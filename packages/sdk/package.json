@@ -1,0 +1,27 @@
+{
+  "name": "@azphalt/sdk",
+  "version": "0.1.0",
+  "description": "The typed API an azphalt extension is written against.",
+  "license": "MIT",
+  "author": "Az (https://hereliesaz.com)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
+  "sideEffects": false
+}
