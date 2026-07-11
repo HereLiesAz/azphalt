@@ -1,0 +1,5 @@
+{
+  "controls": [
+    { "type": "slider", "key": "strength", "label": "Strength", "min": 0, "max": 1, "step": 0.01, "default": 1 }
+  ]
+}

@@ -18,11 +18,52 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.20.1)
 
+  examples/invert:
+    dependencies:
+      '@azphalt/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+    devDependencies:
+      '@azphalt/runtime-reference':
+        specifier: workspace:*
+        version: link:../../packages/runtime-reference
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
   packages/azp:
     dependencies:
       '@azphalt/sdk':
         specifier: workspace:*
         version: link:../sdk
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/importers/abr:
+    dependencies:
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
+      '@azphalt/sdk':
+        specifier: workspace:*
+        version: link:../../sdk
       fflate:
         specifier: ^0.8.2
         version: 0.8.3
@@ -45,6 +86,25 @@ importers:
       '@azphalt/sdk':
         specifier: workspace:*
         version: link:../../sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/runtime-reference:
+    dependencies:
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../azp
+      '@azphalt/sdk':
+        specifier: workspace:*
+        version: link:../sdk
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
