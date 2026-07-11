@@ -153,7 +153,7 @@ function parseV6(r: Reader, version: number): AbrFile {
       const tail = readSampledTail(sr);
       brushes.push({ ...tail, name, kind: "sampled", params });
       const pad = end % 4 ? 4 - (end % 4) : 0;
-      sr.seek(end + pad); // entries are 4-byte aligned
+      sr.seek(Math.min(end + pad, sr.length)); // 4-byte aligned; clamp so trailing padding past EOF ends the loop
     }
   }
 

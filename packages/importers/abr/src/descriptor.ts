@@ -44,6 +44,8 @@ function readValue(r: Reader, ostype: string): DescValue {
     }
     case "VlLs": {
       const n = r.u32();
+      // Each list item is at least a 4-byte OSType; reject a count that can't fit (DoS/OOM guard).
+      if (n * 4 > r.remaining) throw new Error("descriptor: list size exceeds remaining bytes");
       const arr: DescValue[] = [];
       for (let i = 0; i < n; i++) arr.push(readValue(r, r.ascii(4)));
       return arr;
@@ -62,6 +64,8 @@ function readBody(r: Reader): DescObject {
   r.unicode(); // descriptor name (usually empty)
   readKey(r); // class id
   const count = r.u32();
+  // Each item is at least 8 bytes (key code + OSType); reject an impossible count (DoS/OOM guard).
+  if (count * 8 > r.remaining) throw new Error("descriptor: item count exceeds remaining bytes");
   const obj: DescObject = {};
   for (let i = 0; i < count; i++) {
     const key = readKey(r);

@@ -11,9 +11,11 @@ export function decodePackBits(src: Uint8Array, expected: number): Uint8Array {
     const n = src[s++];
     if (n < 128) {
       const count = n + 1;
+      if (s + count > src.length) throw new Error("packbits: literal run exceeds source length");
       for (let i = 0; i < count && o < expected; i++) out[o++] = src[s++];
     } else if (n > 128) {
       const count = 257 - n;
+      if (s >= src.length) throw new Error("packbits: missing repeat value");
       const b = src[s++];
       for (let i = 0; i < count && o < expected; i++) out[o++] = b;
     }
