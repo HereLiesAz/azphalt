@@ -7,6 +7,9 @@ import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { createHash } from "node:crypto";
 import type { Manifest } from "@azphalt/sdk";
 
+/** Fixed archive timestamp for reproducible output. Mid-range so it stays valid (ZIP: 1980–2099) in any timezone. */
+const EPOCH = new Date(Date.UTC(2000, 0, 1));
+
 /** SHA-256 of `bytes` as `sha256-<lowercase-hex>` — the digest form used in `manifest.files`. */
 export function digest(bytes: Uint8Array): string {
   return "sha256-" + createHash("sha256").update(bytes).digest("hex");
@@ -48,7 +51,10 @@ export function writeAzp(input: AzpInput): WriteResult {
   const sorted: Record<string, Uint8Array> = {};
   for (const key of Object.keys(entries).sort()) sorted[key] = entries[key];
 
-  return { azp: zipSync(sorted), manifest };
+  // Fixed timestamp so identical input yields identical bytes — reproducible signing
+  // (see spec/package-format.md § Signing). Without this, fflate stamps the current time.
+  // A Date (not epoch 0, which is outside ZIP's 1980–2099 range) keeps the value unambiguous.
+  return { azp: zipSync(sorted, { mtime: EPOCH }), manifest };
 }
 
 export interface ReadResult {
@@ -76,7 +82,11 @@ export interface VerifyResult {
   errors: string[];
 }
 
-/** Verify a `.azp`: reject unsafe paths and confirm every `manifest.files` digest. */
+/**
+ * Verify a `.azp`: reject unsafe paths, confirm every `manifest.files` digest, and reject any
+ * payload entry that has no digest in `manifest.files`. The spec requires the manifest to digest
+ * every payload file; an unlisted (hence unverifiable, unsigned) file must not pass.
+ */
 export function verifyAzp(bytes: Uint8Array): VerifyResult {
   const errors: string[] = [];
 
@@ -105,6 +115,14 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
       continue;
     }
     if (digest(data) !== want) errors.push(`digest mismatch: ${path}`);
+  }
+
+  // Completeness: every payload entry must be covered by a manifest digest. `hasOwn` avoids
+  // matching inherited keys (e.g. a file literally named `__proto__`).
+  for (const path of Object.keys(payload)) {
+    if (!Object.hasOwn(manifest.files, path)) {
+      errors.push(`unlisted payload (no digest in manifest.files): ${path}`);
+    }
   }
 
   return { ok: errors.length === 0, errors };
