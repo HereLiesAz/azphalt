@@ -7,8 +7,13 @@ import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { createHash } from "node:crypto";
 import type { Manifest } from "@azphalt/sdk";
 
-/** Fixed archive timestamp for reproducible output. Mid-range so it stays valid (ZIP: 1980–2099) in any timezone. */
-const EPOCH = new Date(Date.UTC(2000, 0, 1));
+/**
+ * Fixed archive timestamp for reproducible output. Built from LOCAL fields on purpose: fflate
+ * encodes ZIP mtime via the Date's local getters (getFullYear/getMonth/…), so a UTC instant
+ * would encode to different bytes per timezone. Local construction yields identical bytes in
+ * every timezone. Mid-range (2000) keeps it inside ZIP's valid 1980–2099 window everywhere.
+ */
+const EPOCH = new Date(2000, 0, 1);
 
 /** SHA-256 of `bytes` as `sha256-<lowercase-hex>` — the digest form used in `manifest.files`. */
 export function digest(bytes: Uint8Array): string {
