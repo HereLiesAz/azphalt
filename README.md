@@ -26,7 +26,7 @@ Anyone can implement azphalt and run their own store. Ours is just the flagship.
 /packages/      sdk · importers · runtime-reference · registry
 /apps/          storefront (the marketplace)
 /examples/      sample extensions
-/docs/          ARCHITECTURE.md · RATIONALE.md · adopting-the-standard.md · GOVERNANCE.md
+/docs/          ARCHITECTURE.md · RATIONALE.md · ADOPTION.md · GOVERNANCE.md
 LICENSE         MIT
 ~~~
 

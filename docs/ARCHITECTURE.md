@@ -55,7 +55,7 @@ The native host that embeds the engine and renders the schema is **each app's ow
   storefront/               the marketplace — Next.js consignment store (the business layer)
 /examples/                  sample extensions; doubles as commodity reference tools as templates
 /docs/
-  adopting-the-standard.md  how another app implements a conforming host
+  ADOPTION.md               how another app implements a conforming host
   GOVERNANCE.md             neutrality + how decisions get made
 LICENSE                     MIT
 README.md

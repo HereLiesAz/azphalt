@@ -1,45 +1,42 @@
-# The extension manifest (`manifest.json`)
+# UI schema
 
-*Normative. UTF-8 JSON at the root of every `.azp`. Declares identity, what the package contributes, and — for code — exactly which capabilities it needs.*
+*Normative. A declarative description of an extension's control panel. The host renders it as native widgets — Compose, SwiftUI, whatever it is. No HTML, no DOM, no React: that is precisely what keeps the standard cross-app.*
 
-## Top-level fields
-- `azphalt`: Format version, e.g. `"0.1"`.
-- `id`: Reverse-DNS, globally unique — e.g. `com.hereliesaz.halftone`.
-- `name`: Human-readable.
-- `version`: Semver.
-- `kind`: `asset` | `code` | `mixed`.
-- `license`: SPDX id. MIT permits closed/sold extensions.
-- `compat`: Min host API version, e.g. `">=0.1"`.
-- `capabilities`: Declared capabilities (see capability-model.md).
-- `contributes`: Extension points the code registers.
-- `files`: Map of payload path → SHA-256 digest.
+## Model
+A panel is a JSON object with a `controls` array. Each control has a `type`, a unique `key`, a `label`, and type-specific fields. The extension reads values through the `params` capability; the host owns rendering and layout.
+
+## Core controls (`0.1`)
+| `type` | Fields | Value |
+|---|---|---|
+| `slider` | `min`, `max`, `step`, `default` | number |
+| `number` | `min?`, `max?`, `step?`, `default` | number |
+| `toggle` | `default` | boolean |
+| `select` | `options: [{value,label}]`, `default` | option value |
+| `color` | `default`, `alpha?` | RGBA |
+| `text` | `default`, `placeholder?` | string |
+| `button` | `action` | fires `action` on the entry |
+| `group` | `label`, `controls[]` | container |
+
+Kept deliberately small so every host can render it natively. Richer controls — tone `curve`, `gradient`, conditional visibility — are candidate extensions to the schema, not part of `0.1`.
+
+## Update model
+- Controls update live by default: a change pushes new `params` and the host MAY re-run a preview.
+- A `button` with an `action` is the apply/commit path for expensive operations.
 
 ## Example
+~~~
 {
-  "azphalt": "0.1",
-  "id": "com.hereliesaz.halftone",
-  "name": "Halftone",
-  "version": "1.2.0",
-  "kind": "code",
-  "license": "MIT",
-  "author": "Az",
-  "description": "CMYK halftone filter.",
-  "compat": ">=0.1",
-  "entry": "code/main.js",
-  "runtime": "js",
-  "capabilities": ["canvas", "bitmap", "params"],
-  "contributes": {
-    "filters": [
-      {
-        "id": "halftone",
-        "name": "Halftone",
-        "entry": "applyHalftone",
-        "ui": "ui/panel.json"
-      }
-    ]
-  },
-  "files": {
-    "code/main.js": "sha256-…",
-    "ui/panel.json": "sha256-…"
-  }
+  "controls": [
+    { "type": "slider", "key": "cellSize", "label": "Cell size", "min": 2, "max": 40, "step": 1, "default": 8 },
+    { "type": "select", "key": "shape", "label": "Dot shape",
+      "options": [{ "value": "circle", "label": "Circle" }, { "value": "square", "label": "Square" }],
+      "default": "circle" },
+    { "type": "color", "key": "ink", "label": "Ink", "default": "#000000", "alpha": true },
+    { "type": "toggle", "key": "cmyk", "label": "CMYK separation", "default": true }
+  ]
 }
+~~~
+
+## Open
+- The expressiveness ceiling — rich enough for real tool UIs vs. renderable natively on every host. The central UI tension of the whole standard.
+- Localization of labels/options; conditional show-hide; validation messages.
