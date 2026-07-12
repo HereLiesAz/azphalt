@@ -1,0 +1,77 @@
+/**
+ * Ed25519 signing for `.azp` packages. Signs the canonical `manifest.json` bytes — which
+ * transitively cover the payload through the `manifest.files` digests — and stores a detached
+ * `signature.json`. Per `spec/package-format.md` § Signing, a signature is **tamper-evidence, not
+ * identity**, until the trust model is settled: {@link verifyAzp} confirms the signature is
+ * internally consistent (the payload matches the signed manifest, and the signature matches the
+ * embedded key), not that the key belongs to any particular author or registry.
+ */
+import { createPrivateKey, createPublicKey, generateKeyPairSync, sign as cryptoSign } from "node:crypto";
+import { strToU8, unzipSync, zipSync } from "fflate";
+import { EPOCH } from "./index.js";
+
+export interface SigningKey {
+  /** PKCS8 PEM private key — keep secret. */
+  privateKey: string;
+  /** Base64 SPKI public key — embedded in `signature.json`. */
+  publicKey: string;
+}
+
+/** The detached signature stored as `signature.json`. */
+export interface AzpSignature {
+  alg: "ed25519";
+  /** Base64 SPKI public key the signature verifies against. */
+  publicKey: string;
+  /** Optional signer-chosen key identifier. */
+  keyId?: string;
+  /** Base64 Ed25519 signature over the canonical `manifest.json` bytes. */
+  signature: string;
+}
+
+/** Generate a fresh Ed25519 signing key. */
+export function generateSigningKey(): SigningKey {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  return {
+    privateKey: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+    publicKey: Buffer.from(publicKey.export({ type: "spki", format: "der" })).toString("base64"),
+  };
+}
+
+export interface SignOptions {
+  /** PKCS8 PEM private key (from {@link generateSigningKey}). */
+  privateKey: string;
+  /** Optional key id recorded in the signature. */
+  keyId?: string;
+}
+
+/**
+ * Sign a `.azp` by adding a detached `signature.json` over its `manifest.json`. Returns new `.azp`
+ * bytes; the input is not mutated. Re-signing replaces any existing `signature.json`.
+ */
+export function signAzp(azp: Uint8Array, opts: SignOptions): Uint8Array {
+  const files = unzipSync(azp);
+  const manifestBytes = files["manifest.json"];
+  if (!manifestBytes) throw new Error("azp: manifest.json is missing");
+
+  const key = createPrivateKey(opts.privateKey);
+  if (key.asymmetricKeyType !== "ed25519") {
+    throw new Error("azp: privateKey must be an ed25519 key");
+  }
+  const signature = cryptoSign(null, Buffer.from(manifestBytes), key);
+  const publicKey = Buffer.from(createPublicKey(key).export({ type: "spki", format: "der" })).toString("base64");
+
+  const sig: AzpSignature = {
+    alg: "ed25519",
+    publicKey,
+    ...(opts.keyId ? { keyId: opts.keyId } : {}),
+    signature: Buffer.from(signature).toString("base64"),
+  };
+
+  const entries: Record<string, Uint8Array> = {
+    ...files,
+    "signature.json": strToU8(JSON.stringify(sig, null, 2) + "\n"),
+  };
+  const sorted: Record<string, Uint8Array> = {};
+  for (const k of Object.keys(entries).sort()) sorted[k] = entries[k];
+  return zipSync(sorted, { mtime: EPOCH });
+}
