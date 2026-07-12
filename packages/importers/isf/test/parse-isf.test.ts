@@ -47,4 +47,13 @@ describe("parseIsf", () => {
   it("throws on an input NAME with whitespace", () => {
     expect(() => parseIsf('/*{ "INPUTS": [ { "NAME": "bad name", "TYPE": "float" } ] }*/\ncode')).toThrow(/NAME/);
   });
+
+  it("throws on a duplicate input NAME", () => {
+    const src = '/*{ "INPUTS": [ { "NAME": "a", "TYPE": "float" }, { "NAME": "a", "TYPE": "bool" } ] }*/\ncode';
+    expect(() => parseIsf(src)).toThrow(/duplicate/);
+  });
+
+  it("throws when an INPUTS entry is an array, not an object", () => {
+    expect(() => parseIsf('/*{ "INPUTS": [ [1, 2] ] }*/\ncode')).toThrow(/not an object/);
+  });
 });

@@ -16,8 +16,11 @@ export function isHostBound(input: IsfInput): boolean {
 /** ISF `color` is a vec4 of floats 0–1; azphalt color defaults are `#RRGGBB` (alpha carried separately). */
 export function vec4ToHex(v: number[] | undefined): string {
   const c = v ?? [0, 0, 0, 1];
-  const ch = (x: number) => Math.max(0, Math.min(255, Math.round((x ?? 0) * 255)));
-  const hx = (n: number) => ch(n).toString(16).padStart(2, "0");
+  const ch = (x: unknown) => {
+    const val = typeof x === "number" && !Number.isNaN(x) ? x : 0;
+    return Math.max(0, Math.min(255, Math.round(val * 255)));
+  };
+  const hx = (n: unknown) => ch(n).toString(16).padStart(2, "0");
   return `#${hx(c[0])}${hx(c[1])}${hx(c[2])}`;
 }
 
@@ -44,7 +47,10 @@ export function inputToControl(input: IsfInput): Control | null {
     case "long": {
       const values = input.VALUES ?? [];
       const labels = input.LABELS ?? [];
-      const options: SelectOption[] = values.map((v, i) => ({ value: String(v), label: labels[i] ?? String(v) }));
+      const options: SelectOption[] = values.map((v, i) => ({
+        value: String(v),
+        label: labels[i] !== undefined ? String(labels[i]) : String(v),
+      }));
       const def = input.DEFAULT != null ? String(input.DEFAULT) : options[0]?.value ?? "0";
       return { type: "select", key, label, options, default: def };
     }
@@ -65,8 +71,8 @@ export function inputToControl(input: IsfInput): Control | null {
         key,
         label,
         controls: [
-          { type: "number", key: `${key}.x`, label: `${label} X`, default: d[0] ?? 0 },
-          { type: "number", key: `${key}.y`, label: `${label} Y`, default: d[1] ?? 0 },
+          { type: "number", key: `${key}.x`, label: `${label} X`, default: typeof d[0] === "number" ? d[0] : 0 },
+          { type: "number", key: `${key}.y`, label: `${label} Y`, default: typeof d[1] === "number" ? d[1] : 0 },
         ],
       };
     }

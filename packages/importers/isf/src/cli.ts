@@ -64,11 +64,20 @@ const args = parse(process.argv.slice(2));
 if (!args.input) fail("an input .fs/.glsl shader file is required");
 if (!args.id) fail("--id <reverse-DNS id> is required (e.g. com.hereliesaz.teal-grade)");
 
-const source = readFileSync(args.input, "utf8");
+let source: string;
+try {
+  source = readFileSync(args.input, "utf8");
+} catch (e) {
+  fail(`failed to read input file: ${(e as Error).message}`);
+}
 
 let licenseText: string;
 if (args.licenseFile) {
-  licenseText = readFileSync(args.licenseFile, "utf8");
+  try {
+    licenseText = readFileSync(args.licenseFile, "utf8");
+  } catch (e) {
+    fail(`failed to read license file: ${(e as Error).message}`);
+  }
 } else {
   const spdx = args.license ?? "MIT";
   licenseText = `${spdx}\n\nProvide the full license text with --license-file.\n`;
