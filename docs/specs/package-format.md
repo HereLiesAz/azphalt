@@ -38,5 +38,13 @@ Declared in the manifest as `kind`: `asset` | `code` | `mixed`.
 - **Authenticity:** `signature.json` is a detached **Ed25519** signature over the canonical bytes of `manifest.json`, plus the signer's public key / key id. Signing the manifest transitively signs the payload through the digests.
 - **Open — trust model.** Who counts as a trusted signer (author self-signed, registry counter-signed, web-of-trust) and how keys are distributed is undecided. Until it is, treat a signature as tamper-evidence, not identity.
 
+### 0.1 reality: unsigned packages
+In format version `0.1`, **no tooling produces `signature.json`**. Every `.azp` emitted by the SDK, the importers, and the CLI ships without one. Hosts consuming `.azp` files today MUST:
+1. Verify file-level integrity via the SHA-256 digests in `manifest.files` — this is implemented and enforced by `@azphalt/azp`'s `verifyAzp()`.
+2. **Not** treat a package as authenticated. The absence of `signature.json` means the package has integrity but no provenance.
+3. Warn users appropriately when loading unsigned packages (e.g., "This package is not signed. Install only from sources you trust.").
+
+This is intentional. Shipping a signing ceremony before the trust model is decided would bake in assumptions that are expensive to reverse. The cost is that `0.1` packages have no authenticity guarantee — acceptable for a pre-stable format, unacceptable once a public registry exists.
+
 ## Versioning
 - `azphalt` (format version) gates compatibility. The package's own `version` is semver.

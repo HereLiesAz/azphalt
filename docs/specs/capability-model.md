@@ -34,7 +34,8 @@ These have no host function. They are *absent*, not merely gated.
 Bitmaps cross the boundary as shared linear memory (the WASM instance's memory):
 - Layout: RGBA, 8 bits/channel, **straight (non-premultiplied) alpha**, row-major, tightly packed (`stride = width * 4`).
 - The host passes `ptr, width, height, stride`; the extension reads/writes in place — no copy on the hot path.
-- **Open:** premultiplied-vs-straight is a real call (blend math differs), and 16-bit depth is a later question. Pin both before the ABI stabilizes — this is what bites a pixel app.
+- **Resolved:** straight (non-premultiplied) alpha is the ABI. The SDK types, the reference runtime, and all existing importers and tests emit and consume straight alpha. A host that internally premultiplies MUST convert at the boundary — the extension side is always straight. This is pinned for `0.1` and will not change without a format version bump.
+- **Open:** 16-bit depth is a later question. Pin before the ABI stabilizes past `0.1`.
 
 ## Enforcement
 Capabilities are strings in the manifest. The host builds the host-function table from the granted set only, so an ungranted capability has no importable function — an extension cannot call what it wasn't given, and there is no reflection path to widen the grant at runtime.
