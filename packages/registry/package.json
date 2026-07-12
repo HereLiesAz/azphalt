@@ -1,0 +1,21 @@
+{
+  "name": "@azphalt/registry",
+  "version": "0.1.0",
+  "description": "The azphalt registry: publish, index, search, and serve .azp packages — plus the consignment marketplace overlay.",
+  "license": "MIT",
+  "author": "Az (https://hereliesaz.com)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": { "@azphalt/azp": "workspace:*", "@azphalt/sdk": "workspace:*" },
+  "devDependencies": { "typescript": "^5.6.0", "vitest": "^2.1.0", "@types/node": "^22.0.0", "fflate": "^0.8.2" },
+  "sideEffects": false
+}
