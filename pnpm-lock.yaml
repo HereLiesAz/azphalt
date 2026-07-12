@@ -446,6 +446,9 @@ importers:
 
   packages/runtime-wasm:
     dependencies:
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../azp
       '@azphalt/sdk':
         specifier: workspace:*
         version: link:../sdk
