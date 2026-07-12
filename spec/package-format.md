@@ -35,7 +35,7 @@ Declared in the manifest as `kind`: `asset` | `code` | `mixed`.
 
 ## Signing
 - **Integrity:** `manifest.json` MUST carry a SHA-256 digest of every payload file under `files` (path → digest). A host MUST verify each file against its digest before use.
-- **Authenticity:** `signature.json` is a detached **Ed25519** signature over the canonical bytes of `manifest.json`, plus the signer's public key / key id. Signing the manifest transitively signs the payload through the digests.
+- **Authenticity:** `signature.json` is a detached **Ed25519** signature over the canonical bytes of `manifest.json`, plus the signer's public key / key id. Signing the manifest transitively signs the payload through the digests. *Implemented* in `@azphalt/azp` (`signAzp` / `generateSigningKey`); `verifyAzp` validates it when present.
 - **Open — trust model.** Who counts as a trusted signer (author self-signed, registry counter-signed, web-of-trust) and how keys are distributed is undecided. Until it is, treat a signature as tamper-evidence, not identity.
 
 ## Versioning
