@@ -32,7 +32,8 @@ export type Capability =
 
 export type AssetType = 
   | "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition"
-  | "mesh" | "material" | "hdri" | "motion" | "palette";
+  | "mesh" | "material" | "hdri" | "motion" | "palette"
+  | "image" | "video" | "font" | "audio";
 
 export interface AssetContribution {
   type: AssetType;
@@ -42,6 +43,8 @@ export interface AssetContribution {
   params?: Record<string, unknown>;
   /** Optional UI panel path (e.g. assets/ui.json) generated for configurable assets. */
   ui?: string;
+  /** Optional tags for filtering in the marketplace (e.g., ["sfx", "impact"]). */
+  tags?: string[];
 }
 
 export interface FilterContribution {
