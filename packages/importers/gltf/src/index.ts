@@ -1,25 +1,29 @@
 import { writeAzp } from "@azphalt/azp";
 import type { Manifest } from "@azphalt/sdk";
+import { parseGltf, type GltfInfo } from "./parse-gltf.js";
 
 export interface ImportOptions {
   id: string;
   name?: string;
   version: string;
   author: string;
+  /** SPDX id recorded in the manifest; default `"MIT"`. */
+  license?: string;
+  /** Full license text stored as the package's `LICENSE`; default is a placeholder. */
+  licenseText?: string;
 }
 
 /**
- * Packages a glTF (.glb or .gltf) into an .azp asset package.
+ * Packages a glTF (.glb or .gltf) into an .azp asset package. Validates the input by its
+ * magic bytes / JSON shape and throws on anything that is not glTF — never mislabels.
  */
 export function importGltf(bytes: Uint8Array, opts: ImportOptions): Uint8Array {
-  // Simple validation: .glb magic bytes (0x46546C67 = "glTF")
-  const isGlb = bytes.length >= 4 && 
-    bytes[0] === 0x67 && bytes[1] === 0x6C && bytes[2] === 0x54 && bytes[3] === 0x46;
-  
-  const ext = isGlb ? "glb" : "gltf";
-  
+  const info: GltfInfo = parseGltf(bytes);
+  const ext = info.format;
+  const assetPath = `assets/model.${ext}`;
+
   const payload: Record<string, Uint8Array> = {
-    [`assets/model.${ext}`]: bytes
+    [assetPath]: bytes,
   };
 
   const manifest: Omit<Manifest, "files"> = {
@@ -28,17 +32,26 @@ export function importGltf(bytes: Uint8Array, opts: ImportOptions): Uint8Array {
     name: opts.name || "3D Model",
     version: opts.version,
     kind: "asset",
-    license: "MIT",
+    license: opts.license ?? "MIT",
     compat: ">=0.1",
     author: opts.author,
     assets: [
       {
         type: "mesh",
-        path: `assets/model.${ext}`
-      }
-    ]
+        path: assetPath,
+        params: { format: info.format, version: info.version },
+      },
+    ],
   };
 
-  const { azp } = writeAzp({ manifest, payload, license: "MIT License" });
+  const { azp } = writeAzp({
+    manifest,
+    payload,
+    license:
+      opts.licenseText ?? `${opts.license ?? "MIT"}\n\nProvide the full license text.\n`,
+  });
   return azp;
 }
+
+export { parseGltf } from "./parse-gltf.js";
+export type { GltfInfo } from "./parse-gltf.js";
