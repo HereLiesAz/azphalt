@@ -72,16 +72,18 @@ const world = (bitmap: ConformanceBitmap, params: Record<string, unknown> = {}):
   bitmap,
 });
 
-/** `>=X.Y` (or bare `X.Y`) satisfied by `version` — the only `compat` form `0.1` needs. */
+/** `>=X.Y[.Z]` (or bare `X.Y[.Z]`) satisfied by `version`. Patch defaults to 0 when omitted. */
 function satisfiesCompat(version: string, compat: string): boolean {
   const parse = (s: string) => {
-    const m = /(\d+)\.(\d+)/.exec(s);
-    return m ? [Number(m[1]), Number(m[2])] : null;
+    const m = /(\d+)\.(\d+)(?:\.(\d+))?/.exec(s);
+    return m ? [Number(m[1]), Number(m[2]), Number(m[3] ?? 0)] : null;
   };
   const v = parse(version);
   const c = parse(compat);
   if (!v || !c) return false;
-  return v[0] > c[0] || (v[0] === c[0] && v[1] >= c[1]);
+  if (v[0] !== c[0]) return v[0] > c[0];
+  if (v[1] !== c[1]) return v[1] > c[1];
+  return v[2] >= c[2];
 }
 
 /* ───────────────────────── package-level (host-agnostic) ───────────────────────── */
@@ -138,7 +140,7 @@ export async function checkAbiRoundTrip(host: CodeHost): Promise<CheckResult> {
   if (error) return fail(id, title, `filter threw: ${error.message}`);
   const expected = [245, 235, 225, 255, 55, 155, 205, 128];
   const got = result?.bitmap.data;
-  return got && expected.every((v, i) => v === got[i])
+  return got && got.length === expected.length && expected.every((v, i) => v === got[i])
     ? pass(id, title)
     : fail(id, title, `expected ${JSON.stringify(expected)} got ${JSON.stringify(got)}`);
 }
