@@ -1,0 +1,18 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.invert",
+  "name": "Invert",
+  "version": "1.0.0",
+  "kind": "code",
+  "license": "MIT",
+  "author": "Az",
+  "description": "Invert layer colors, by adjustable strength.",
+  "compat": ">=0.1",
+  "entry": "code/main.js",
+  "runtime": "js",
+  "capabilities": ["bitmap", "params", "canvas"],
+  "contributes": {
+    "filters": [{ "id": "invert", "name": "Invert", "entry": "invert", "ui": "ui/panel.json" }]
+  },
+  "files": {}
+}

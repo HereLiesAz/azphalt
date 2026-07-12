@@ -49,7 +49,11 @@ describe("azp", () => {
     expect(result.errors.some((e) => e.includes("digest mismatch"))).toBe(true);
   });
 
-  it("rejects an extra unlisted file in the payload", () => {
+  it("rejects bytes that are not a package", () => {
+    expect(verifyAzp(new Uint8Array([1, 2, 3, 4])).ok).toBe(false);
+  });
+
+  it("flags a payload file that is absent from manifest.files", () => {
     const { azp } = writeAzp({
       manifest: { ...base, id: "com.hereliesaz.x" },
       payload: { "assets/a.bin": new Uint8Array([1, 2, 3]) },
@@ -57,15 +61,20 @@ describe("azp", () => {
     });
 
     const files = unzipSync(azp);
-    files["assets/extra.bin"] = new Uint8Array([9, 9, 9]); // unlisted in manifest.files
-    const tampered = zipSync(files);
+    files["assets/stowaway.bin"] = new Uint8Array([4, 5, 6]); // never listed in manifest.files
+    const smuggled = zipSync(files);
 
-    const result = verifyAzp(tampered);
+    const result = verifyAzp(smuggled);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes("unlisted payload file"))).toBe(true);
+    expect(result.errors.some((e) => e.includes("unlisted payload"))).toBe(true);
   });
 
-  it("rejects bytes that are not a package", () => {
-    expect(verifyAzp(new Uint8Array([1, 2, 3, 4])).ok).toBe(false);
+  it("writes identical bytes for identical input (reproducible)", () => {
+    const input = {
+      manifest: { ...base, id: "com.hereliesaz.repro" },
+      payload: { "assets/x.bin": new Uint8Array([7, 8, 9]) },
+      license,
+    };
+    expect(writeAzp(input).azp).toEqual(writeAzp(input).azp);
   });
 });

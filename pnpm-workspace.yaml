@@ -4,3 +4,4 @@ packages:
   - "packages/importers/*"
   - "packages/create-azphalt"
   - "docs"
+  - "examples/*"
