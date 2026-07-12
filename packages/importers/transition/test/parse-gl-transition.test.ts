@@ -35,4 +35,12 @@ describe("parseGlTransition", () => {
     const src = "uniform float a; // = 1.0\nuniform float a; // = 2.0\nvec4 transition(vec2 uv){ return vec4(a); }";
     expect(() => parseGlTransition(src)).toThrow(/duplicate/);
   });
+
+  it("handles precision qualifiers and trailing-dot/leading-dot float literals", () => {
+    const src =
+      "uniform mediump float x; // = 1.\nuniform highp vec2 v; // = vec2(2., .5)\nvec4 transition(vec2 uv){ return vec4(x); }";
+    const p = parseGlTransition(src);
+    expect(p.uniforms.find((u) => u.name === "x")).toMatchObject({ glslType: "float", default: 1 });
+    expect(p.uniforms.find((u) => u.name === "v")!.default).toEqual([2, 0.5]);
+  });
 });

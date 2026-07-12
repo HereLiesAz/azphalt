@@ -29,7 +29,11 @@ export const HOST_PROVIDED: ReadonlySet<string> = new Set(["from", "to", "progre
 const VEC_SIZE: Record<string, number> = { vec2: 2, vec3: 3, vec4: 4, ivec2: 2, ivec3: 3, ivec4: 4 };
 
 function numbersIn(expr: string): number[] {
-  return (expr.match(/-?\d*\.?\d+(?:[eE][+-]?\d+)?/g) ?? []).map(Number);
+  // Strip GLSL identifiers (vec3, mix, …) so their digits aren't parsed as numbers, then match
+  // int/float literals including trailing-dot (`1.`) and exponent forms.
+  const clean = expr.replace(/\b[a-zA-Z_]\w*\b/g, "");
+  const matches = clean.match(/-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|-?\.\d+(?:[eE][+-]?\d+)?/g) ?? [];
+  return matches.map(Number);
 }
 
 function parseDefault(glslType: string, expr: string | undefined): GlUniform["default"] {
@@ -37,14 +41,12 @@ function parseDefault(glslType: string, expr: string | undefined): GlUniform["de
   const e = expr.trim();
   if (glslType === "bool") return e === "true" || e === "1";
   if (glslType === "float" || glslType === "int") {
-    const n = Number(numbersIn(e)[0]);
-    return Number.isFinite(n) ? n : undefined;
+    const n = numbersIn(e)[0];
+    return n !== undefined && Number.isFinite(n) ? n : undefined;
   }
   const size = VEC_SIZE[glslType];
   if (size) {
-    // Read only inside the constructor's parens, so the type's own digit (vec"4") isn't captured.
-    const inner = /\(([^)]*)\)/.exec(e)?.[1] ?? e;
-    let nums = numbersIn(inner);
+    let nums = numbersIn(e); // identifiers are stripped, so vecN(...)'s own digit isn't captured
     if (nums.length === 1) nums = Array(size).fill(nums[0]); // GLSL vecN(x) fills all components
     return nums.slice(0, size);
   }
@@ -64,7 +66,7 @@ export function parseGlTransition(source: string): ParsedGlTransition {
 
   const uniforms: GlUniform[] = [];
   const seen = new Set<string>();
-  const re = /uniform\s+(\w+)\s+(\w+)\s*;[ \t]*(?:\/\/\s*=\s*([^\n\r]*))?/g;
+  const re = /uniform\s+(?:(?:lowp|mediump|highp)\s+)?(\w+)\s+(\w+)\s*;[ \t]*(?:\/\/\s*=\s*([^\n\r]*))?/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(source)) !== null) {
     const [, glslType, name, defExpr] = m;
