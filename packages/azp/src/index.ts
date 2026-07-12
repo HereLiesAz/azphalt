@@ -1,10 +1,11 @@
 /**
- * `@azphalt/azp` — read, write, and verify `.azp` packages.
- * See `spec/package-format.md`. Node-side (uses `node:crypto`); packages are written
- * unsigned for now, pending the trust-model decision in the package-format spec.
+ * `@azphalt/azp` — read, write, verify, and sign `.azp` packages.
+ * See `spec/package-format.md`. Node-side (uses `node:crypto`). `writeAzp` produces an unsigned
+ * package; {@link signAzp} adds an Ed25519 `signature.json`, and {@link verifyAzp} validates it
+ * when present. A signature is tamper-evidence, not identity, until the trust model is settled.
  */
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
-import { createHash } from "node:crypto";
+import { createHash, createPublicKey, verify as cryptoVerify } from "node:crypto";
 import type { Manifest } from "@azphalt/sdk";
 
 /**
@@ -13,7 +14,7 @@ import type { Manifest } from "@azphalt/sdk";
  * would encode to different bytes per timezone. Local construction yields identical bytes in
  * every timezone. Mid-range (2000) keeps it inside ZIP's valid 1980–2099 window everywhere.
  */
-const EPOCH = new Date(2000, 0, 1);
+export const EPOCH = new Date(2000, 0, 1);
 
 /** SHA-256 of `bytes` as `sha256-<lowercase-hex>` — the digest form used in `manifest.files`. */
 export function digest(bytes: Uint8Array): string {
@@ -85,21 +86,25 @@ export function readAzp(bytes: Uint8Array): ReadResult {
 export interface VerifyResult {
   ok: boolean;
   errors: string[];
+  /** True if the package carries a `signature.json` (whose validity is folded into `ok`/`errors`). */
+  signed: boolean;
 }
 
 /**
- * Verify a `.azp`: reject unsafe paths, confirm every `manifest.files` digest, and reject any
- * payload entry that has no digest in `manifest.files`. The spec requires the manifest to digest
- * every payload file; an unlisted (hence unverifiable, unsigned) file must not pass.
+ * Verify a `.azp`: reject unsafe paths, confirm every `manifest.files` digest, reject any payload
+ * entry that has no digest in `manifest.files`, and — if a `signature.json` is present — confirm it
+ * is a valid Ed25519 signature over the `manifest.json`. A valid signature is tamper-evidence, not
+ * identity (spec/package-format.md § Signing); unsigned packages remain valid on integrity alone.
  */
 export function verifyAzp(bytes: Uint8Array): VerifyResult {
   const errors: string[] = [];
+  let signed = false;
 
   let read: ReadResult;
   try {
     read = readAzp(bytes);
   } catch (e) {
-    return { ok: false, errors: [(e as Error).message] };
+    return { ok: false, errors: [(e as Error).message], signed: false };
   }
   const { manifest, payload } = read;
 
@@ -111,7 +116,7 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
 
   if (!manifest.files) {
     errors.push("manifest.files is missing");
-    return { ok: false, errors };
+    return { ok: false, errors, signed };
   }
   for (const [path, want] of Object.entries(manifest.files)) {
     const data = payload[path];
@@ -123,12 +128,35 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
   }
 
   // Completeness: every payload entry must be covered by a manifest digest. `hasOwn` avoids
-  // matching inherited keys (e.g. a file literally named `__proto__`).
+  // matching inherited keys (e.g. a file literally named `__proto__`). `signature.json` is the
+  // detached signature, not a signed payload file, so it is exempt.
   for (const path of Object.keys(payload)) {
-    if (!Object.hasOwn(manifest.files, path)) {
+    if (path !== "signature.json" && !Object.hasOwn(manifest.files, path)) {
       errors.push(`unlisted payload (no digest in manifest.files): ${path}`);
     }
   }
 
-  return { ok: errors.length === 0, errors };
+  // Signature (optional): validate an Ed25519 `signature.json` over the stored `manifest.json`.
+  const sigRaw = payload["signature.json"];
+  if (sigRaw) {
+    signed = true;
+    try {
+      const sig = JSON.parse(strFromU8(sigRaw)) as { alg?: string; publicKey?: string; signature?: string };
+      if (sig.alg !== "ed25519" || !sig.publicKey || !sig.signature) {
+        errors.push("signature.json is malformed");
+      } else {
+        const manifestBytes = unzipSync(bytes)["manifest.json"];
+        const pub = createPublicKey({ key: Buffer.from(sig.publicKey, "base64"), format: "der", type: "spki" });
+        const valid = cryptoVerify(null, Buffer.from(manifestBytes), pub, Buffer.from(sig.signature, "base64"));
+        if (!valid) errors.push("signature verification failed");
+      }
+    } catch (e) {
+      errors.push(`signature error: ${(e as Error).message}`);
+    }
+  }
+
+  return { ok: errors.length === 0, errors, signed };
 }
+
+export { generateSigningKey, signAzp } from "./sign.js";
+export type { SigningKey, SignOptions, AzpSignature } from "./sign.js";
