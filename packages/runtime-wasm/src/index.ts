@@ -127,7 +127,7 @@ const inject = (vm: QuickJSContext, name: string, fn: Parameters<QuickJSContext[
  */
 function installHostFunctions(vm: QuickJSContext, world: SandboxWorld, granted: Set<Capability>) {
   const state: BitmapState = {
-    bytes: Uint8Array.from(world.bitmap.data.map((n) => n & 0xff)),
+    bytes: Uint8Array.from(world.bitmap.data, (n) => n & 0xff),
     width: world.bitmap.width,
     height: world.bitmap.height,
   };
@@ -152,12 +152,15 @@ function installHostFunctions(vm: QuickJSContext, world: SandboxWorld, granted: 
       const w = vm.getNumber(wH);
       const h = vm.getNumber(hH);
       let out: Uint8Array;
+      let life: ReturnType<QuickJSContext["getArrayBuffer"]> | undefined;
       try {
-        const life = vm.getArrayBuffer(bufH);
+        life = vm.getArrayBuffer(bufH);
         out = Uint8Array.from(life.value);
-        life.dispose();
       } catch {
         throw new Error("invalid bitmap written from sandbox: not an ArrayBuffer");
+      } finally {
+        // Dispose even if Uint8Array.from throws (OOM), or the WASM-heap handle leaks.
+        life?.dispose();
       }
       if (!Number.isInteger(w) || !Number.isInteger(h) || w < 0 || h < 0 || out.length !== w * h * 4) {
         throw new Error("invalid bitmap written from sandbox: stride must be width * 4");
@@ -266,7 +269,8 @@ export async function runFilter(
 
   const granted = new Set<Capability>(opts.capabilities ?? manifest.capabilities ?? []);
   const targetLayerId = world.targetLayerId ?? "layer-0";
-  const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
+  const decoder = new TextDecoder();
+  const decode = (bytes: Uint8Array) => decoder.decode(bytes);
 
   const QuickJS = await getQuickJS();
   const vm = QuickJS.newContext();
