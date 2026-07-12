@@ -70,12 +70,19 @@ const INPUT_TYPES: ReadonlySet<string> = new Set([
 function validateInputs(x: unknown): IsfInput[] {
   if (x == null) return [];
   if (!Array.isArray(x)) throw new Error("isf: INPUTS must be an array");
+  const seen = new Set<string>();
   return x.map((raw, i) => {
-    if (!raw || typeof raw !== "object") throw new Error(`isf: INPUTS[${i}] is not an object`);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      throw new Error(`isf: INPUTS[${i}] is not an object`);
+    }
     const inp = raw as IsfInput;
     if (typeof inp.NAME !== "string" || inp.NAME === "" || /\s/.test(inp.NAME)) {
       throw new Error(`isf: INPUTS[${i}].NAME must be a non-empty, whitespace-free string`);
     }
+    if (seen.has(inp.NAME)) {
+      throw new Error(`isf: INPUTS[${i}].NAME (${inp.NAME}) is a duplicate`);
+    }
+    seen.add(inp.NAME);
     if (typeof inp.TYPE !== "string" || !INPUT_TYPES.has(inp.TYPE)) {
       throw new Error(`isf: INPUTS[${i}] (${inp.NAME}) has unknown TYPE ${JSON.stringify(inp.TYPE)}`);
     }
@@ -89,7 +96,7 @@ function validateInputs(x: unknown): IsfInput[] {
  * leading comment (e.g. a license banner) is treated as plain GLSL.
  */
 export function parseIsf(source: string): ParsedIsf {
-  const text = source.replace(/^﻿/, ""); // strip a BOM if present
+  const text = source.replace(/^\\uFEFF/, ""); // strip a BOM if present
   const m = /^\s*\/\*([\s\S]*?)\*\//.exec(text);
   if (m) {
     const inner = m[1].trim();

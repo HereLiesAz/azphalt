@@ -52,4 +52,9 @@ describe("vec4ToHex", () => {
     expect(vec4ToHex([2, -1, 0.5, 1])).toBe("#ff0080");
     expect(vec4ToHex(undefined)).toBe("#000000");
   });
+
+  it("coerces NaN / non-numeric channels to 0", () => {
+    expect(vec4ToHex([Number.NaN, 0.5, 0])).toBe("#008000");
+    expect(vec4ToHex(["x" as unknown as number, 1, 0])).toBe("#00ff00");
+  });
 });
