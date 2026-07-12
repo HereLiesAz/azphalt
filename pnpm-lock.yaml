@@ -150,6 +150,25 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.20.1)
 
+  packages/importers/transition:
+    dependencies:
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
+      '@azphalt/sdk':
+        specifier: workspace:*
+        version: link:../../sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
   packages/registry:
     dependencies:
       '@azphalt/azp':

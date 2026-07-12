@@ -26,7 +26,7 @@ Declared in the manifest as `kind`: `asset` | `code` | `mixed`.
 - `mixed` — both (e.g. a filter shipping its own LUTs).
 
 ## Assets
-- Assets are normalized, host-neutral data: brush tips and grain as PNG (8-bit gray or RGBA), LUTs as `.cube`, patterns/stamps as PNG, shaders as GLSL/ISF source. Per-asset parameters (and a shader's declared inputs) live in the manifest, never in a host-proprietary blob.
+- Assets are normalized, host-neutral data: brush tips and grain as PNG (8-bit gray or RGBA), LUTs as `.cube`, patterns/stamps as PNG, shaders and transitions as GLSL source. Per-asset parameters (and a shader's or transition's declared inputs) live in the manifest, never in a host-proprietary blob.
 - Importers MUST emit this normalized form — an imported `.abr` becomes `assets/*.png` plus manifest params, not a repackaged `.abr`.
 
 ## Code
