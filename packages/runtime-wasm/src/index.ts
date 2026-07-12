@@ -127,7 +127,8 @@ const inject = (vm: QuickJSContext, name: string, fn: Parameters<QuickJSContext[
  */
 function installHostFunctions(vm: QuickJSContext, world: SandboxWorld, granted: Set<Capability>) {
   const state: BitmapState = {
-    bytes: Uint8Array.from(world.bitmap.data, (n) => n & 0xff),
+    // `new Uint8Array(number[])` truncates each element to a byte natively (no per-element JS callback).
+    bytes: new Uint8Array(world.bitmap.data),
     width: world.bitmap.width,
     height: world.bitmap.height,
   };
@@ -146,7 +147,9 @@ function installHostFunctions(vm: QuickJSContext, world: SandboxWorld, granted: 
     inject(vm, "__bitmapWidth", () => vm.newNumber(state.width));
     inject(vm, "__bitmapHeight", () => vm.newNumber(state.height));
     // Hand the guest a fresh ArrayBuffer of the current pixels; it views it as a Uint8ClampedArray.
-    inject(vm, "__bitmapReadBuffer", () => vm.newArrayBuffer(state.bytes.slice().buffer));
+    // `state.bytes` is always a standalone offset-0 array, so its buffer is exactly the pixels;
+    // `newArrayBuffer` copies it into the guest heap, so no host-side slice is needed.
+    inject(vm, "__bitmapReadBuffer", () => vm.newArrayBuffer(state.bytes.buffer));
     // Take the guest's mutated buffer back, validating the RGBA8 stride before trusting it.
     inject(vm, "__bitmapWriteBuffer", (bufH, wH, hH) => {
       const w = vm.getNumber(wH);
@@ -155,7 +158,7 @@ function installHostFunctions(vm: QuickJSContext, world: SandboxWorld, granted: 
       let life: ReturnType<QuickJSContext["getArrayBuffer"]> | undefined;
       try {
         life = vm.getArrayBuffer(bufH);
-        out = Uint8Array.from(life.value);
+        out = life.value.slice();
       } catch {
         throw new Error("invalid bitmap written from sandbox: not an ArrayBuffer");
       } finally {
