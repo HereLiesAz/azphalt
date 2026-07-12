@@ -128,13 +128,19 @@ export class Marketplace {
       throw new RegistryError(`price must be a positive integer amount of minor units: ${price.amountCents}`);
     }
     if (!price.currency) throw new RegistryError("price.currency is required");
+    // Reject a price so low the fees exceed it — the seller would net nothing and the platform would
+    // eat the shortfall (see `docs/ARCHITECTURE.md § "Very small" has a floor`).
+    if (quote(price, this.terms).sellerNet.amountCents <= 0) {
+      throw new RegistryError(`price of ${price.amountCents} is too low to clear transaction fees`);
+    }
 
     const now = new Date().toISOString();
     const prior = await this.store.getListing(packageId);
     const listing: Listing = {
       packageId,
       sellerId,
-      price,
+      // Clone so a later mutation of the caller's object can't silently alter stored state.
+      price: { ...price },
       status: "active",
       createdAt: prior?.createdAt ?? now,
       updatedAt: now,

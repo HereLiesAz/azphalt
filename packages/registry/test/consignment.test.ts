@@ -53,6 +53,22 @@ describe("Marketplace", () => {
     await expect(market.listForSale("com.hereliesaz.free", "s", USD(0))).rejects.toThrow(/positive/);
   });
 
+  it("rejects a price too low to clear the fee floor", async () => {
+    const { registry, market } = setup();
+    await registry.publish(makeAzp("com.hereliesaz.cheap", "1.0.0"));
+    // 20¢: processor ~31¢ + platform 3¢ > gross, so seller nets nothing — refused.
+    await expect(market.listForSale("com.hereliesaz.cheap", "s", USD(20))).rejects.toThrow(/too low/);
+  });
+
+  it("does not let a later mutation of the caller's price object alter the stored listing", async () => {
+    const { registry, market } = setup();
+    await registry.publish(makeAzp("com.hereliesaz.clone", "1.0.0"));
+    const price = USD(499);
+    await market.listForSale("com.hereliesaz.clone", "seller_1", price);
+    price.amountCents = 1; // mutate after listing
+    expect((await market.getListing("com.hereliesaz.clone"))?.price.amountCents).toBe(499);
+  });
+
   it("opens a checkout session and applies the split", async () => {
     const { registry, market, payments } = setup();
     await registry.publish(makeAzp("com.hereliesaz.buy", "1.0.0"));

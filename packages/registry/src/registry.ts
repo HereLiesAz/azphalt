@@ -29,7 +29,10 @@ export class RegistryError extends Error {
 }
 
 const ID_RE = /^[a-z0-9]+(\.[a-z0-9-]+)+$/i; // reverse-DNS, at least two dot-separated labels
-const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/;
+// Official SemVer 2.0.0 grammar (https://semver.org): no leading zeroes in numeric identifiers, no
+// empty prerelease/build identifiers. Capture groups: 1=major, 2=minor, 3=patch, 4=prerelease, 5=build.
+const SEMVER_RE =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
 
 /**
  * Compare two semvers. Returns >0 if [a] is newer, <0 if older, 0 if equal precedence. A release
@@ -59,8 +62,10 @@ export function compareSemver(a: string, b: string): number {
     if (x === undefined) return -1; // shorter prerelease is lower
     if (y === undefined) return 1;
     if (x === y) continue;
-    const nx = /^\d+$/.test(x);
-    const ny = /^\d+$/.test(y);
+    // SemVer 2.0.0: numeric identifiers have no leading zeroes; a leading-zero token like "01" is
+    // therefore alphanumeric (and outranks numeric identifiers).
+    const nx = /^(0|[1-9]\d*)$/.test(x);
+    const ny = /^(0|[1-9]\d*)$/.test(y);
     if (nx && ny) return Number(x) - Number(y) < 0 ? -1 : 1;
     if (nx) return -1; // numeric identifiers are lower than alphanumeric
     if (ny) return 1;
@@ -188,7 +193,10 @@ export class Registry {
     const v = await this.store.getVersion(id, version);
     if (!v) throw new RegistryError(`not found: ${id}@${version}`);
     const bytes = await this.store.getBytes(id, version);
-    await this.store.putVersion({ ...v, yanked }, bytes ?? new Uint8Array());
+    // Never re-put with empty bytes: on a storage inconsistency that would silently overwrite (and
+    // corrupt) the stored payload. Fail loudly instead.
+    if (!bytes) throw new RegistryError(`bytes missing: ${id}@${version}`);
+    await this.store.putVersion({ ...v, yanked }, bytes);
   }
 
   /** Browse the catalog with optional filters and sorting. One summary per package. */
