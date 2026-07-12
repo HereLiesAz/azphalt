@@ -16,7 +16,10 @@ export const FORMAT_VERSION = "0.1" as const;
 export type Kind = "asset" | "code" | "mixed";
 export type Runtime = "js" | "wasm";
 
-/** Least-privilege surface an extension may request. See `spec/capability-model.md`. */
+/** 
+ * Least-privilege surface an extension may request. See `spec/capability-model.md`.
+ * Note: no `StorageApi` ships in 0.1.
+ */
 export type Capability =
   | "canvas"
   | "layers"

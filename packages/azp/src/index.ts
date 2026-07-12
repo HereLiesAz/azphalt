@@ -48,7 +48,7 @@ export function writeAzp(input: AzpInput): WriteResult {
   const sorted: Record<string, Uint8Array> = {};
   for (const key of Object.keys(entries).sort()) sorted[key] = entries[key];
 
-  return { azp: zipSync(sorted), manifest };
+  return { azp: zipSync(sorted, { mtime: 0 }), manifest };
 }
 
 export interface ReadResult {
@@ -105,6 +105,12 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
       continue;
     }
     if (digest(data) !== want) errors.push(`digest mismatch: ${path}`);
+  }
+
+  for (const path of Object.keys(payload)) {
+    if (path !== "signature.json" && !manifest.files[path]) {
+      errors.push(`unlisted payload file: ${path}`);
+    }
   }
 
   return { ok: errors.length === 0, errors };

@@ -49,6 +49,22 @@ describe("azp", () => {
     expect(result.errors.some((e) => e.includes("digest mismatch"))).toBe(true);
   });
 
+  it("rejects an extra unlisted file in the payload", () => {
+    const { azp } = writeAzp({
+      manifest: { ...base, id: "com.hereliesaz.x" },
+      payload: { "assets/a.bin": new Uint8Array([1, 2, 3]) },
+      license,
+    });
+
+    const files = unzipSync(azp);
+    files["assets/extra.bin"] = new Uint8Array([9, 9, 9]); // unlisted in manifest.files
+    const tampered = zipSync(files);
+
+    const result = verifyAzp(tampered);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("unlisted payload file"))).toBe(true);
+  });
+
   it("rejects bytes that are not a package", () => {
     expect(verifyAzp(new Uint8Array([1, 2, 3, 4])).ok).toBe(false);
   });

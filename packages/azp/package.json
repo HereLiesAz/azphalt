@@ -15,7 +15,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": { "fflate": "^0.8.2" },
-  "devDependencies": { "@azphalt/sdk": "workspace:*", "typescript": "^5.6.0", "vitest": "^2.1.0", "@types/node": "^22.0.0" },
+  "dependencies": { "fflate": "^0.8.2", "@azphalt/sdk": "workspace:*" },
+  "devDependencies": { "typescript": "^5.6.0", "vitest": "^2.1.0", "@types/node": "^22.0.0" },
   "sideEffects": false
 }
