@@ -31,12 +31,14 @@ export type Capability =
   | "assets"
   | "storage";
 
-export type AssetType = "brush" | "lut" | "pattern" | "stamp";
+export type AssetType = "brush" | "lut" | "pattern" | "stamp" | "shader";
 
 export interface AssetContribution {
   type: AssetType;
   /** Path into `/assets` inside the `.azp`. */
   path: string;
+  /** Optional host-rendered control panel for the asset (see {@link Panel}), e.g. `ui/grade.json`. */
+  ui?: string;
   /** Normalized, host-neutral parameters (e.g. spacing, angle, roundness). */
   params?: Record<string, unknown>;
 }
