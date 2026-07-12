@@ -1,0 +1,31 @@
+{
+  "name": "@azphalt/storefront",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The azphalt consignment marketplace storefront — a Next.js app on the open standard.",
+  "license": "MIT",
+  "author": "Az (https://hereliesaz.com)",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"(no tests)\"",
+    "clean": "rm -rf .next"
+  },
+  "dependencies": {
+    "@azphalt/azp": "workspace:*",
+    "@azphalt/registry": "workspace:*",
+    "@azphalt/sdk": "workspace:*",
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0"
+  }
+}
