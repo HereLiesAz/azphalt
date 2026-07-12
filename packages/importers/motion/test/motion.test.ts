@@ -41,4 +41,11 @@ describe("importer-motion", () => {
   it("rejects a non-numeric array", () => {
     expect(() => importMotion('["a", 1, 2, 3]', OPTS)).toThrow(/cubic-bezier/);
   });
+
+  it("rejects X control coords outside [0, 1] (Y may overshoot)", () => {
+    expect(() => importMotion("[1.5, 0, 0.5, 1]", OPTS)).toThrow(/between 0 and 1/);
+    expect(() => importMotion("[0.25, 0.1, -0.2, 1]", OPTS)).toThrow(/between 0 and 1/);
+    // Y outside [0,1] is allowed (bouncy easing), so this must still pass.
+    expect(verifyAzp(importMotion("[0.5, -0.5, 0.5, 1.5]", OPTS)).ok).toBe(true);
+  });
 });

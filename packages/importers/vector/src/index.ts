@@ -19,14 +19,15 @@ export interface ImportOptions {
  * `viewBox` / `width` / `height` are lifted into the asset params when present.
  */
 export function importVector(bytes: Uint8Array, opts: ImportOptions): Uint8Array {
-  // Only the head matters for locating the root <svg> tag; keep it bounded.
-  const head = new TextDecoder().decode(bytes.slice(0, 4096));
-  if (!/<svg/i.test(head)) {
+  // Decode the whole document: an SVG may carry large leading metadata (XML comments, editor
+  // RDF, a DOCTYPE) before the root <svg> tag, which a bounded head slice would miss.
+  const text = new TextDecoder().decode(bytes);
+  if (!/<svg/i.test(text)) {
     throw new Error("not an SVG");
   }
 
   const params: Record<string, unknown> = { format: "svg" };
-  const svgTag = head.match(/<svg\b[^>]*>/i);
+  const svgTag = text.match(/<svg\b[^>]*>/i);
   if (svgTag) {
     const tag = svgTag[0];
     const viewBox = tag.match(/\bviewBox\s*=\s*["']([^"']*)["']/i);

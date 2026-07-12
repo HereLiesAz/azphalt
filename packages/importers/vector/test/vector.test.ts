@@ -25,6 +25,16 @@ describe("importer-vector", () => {
     expect(parsed.payload["assets/vector.svg"]).toEqual(svg);
   });
 
+  it("accepts an SVG with large leading metadata before the root tag", () => {
+    // >4096 bytes of leading comment (e.g. editor RDF) that a bounded head slice would have missed.
+    const lead = `<?xml version='1.0'?>\n<!-- ${"x".repeat(5000)} -->\n`;
+    const svg = new TextEncoder().encode(
+      `${lead}<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'></svg>`
+    );
+    const parsed = readAzp(importVector(svg, OPTS));
+    expect(parsed.manifest.assets![0].params!.viewBox).toBe("0 0 8 8");
+  });
+
   it("omits absent viewBox/width/height", () => {
     const svg = new TextEncoder().encode("<svg xmlns='http://www.w3.org/2000/svg'></svg>");
     const parsed = readAzp(importVector(svg, OPTS));

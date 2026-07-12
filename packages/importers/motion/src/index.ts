@@ -37,6 +37,12 @@ export function importMotion(jsonStr: string, opts: ImportOptions): Uint8Array {
 
   const bezier: [number, number, number, number] = [parsed[0], parsed[1], parsed[2], parsed[3]];
 
+  // For a valid easing curve the X control coords must lie in [0, 1] (the Y may overshoot for
+  // bounce). An out-of-range X makes the curve non-monotonic and can crash animation runtimes.
+  if (bezier[0] < 0 || bezier[0] > 1 || bezier[2] < 0 || bezier[2] > 1) {
+    throw new Error("Cubic-bezier X coordinates (x1, x2) must be between 0 and 1.");
+  }
+
   const payload: Record<string, Uint8Array> = {
     "assets/motion.json": new TextEncoder().encode(JSON.stringify(bezier))
   };
