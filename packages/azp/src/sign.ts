@@ -54,6 +54,9 @@ export function signAzp(azp: Uint8Array, opts: SignOptions): Uint8Array {
   if (!manifestBytes) throw new Error("azp: manifest.json is missing");
 
   const key = createPrivateKey(opts.privateKey);
+  if (key.asymmetricKeyType !== "ed25519") {
+    throw new Error("azp: privateKey must be an ed25519 key");
+  }
   const signature = cryptoSign(null, Buffer.from(manifestBytes), key);
   const publicKey = Buffer.from(createPublicKey(key).export({ type: "spki", format: "der" })).toString("base64");
 

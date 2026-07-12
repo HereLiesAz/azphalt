@@ -100,13 +100,27 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
   const errors: string[] = [];
   let signed = false;
 
-  let read: ReadResult;
+  // Decompress once. (readAzp would decompress a second time — wasteful for large payloads.)
+  let files: Record<string, Uint8Array>;
   try {
-    read = readAzp(bytes);
+    files = unzipSync(bytes);
   } catch (e) {
     return { ok: false, errors: [(e as Error).message], signed: false };
   }
-  const { manifest, payload } = read;
+
+  const manifestRaw = files["manifest.json"];
+  if (!manifestRaw) return { ok: false, errors: ["azp: manifest.json is missing"], signed: false };
+  let manifest: Manifest;
+  try {
+    manifest = JSON.parse(strFromU8(manifestRaw)) as Manifest;
+  } catch (e) {
+    return { ok: false, errors: [`azp: manifest.json is not valid JSON: ${(e as Error).message}`], signed: false };
+  }
+
+  const payload: Record<string, Uint8Array> = {};
+  for (const [path, data] of Object.entries(files)) {
+    if (path !== "manifest.json") payload[path] = data;
+  }
 
   for (const path of Object.keys(payload)) {
     if (path.startsWith("/") || path.split("/").includes("..")) {
@@ -136,19 +150,29 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     }
   }
 
-  // Signature (optional): validate an Ed25519 `signature.json` over the stored `manifest.json`.
+  // Signature (optional): validate an Ed25519 `signature.json` over the stored `manifest.json` bytes.
   const sigRaw = payload["signature.json"];
   if (sigRaw) {
     signed = true;
     try {
-      const sig = JSON.parse(strFromU8(sigRaw)) as { alg?: string; publicKey?: string; signature?: string };
-      if (sig.alg !== "ed25519" || !sig.publicKey || !sig.signature) {
+      const sig = JSON.parse(strFromU8(sigRaw)) as Record<string, unknown> | null;
+      if (
+        !sig ||
+        typeof sig !== "object" ||
+        Array.isArray(sig) ||
+        sig.alg !== "ed25519" ||
+        typeof sig.publicKey !== "string" ||
+        typeof sig.signature !== "string"
+      ) {
         errors.push("signature.json is malformed");
       } else {
-        const manifestBytes = unzipSync(bytes)["manifest.json"];
         const pub = createPublicKey({ key: Buffer.from(sig.publicKey, "base64"), format: "der", type: "spki" });
-        const valid = cryptoVerify(null, Buffer.from(manifestBytes), pub, Buffer.from(sig.signature, "base64"));
-        if (!valid) errors.push("signature verification failed");
+        if (pub.asymmetricKeyType !== "ed25519") {
+          errors.push("signature public key must be ed25519");
+        } else {
+          const valid = cryptoVerify(null, Buffer.from(manifestRaw), pub, Buffer.from(sig.signature, "base64"));
+          if (!valid) errors.push("signature verification failed");
+        }
       }
     } catch (e) {
       errors.push(`signature error: ${(e as Error).message}`);
