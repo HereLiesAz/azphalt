@@ -33,18 +33,27 @@ export type Capability =
 export type AssetType = 
   | "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition"
   | "mesh" | "material" | "hdri" | "motion" | "palette"
-  | "image" | "video" | "font" | "audio" | "vector";
+  | "image" | "video" | "font" | "audio" | "vector"
+  | "tflite" | "litert" | "onnx" | "sherpa-bundle";
 
 export interface AssetContribution {
   type: AssetType;
-  /** Path into `/assets` inside the `.azp`. */
+  /** Path into `/assets` inside the `.azp`, or empty if remoteUrl is provided. */
   path: string;
+  /** A specific role for generic types (e.g. `type: "tflite", role: "depth"`). */
+  role?: string;
   /** Normalized, host-neutral parameters (e.g. spacing, angle, roundness). */
   params?: Record<string, unknown>;
   /** Optional UI panel path (e.g. assets/ui.json) generated for configurable assets. */
   ui?: string;
   /** Optional tags for filtering in the marketplace (e.g., ["sfx", "impact"]). */
   tags?: string[];
+  /** The URL where this asset can be directly downloaded by the host (VSCode header pattern). */
+  remoteUrl?: string;
+  /** Checksum of the remote file (usually SHA-256) for verification. */
+  checksum?: string;
+  /** Pre-declared byte size for download progress / headroom checks. */
+  byteSize?: number;
 }
 
 export interface FilterContribution {
