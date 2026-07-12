@@ -33,7 +33,7 @@ export type Capability =
 export type AssetType = 
   | "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition"
   | "mesh" | "material" | "hdri" | "motion" | "palette"
-  | "image" | "video" | "font" | "audio";
+  | "image" | "video" | "font" | "audio" | "vector";
 
 export interface AssetContribution {
   type: AssetType;
