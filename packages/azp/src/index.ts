@@ -48,7 +48,7 @@ export function writeAzp(input: AzpInput): WriteResult {
   const sorted: Record<string, Uint8Array> = {};
   for (const key of Object.keys(entries).sort()) sorted[key] = entries[key];
 
-  return { azp: zipSync(sorted, { mtime: 0 }), manifest };
+  return { azp: zipSync(sorted, { mtime: new Date("2026-01-01T00:00:00Z") }), manifest };
 }
 
 export interface ReadResult {
