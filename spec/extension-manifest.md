@@ -20,9 +20,9 @@
 | `files` | ✔ | Map of payload path → SHA-256 digest (integrity; see package-format.md). |
 
 ## `assets`
-Each entry: `type` (`brush` | `lut` | `pattern` | `stamp` | `shader` | `transition`), `path` (into `/assets`), and `params` — normalized, host-neutral settings. 
+Each entry: `type` (`brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette`), `path` (into `/assets`), and `params` — normalized, host-neutral settings. 
 Assets like `shader` can also optionally define a `ui` path to a control panel schema (see ui-schema.md).
-A brush's params might be `spacing`, `angle`, `roundness`, `grainPath`, `flowByPressure`. Losses versus the source engine are expected (RATIONALE § 1.3).
+A brush's params might be `spacing`, `angle`, `roundness`. A material's params maps semantic PBR roles to texture paths (e.g. `{"albedo": "assets/color.png"}`). Losses versus the source engine are expected (RATIONALE § 1.3).
 
 ## `contributes`
 What the code adds to the host, each with an `id`:
