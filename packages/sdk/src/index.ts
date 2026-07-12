@@ -333,3 +333,31 @@ export function defineTool(fn: ToolFn): Contribution<ToolFn> {
 export function defineCommand(fn: CommandFn): Contribution<CommandFn> {
   return Object.assign(fn, { [KIND]: "command" as const });
 }
+
+/* ───────────────────── Repository API ───────────────────── */
+
+export interface RepositoryIndex {
+  name: string;
+  version: string;
+  description?: string;
+  auth?: {
+    type: string;
+    url: string;
+  };
+}
+
+export interface PackageSummary {
+  id: string;
+  name: string;
+  author?: string;
+  version: string;
+  types: string[];
+  priceStatus?: "free" | "paid";
+}
+
+export interface PackageSearchResponse {
+  packages: PackageSummary[];
+  total: number;
+  page: number;
+  pages: number;
+}
