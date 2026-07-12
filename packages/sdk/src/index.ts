@@ -31,7 +31,7 @@ export type Capability =
   | "assets"
   | "storage";
 
-export type AssetType = "brush" | "lut" | "pattern" | "stamp" | "shader";
+export type AssetType = "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition";
 
 export interface AssetContribution {
   type: AssetType;
