@@ -1,5 +1,7 @@
 packages:
+  - "apps/*"
   - "packages/*"
   - "packages/importers/*"
-  - "apps/*"
+  - "packages/create-azphalt"
+  - "docs"
   - "examples/*"

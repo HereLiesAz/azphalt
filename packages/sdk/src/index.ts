@@ -16,10 +16,9 @@ export const FORMAT_VERSION = "0.1" as const;
 export type Kind = "asset" | "code" | "mixed";
 export type Runtime = "js" | "wasm";
 
-/**
+/** 
  * Least-privilege surface an extension may request. See `spec/capability-model.md`.
- * `storage` is a *candidate* for `0.1`: it is declarable, but no `StorageApi` ships on
- * {@link Host} yet, so a host provides no storage surface until the capability is finalized.
+ * Note: no `StorageApi` ships in 0.1.
  */
 export type Capability =
   | "canvas"
@@ -31,16 +30,30 @@ export type Capability =
   | "assets"
   | "storage";
 
-export type AssetType = "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition";
+export type AssetType = 
+  | "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition"
+  | "mesh" | "material" | "hdri" | "motion" | "palette"
+  | "image" | "video" | "font" | "audio" | "vector"
+  | "tflite" | "litert" | "onnx" | "sherpa-bundle";
 
 export interface AssetContribution {
   type: AssetType;
-  /** Path into `/assets` inside the `.azp`. */
+  /** Path into `/assets` inside the `.azp`, or empty if remoteUrl is provided. */
   path: string;
-  /** Optional host-rendered control panel for the asset (see {@link Panel}), e.g. `ui/grade.json`. */
-  ui?: string;
+  /** A specific role for generic types (e.g. `type: "tflite", role: "depth"`). */
+  role?: string;
   /** Normalized, host-neutral parameters (e.g. spacing, angle, roundness). */
   params?: Record<string, unknown>;
+  /** Optional UI panel path (e.g. assets/ui.json) generated for configurable assets. */
+  ui?: string;
+  /** Optional tags for filtering in the marketplace (e.g., ["sfx", "impact"]). */
+  tags?: string[];
+  /** The URL where this asset can be directly downloaded by the host (VSCode header pattern). */
+  remoteUrl?: string;
+  /** Checksum of the remote file (usually SHA-256) for verification. */
+  checksum?: string;
+  /** Pre-declared byte size for download progress / headroom checks. */
+  byteSize?: number;
 }
 
 export interface FilterContribution {
@@ -328,4 +341,32 @@ export function defineTool(fn: ToolFn): Contribution<ToolFn> {
 
 export function defineCommand(fn: CommandFn): Contribution<CommandFn> {
   return Object.assign(fn, { [KIND]: "command" as const });
+}
+
+/* ───────────────────── Repository API ───────────────────── */
+
+export interface RepositoryIndex {
+  name: string;
+  version: string;
+  description?: string;
+  auth?: {
+    type: string;
+    url: string;
+  };
+}
+
+export interface PackageSummary {
+  id: string;
+  name: string;
+  author?: string;
+  version: string;
+  types: string[];
+  priceStatus?: "free" | "paid";
+}
+
+export interface PackageSearchResponse {
+  packages: PackageSummary[];
+  total: number;
+  page: number;
+  pages: number;
 }
