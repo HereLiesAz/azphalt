@@ -30,7 +30,7 @@ export type Capability =
   | "assets"
   | "storage";
 
-export type AssetType = "brush" | "lut" | "pattern" | "stamp";
+export type AssetType = "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition";
 
 export interface AssetContribution {
   type: AssetType;
@@ -38,6 +38,8 @@ export interface AssetContribution {
   path: string;
   /** Normalized, host-neutral parameters (e.g. spacing, angle, roundness). */
   params?: Record<string, unknown>;
+  /** Optional UI panel path (e.g. assets/ui.json) generated for configurable assets. */
+  ui?: string;
 }
 
 export interface FilterContribution {

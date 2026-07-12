@@ -1,0 +1,21 @@
+{
+  "name": "@azphalt/importer-isf",
+  "version": "0.1.0",
+  "description": "Import ISF shaders into .azp asset packages.",
+  "license": "MIT",
+  "author": "Az (https://hereliesaz.com)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": { "azphalt-import-isf": "./dist/cli.js" },
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": { "@azphalt/azp": "workspace:*", "@azphalt/sdk": "workspace:*" },
+  "sideEffects": false
+}
