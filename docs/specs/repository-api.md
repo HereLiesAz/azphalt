@@ -69,3 +69,7 @@ If the token is missing or invalid, or the user does not have a license, the ser
 **Response (200 OK):**
 Headers: `Content-Type: application/x-azphalt`
 Body: (binary fflate archive)
+
+## Reference implementation
+
+A working reference server ships as `@azphalt/repository-server` — a thin facade over `@azphalt/registry` that implements every endpoint above (discovery, search, detail, and the `401`/`402`-gated download). It is tested end-to-end against `@azphalt/repository-client`, so the two sides of the standard are known to agree.

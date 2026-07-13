@@ -1,0 +1,33 @@
+{
+  "name": "@azphalt/repository-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A reference implementation of the azphalt Repository API (spec/repository-api.md), served over @azphalt/registry.",
+  "license": "MIT",
+  "author": "Az (https://hereliesaz.com)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": { "azphalt-repository-server": "./dist/main.js" },
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@azphalt/azp": "workspace:*",
+    "@azphalt/registry": "workspace:*",
+    "@azphalt/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@azphalt/repository-client": "workspace:*",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "@types/node": "^22.0.0"
+  },
+  "sideEffects": false
+}
