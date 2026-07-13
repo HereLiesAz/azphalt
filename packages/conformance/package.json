@@ -1,7 +1,7 @@
 {
-  "name": "@azphalt/runtime-wasm",
+  "name": "@azphalt/conformance",
   "version": "0.1.0",
-  "description": "Run azphalt code extensions inside a QuickJS-in-WASM sandbox with capability-gated host functions.",
+  "description": "A runnable conformance suite that certifies an azphalt host against the standard.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",
   "type": "module",
@@ -15,7 +15,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": { "@azphalt/azp": "workspace:*", "@azphalt/sdk": "workspace:*", "quickjs-emscripten": "^0.31.0" },
-  "devDependencies": { "typescript": "^5.6.0", "vitest": "^2.1.0", "@types/node": "^22.0.0" },
+  "dependencies": { "@azphalt/azp": "workspace:*", "@azphalt/sdk": "workspace:*" },
+  "devDependencies": {
+    "@azphalt/runtime-wasm": "workspace:*",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "@types/node": "^22.0.0"
+  },
   "sideEffects": false
 }

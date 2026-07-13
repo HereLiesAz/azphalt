@@ -17,7 +17,7 @@ A host embeds a runtime and takes on six jobs. The first five are non-negotiable
 
 ## The shape of it
 
-Your host implements the `Host` interface from `@azphalt/sdk` — `canvas`, `layers`, `bitmap`, `selection`, `color`, `params`, `assets` — but instantiates only the sub-APIs a given extension was granted. Everything the extension calls routes through those functions and nothing else. `packages/runtime-reference` is a working host that loads and runs an extension against the contract; read it as the executable spec, and check your host against the conformance suite (forthcoming) rather than against prose.
+Your host implements the `Host` interface from `@azphalt/sdk` — `canvas`, `layers`, `bitmap`, `selection`, `color`, `params`, `assets` — but instantiates only the sub-APIs a given extension was granted. Everything the extension calls routes through those functions and nothing else. `packages/runtime-reference` is a working host that loads and runs an extension against the contract; read it as the executable spec, and check your host against the **[`@azphalt/conformance`](../packages/conformance)** suite — `runConformance(host)` returns a pass/fail report over the checklist below — rather than against prose.
 
 ## Conformance checklist
 
