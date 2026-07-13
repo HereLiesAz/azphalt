@@ -18,23 +18,40 @@ trusted module in-process, this proves it under **real sandboxing**:
 
 ## Run a real `.azp`
 
-`runFilter` loads a real `code`-kind package: it verifies the `.azp`, loads the `entry` module as
-an **ES module** (resolving its `import "@azphalt/sdk"` to an in-sandbox shim), resolves the export
-named by `contributes.filters[].entry`, checks its `defineFilter` brand, and runs it against a
-capability-gated `ctx` — the same contract `runtime-reference` runs, but sandboxed.
+`runFilter` / `runTool` / `runCommand` load a real `code`-kind package: verify the `.azp`, load the
+`entry` module as an **ES module** (resolving its `import "@azphalt/sdk"` to an in-sandbox shim),
+resolve the export named by `contributes.{filters,tools,commands}[].entry`, check its brand, and run
+it against a capability-gated `ctx` — the same contract `runtime-reference` runs, but sandboxed.
 
 ~~~ts
 import { runFilter, loadExtension } from "@azphalt/runtime-wasm";
 
-// azp is a code-kind .azp whose manifest declares entry, runtime: "js", capabilities, and a filter.
-const { bitmap, redraws } = await runFilter(
+// azp is a code-kind .azp whose manifest declares entry, runtime, capabilities, and a contribution.
+const result = await runFilter(
   azp,
   { params: { strength: 1 }, bitmap: { data: [/* RGBA8 */], width: 64, height: 64 } },
   // capabilities default to the manifest's declared set; pass to narrow the grant.
 );
+result.bitmap;    // the target layer's final pixels
+result.layers;    // every layer, result.selection, result.color, result.redraws
 
 loadExtension(azp).manifest; // verify + parse without running
 ~~~
+
+The **full `Host` surface** is bridged, each gated by its capability: `canvas`, `layers`,
+`bitmap`, `selection`, `color`, `params`, `assets`. Pass a multi-layer document via `world.layers`
+(with `activeLayerId` / `targetLayerId`), a `selection` mask, and a `color` active/palette; a single
+`world.bitmap` is the one-layer shorthand. Bitmaps and the selection mask cross as the binary
+`ArrayBuffer` ABI; layer refs and colors cross as JSON.
+
+## Raw `runtime: "wasm"` entries
+
+A `runtime: "wasm"` extension runs on the host's own `WebAssembly` (it *is* the sandbox), against the
+shared-memory image ABI from `spec/capability-model.md`. The module **exports** `memory` and the
+entry `filter(ptr, width, height, stride)`; the runtime writes the target layer's RGBA8 bytes into
+the module's memory at `ptr`, calls the entry, and reads them back. Capability-gated host functions
+are passed as `env` imports (this first cut wires `canvas`'s `requestRedraw`; the `bitmap` capability
+is required). `runFilter` dispatches here automatically when `manifest.runtime === "wasm"`.
 
 ## Probe with a bare expression
 
@@ -58,10 +75,9 @@ const { bitmap, redraws } = await runFilterSandboxed(
 
 ## Scope
 
-`runFilter` runs `runtime: "js"` filter contributions with the `bitmap`, `params`, and `canvas`
-capabilities bridged — enough to run a real shipped extension (the `examples/invert` build runs
-unchanged). The remaining `Host` sub-APIs (`layers`, `selection`, `color`, `assets`) and the raw
-`runtime: "wasm"` path are mechanical extensions of the same gating + bridge pattern; a `wasm`
-entry is rejected rather than silently ignored. Across a WASM isolation boundary a copy is
-unavoidable, so the buffer ABI is one copy in / one copy out — binary, not the per-pixel JSON of
-the first cut.
+The full `Host` surface and both entry runtimes (`js` on QuickJS-in-WASM, raw `wasm`) are covered.
+The raw-wasm ABI is a **first cut**: it wires the shared-memory bitmap + `canvas.requestRedraw`, and
+writes the bitmap at `ptr = 0` (a real module reserving low memory would want a host-provided offset
+or an `alloc` export). Passing string params and the richer `Host` sub-APIs across the raw-wasm
+boundary — which need a memory-marshaling convention — are the next steps there; the QuickJS `js`
+path already bridges them all.

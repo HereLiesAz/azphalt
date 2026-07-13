@@ -34,6 +34,7 @@ These have no host function. They are *absent*, not merely gated.
 Bitmaps cross the boundary as shared linear memory (the WASM instance's memory):
 - Layout: RGBA, 8 bits/channel, **straight (non-premultiplied) alpha**, row-major, tightly packed (`stride = width * 4`).
 - The host passes `ptr, width, height, stride`; the extension reads/writes in place — no copy on the hot path.
+- **Raw `wasm` entry (`runtime: "wasm"`).** The module exports `memory` and the entry `filter(ptr, width, height, stride)`; the host writes the target layer into `memory` at `ptr`, calls the entry, and reads it back. Capability host functions are `env` imports. *Implemented* in `@azphalt/runtime-wasm` (first cut: shared-memory bitmap + `canvas.requestRedraw`).
 - **Resolved:** straight (non-premultiplied) alpha is the ABI. The SDK types, the reference runtime, and all existing importers and tests emit and consume straight alpha. A host that internally premultiplies MUST convert at the boundary — the extension side is always straight. This is pinned for `0.1` and will not change without a format version bump.
 - **Open:** 16-bit depth is a later question. Pin before the ABI stabilizes past `0.1`.
 
