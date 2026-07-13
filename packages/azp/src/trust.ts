@@ -80,16 +80,24 @@ export function verifyTrust(azp: Uint8Array, store: TrustStore): TrustResult {
     signerPublicKey: sig.publicKey,
     signerKeyId: sig.keyId,
   };
-  const trustedKeys = new Set(store.keys.map((k) => k.publicKey));
+  // The store may come from user config; guard against null/malformed input rather than throwing.
+  const keys = store?.keys;
+  if (!Array.isArray(keys)) {
+    return { ...base, trusted: false, reason: "invalid trust store: keys list is missing or malformed" };
+  }
+  const trustedKeys = new Set(keys.map((k) => k?.publicKey).filter(Boolean));
 
   // (a) Direct trust: the signer key is in the store.
-  if (trustedKeys.has(sig.publicKey)) {
+  if (sig.publicKey && trustedKeys.has(sig.publicKey)) {
     return { ...base, trusted: true, reason: "signer key is directly trusted" };
   }
 
   // (b) Transitive trust: a trusted registry key counter-signed the author key.
   const cs = sig.countersignature;
-  if (cs && typeof cs.publicKey === "string" && typeof cs.signature === "string") {
+  if (cs) {
+    if (typeof cs.publicKey !== "string" || typeof cs.signature !== "string") {
+      return { ...base, trusted: false, reason: "registry counter-signature is malformed" };
+    }
     if (trustedKeys.has(cs.publicKey)) {
       try {
         const registryPub = createPublicKey({ key: Buffer.from(cs.publicKey, "base64"), format: "der", type: "spki" });

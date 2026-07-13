@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { writeAzp, signAzp, generateSigningKey, verifyTrust, countersign, type TrustStore } from "../src/index";
+import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
+import { writeAzp, signAzp, generateSigningKey, verifyTrust, countersign, EPOCH, type TrustStore } from "../src/index";
 
 /** A minimal asset `.azp` to sign and trust-check. */
 function sampleAzp() {
@@ -89,5 +90,36 @@ describe("trust model", () => {
   it("countersign refuses an unsigned package", () => {
     const registry = generateSigningKey();
     expect(() => countersign(sampleAzp(), { registryPrivateKey: registry.privateKey })).toThrow(/unsigned/);
+  });
+
+  it("handles a malformed trust store gracefully (no crash)", () => {
+    const author = generateSigningKey();
+    const azp = signAzp(sampleAzp(), { privateKey: author.privateKey });
+    // @ts-expect-error runtime robustness: a null store (e.g. from bad config)
+    const r1 = verifyTrust(azp, null);
+    expect(r1.ok).toBe(true);
+    expect(r1.trusted).toBe(false);
+    expect(r1.reason).toMatch(/invalid trust store/);
+    // @ts-expect-error runtime robustness: store with no keys array
+    const r2 = verifyTrust(azp, {});
+    expect(r2.trusted).toBe(false);
+    expect(r2.reason).toMatch(/invalid trust store/);
+  });
+
+  it("explicitly reports a malformed counter-signature", () => {
+    const author = generateSigningKey();
+    const signed = signAzp(sampleAzp(), { privateKey: author.privateKey });
+    // Inject a counter-signature whose publicKey is not a string.
+    const files = unzipSync(signed);
+    const sig = JSON.parse(strFromU8(files["signature.json"]!)) as Record<string, unknown>;
+    sig.countersignature = { publicKey: 123, signature: "x" };
+    files["signature.json"] = strToU8(JSON.stringify(sig));
+    const tampered = zipSync(files, { mtime: EPOCH });
+
+    // Store holds an unrelated key so direct trust fails and the counter-signature branch is reached.
+    const r = verifyTrust(tampered, { keys: [{ publicKey: generateSigningKey().publicKey }] });
+    expect(r.ok).toBe(true);
+    expect(r.trusted).toBe(false);
+    expect(r.reason).toMatch(/counter-signature is malformed/);
   });
 });
