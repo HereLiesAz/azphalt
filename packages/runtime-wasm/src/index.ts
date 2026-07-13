@@ -137,7 +137,15 @@ interface World {
   redraws: number;
 }
 
+/** Reject a host-supplied bitmap whose byte length doesn't match its dimensions (RGBA8 stride). */
+function assertShape(b: SandboxBitmap, what: string): void {
+  if (!b || typeof b.width !== "number" || typeof b.height !== "number" || !b.data || b.data.length !== b.width * b.height * 4) {
+    throw new AzpError(`${what}: bitmap data length must equal width * height * 4`);
+  }
+}
+
 function toLayer(l: SandboxLayer): Layer {
+  assertShape(l.bitmap, `layer '${l.id}'`);
   return {
     id: l.id,
     name: l.name ?? l.id,
@@ -151,13 +159,14 @@ function toLayer(l: SandboxLayer): Layer {
 
 /** Normalize the public {@link SandboxWorld} into the mutable internal {@link World}. */
 function normalizeWorld(world: SandboxWorld, defaultAssets: Record<string, Uint8Array>): World {
-  const layers: Layer[] = world.layers
-    ? world.layers.map(toLayer)
-    : world.bitmap
-      ? [toLayer({ id: "layer-0", bitmap: world.bitmap })]
-      : (() => {
-          throw new AzpError("world needs a `bitmap` or `layers`");
-        })();
+  const layers: Layer[] =
+    world.layers && world.layers.length > 0
+      ? world.layers.map(toLayer)
+      : world.bitmap
+        ? [toLayer({ id: "layer-0", bitmap: world.bitmap })]
+        : (() => {
+            throw new AzpError("world needs a non-empty `layers` array or a `bitmap`");
+          })();
   const active = world.activeLayerId ?? layers[0].id;
   const first = layers[0];
   return {
@@ -169,7 +178,8 @@ function normalizeWorld(world: SandboxWorld, defaultAssets: Record<string, Uint8
       dpi: world.canvas?.dpi ?? 72,
     },
     selection: world.selection
-      ? { bytes: new Uint8Array(world.selection.data), width: world.selection.width, height: world.selection.height }
+      ? (assertShape(world.selection, "selection"),
+        { bytes: new Uint8Array(world.selection.data), width: world.selection.width, height: world.selection.height })
       : null,
     color: {
       active: world.color?.active ?? { r: 0, g: 0, b: 0, a: 255 },
@@ -582,9 +592,11 @@ async function runWasmFilter(
 
   let instance: WebAssembly.Instance;
   try {
-    ({ instance } = await WebAssembly.instantiate(wasmBytes.slice().buffer as ArrayBuffer, { env }));
+    // `WebAssembly.instantiate` accepts a Uint8Array view directly — no copy needed.
+    const source = await WebAssembly.instantiate(wasmBytes as BufferSource, { env });
+    instance = source.instance;
   } catch (e) {
-    throw new AzpError(`wasm: instantiation failed: ${(e as Error).message}`);
+    throw new AzpError(`wasm: instantiation failed: ${e instanceof Error ? e.message : String(e)}`);
   }
   const memory = instance.exports.memory as WebAssembly.Memory | undefined;
   const entry = instance.exports[entryName] as ((ptr: number, w: number, h: number, stride: number) => void) | undefined;
@@ -595,13 +607,19 @@ async function runWasmFilter(
   const stride = target.width * 4;
   const ptr = 0;
   const need = ptr + target.bytes.length;
-  if (memory.buffer.byteLength < need) memory.grow(Math.ceil((need - memory.buffer.byteLength) / 65536));
+  if (memory.buffer.byteLength < need) {
+    try {
+      memory.grow(Math.ceil((need - memory.buffer.byteLength) / 65536));
+    } catch (e) {
+      throw new AzpError(`wasm: failed to grow memory to ${need} bytes: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
 
-  new Uint8Array(memory.buffer).set(target.bytes, ptr);
   try {
+    new Uint8Array(memory.buffer).set(target.bytes, ptr);
     entry(ptr, target.width, target.height, stride);
   } catch (e) {
-    throw new AzpError(`wasm: entry threw: ${(e as Error).message}`);
+    throw new AzpError(`wasm: entry threw: ${e instanceof Error ? e.message : String(e)}`);
   }
   target.bytes = new Uint8Array(memory.buffer).slice(ptr, ptr + target.bytes.length);
   return readback(internal, targetId);

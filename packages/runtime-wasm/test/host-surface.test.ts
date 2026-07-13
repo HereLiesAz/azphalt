@@ -157,6 +157,19 @@ describe("runtime-wasm full Host surface", () => {
     expect(r.bitmap.data[0]).toBe(5);
   });
 
+  it("rejects a host-supplied bitmap whose length doesn't match its dimensions", async () => {
+    const azp = buildAzp({ source: `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter(() => {});`, capabilities: ["bitmap"], contributes: filterContributes });
+    // width*height*4 = 4, but data has 3 bytes.
+    await expect(runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0], width: 1, height: 1 } })).rejects.toThrow(
+      /width \* height \* 4/,
+    );
+  });
+
+  it("rejects a world with an empty layers array", async () => {
+    const azp = buildAzp({ source: `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter(() => {});`, capabilities: ["bitmap"], contributes: filterContributes });
+    await expect(runFilter(azp, { params: {}, layers: [] })).rejects.toThrow(/non-empty `layers`|`bitmap`/);
+  });
+
   it("rejects a tool export dispatched as a filter (brand mismatch)", async () => {
     const mod = `
       import { defineTool } from "@azphalt/sdk";
