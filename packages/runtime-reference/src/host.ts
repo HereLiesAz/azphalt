@@ -29,10 +29,17 @@ function findLayer(world: World, ref: LayerRef): WorldLayer {
   return l;
 }
 
-/** Enforce the image-buffer ABI: RGBA8, `stride = width * 4`. */
+/**
+ * Enforce the image-buffer ABI: 4 channels per pixel (element count `width * height * 4`, depth
+ * independent), and the `data` element type must match the declared depth (`Uint16Array` iff 16-bit).
+ */
 function assertBitmap(bmp: Bitmap): void {
   if (bmp.data.length !== bmp.width * bmp.height * 4) {
-    throw new Error("bitmap does not satisfy the RGBA8 ABI (stride must be width * 4)");
+    throw new Error("bitmap does not satisfy the RGBA ABI (element count must be width * height * 4)");
+  }
+  const is16 = bmp.depth === 16;
+  if (is16 !== bmp.data instanceof Uint16Array) {
+    throw new Error(`bitmap depth ${bmp.depth ?? 8} does not match its data type (16-bit ⇒ Uint16Array)`);
   }
 }
 
@@ -102,7 +109,7 @@ export function createHost(manifest: Manifest, world: World): RuntimeHost {
         assertBitmap(bmp);
         findLayer(world, ref).bitmap = bmp;
       },
-      alloc: (width, height) => blankBitmap(width, height),
+      alloc: (width, height, depth) => blankBitmap(width, height, undefined, depth),
     };
   }
 

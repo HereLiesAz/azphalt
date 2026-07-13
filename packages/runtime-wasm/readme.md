@@ -13,8 +13,9 @@ trusted module in-process, this proves it under **real sandboxing**:
 - **Capability-gated host functions** — the runtime injects host functions only for the granted
   capabilities, and builds the `ctx` from them, so an ungranted capability is **absent**, not an
   erroring stub.
-- **Binary image ABI** — the bitmap crosses as a single RGBA8 `ArrayBuffer` (one copy in, one copy
-  out); the guest mutates a `Uint8ClampedArray` view in place, not per-pixel JSON.
+- **Binary image ABI** — the bitmap crosses as a single RGBA `ArrayBuffer` (one copy in, one copy
+  out); the guest mutates a typed-array view in place, not per-pixel JSON. 8-bit by default
+  (`Uint8ClampedArray`); pass `depth: 16` for a `Uint16Array` (channels 0–65535), doubling the byte stride.
 
 ## Run a real `.azp`
 
