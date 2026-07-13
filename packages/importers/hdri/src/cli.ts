@@ -1,25 +1,93 @@
 #!/usr/bin/env node
+/** CLI for `@azphalt/importer-hdri`: wrap a Radiance `.hdr` / OpenEXR `.exr` map into a `.azp`. */
 import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, extname } from "node:path";
 import { importHdri } from "./index.js";
 
-const [,, input, output] = process.argv;
-
-if (!input || !output) {
-  console.error("Usage: azphalt-import-hdri <input.hdr|exr> <output.azp>");
-  process.exit(1);
+interface Args {
+  input?: string;
+  out?: string;
+  id?: string;
+  name?: string;
+  version?: string;
+  license?: string;
+  licenseFile?: string;
+  author?: string;
 }
 
+const USAGE =
+  "usage: azphalt-import-hdri <input.hdr|exr> --id <reverse.dns.id> " +
+  "[-o out.azp] [--name N] [--version V] [--license SPDX] [--license-file PATH] [--author A]";
+
+function fail(msg: string): never {
+  console.error(`error: ${msg}`);
+  console.error(USAGE);
+  process.exit(2);
+}
+
+function parse(argv: string[]): Args {
+  const a: Args = {};
+  for (let i = 0; i < argv.length; i++) {
+    const t = argv[i];
+    switch (t) {
+      case "-o":
+      case "--out":
+        a.out = argv[++i];
+        break;
+      case "--id":
+        a.id = argv[++i];
+        break;
+      case "--name":
+        a.name = argv[++i];
+        break;
+      case "--version":
+        a.version = argv[++i];
+        break;
+      case "--license":
+        a.license = argv[++i];
+        break;
+      case "--license-file":
+        a.licenseFile = argv[++i];
+        break;
+      case "--author":
+        a.author = argv[++i];
+        break;
+      default:
+        if (!t.startsWith("-") && !a.input) a.input = t;
+        else fail(`unknown argument: ${t}`);
+    }
+  }
+  return a;
+}
+
+const args = parse(process.argv.slice(2));
+if (!args.input) fail("an input .hdr/.exr file is required");
+if (!args.id) fail("--id <reverse-DNS id> is required (e.g. com.you.studio-env)");
+
 try {
-  const bytes = readFileSync(resolve(input));
+  const bytes = readFileSync(args.input);
+
+  let licenseText: string | undefined;
+  if (args.licenseFile) {
+    licenseText = readFileSync(args.licenseFile, "utf8");
+  } else {
+    console.error(`warning: no --license-file; writing a placeholder LICENSE (SPDX: ${args.license ?? "MIT"}).`);
+  }
+
+  const out = args.out ?? basename(args.input, extname(args.input)) + ".azp";
   const azp = importHdri(bytes, {
-    id: "com.example.hdri-import",
-    version: "1.0.0",
-    author: "User"
+    id: args.id,
+    name: args.name,
+    version: args.version ?? "1.0.0",
+    author: args.author ?? "",
+    license: args.license,
+    licenseText,
   });
-  writeFileSync(resolve(output), azp);
-  console.log(`Successfully wrote ${output}`);
+
+  writeFileSync(out, azp);
+  console.error(`wrote ${out}  (${args.id}, ${azp.length} bytes)`);
 } catch (e) {
-  console.error("Error importing HDRI:", (e as Error).message);
+  // A bad file, an unrecognized HDRI format, or a write error — a clean message, not a stack trace.
+  console.error(`error: ${(e as Error).message}`);
   process.exit(1);
 }
