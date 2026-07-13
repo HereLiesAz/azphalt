@@ -24,6 +24,16 @@ import {
   type CheckResult,
   type CodeHost,
 } from "./checks.js";
+import {
+  checkAssetRejectTampered,
+  checkAssetRejectUnsafePath,
+  checkRejectKindCode,
+  checkAcceptsAsset,
+  checkAssetUiSchema,
+  checkAssetCompat,
+  checkAssetRejectBadPanel,
+  type AssetHost,
+} from "./asset-checks.js";
 
 export interface ConformanceReport {
   /** True iff every check passed. */
@@ -31,7 +41,7 @@ export interface ConformanceReport {
   checks: CheckResult[];
 }
 
-/** Run the full conformance battery against `host`. Package-level checks need no host. */
+/** Run the full **code-host** conformance battery against `host`. Package-level checks need no host. */
 export async function runConformance(host: CodeHost): Promise<ConformanceReport> {
   const checks: CheckResult[] = [
     checkRejectTampered(),
@@ -46,7 +56,25 @@ export async function runConformance(host: CodeHost): Promise<ConformanceReport>
   return { ok: checks.every((c) => c.ok), checks };
 }
 
+/**
+ * Run the **asset-host** conformance battery against `host` — the lighter profile for an app that
+ * consumes `asset` `.azp` but runs no code (`docs-old/ADOPTION_ASSET_HOST.md`).
+ */
+export async function runAssetConformance(host: AssetHost): Promise<ConformanceReport> {
+  const checks: CheckResult[] = [
+    await checkAssetRejectTampered(host),
+    await checkAssetRejectUnsafePath(host),
+    await checkRejectKindCode(host),
+    await checkAcceptsAsset(host),
+    checkAssetUiSchema(),
+    await checkAssetCompat(host),
+    await checkAssetRejectBadPanel(host),
+  ];
+  return { ok: checks.every((c) => c.ok), checks };
+}
+
 export { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
+export { satisfiesCompat } from "./checks.js";
 export * as fixtures from "./fixtures.js";
 export type {
   CodeHost,
@@ -55,3 +83,4 @@ export type {
   ConformanceWorld,
   ConformanceResult,
 } from "./checks.js";
+export type { AssetHost, AssetHostReport } from "./asset-checks.js";

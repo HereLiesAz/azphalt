@@ -17,6 +17,20 @@ export interface SigningKey {
   publicKey: string;
 }
 
+/**
+ * A registry (or other trusted authority) counter-signature vouching for the author's key: an
+ * Ed25519 signature over the author's SPKI public-key bytes. A host that trusts the registry key
+ * transitively trusts any author key it counter-signed. See `spec/package-format.md` § Signing.
+ */
+export interface AzpCountersignature {
+  /** Base64 SPKI public key of the registry/authority. */
+  publicKey: string;
+  /** Base64 Ed25519 signature over the author's SPKI DER bytes (`Buffer.from(publicKey, "base64")`). */
+  signature: string;
+  /** Optional registry-chosen key identifier. */
+  keyId?: string;
+}
+
 /** The detached signature stored as `signature.json`. */
 export interface AzpSignature {
   alg: "ed25519";
@@ -26,6 +40,8 @@ export interface AzpSignature {
   keyId?: string;
   /** Base64 Ed25519 signature over the canonical `manifest.json` bytes. */
   signature: string;
+  /** Optional counter-signature from a registry vouching for {@link publicKey}. */
+  countersignature?: AzpCountersignature;
 }
 
 /** Generate a fresh Ed25519 signing key. */

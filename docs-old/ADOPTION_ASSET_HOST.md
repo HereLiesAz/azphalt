@@ -28,8 +28,9 @@ standard: it never touches azphalt's editor surface, only its packages.
 
 1. **Open and verify.** Treat the `.azp` as a ZIP; run `verifyAzp` (`@azphalt/azp`). It confirms
    safe paths, every payload digest, payload completeness, and — if a `signature.json` is present —
-   the Ed25519 signature. **Refuse anything that fails.** (A signature is tamper-evidence, not
-   identity, until the trust model is settled — see `spec/package-format.md § Signing`.)
+   the Ed25519 signature. **Refuse anything that fails.** (A signature alone is tamper-evidence, not
+   identity; check the signer against a trust store with `verifyTrust` where provenance matters —
+   see `spec/package-format.md § Signing`.)
 2. **Read the manifest.** Reject packages where `kind` is `code`. For `kind: "mixed"`, ignore the
    root-level code fields (`entry`, `runtime`) and process only `manifest.assets` — this profile
    runs no code. A pure `asset` package has only assets.
@@ -46,6 +47,10 @@ standard: it never touches azphalt's editor surface, only its packages.
    back into the asset's parameters. Do not render extension HTML; there is none.
 
 ## Conformance checklist (asset host)
+
+Check your host against **[`@azphalt/conformance`](../packages/conformance)** —
+`runAssetConformance(host)` drives your host's `load` through these lines and returns a pass/fail
+report — rather than against prose.
 
 - [ ] Opens the `.azp`, runs `verifyAzp`, and refuses any package that fails integrity (or, when
       signed, signature) verification.
