@@ -64,24 +64,30 @@ const args = parse(process.argv.slice(2));
 if (!args.input) fail("an input .hdr/.exr file is required");
 if (!args.id) fail("--id <reverse-DNS id> is required (e.g. com.you.studio-env)");
 
-const bytes = readFileSync(args.input);
+try {
+  const bytes = readFileSync(args.input);
 
-let licenseText: string | undefined;
-if (args.licenseFile) {
-  licenseText = readFileSync(args.licenseFile, "utf8");
-} else {
-  console.error(`warning: no --license-file; writing a placeholder LICENSE (SPDX: ${args.license ?? "MIT"}).`);
+  let licenseText: string | undefined;
+  if (args.licenseFile) {
+    licenseText = readFileSync(args.licenseFile, "utf8");
+  } else {
+    console.error(`warning: no --license-file; writing a placeholder LICENSE (SPDX: ${args.license ?? "MIT"}).`);
+  }
+
+  const out = args.out ?? basename(args.input, extname(args.input)) + ".azp";
+  const azp = importHdri(bytes, {
+    id: args.id,
+    name: args.name,
+    version: args.version ?? "1.0.0",
+    author: args.author ?? "",
+    license: args.license,
+    licenseText,
+  });
+
+  writeFileSync(out, azp);
+  console.error(`wrote ${out}  (${args.id}, ${azp.length} bytes)`);
+} catch (e) {
+  // A bad file, an unrecognized HDRI format, or a write error — a clean message, not a stack trace.
+  console.error(`error: ${(e as Error).message}`);
+  process.exit(1);
 }
-
-const out = args.out ?? basename(args.input, extname(args.input)) + ".azp";
-const azp = importHdri(bytes, {
-  id: args.id,
-  name: args.name,
-  version: args.version ?? "1.0.0",
-  author: args.author ?? "",
-  license: args.license,
-  licenseText,
-});
-
-writeFileSync(out, azp);
-console.error(`wrote ${out}  (${args.id}, ${azp.length} bytes)`);
