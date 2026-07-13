@@ -11,20 +11,42 @@ export interface ImportOptions {
   remoteUrl?: string;
   checksum?: string;
   byteSize?: number;
+  /** SPDX id for the manifest; default `"MIT"`. */
+  license?: string;
+  /** Full license text written as the package's LICENSE entry. */
+  licenseText?: string;
+}
+
+/**
+ * Validate the FlatBuffer file identifier for a TFLite/LiteRT model: bytes 4..8
+ * must spell ASCII "TFL3".
+ */
+function validateTflite(bytes: Uint8Array): void {
+  if (
+    bytes.length < 8 ||
+    bytes[4] !== 0x54 ||
+    bytes[5] !== 0x46 ||
+    bytes[6] !== 0x4c ||
+    bytes[7] !== 0x33
+  ) {
+    throw new Error("not a TFLite/LiteRT flatbuffer (missing TFL3 identifier)");
+  }
 }
 
 export function importTflite(bytes: Uint8Array | null, opts: ImportOptions): Uint8Array {
   const payload: Record<string, Uint8Array> = {};
-  
+
   let assetPath = "";
   if (bytes && !opts.remoteUrl) {
+    validateTflite(bytes);
     assetPath = `assets/${opts.filename}`;
     payload[assetPath] = bytes;
   }
 
   const asset: AssetContribution = {
-    type: "tflite" as any,
-    path: assetPath
+    type: "tflite",
+    path: assetPath,
+    params: { format: "tflite" }
   };
 
   if (opts.role) asset.role = opts.role;
@@ -38,12 +60,16 @@ export function importTflite(bytes: Uint8Array | null, opts: ImportOptions): Uin
     name: opts.name || "tflite Asset",
     version: opts.version,
     kind: "asset",
-    license: "MIT",
+    license: opts.license ?? "MIT",
     compat: ">=0.1",
     author: opts.author,
     assets: [asset]
   };
 
-  const { azp } = writeAzp({ manifest, payload, license: "MIT License" });
+  const { azp } = writeAzp({
+    manifest,
+    payload,
+    license: opts.licenseText ?? `${opts.license ?? "MIT"}\n\nProvide the full license text.\n`
+  });
   return azp;
 }
