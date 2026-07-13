@@ -115,6 +115,18 @@ describe("trust model", () => {
     expect(none.reason).toMatch(/reaches no trusted key/);
   });
 
+  it("allows a chain up to the depth cap and refuses counter-signing past it", () => {
+    const author = generateSigningKey();
+    let azp = signAzp(sampleAzp(), { privateKey: author.privateKey });
+    const top = generateSigningKey();
+    // Build a 10-hop chain (the maximum): 9 intermediates then the top authority.
+    for (let i = 0; i < 9; i++) azp = countersign(azp, { registryPrivateKey: generateSigningKey().privateKey });
+    azp = countersign(azp, { registryPrivateKey: top.privateKey });
+    expect(verifyTrust(azp, { keys: [{ publicKey: top.publicKey }] }).trusted).toBe(true);
+    // An 11th hop exceeds the cap.
+    expect(() => countersign(azp, { registryPrivateKey: generateSigningKey().privateKey })).toThrow(/hop limit/);
+  });
+
   it("severs trust when a lower hop of the chain is broken", () => {
     const author = generateSigningKey();
     const r1 = generateSigningKey();

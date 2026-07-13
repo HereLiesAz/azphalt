@@ -45,6 +45,9 @@ export interface TrustResult {
   viaRegistryPublicKey?: string;
 }
 
+/** Ceiling on counter-signature chain length — a DoS guard against attacker-crafted deep chains. */
+const MAX_CHAIN_DEPTH = 10;
+
 function parseSignature(azp: Uint8Array): AzpSignature | null {
   const { payload } = readAzp(azp);
   const raw = payload["signature.json"];
@@ -101,6 +104,11 @@ export function verifyTrust(azp: Uint8Array, store: TrustStore): TrustResult {
   let hop = 0;
   while (cs) {
     hop++;
+    // Cap the chain: verifying each hop is an Ed25519 verify, so an attacker-crafted deep chain
+    // of bad links could burn CPU. A trust chain more than a few hops deep is not a real topology.
+    if (hop > MAX_CHAIN_DEPTH) {
+      return { ...base, trusted: false, reason: `counter-signature chain exceeds the ${MAX_CHAIN_DEPTH}-hop limit` };
+    }
     if (typeof cs.publicKey !== "string" || typeof cs.signature !== "string") {
       return { ...base, trusted: false, reason: `counter-signature is malformed at hop ${hop}` };
     }
@@ -162,7 +170,17 @@ export function countersign(azp: Uint8Array, opts: CountersignOptions): Uint8Arr
   // Find the deepest existing link; the new counter-signature vouches for its key (the author's if
   // there is no chain yet) and attaches above it.
   let parent: { publicKey: string; countersignature?: AzpCountersignature } = sig;
-  while (parent.countersignature) parent = parent.countersignature;
+  let depth = 0;
+  while (parent.countersignature) {
+    if (typeof parent.countersignature !== "object" || typeof parent.countersignature.publicKey !== "string") {
+      throw new Error("azp: existing counter-signature chain is malformed");
+    }
+    parent = parent.countersignature;
+    depth++;
+  }
+  if (depth >= MAX_CHAIN_DEPTH) {
+    throw new Error(`azp: counter-signature chain is already at the ${MAX_CHAIN_DEPTH}-hop limit`);
+  }
 
   const vouchesFor = Buffer.from(parent.publicKey, "base64");
   const signature = cryptoSign(null, vouchesFor, key);
