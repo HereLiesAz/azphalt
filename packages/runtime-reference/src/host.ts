@@ -37,9 +37,13 @@ function assertBitmap(bmp: Bitmap): void {
   if (bmp.data.length !== bmp.width * bmp.height * 4) {
     throw new Error("bitmap does not satisfy the RGBA ABI (element count must be width * height * 4)");
   }
-  const is16 = bmp.depth === 16;
-  if (is16 !== bmp.data instanceof Uint16Array) {
-    throw new Error(`bitmap depth ${bmp.depth ?? 8} does not match its data type (16-bit ⇒ Uint16Array)`);
+  if (bmp.depth === 16) {
+    if (!(bmp.data instanceof Uint16Array)) {
+      throw new Error("bitmap depth 16 does not match its data type (expected Uint16Array)");
+    }
+  } else if (!(bmp.data instanceof Uint8ClampedArray)) {
+    // 8-bit is specifically a Uint8ClampedArray (a plain Uint8Array or Float32Array must not slip through).
+    throw new Error(`bitmap depth ${bmp.depth ?? 8} does not match its data type (expected Uint8ClampedArray)`);
   }
 }
 

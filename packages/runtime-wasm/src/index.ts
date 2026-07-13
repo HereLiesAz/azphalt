@@ -135,13 +135,18 @@ interface Layer {
 
 /** Pack a channel-value array into raw bytes for a depth (16-bit ⇒ little-endian `Uint16`). */
 function packBytes(data: number[] | ArrayLike<number>, depth: BitDepth): Uint8Array {
-  return depth === 16 ? new Uint8Array(Uint16Array.from(data as ArrayLike<number>).buffer) : new Uint8Array(data as ArrayLike<number>);
+  // 8-bit clamps (matching the Uint8ClampedArray ABI), not wraps mod 256.
+  return depth === 16
+    ? new Uint8Array(Uint16Array.from(data as ArrayLike<number>).buffer)
+    : new Uint8Array(Uint8ClampedArray.from(data as ArrayLike<number>));
 }
 
 /** Unpack raw bytes back into a channel-value array for a depth. */
 function unpackBytes(bytes: Uint8Array, depth: BitDepth): number[] {
-  if (depth === 16) return Array.from(new Uint16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 1));
-  return Array.from(bytes);
+  if (depth !== 16) return Array.from(bytes);
+  // `Uint16Array` needs a 2-byte-aligned offset; copy to a fresh (offset-0) buffer if the view is odd.
+  const src = bytes.byteOffset % 2 === 0 ? bytes : new Uint8Array(bytes);
+  return Array.from(new Uint16Array(src.buffer, src.byteOffset, src.byteLength >> 1));
 }
 
 interface World {
@@ -449,7 +454,12 @@ function ctxBootstrap(targetLayerId: string): string {
         write: function (a, b) {
           var layer = b === undefined ? null : a;
           var bmp = b === undefined ? a : b;
-          __bitmapWrite(__lid(layer), bmp.data.buffer, bmp.width, bmp.height, bmp.depth || 8);
+          var buf = bmp.data.buffer;
+          // If data is a partial view of a larger buffer, pass just its bytes (else the host over-reads).
+          if (bmp.data.byteOffset !== 0 || bmp.data.byteLength !== buf.byteLength) {
+            buf = buf.slice(bmp.data.byteOffset, bmp.data.byteOffset + bmp.data.byteLength);
+          }
+          __bitmapWrite(__lid(layer), buf, bmp.width, bmp.height, bmp.depth || 8);
         },
         alloc: function (w, h, depth) {
           var d = depth === 16 ? 16 : 8;

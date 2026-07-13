@@ -142,6 +142,30 @@ describe("runtime-wasm full Host surface", () => {
     expect(r.bitmap.data[1]).toBe(3);
   });
 
+  it("clamps 8-bit channel values instead of wrapping them (input out of 0–255)", async () => {
+    const azp = buildAzp({
+      source: `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter(() => {});`,
+      capabilities: ["bitmap"],
+      contributes: filterContributes,
+    });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [300, -5, 256, 128], width: 1, height: 1 } });
+    expect(r.bitmap.data).toEqual([255, 0, 255, 128]); // clamp, not 300%256=44 / -5→251 / 256→0
+  });
+
+  it("writes a partial-view bitmap correctly (data is a subarray of a larger buffer)", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        const big = new Uint8ClampedArray(12);
+        big.set([9, 8, 7, 6], 4);
+        ctx.bitmap.write(ctx.target, { data: big.subarray(4, 8), width: 1, height: 1 }); // byteOffset 4
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 } });
+    expect(r.bitmap.data).toEqual([9, 8, 7, 6]);
+  });
+
   it("gates a new capability: ctx.layers is absent when not granted", async () => {
     const mod = `
       import { defineFilter } from "@azphalt/sdk";
