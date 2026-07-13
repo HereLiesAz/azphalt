@@ -34,8 +34,10 @@ Until it is set, the versioning half still works (the Version Packages PR opens 
 With a valid `NPM_TOKEN`/npm login in the environment:
 
 ~~~sh
-pnpm changeset version   # apply pending changesets → bump versions + changelogs
-pnpm release             # build + test + changeset publish
+pnpm run version   # apply pending changesets → bump versions + changelogs + refresh the lockfile
+pnpm run release   # build + test + changeset publish
 ~~~
+
+Use `pnpm run version` (not bare `pnpm version`, which is pnpm's own version command). The `version` script also runs `pnpm install --lockfile-only` after bumping, so `pnpm-lock.yaml` stays in sync and CI's `--frozen-lockfile` install doesn't fail.
 
 Private packages (the `apps/*`, e.g. `@azphalt/storefront`) are never published — Changesets skips any package marked `private` automatically.
