@@ -21,14 +21,23 @@ function normalizeHeaders(raw: IncomingMessage["headers"]): Record<string, strin
 export function createRepositoryServer(opts: RepositoryHandlerOptions): Server {
   const handle = createRepositoryHandler(opts);
   return createServer((req: IncomingMessage, res: ServerResponse) => {
-    // A dummy origin lets URL parse a path-only request-target; only pathname + search are read.
-    const url = new URL(req.url ?? "/", "http://repository.local");
-    const repoReq: RepoRequest = {
-      method: req.method ?? "GET",
-      path: url.pathname,
-      query: url.searchParams,
-      headers: normalizeHeaders(req.headers),
-    };
+    let repoReq: RepoRequest;
+    try {
+      // A dummy origin lets URL parse a path-only request-target; only pathname + search are read.
+      // `new URL` throws synchronously on a malformed request-target — catch it so one bad client
+      // can't crash the process (DoS); answer 400 instead.
+      const url = new URL(req.url ?? "/", "http://repository.local");
+      repoReq = {
+        method: req.method ?? "GET",
+        path: url.pathname,
+        query: url.searchParams,
+        headers: normalizeHeaders(req.headers),
+      };
+    } catch {
+      res.writeHead(400, { "content-type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: "bad request: malformed URL" }));
+      return;
+    }
     handle(repoReq)
       .then((out) => {
         res.writeHead(out.status, out.headers);

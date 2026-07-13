@@ -126,6 +126,14 @@ describe("repository handler — spec/repository-api.md", () => {
     expect((await handle(mk("/packages/com.demo.free/versions/9.9.9/download"))).status).toBe(404);
     expect((await handle(mk("/packages", { method: "POST" }))).status).toBe(405);
   });
+
+  it("400s a malformed percent-escape in the path instead of throwing", async () => {
+    const { handle } = await handlerFixture();
+    // A lone `%` is an invalid URI escape — decodeURIComponent would throw a URIError.
+    const res = await handle({ method: "GET", path: "/packages/%E0%A4%A", query: new URLSearchParams(), headers: {} });
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body as string).error).toMatch(/invalid URI encoding/);
+  });
 });
 
 describe("repository server — end-to-end over @azphalt/repository-client", () => {

@@ -156,10 +156,12 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     if (req.method !== "GET") return fail(405, `method not allowed: ${req.method}`);
     if (req.path === "/.well-known/azphalt-repository.json") return json(200, index);
 
-    const segs = req.path.split("/").filter(Boolean).map((s) => decodeURIComponent(s));
-    if (segs[0] !== "packages") return fail(404, "not found");
-
     try {
+      // `decodeURIComponent` throws a URIError on a malformed percent-escape — keep it inside the
+      // try so a bad path answers 400, not an unhandled 500.
+      const segs = req.path.split("/").filter(Boolean).map((s) => decodeURIComponent(s));
+      if (segs[0] !== "packages") return fail(404, "not found");
+
       if (segs.length === 1) return await search(req);
       if (segs.length === 2) return await detail(segs[1]);
       if (segs.length === 5 && segs[2] === "versions" && segs[4] === "download") {
@@ -167,6 +169,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
       }
       return fail(404, "not found");
     } catch (e) {
+      if (e instanceof URIError) return fail(400, "invalid URI encoding in path");
       if (e instanceof RegistryError) return fail(400, e.message);
       return fail(500, `internal error: ${e instanceof Error ? e.message : String(e)}`);
     }
