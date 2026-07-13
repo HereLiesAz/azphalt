@@ -50,8 +50,8 @@ export interface CheckResult {
   detail: string;
 }
 
-const pass = (id: string, title: string, detail = "ok"): CheckResult => ({ id, title, ok: true, detail });
-const fail = (id: string, title: string, detail: string): CheckResult => ({ id, title, ok: false, detail });
+export const pass = (id: string, title: string, detail = "ok"): CheckResult => ({ id, title, ok: true, detail });
+export const fail = (id: string, title: string, detail: string): CheckResult => ({ id, title, ok: false, detail });
 
 /** Run a filter, returning either its result or the thrown error — checks assert on which. */
 async function run(
@@ -73,7 +73,7 @@ const world = (bitmap: ConformanceBitmap, params: Record<string, unknown> = {}):
 });
 
 /** `>=X.Y[.Z]` (or bare `X.Y[.Z]`) satisfied by `version`. Patch defaults to 0 when omitted. */
-function satisfiesCompat(version: string, compat: string): boolean {
+export function satisfiesCompat(version: string, compat: string): boolean {
   const parse = (s: string) => {
     const m = /(\d+)\.(\d+)(?:\.(\d+))?/.exec(s);
     return m ? [Number(m[1]), Number(m[2]), Number(m[3] ?? 0)] : null;

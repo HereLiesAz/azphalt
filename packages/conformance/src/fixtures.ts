@@ -4,7 +4,7 @@
  * plain ES modules written against `@azphalt/sdk` — exactly what a `runtime: "js"` host loads.
  */
 import { writeAzp } from "@azphalt/azp";
-import type { Manifest, Panel } from "@azphalt/sdk";
+import type { AssetContribution, Manifest, Panel } from "@azphalt/sdk";
 
 const enc = (s: string) => new TextEncoder().encode(s);
 
@@ -165,4 +165,64 @@ export function uiPanelAzp(): Uint8Array {
     ui: "ui/panel.json",
     extraPayload: { "ui/panel.json": enc(JSON.stringify(panel)) },
   });
+}
+
+/* ─────────────── asset-host fixtures ─────────────── */
+
+interface AssetBuildOpts {
+  compat?: string;
+  /** Override the asset contribution's `type` (default `"lut"`). */
+  type?: string;
+  /** Panel JSON to store at `ui/grade.json` and reference from the asset (default a valid panel). */
+  panel?: unknown;
+}
+
+/** Build an `asset`-kind `.azp` with one asset (a `.cube` LUT by default) + a ui panel. */
+function buildAssetAzp(opts: AssetBuildOpts = {}): Uint8Array {
+  const panel = opts.panel ?? everyControlPanel();
+  const manifest: Omit<Manifest, "files"> = {
+    azphalt: "0.1",
+    id: "com.azphalt.conformance.asset",
+    name: "Asset Fixture",
+    version: "1.0.0",
+    kind: "asset",
+    license: "MIT",
+    compat: opts.compat ?? ">=0.1",
+    assets: [
+      {
+        type: (opts.type ?? "lut") as AssetContribution["type"],
+        path: "assets/grade.cube",
+        ui: "ui/grade.json",
+        params: { format: "cube" },
+      },
+    ],
+  };
+  return writeAzp({
+    manifest,
+    payload: {
+      "assets/grade.cube": enc('TITLE "Teal"\nLUT_3D_SIZE 2\n'),
+      "ui/grade.json": enc(JSON.stringify(panel)),
+    },
+    license: "MIT License",
+  }).azp;
+}
+
+/** A conforming asset package: a `lut` asset with a valid ui panel — an asset host must accept it. */
+export function assetAzp(): Uint8Array {
+  return buildAssetAzp();
+}
+
+/** A `code`-kind package — an asset host MUST refuse it (it runs no code). */
+export function codeKindAzp(): Uint8Array {
+  return validFilterAzp();
+}
+
+/** A valid asset package whose `compat` no `0.1` host satisfies — must be refused on compat. */
+export function incompatibleAssetAzp(): Uint8Array {
+  return buildAssetAzp({ compat: ">=99.0" });
+}
+
+/** An asset package whose ui panel is malformed — a host validating the schema must refuse it. */
+export function assetBadPanelAzp(): Uint8Array {
+  return buildAssetAzp({ panel: { controls: [{ type: "color", key: "k", label: "L", default: "not-a-hex" }] } });
 }
