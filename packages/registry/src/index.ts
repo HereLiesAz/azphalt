@@ -29,6 +29,7 @@ export {
   type CheckoutSession,
   type MarketplaceOptions,
 } from "./consignment.js";
+export { StripePaymentProvider, stripeConfigFromEnv, type StripeConfig } from "./stripe.js";
 export type {
   Money,
   Listing,
