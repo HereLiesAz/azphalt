@@ -47,6 +47,10 @@ standard: it never touches azphalt's editor surface, only its packages.
 
 ## Conformance checklist (asset host)
 
+Check your host against **[`@azphalt/conformance`](../packages/conformance)** —
+`runAssetConformance(host)` drives your host's `load` through these lines and returns a pass/fail
+report — rather than against prose.
+
 - [ ] Opens the `.azp`, runs `verifyAzp`, and refuses any package that fails integrity (or, when
       signed, signature) verification.
 - [ ] Reads `manifest.assets` and applies each supported `type` with its own engine.
