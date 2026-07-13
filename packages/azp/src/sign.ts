@@ -18,17 +18,20 @@ export interface SigningKey {
 }
 
 /**
- * A registry (or other trusted authority) counter-signature vouching for the author's key: an
- * Ed25519 signature over the author's SPKI public-key bytes. A host that trusts the registry key
- * transitively trusts any author key it counter-signed. See `spec/package-format.md` § Signing.
+ * A counter-signature: an Ed25519 signature over the SPKI public-key bytes of the key **below** it
+ * in the chain (the author at the base, or the previous counter-signer). A host that trusts a key
+ * anywhere in the chain transitively trusts the author. Counter-signatures nest, forming a
+ * web-of-trust chain of arbitrary depth. See `spec/package-format.md` § Signing.
  */
 export interface AzpCountersignature {
-  /** Base64 SPKI public key of the registry/authority. */
+  /** Base64 SPKI public key of the registry/authority making this vouch. */
   publicKey: string;
-  /** Base64 Ed25519 signature over the author's SPKI DER bytes (`Buffer.from(publicKey, "base64")`). */
+  /** Base64 Ed25519 signature over the vouched-for key's SPKI DER bytes. */
   signature: string;
   /** Optional registry-chosen key identifier. */
   keyId?: string;
+  /** A further counter-signature vouching for {@link publicKey} — the next hop up the chain. */
+  countersignature?: AzpCountersignature;
 }
 
 /** The detached signature stored as `signature.json`. */

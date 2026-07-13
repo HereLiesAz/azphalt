@@ -84,12 +84,69 @@ describe("trust model", () => {
     const r = verifyTrust(countersigned, { keys: [{ publicKey: otherRegistry.publicKey }] });
     expect(r.ok).toBe(true);
     expect(r.trusted).toBe(false);
-    expect(r.reason).toMatch(/untrusted registry/);
+    expect(r.reason).toMatch(/reaches no trusted key/);
   });
 
   it("countersign refuses an unsigned package", () => {
     const registry = generateSigningKey();
     expect(() => countersign(sampleAzp(), { registryPrivateKey: registry.privateKey })).toThrow(/unsigned/);
+  });
+
+  it("follows a multi-hop counter-signature chain (author ← r1 ← r2), trusting only the top", () => {
+    const author = generateSigningKey();
+    const r1 = generateSigningKey();
+    const r2 = generateSigningKey();
+    const signed = signAzp(sampleAzp(), { privateKey: author.privateKey });
+    const hop1 = countersign(signed, { registryPrivateKey: r1.privateKey, keyId: "r1" }); // r1 vouches author
+    const hop2 = countersign(hop1, { registryPrivateKey: r2.privateKey, keyId: "r2" }); // r2 vouches r1
+
+    // Trust only the top authority r2 — neither the author nor r1 directly.
+    const r = verifyTrust(hop2, { keys: [{ publicKey: r2.publicKey, keyId: "r2" }] });
+    expect(r.ok).toBe(true);
+    expect(r.trusted).toBe(true);
+    expect(r.reason).toMatch(/2-hop/);
+    expect(r.viaRegistryPublicKey).toBe(r2.publicKey);
+
+    // Trusting the middle link r1 also works (shorter path down the same chain).
+    expect(verifyTrust(hop2, { keys: [{ publicKey: r1.publicKey }] }).trusted).toBe(true);
+    // Trusting no one in the chain → untrusted but still valid.
+    const none = verifyTrust(hop2, { keys: [{ publicKey: generateSigningKey().publicKey }] });
+    expect(none.trusted).toBe(false);
+    expect(none.reason).toMatch(/reaches no trusted key/);
+  });
+
+  it("allows a chain up to the depth cap and refuses counter-signing past it", () => {
+    const author = generateSigningKey();
+    let azp = signAzp(sampleAzp(), { privateKey: author.privateKey });
+    const top = generateSigningKey();
+    // Build a 10-hop chain (the maximum): 9 intermediates then the top authority.
+    for (let i = 0; i < 9; i++) azp = countersign(azp, { registryPrivateKey: generateSigningKey().privateKey });
+    azp = countersign(azp, { registryPrivateKey: top.privateKey });
+    expect(verifyTrust(azp, { keys: [{ publicKey: top.publicKey }] }).trusted).toBe(true);
+    // An 11th hop exceeds the cap.
+    expect(() => countersign(azp, { registryPrivateKey: generateSigningKey().privateKey })).toThrow(/hop limit/);
+  });
+
+  it("severs trust when a lower hop of the chain is broken", () => {
+    const author = generateSigningKey();
+    const r1 = generateSigningKey();
+    const r2 = generateSigningKey();
+    const signed = signAzp(sampleAzp(), { privateKey: author.privateKey });
+    const hop1 = countersign(signed, { registryPrivateKey: r1.privateKey });
+    const hop2 = countersign(hop1, { registryPrivateKey: r2.privateKey });
+
+    // Corrupt hop 1's signature (r1→author). Even though r2 (top) is trusted, the broken lower
+    // link means the chain no longer connects to the author.
+    const files = unzipSync(hop2);
+    const sig = JSON.parse(strFromU8(files["signature.json"]!)) as Record<string, any>;
+    sig.countersignature.signature = Buffer.from("garbage-signature-bytes-000000000000").toString("base64");
+    files["signature.json"] = strToU8(JSON.stringify(sig));
+    const tampered = zipSync(files, { mtime: EPOCH });
+
+    const r = verifyTrust(tampered, { keys: [{ publicKey: r2.publicKey }] });
+    expect(r.ok).toBe(true);
+    expect(r.trusted).toBe(false);
+    expect(r.reason).toMatch(/invalid at hop 1/);
   });
 
   it("handles a malformed trust store gracefully (no crash)", () => {

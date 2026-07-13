@@ -12,7 +12,7 @@
 import { createPrivateKey, createPublicKey, sign as cryptoSign, verify as cryptoVerify } from "node:crypto";
 import { strToU8, strFromU8, unzipSync, zipSync } from "fflate";
 import { EPOCH, verifyAzp, readAzp } from "./index.js";
-import type { AzpSignature } from "./sign.js";
+import type { AzpSignature, AzpCountersignature } from "./sign.js";
 
 /** A public key a host trusts, either as a direct author key or as a registry key. */
 export interface TrustedKey {
@@ -44,6 +44,9 @@ export interface TrustResult {
   /** When trust came transitively, the registry key that vouched for the signer. */
   viaRegistryPublicKey?: string;
 }
+
+/** Ceiling on counter-signature chain length — a DoS guard against attacker-crafted deep chains. */
+const MAX_CHAIN_DEPTH = 10;
 
 function parseSignature(azp: Uint8Array): AzpSignature | null {
   const { payload } = readAzp(azp);
@@ -92,28 +95,50 @@ export function verifyTrust(azp: Uint8Array, store: TrustStore): TrustResult {
     return { ...base, trusted: true, reason: "signer key is directly trusted" };
   }
 
-  // (b) Transitive trust: a trusted registry key counter-signed the author key.
-  const cs = sig.countersignature;
-  if (cs) {
+  // (b) Transitive trust: walk the counter-signature chain from the author up. Each link's key
+  // vouches (signs) for the key below it — the author at the base, then each previous counter-signer.
+  // Trusted as soon as a link's key is in the store, provided every hop's signature down to it
+  // verifies (a broken lower link severs the chain).
+  let vouchedKey = sig.publicKey; // base64 SPKI of the key this hop vouches for
+  let cs = sig.countersignature;
+  let hop = 0;
+  while (cs) {
+    hop++;
+    // Cap the chain: verifying each hop is an Ed25519 verify, so an attacker-crafted deep chain
+    // of bad links could burn CPU. A trust chain more than a few hops deep is not a real topology.
+    if (hop > MAX_CHAIN_DEPTH) {
+      return { ...base, trusted: false, reason: `counter-signature chain exceeds the ${MAX_CHAIN_DEPTH}-hop limit` };
+    }
     if (typeof cs.publicKey !== "string" || typeof cs.signature !== "string") {
-      return { ...base, trusted: false, reason: "registry counter-signature is malformed" };
+      return { ...base, trusted: false, reason: `counter-signature is malformed at hop ${hop}` };
     }
+    let valid: boolean;
+    try {
+      const pub = createPublicKey({ key: Buffer.from(cs.publicKey, "base64"), format: "der", type: "spki" });
+      valid =
+        pub.asymmetricKeyType === "ed25519" &&
+        cryptoVerify(null, Buffer.from(vouchedKey, "base64"), pub, Buffer.from(cs.signature, "base64"));
+    } catch (e) {
+      return { ...base, trusted: false, reason: `counter-signature error at hop ${hop}: ${(e as Error).message}` };
+    }
+    if (!valid) return { ...base, trusted: false, reason: `counter-signature invalid at hop ${hop}` };
     if (trustedKeys.has(cs.publicKey)) {
-      try {
-        const registryPub = createPublicKey({ key: Buffer.from(cs.publicKey, "base64"), format: "der", type: "spki" });
-        const vouchesFor = Buffer.from(sig.publicKey, "base64"); // the author's SPKI DER bytes
-        if (registryPub.asymmetricKeyType === "ed25519" && cryptoVerify(null, vouchesFor, registryPub, Buffer.from(cs.signature, "base64"))) {
-          return { ...base, trusted: true, reason: "signer key counter-signed by a trusted registry", viaRegistryPublicKey: cs.publicKey };
-        }
-        return { ...base, trusted: false, reason: "registry counter-signature is invalid" };
-      } catch (e) {
-        return { ...base, trusted: false, reason: `counter-signature error: ${(e as Error).message}` };
-      }
+      return {
+        ...base,
+        trusted: true,
+        reason: hop === 1 ? "signer counter-signed by a trusted registry" : `signer trusted via a ${hop}-hop counter-signature chain`,
+        viaRegistryPublicKey: cs.publicKey,
+      };
     }
-    return { ...base, trusted: false, reason: "signer counter-signed by an untrusted registry" };
+    vouchedKey = cs.publicKey;
+    cs = cs.countersignature;
   }
 
-  return { ...base, trusted: false, reason: "signer key is not in the trust store" };
+  return {
+    ...base,
+    trusted: false,
+    reason: sig.countersignature ? "counter-signature chain reaches no trusted key" : "signer key is not in the trust store",
+  };
 }
 
 export interface CountersignOptions {
@@ -124,8 +149,9 @@ export interface CountersignOptions {
 }
 
 /**
- * Counter-sign an already-signed `.azp`: a registry vouches for the author's key by signing the
- * author's SPKI public-key bytes, storing the result in `signature.json` under `countersignature`.
+ * Counter-sign an already-signed `.azp`: an authority vouches for the current leaf of the trust
+ * chain by signing that key's SPKI public-key bytes. The first counter-signature vouches for the
+ * author; a further one vouches for the previous counter-signer, extending the chain (web of trust).
  * The author's signature (over `manifest.json`) is untouched, so integrity still verifies. Returns
  * new `.azp` bytes; the input is not mutated.
  */
@@ -141,11 +167,26 @@ export function countersign(azp: Uint8Array, opts: CountersignOptions): Uint8Arr
   const key = createPrivateKey(opts.registryPrivateKey);
   if (key.asymmetricKeyType !== "ed25519") throw new Error("azp: registryPrivateKey must be an ed25519 key");
 
-  const vouchesFor = Buffer.from(sig.publicKey, "base64"); // sign the author's SPKI DER bytes
+  // Find the deepest existing link; the new counter-signature vouches for its key (the author's if
+  // there is no chain yet) and attaches above it.
+  let parent: { publicKey: string; countersignature?: AzpCountersignature } = sig;
+  let depth = 0;
+  while (parent.countersignature) {
+    if (typeof parent.countersignature !== "object" || typeof parent.countersignature.publicKey !== "string") {
+      throw new Error("azp: existing counter-signature chain is malformed");
+    }
+    parent = parent.countersignature;
+    depth++;
+  }
+  if (depth >= MAX_CHAIN_DEPTH) {
+    throw new Error(`azp: counter-signature chain is already at the ${MAX_CHAIN_DEPTH}-hop limit`);
+  }
+
+  const vouchesFor = Buffer.from(parent.publicKey, "base64");
   const signature = cryptoSign(null, vouchesFor, key);
   const registryPublicKey = Buffer.from(createPublicKey(key).export({ type: "spki", format: "der" })).toString("base64");
 
-  sig.countersignature = {
+  parent.countersignature = {
     publicKey: registryPublicKey,
     signature: Buffer.from(signature).toString("base64"),
     ...(opts.keyId ? { keyId: opts.keyId } : {}),
