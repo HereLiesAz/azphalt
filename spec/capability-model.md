@@ -34,6 +34,7 @@ These have no host function. They are *absent*, not merely gated.
 Bitmaps cross the boundary as shared linear memory (the WASM instance's memory):
 - Layout: RGBA, 8 bits/channel, **straight (non-premultiplied) alpha**, row-major, tightly packed (`stride = width * 4`).
 - The host passes `ptr, width, height, stride`; the extension reads/writes in place — no copy on the hot path.
+- **Raw `wasm` entry (`runtime: "wasm"`).** The module exports `memory` and the entry `filter(ptr, width, height, stride)`; the host writes the target layer into `memory` at `ptr`, calls the entry, and reads it back. Capability host functions are `env` imports. *Implemented* in `@azphalt/runtime-wasm` (first cut: shared-memory bitmap + `canvas.requestRedraw`).
 - **Open:** premultiplied-vs-straight is a real call (blend math differs), and 16-bit depth is a later question. Pin both before the ABI stabilizes — this is what bites a pixel app.
 
 ## Enforcement
