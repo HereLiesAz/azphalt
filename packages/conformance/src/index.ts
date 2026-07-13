@@ -31,6 +31,7 @@ import {
   checkAcceptsAsset,
   checkAssetUiSchema,
   checkAssetCompat,
+  checkAssetRejectBadPanel,
   type AssetHost,
 } from "./asset-checks.js";
 
@@ -67,6 +68,7 @@ export async function runAssetConformance(host: AssetHost): Promise<ConformanceR
     await checkAcceptsAsset(host),
     checkAssetUiSchema(),
     await checkAssetCompat(host),
+    await checkAssetRejectBadPanel(host),
   ];
   return { ok: checks.every((c) => c.ok), checks };
 }

@@ -39,7 +39,7 @@ describe("@azphalt/conformance — asset host", () => {
     const failed = report.checks.filter((c) => !c.ok);
     expect(failed, failed.map((c) => `${c.id}: ${c.detail}`).join("\n")).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.checks).toHaveLength(6);
+    expect(report.checks).toHaveLength(7);
   });
 
   it("has teeth — a host that accepts everything fails", async () => {
@@ -50,6 +50,7 @@ describe("@azphalt/conformance — asset host", () => {
     expect(report.checks.find((c) => c.id === "reject-kind-code")?.ok).toBe(false);
     expect(report.checks.find((c) => c.id === "reject-tampered")?.ok).toBe(false);
     expect(report.checks.find((c) => c.id === "compat-version")?.ok).toBe(false);
+    expect(report.checks.find((c) => c.id === "reject-bad-panel")?.ok).toBe(false);
   });
 
   it("fails a host that does not report an apiVersion", async () => {

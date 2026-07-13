@@ -37,7 +37,8 @@ async function load(host: AssetHost, azp: Uint8Array): Promise<AssetHostReport> 
     return await host.load(azp);
   } catch (e) {
     // A throw is a refusal too — capture it rather than letting the suite crash.
-    return { accepted: false, reason: `threw: ${(e as Error).message}` };
+    const message = e instanceof Error ? e.message : String(e);
+    return { accepted: false, reason: `threw: ${message}` };
   }
 }
 
@@ -104,4 +105,12 @@ export async function checkAssetCompat(host: AssetHost): Promise<CheckResult> {
   return r.accepted
     ? fail(id, title, "host accepted a package whose compat it cannot satisfy")
     : pass(id, title, `apiVersion ${host.apiVersion}; refused an incompatible package`);
+}
+
+/** Checklist: refuses an asset package whose ui panel is malformed per the UI schema. */
+export async function checkAssetRejectBadPanel(host: AssetHost): Promise<CheckResult> {
+  const id = "reject-bad-panel";
+  const title = "Refuses an asset package with a malformed ui panel";
+  const r = await load(host, fx.assetBadPanelAzp());
+  return r.accepted ? fail(id, title, "host accepted an asset with a malformed ui panel") : pass(id, title);
 }
