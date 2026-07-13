@@ -28,7 +28,11 @@ export interface StripeConfig {
    * records it); the registry stays identity-agnostic.
    */
   connectedAccountFor: (sellerId: string) => string | Promise<string>;
-  /** Absolute URL the buyer returns to after a completed checkout (Stripe appends `?session_id=…`). */
+  /**
+   * Absolute URL the buyer returns to after a completed checkout. To capture the session on redirect,
+   * include Stripe's `{CHECKOUT_SESSION_ID}` template variable (e.g.
+   * `https://shop.example/ok?session_id={CHECKOUT_SESSION_ID}`) — Stripe does not append it otherwise.
+   */
   successUrl: string;
   /** Absolute URL the buyer returns to if they cancel. */
   cancelUrl: string;
@@ -64,6 +68,10 @@ interface StripeSessionResponse {
   id?: string;
   url?: string | null;
   status?: string;
+  /** Total charged, in the currency's minor unit — present on a retrieved session. */
+  amount_total?: number | null;
+  /** ISO-4217 currency (lower-cased by Stripe). */
+  currency?: string | null;
 }
 interface StripeErrorResponse {
   error?: { message?: string; code?: string; type?: string };
@@ -103,7 +111,9 @@ export class StripePaymentProvider implements PaymentProvider {
       throw new RegistryError(`Stripe returned non-JSON (${res.status}): ${text.slice(0, 200)}`);
     }
     if (!res.ok) {
-      throw new RegistryError(`Stripe error (${res.status}): ${json.error?.message ?? res.statusText}`);
+      // Some runtimes (edge/workers) leave `statusText` empty — fall back so the reason is never blank.
+      const reason = json.error?.message || res.statusText || "unknown error";
+      throw new RegistryError(`Stripe error (${res.status}): ${reason}`);
     }
     return json;
   }
@@ -163,8 +173,13 @@ export class StripePaymentProvider implements PaymentProvider {
     }
     if (res.status === 404) return undefined; // unknown to Stripe
     const s = await this.parse(res);
-    // A GET carries no amount; Stripe echoes `amount_total` + `currency`, but we only need lifecycle here.
-    return { id: s.id ?? id, url: s.url ?? "", status: mapStatus(s.status), amount: { amountCents: 0, currency: "" } };
+    // A retrieved session echoes the real total + currency — surface them rather than a placeholder.
+    return {
+      id: s.id ?? id,
+      url: s.url ?? "",
+      status: mapStatus(s.status),
+      amount: { amountCents: s.amount_total ?? 0, currency: (s.currency ?? "").toUpperCase() },
+    };
   }
 }
 

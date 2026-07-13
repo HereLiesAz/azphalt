@@ -81,9 +81,12 @@ describe("StripePaymentProvider", () => {
   it("maps session lifecycle: complete → completed, expired → canceled, 404 → undefined", async () => {
     const complete = new StripePaymentProvider({
       ...baseConfig,
-      fetch: fakeStripe([{ status: 200, body: { id: "cs_3", url: "u", status: "complete" } }]).fetch,
+      fetch: fakeStripe([{ status: 200, body: { id: "cs_3", url: "u", status: "complete", amount_total: 600, currency: "usd" } }]).fetch,
     });
-    expect((await complete.getSession("cs_3"))?.status).toBe("completed");
+    const done = await complete.getSession("cs_3");
+    expect(done?.status).toBe("completed");
+    // The retrieved session's real total/currency are surfaced (not a placeholder).
+    expect(done?.amount).toEqual({ amountCents: 600, currency: "USD" });
 
     const expired = new StripePaymentProvider({
       ...baseConfig,
