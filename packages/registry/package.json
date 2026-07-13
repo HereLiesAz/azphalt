@@ -1,6 +1,7 @@
 {
   "name": "@azphalt/registry",
   "version": "0.1.0",
+  "publishConfig": { "access": "public" },
   "description": "The azphalt registry: publish, index, search, and serve .azp packages — plus the consignment marketplace overlay.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",

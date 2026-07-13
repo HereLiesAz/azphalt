@@ -1,6 +1,7 @@
 {
   "name": "@azphalt/runtime-reference",
   "version": "0.1.0",
+  "publishConfig": { "access": "public" },
   "description": "Reference host that loads, verifies, and runs a .azp against the capability contract.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",

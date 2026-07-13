@@ -1,6 +1,7 @@
 {
   "name": "@azphalt/importer-abr",
   "version": "0.1.0",
+  "publishConfig": { "access": "public" },
   "description": "Import Photoshop .abr sampled brushes into .azp asset packages.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",
