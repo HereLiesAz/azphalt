@@ -183,4 +183,6 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
 }
 
 export { generateSigningKey, signAzp } from "./sign.js";
-export type { SigningKey, SignOptions, AzpSignature } from "./sign.js";
+export type { SigningKey, SignOptions, AzpSignature, AzpCountersignature } from "./sign.js";
+export { verifyTrust, countersign } from "./trust.js";
+export type { TrustStore, TrustedKey, TrustResult, CountersignOptions } from "./trust.js";

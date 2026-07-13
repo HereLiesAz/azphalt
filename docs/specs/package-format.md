@@ -36,15 +36,13 @@ Declared in the manifest as `kind`: `asset` | `code` | `mixed`.
 ## Signing
 - **Integrity:** `manifest.json` MUST carry a SHA-256 digest of every payload file under `files` (path → digest). A host MUST verify each file against its digest before use.
 - **Authenticity:** `signature.json` is a detached **Ed25519** signature over the canonical bytes of `manifest.json`, plus the signer's public key / key id. Signing the manifest transitively signs the payload through the digests.
-- **Open — trust model.** Who counts as a trusted signer (author self-signed, registry counter-signed, web-of-trust) and how keys are distributed is undecided. Until it is, treat a signature as tamper-evidence, not identity.
+- **Trust model.** A signature alone is *tamper-evidence*, not identity: `verifyAzp` only confirms it is internally consistent. **Identity is an explicit trusted-key set.** A host holds a trust store of Ed25519 public keys; a package is *trusted* when its signer key is directly in the store, or was **counter-signed** by a registry key in the store. A counter-signature (an Ed25519 signature over the author's SPKI public-key bytes, stored in `signature.json` under `countersignature`) lets a host trust one registry instead of every author, and does not disturb the author's manifest signature. Key distribution is out-of-band. *Implemented* in `@azphalt/azp` (`verifyTrust`, `countersign`).
 
-### 0.1 reality: unsigned packages
-In format version `0.1`, **no tooling produces `signature.json`**. Every `.azp` emitted by the SDK, the importers, and the CLI ships without one. Hosts consuming `.azp` files today MUST:
-1. Verify file-level integrity via the SHA-256 digests in `manifest.files` — this is implemented and enforced by `@azphalt/azp`'s `verifyAzp()`.
-2. **Not** treat a package as authenticated. The absence of `signature.json` means the package has integrity but no provenance.
-3. Warn users appropriately when loading unsigned packages (e.g., "This package is not signed. Install only from sources you trust.").
-
-This is intentional. Shipping a signing ceremony before the trust model is decided would bake in assumptions that are expensive to reverse. The cost is that `0.1` packages have no authenticity guarantee — acceptable for a pre-stable format, unacceptable once a public registry exists.
+### Signing status
+Signing is **implemented**: `@azphalt/azp` produces `signature.json` (`signAzp` / `generateSigningKey`), `verifyAzp` validates it when present, and `verifyTrust(azp, store)` decides trust. Signing is still **optional** — the SDK, importers, and CLI emit unsigned packages by default. A host consuming `.azp` files MUST:
+1. Verify file-level integrity via the `manifest.files` digests (enforced by `verifyAzp()`), and reject any failure.
+2. For a signed package, verify the signature (`verifyAzp` folds this into `ok`), and — where provenance matters — check the signer against a trust store via `verifyTrust`.
+3. Treat an unsigned or untrusted-but-valid package as having integrity but no established provenance, and warn accordingly (e.g., "not from a trusted signer; install only from sources you trust").
 
 ## Versioning
 - `azphalt` (format version) gates compatibility. The package's own `version` is semver.
