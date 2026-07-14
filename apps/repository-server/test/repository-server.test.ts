@@ -60,6 +60,16 @@ describe("repository handler — spec/repository-api.md", () => {
     expect(JSON.parse(res.body as string)).toEqual(INDEX);
   });
 
+  it("advertises supportedTypes + profiles in the discovery index when set (#27 item 5)", async () => {
+    const registry = new Registry();
+    const index = { name: "Video Repo", version: "0.1", supportedTypes: ["audio", "lut", "transition"], profiles: ["video-audio"] };
+    const handle = createRepositoryHandler({ registry, index });
+    const res = await handle({ method: "GET", path: "/.well-known/azphalt-repository.json", query: new URLSearchParams(), headers: {} });
+    const body = JSON.parse(res.body as string);
+    expect(body.supportedTypes).toEqual(["audio", "lut", "transition"]);
+    expect(body.profiles).toEqual(["video-audio"]);
+  });
+
   it("lists packages with the correct free/paid status", async () => {
     const { handle, mk } = await handlerFixture();
     const res = await handle(mk("/packages"));

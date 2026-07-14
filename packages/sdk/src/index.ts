@@ -645,6 +645,19 @@ export interface RepositoryIndex {
    * `spec/repository-api.md` § Trust bootstrap.
    */
   signingKeys?: RegistrySigningKey[];
+  /**
+   * The `assets[].type`s this repository serves (a subset of the SDK `AssetType` union). Advertised
+   * so a host can tell up front whether the catalog carries anything it can consume — the discovery
+   * analog of the `GET /packages?types=` filter. Absent = unspecified (the host must query to learn).
+   * See `spec/repository-api.md` § Supported types and profiles.
+   */
+  supportedTypes?: AssetType[];
+  /**
+   * The conformance **host profiles** this repository's catalog targets (e.g. `["image"]`,
+   * `["video-audio"]`) — the same vocabulary a host declares via `@azphalt/conformance`. A host reads
+   * it to check the registry is worth talking to before browsing (`#27` item 5 / item 7).
+   */
+  profiles?: string[];
 }
 
 /**
