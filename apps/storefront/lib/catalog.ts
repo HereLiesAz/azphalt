@@ -463,9 +463,10 @@ function previewMime(path: string): string {
 export async function getPreviewImage(id: string): Promise<{ bytes: Uint8Array; contentType: string } | null> {
   await getCatalog();
   const latest = await registry.latest(id);
-  const image = latest?.manifest.preview?.image;
+  if (!latest) return null;
+  const image = latest.manifest.preview?.image;
   if (!image || /^https?:/i.test(image)) return null;
-  const azpBytes = await store.getBytes(id, latest!.version);
+  const azpBytes = await store.getBytes(id, latest.version);
   if (!azpBytes) return null;
   const { payload } = readAzp(azpBytes);
   const bytes = payload[image];

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getCatalog, getPreviewImage } from "../lib/catalog";
-import { formatHandoffIO, formatRating, kindLabel, safeHttpUrl } from "../lib/format";
+import { formatHandoffIO, formatRating, kindLabel, previewSrc, safeHttpUrl } from "../lib/format";
 
 describe("format helpers", () => {
   it("labels every package kind, companion apps included", () => {
@@ -30,6 +30,15 @@ describe("format helpers", () => {
     expect(safeHttpUrl("data:text/html,<script>")).toBeUndefined();
     expect(safeHttpUrl("/relative")).toBeUndefined();
     expect(safeHttpUrl(undefined)).toBeUndefined();
+  });
+
+  it("routes previews: in-package via proxy, external via a validated direct URL", () => {
+    expect(previewSrc("com.x", "preview/card.svg")).toBe("/api/preview/com.x");
+    expect(previewSrc("com.x", "https://cdn.example.com/a.png")).toBe("https://cdn.example.com/a.png");
+    // A javascript: value is never treated as an external URL — it falls to the same-origin proxy,
+    // which serves nothing for that bogus manifest path (404). The raw string never reaches an <img src>.
+    expect(previewSrc("com.x", "javascript:alert(1)")).toBe("/api/preview/com.x");
+    expect(previewSrc("com.x", undefined)).toBeUndefined();
   });
 
   it("formats a rating as stars + count, or null when untracked", () => {

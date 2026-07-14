@@ -51,6 +51,17 @@ export function safeHttpUrl(url?: string): string | undefined {
   }
 }
 
+/**
+ * The `<img>` src for a package's preview. An external `https:` image is rendered **directly** (after
+ * `safeHttpUrl` validation — a `javascript:` value yields `undefined`, no image); an in-package image is
+ * served through the `/api/preview/[id]` proxy. `undefined` when there's no preview.
+ */
+export function previewSrc(id: string, image?: string): string | undefined {
+  if (!image) return undefined;
+  if (/^https?:/i.test(image)) return safeHttpUrl(image);
+  return `/api/preview/${encodeURIComponent(id)}`;
+}
+
 /** Human label for a package `kind`. */
 export function kindLabel(kind: string): string {
   if (kind === "code") return "Code extension";

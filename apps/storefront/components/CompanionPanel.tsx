@@ -15,7 +15,7 @@ function platformLabel(p: string): string {
 
 /** One handoff row: the function's name/action, its input → output, transports, and any version floor. */
 function HandoffRow({ handoff }: { handoff: Handoff }) {
-  const platforms = Object.keys(handoff.transport).map(platformLabel);
+  const platforms = Object.keys(handoff.transport ?? {}).map(platformLabel);
   const floor = handoff.minAppVersion;
   return (
     <li className="handoff">
@@ -49,7 +49,7 @@ function HandoffRow({ handoff }: { handoff: Handoff }) {
 }
 
 export function CompanionPanel({ app }: { app: AppManifest }) {
-  const { android, pwa } = app.platforms;
+  const { android, pwa } = app.platforms ?? {};
   return (
     <div className="panel companion">
       <h3>Companion app</h3>
@@ -102,7 +102,7 @@ export function CompanionPanel({ app }: { app: AppManifest }) {
 
       <h4 className="companion-subhead">Handoffs</h4>
       <ul className="handoffs">
-        {app.handoffs.map((h) => (
+        {(app.handoffs ?? []).map((h) => (
           <HandoffRow key={h.id} handoff={h} />
         ))}
       </ul>

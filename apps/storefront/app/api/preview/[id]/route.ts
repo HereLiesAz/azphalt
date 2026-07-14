@@ -16,8 +16,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const preview = await getPreviewImage(id);
   if (!preview) return NextResponse.json({ error: "no preview" }, { status: 404 });
 
-  const body = preview.bytes.slice().buffer;
-  return new NextResponse(body, {
+  // Hand back a standalone ArrayBuffer. (A bare Uint8Array is a valid BodyInit at runtime, but TS's
+  // generic `Uint8Array<ArrayBufferLike>` doesn't satisfy the DOM `BodyInit` type; the copy is trivial
+  // for a small preview image.)
+  return new NextResponse(preview.bytes.slice().buffer, {
     status: 200,
     headers: {
       "content-type": preview.contentType,

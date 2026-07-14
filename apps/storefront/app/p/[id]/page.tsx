@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { getCatalog } from "../../../lib/catalog";
 import { BuyButton } from "../../../components/BuyButton";
 import { CompanionPanel } from "../../../components/CompanionPanel";
-import { formatCount, formatDate, formatMoney, formatRating, kindLabel } from "../../../lib/format";
+import { formatCount, formatDate, formatMoney, formatRating, kindLabel, previewSrc } from "../../../lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -85,10 +85,10 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
 
       {summary.description ? <p className="lede" style={{ marginTop: 16 }}>{summary.description}</p> : null}
 
-      {summary.preview?.image ? (
+      {previewSrc(summary.id, summary.preview?.image) ? (
         <div className="detail-preview">
-          {/* eslint-disable-next-line @next/next/no-img-element -- served by /api/preview, arbitrary MIME */}
-          <img src={`/api/preview/${encodeURIComponent(summary.id)}`} alt={`${summary.name} preview`} />
+          {/* eslint-disable-next-line @next/next/no-img-element -- in-package proxy or validated external URL */}
+          <img src={previewSrc(summary.id, summary.preview?.image)} alt={`${summary.name} preview`} />
         </div>
       ) : null}
 
