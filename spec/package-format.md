@@ -99,6 +99,7 @@ Signing is **implemented**: `@azphalt/azp` produces `signature.json` (`signAzp` 
 1. Verify file-level integrity via the `manifest.files` digests (enforced by `verifyAzp()`), and reject any failure.
 2. For a signed package, verify the signature (`verifyAzp` folds this into `ok`), and — where provenance matters — check the signer against a trust store via `verifyTrust`.
 3. Treat an unsigned or untrusted-but-valid package as having integrity but no established provenance, and warn accordingly (e.g., "not from a trusted signer; install only from sources you trust").
+4. For any **remote asset** — an `assets[]` entry (or `files[]` member) delivered by `remoteUrl` rather than bundled — verify the downloaded bytes against its `checksum` (`sha256-<hex>`) **before use, and reject on mismatch**. These bytes aren't in the `files` map, so `verifyAzp` can't cover them; the check happens lazily at fetch time (see extension-manifest.md § assets). The signed manifest makes the `checksum` value itself trustworthy.
 
 ## Versioning
 - `azphalt` (format version) gates compatibility. The package's own `version` is semver.

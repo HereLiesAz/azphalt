@@ -21,7 +21,8 @@ export default defineConfig({
             { text: 'Manifest Schema', link: '/specs/extension-manifest' },
             { text: 'Package Format', link: '/specs/package-format' },
             { text: 'UI Schema', link: '/specs/ui-schema' },
-            { text: 'Repository API', link: '/specs/repository-api' }
+            { text: 'Repository API', link: '/specs/repository-api' },
+            { text: 'Companion Apps (RFC)', link: '/specs/companion-app' }
           ]
         }
       ],
