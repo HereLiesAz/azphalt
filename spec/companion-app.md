@@ -209,8 +209,11 @@ A host ignores an `action` it doesn't place, or files it under a generic "Open i
 - **PWA `postMessage` handshake** — nonce issuance, `event.origin` binding, transferable lifetime, and
   the popup-blocked fallback (a service-worker/Cache-Storage handoff on the host's own origin). Android
   is settled; the web `postMessage` dance is the one genuinely under-specified surface.
-- **Conformance** — a `companion` host-conformance profile (drive a fixture handoff, assert the host
-  shows consent, sends only declared input, and validates the return) — analogous to the code / asset /
-  video-audio profiles in `@azphalt/conformance`.
+- **Conformance** — *resolved.* `@azphalt/conformance` ships a `companion` host-conformance profile,
+  `runCompanionConformance(host)`: it drives a fixture handoff and asserts the host verifies the header,
+  refuses a non-`kind:"app"` package (runs no code), surfaces the handoff on a supported platform, shows
+  consent, sends only the declared input, and validates the return against `output` — analogous to the
+  code / asset / video-audio profiles. A conforming host declares a `"companion"` profile for registry
+  matching.
 - **Versioning** — pinning a minimum companion *app* version per handoff (the app updates out-of-band
   from the `.azp` header).
