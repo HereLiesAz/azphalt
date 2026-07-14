@@ -35,16 +35,67 @@ function azp(id: string, extra: Partial<Omit<Manifest, "files" | "id">> = {}): U
   return writeAzp({ manifest, payload: { "assets/x.cube": lut }, license: LICENSE }).azp;
 }
 
+/** The host id the sample companion is scoped to — a paint host browsing its own store. */
+const HOST_APP = "com.hereliesaz.graffitixr";
+
+/**
+ * A `kind:"app"` **companion** package (`companion-app.md`) — a header (no /code, no /assets) that lets
+ * a host launch an external Android app / PWA over a handoff. App-scoped to {@link HOST_APP}, so it
+ * surfaces only when the browse request's `app` matches. Demonstrates companion discovery end-to-end.
+ */
+function companionAzp(): Uint8Array {
+  const manifest: Omit<Manifest, "files"> = {
+    azphalt: "0.1",
+    id: "com.demo.companion",
+    name: "AR Stencil Capture",
+    version: "1.0.0",
+    description: "Capture a wall stencil in AR and hand it back",
+    author: "Acme AR",
+    kind: "app",
+    license: "MIT",
+    compat: ">=0.1",
+    targetApps: [HOST_APP],
+    app: {
+      platforms: {
+        android: {
+          packageId: "com.acme.arstencil",
+          minSdk: 29,
+          install: "https://play.google.com/store/apps/details?id=com.acme.arstencil",
+        },
+        pwa: {
+          manifestUrl: "https://arstencil.acme.com/manifest.webmanifest",
+          startUrl: "https://arstencil.acme.com/",
+          shareTargetUrl: "https://arstencil.acme.com/handoff",
+        },
+      },
+      handoffs: [
+        {
+          id: "capture-stencil",
+          action: "capture",
+          name: "Capture AR Stencil",
+          input: { assets: ["image"], params: { wallWidthMm: "number?" } },
+          output: { assets: ["vector", "image"], params: { scaleMm: "number?" } },
+          transport: {
+            android: { intentAction: "com.acme.arstencil.CAPTURE", resultMimeTypes: ["image/svg+xml", "image/png"] },
+            pwa: { shareTargetUrl: "https://arstencil.acme.com/handoff/capture", return: { kind: "postMessage" } },
+          },
+        },
+      ],
+    },
+  };
+  return writeAzp({ manifest, payload: {}, license: LICENSE }).azp;
+}
+
 const INDEX: RepositoryIndex = {
   name: "Sample azphalt Repository",
   version: "0.1",
   description: "Reference sample responses for a host's registry client.",
   supportedTypes: ["lut", "audio", "transition"],
-  profiles: ["image", "video-audio"],
+  profiles: ["image", "video-audio", "companion"],
   signingKeys: [{ publicKey: "MCowBQYDK2VwAyEA…", keyId: "reg-2026", label: "Sample Repository" }],
 };
 
-/** A deterministic seeded repo: a free grade + a consigned (paid) pack with a demo license. */
+/** A deterministic seeded repo: a free grade, a consigned (paid) pack, and an app-scoped companion. */
 async function seed() {
   const store = new InMemoryStore();
   const registry = new Registry(store);
@@ -52,6 +103,7 @@ async function seed() {
   await registry.publish(azp("com.demo.free", { name: "Free Grade", description: "an open-lane LUT", author: "Az" }));
   await registry.publish(azp("com.demo.free", { name: "Free Grade", version: "1.1.0", author: "Az" }));
   await registry.publish(azp("com.demo.paid", { name: "Cinematic Pack", description: "premium grades", author: "SFX Studio" }));
+  await registry.publish(companionAzp());
   await marketplace.listForSale("com.demo.paid", "seller_1", { amountCents: 900, currency: "USD" });
   const authorizer = new InMemoryAuthorizer().registerToken("known-but-unlicensed");
   return { registry, marketplace, authorizer };
@@ -88,7 +140,11 @@ async function buildFixtures(): Promise<Record<string, unknown>> {
   const entries = await Promise.all([
     capture("well-known", mk("/.well-known/azphalt-repository.json")),
     capture("packages", mk("/packages")),
+    // Companion discovery: a paint host browsing its own store (`?app=`) sees the app-scoped companion.
+    capture("packages-app-scoped", mk(`/packages?app=${HOST_APP}`)),
     capture("package-detail", mk("/packages/com.demo.free")),
+    // A `kind:"app"` detail — the full manifest with the `app` block (platforms + handoffs).
+    capture("package-detail-companion", mk("/packages/com.demo.companion")),
     capture("revocations", mk("/revocations")),
     capture("updates", mk("/updates", { method: "POST", body: JSON.stringify([{ id: "com.demo.free", version: "1.0.0" }, { id: "com.demo.paid", version: "1.0.0" }]) })),
     capture("download-401-unauthenticated", mk(dl)),
@@ -120,7 +176,17 @@ describe("Repository API — canonical sample responses (#43)", () => {
     const f = await buildFixtures();
     const wk = f["well-known"] as { body: RepositoryIndex };
     expect(wk.body.supportedTypes).toContain("lut");
+    expect(wk.body.profiles).toContain("companion");
     expect((f["package-detail"] as { body: { latest: string } }).body.latest).toBe("1.1.0");
+    // Companion discovery: app-scoped browse surfaces the kind:"app" companion to its target host.
+    const scoped = (f["packages-app-scoped"] as { body: { packages: Array<{ id: string; kind: string; targetApps?: string[] }> } }).body;
+    const companion = scoped.packages.find((p) => p.id === "com.demo.companion");
+    expect(companion?.kind).toBe("app");
+    expect(companion?.targetApps).toContain("com.hereliesaz.graffitixr");
+    // The companion's detail carries the full app manifest (platforms + handoffs).
+    const detail = (f["package-detail-companion"] as { body: { manifest: { kind: string; app: { handoffs: Array<{ action: string }> } } } }).body;
+    expect(detail.manifest.kind).toBe("app");
+    expect(detail.manifest.app.handoffs[0].action).toBe("capture");
     expect((f["updates"] as { body: { updates: unknown[] } }).body.updates).toEqual([{ id: "com.demo.free", latest: "1.1.0" }]);
     expect((f["download-401-unauthenticated"] as { status: number; body: { error: { code: string } } }).status).toBe(401);
     expect((f["download-402-unlicensed"] as { body: { error: { code: string } } }).body.error.code).toBe("payment_required");

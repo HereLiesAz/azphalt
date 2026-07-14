@@ -481,7 +481,12 @@ export interface AndroidPlatform {
   packageId: string;
   /** Minimum Android SDK level the app needs. */
   minSdk?: number;
-  /** Install/store URL a host deep-links to when the app isn't present. */
+  /**
+   * Store URL a host deep-links to when the app isn't installed — typically the Google Play listing
+   * (`https://play.google.com/store/apps/details?id=<packageId>`, or a `market://` deep link). A
+   * companion app MUST be linkable and installable from a store; the host opens this to install before
+   * launching the handoff (spec/companion-app.md § Transports — Android).
+   */
   install?: string;
 }
 
@@ -914,6 +919,13 @@ export interface PackageSummary {
   name: string;
   author?: string;
   version: string;
+  /**
+   * The package {@link Kind}. Lets a host tell an `asset` / `code` / `app` package apart directly from
+   * the browse list — e.g. to surface only `kind:"app"` **companions** when filtering an app-scoped
+   * catalog to the `companion` profile — without a per-package detail round-trip. See
+   * `spec/repository-api.md` § App scoping and `companion-app.md`.
+   */
+  kind?: Kind;
   types: string[];
   priceStatus?: "free" | "paid";
   /**

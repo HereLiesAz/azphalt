@@ -1,6 +1,6 @@
 {
   "method": "GET",
-  "path": "/packages",
+  "path": "/packages?app=com.hereliesaz.graffitixr",
   "status": 200,
   "body": {
     "packages": [

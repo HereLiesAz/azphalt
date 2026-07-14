@@ -31,7 +31,7 @@ Provides global metadata about the repository, its supported API versions, and i
 
 **Supported types and profiles.** Two optional fields let a host decide whether a repository is worth talking to **before** it browses:
 - `supportedTypes` — the `assets[].type`s this repository serves (a subset of the SDK `AssetType` union). The discovery-time analog of the `GET /packages?types=` filter: a paint host seeing only `["audio","transition"]` knows there's nothing for it here.
-- `profiles` — the conformance **host profiles** the catalog targets (the same vocabulary a host declares via `@azphalt/conformance` — e.g. `"image"`, `"video-audio"`). A host reads it to confirm the registry's packages match a profile it implements (azphalt #27 items 5 & 7 — the registry side of package↔host compatibility).
+- `profiles` — the conformance **host profiles** the catalog targets (the same vocabulary a host declares via `@azphalt/conformance` — the blessed set is `"image"`, `"video-audio"`, and `"companion"`). A host reads it to confirm the registry's packages match a profile it implements (azphalt #27 items 5 & 7 — the registry side of package↔host compatibility). A registry that carries `kind:"app"` **companion** packages (`companion-app.md`) advertises `"companion"` so only a host that implements the handoff runtime browses for them; companions are almost always **app-scoped** (below), so a host also passes its own `app` id.
 
 Both are advisory hints; absent means "unspecified — query to learn". They never replace verifying an individual `.azp` before use.
 
@@ -62,6 +62,7 @@ Queries the repository for available packages. Host applications should use quer
       "author": "SFX Studio",
       "version": "1.2.0",
       "latest": "1.2.0",
+      "kind": "asset",
       "types": ["audio"],
       "priceStatus": "paid",
       "targetApps": [],
@@ -82,7 +83,9 @@ Queries the repository for available packages. Host applications should use quer
 
 The ranking/preview fields (`downloads`, `rating`, `ratingCount`, `updatedAt`, `byteSize`, `mediaDomains`, `preview`) let a gallery **rank, sort, and preview without downloading or executing** a package. `rating`/`ratingCount` are present only when the repository tracks ratings; everything else is always computed. A repository MAY omit any optional field it does not track.
 
-**App scoping.** A package MAY declare `targetApps` in its manifest (a list of reverse-DNS host-app ids). A package with an empty/absent `targetApps` is **global** — visible to every app. A package with a non-empty `targetApps` is **app-scoped** — a repository MUST show it in browse/search **only** when the request's `app` matches one of its `targetApps`. When `app` is omitted, no scoping filter is applied (every package is returned). This lets a host app publish store entries meant only for its own users while the same registry serves other apps. Scoping is a **discovery** filter, not access control: a caller that already knows a package's `id` MAY still fetch its details and bytes.
+**Kind.** Each summary carries `kind` (`"asset"` · `"code"` · `"mixed"` · `"app"`), so a host tells package classes apart straight from the browse list. A companion host filtering an app-scoped catalog (below) to the `companion` profile keeps the `kind:"app"` entries — no per-package detail round-trip to learn a package is a **companion** (`companion-app.md`). The `app` block (platforms + handoffs) itself is not in the summary; a host reads it from the package's detail (`GET /packages/{id}` → `manifest.app`) before offering a handoff.
+
+**App scoping.** A package MAY declare `targetApps` in its manifest (a list of reverse-DNS host-app ids). A package with an empty/absent `targetApps` is **global** — visible to every app. A package with a non-empty `targetApps` is **app-scoped** — a repository MUST show it in browse/search **only** when the request's `app` matches one of its `targetApps`. When `app` is omitted, no scoping filter is applied (every package is returned). This lets a host app publish store entries meant only for its own users while the same registry serves other apps. Scoping is a **discovery** filter, not access control: a caller that already knows a package's `id` MAY still fetch its details and bytes. Companion (`kind:"app"`) packages are almost always app-scoped — a `capture-stencil` companion belongs to its host's store, not everyone's.
 
 **Media domains.** Each summary carries `mediaDomains`, a coarse set drawn from `image` / `video` / `audio` / `3d` / `model` / `font`, derived from the package's asset types **and** capabilities: raster capabilities (`canvas`/`layers`/`bitmap`/`selection`/`color`) imply `image`; `time` and a `transitions` contribution imply `video`; `audio` implies `audio`; asset types map per their nature (a LUT and a shader span `image` **and** `video`, a mesh is `3d`, an `onnx` model is `model`, and so on). The `mediaDomains` query keeps a package when its domains **intersect** the host's — a video/audio host (`mediaDomains=video,audio`) keeps a LUT (`image,video`) and audio SFX but drops a paint-only brush (`image`). This is a discovery filter, letting a host avoid surfacing extensions it structurally cannot run.
 
