@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "path": "/updates",
+  "status": 200,
+  "body": {
+    "updates": [
+      {
+        "id": "com.demo.free",
+        "latest": "1.1.0"
+      }
+    ]
+  }
+}
