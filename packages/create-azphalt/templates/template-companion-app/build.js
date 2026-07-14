@@ -15,6 +15,7 @@ const payload = {};
 // Optional: a still / clip for the marketplace store card, referenced from manifest.preview.
 if (fs.existsSync("preview")) {
   for (const name of fs.readdirSync("preview")) {
+    if (name.startsWith(".")) continue; // skip .DS_Store, .gitkeep, etc.
     const rel = `preview/${name}`;
     if (fs.statSync(rel).isFile()) payload[rel] = fs.readFileSync(rel);
   }
@@ -25,6 +26,8 @@ const license = fs.existsSync("LICENSE")
   : manifest.license || "All Rights Reserved";
 
 const { azp } = writeAzp({ manifest, payload, license });
-const out = `${manifest.name.replace(/\s+/g, "-").toLowerCase()}-${manifest.version}.azp`;
+// Sanitize the name into a safe, cross-platform filename (no path separators or special chars).
+const safeName = manifest.name.toLowerCase().replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "");
+const out = `${safeName}-${manifest.version}.azp`;
 fs.writeFileSync(out, azp);
 console.log(`Built ${out} (${azp.length} bytes)`);
