@@ -65,27 +65,31 @@ export function createRepositoryServer(opts: RepositoryHandlerOptions): Server {
     }
     const chunks: Buffer[] = [];
     let size = 0;
-    let tooLarge = false;
+    // A single-shot guard: once we've responded (overflow / stream error) or dispatched, ignore every
+    // later event, so we never call res.writeHead/end twice ("headers already sent").
+    let done = false;
+    const failRequest = (status: number, code: string, message: string) => {
+      if (done) return;
+      done = true;
+      res.writeHead(status, JSON_HEADERS);
+      res.end(errorBody(code, message));
+      req.destroy(); // stop the client uploading — don't keep draining an oversize/garbage body (DoS).
+    };
     req.on("data", (chunk: Buffer) => {
+      if (done) return;
       size += chunk.length;
       if (size > MAX_BODY_BYTES) {
-        tooLarge = true;
+        failRequest(413, "bad_request", "request body too large");
         return;
       }
       chunks.push(chunk);
     });
     req.on("end", () => {
-      if (tooLarge) {
-        res.writeHead(413, JSON_HEADERS);
-        res.end(errorBody("bad_request", "request body too large"));
-        return;
-      }
+      if (done) return;
+      done = true;
       repoReq.body = Buffer.concat(chunks).toString("utf8");
       void run();
     });
-    req.on("error", () => {
-      res.writeHead(400, JSON_HEADERS);
-      res.end(errorBody("bad_request", "error reading request body"));
-    });
+    req.on("error", () => failRequest(400, "bad_request", "error reading request body"));
   });
 }

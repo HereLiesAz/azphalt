@@ -213,12 +213,15 @@ export class Registry {
    * Unknown ids (and ids already current or ahead) are simply omitted.
    */
   async updates(installed: Array<{ id: string; version: string }>): Promise<Array<{ id: string; latest: string }>> {
-    const out: Array<{ id: string; latest: string }> = [];
-    for (const { id, version } of installed) {
-      const newest = await this.latest(id);
-      if (newest && compareSemver(newest.version, version) > 0) out.push({ id, latest: newest.version });
-    }
-    return out;
+    // Resolve every package's latest in parallel — a DB-backed store makes each `latest` a round-trip,
+    // so a sequential loop would be O(n) latency for a large library. Order is preserved.
+    const resolved = await Promise.all(
+      installed.map(async ({ id, version }) => {
+        const newest = await this.latest(id);
+        return newest && compareSemver(newest.version, version) > 0 ? { id, latest: newest.version } : null;
+      }),
+    );
+    return resolved.filter((x): x is { id: string; latest: string } => x !== null);
   }
 
   /** The full package (summary + newest-first versions), or `undefined`. */
