@@ -30,3 +30,28 @@ Your host implements the `Host` interface from `@azphalt/sdk` — `canvas`, `lay
 - [ ] Reports its host API version so `compat` can gate.
 
 Meet these and any conforming `.azp` runs in your app. That is the whole promise.
+
+## Temporal hosts (video / audio)
+
+A **video / audio** host — like [Guillotine](https://github.com/HereLiesAz/Guillotine) — is *temporal*: on top of the base host contract above, it grants the `time` and `audio` capabilities and dispatches the `transitions` contribution kind (two input frames `from`/`to` blended over a `progress` 0→1). Beyond the checklist, such a host also:
+
+- honors the **audio-buffer ABI** — 32-bit float, interleaved by channel (`samples[f * channels + c]`, so `samples.length === frames * channels`); see `spec/capability-model.md` § Audio-buffer ABI;
+- dispatches **transitions** via the two-input A/B/`progress` contract; see `spec/capability-model.md` § Transition ABI;
+- gates `audio` (which writes) like any capability — ungranted, `ctx.audio` is absent, not a stub.
+
+Certify a temporal host with **`runVideoAudioConformance(host)`** from `@azphalt/conformance` — the temporal sibling of `runConformance`. It returns a pass/fail report that also carries the host's declared **profile(s)** (`image` or `video-audio`), so a registry can mark package↔host compatibility instead of leaving it to trial-and-error:
+
+~~~ts
+import { runVideoAudioConformance } from "@azphalt/conformance";
+import { runFilter, runTransition } from "@azphalt/runtime-wasm";
+
+const report = await runVideoAudioConformance({
+  runFilter,
+  runTransition,
+  apiVersion: "0.1",
+  profiles: ["video-audio"],
+  supports: { capabilities: ["time", "audio"], contributionKinds: ["filters", "transitions"] },
+});
+report.ok;       // true ⇒ conforming temporal host
+report.profiles; // ["video-audio"]
+~~~
