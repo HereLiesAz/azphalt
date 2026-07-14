@@ -39,7 +39,9 @@ The SDK `AssetType` union (`packages/sdk/src/index.ts`) is the single source of 
 Each entry also requires a `path` (relative path into `/assets` inside the `.azp` archive) OR a `remoteUrl` (see below).
 
 **Remote Assets (The VSCode Header Pattern):**
-For extremely large files like AI models (e.g. multi-gigabyte `.task` files), bundling the file inside the `.azp` archive is hostile to mobile environments. If an asset is too large to bundle, set `path` to an **empty string** (`"path": ""`) — the key stays present, since it is required — and provide a `remoteUrl` and `checksum` (SHA-256) instead. A host treats an empty `path` as "not bundled" and fetches from `remoteUrl`. The `.azp` acts as a lightweight header, and host applications are responsible for using their own resumable background download managers to fetch the file to local storage. You should also provide a `byteSize` to help hosts allocate space.
+For extremely large files like AI models (e.g. multi-gigabyte `.task` files), bundling the file inside the `.azp` archive is hostile to mobile environments. If an asset is too large to bundle, set `path` to an **empty string** (`"path": ""`) — the key stays present, since it is required — and provide a `remoteUrl` and `checksum` instead. A host treats an empty `path` as "not bundled" and fetches from `remoteUrl`. The `.azp` acts as a lightweight header, and host applications are responsible for using their own resumable background download managers to fetch the file to local storage. You should also provide a `byteSize` to help hosts allocate space.
+
+*Integrity (normative).* The `checksum` string is pinned to the **same `sha256-<hex>` lowercase form** as `manifest.files` digests (`package-format.md § Signing`) — not SRI base64 or multihash. Because a remote asset's bytes aren't present at install, it is **not** covered by the `files` map or `verifyAzp`; it is verified **lazily, at fetch time**. A host **MUST** verify a downloaded `remoteUrl` asset against its `checksum` before use and **reject on mismatch** — the remote analog of the `files` digest gate. `byteSize` is advisory (progress / headroom only); `checksum` is authoritative. Since the manifest is signed verbatim, a trusted signature makes `checksum` itself trustworthy.
 
 **Metadata Fields:**
 - `role`: Optional semantic role (e.g., `type: "tflite", role: "depth"`). Crucial for routing generic model graphs to the correct host engine.
@@ -134,6 +136,66 @@ Example — a `tflite` depth model delivered remotely, fully self-describing:
   }
 }
 ~~~
+
+### Multi-file model bundles (`files`)
+Real on-device models are rarely a single file — a sherpa-onnx bundle is `encoder.onnx` + `decoder.onnx` + `joiner.onnx` + `tokens.txt` + config; a Vosk model is a whole tree; an ONNX pipeline ships weights + a separate `labels.txt`. Instead of one `path`/`remoteUrl`, a model asset MAY declare a **`files`** array of member files — the additive multi-part form (the scalar `path`/`remoteUrl` stays valid for single-file assets):
+
+~~~
+{
+  "type": "sherpa-bundle",
+  "role": "speech-to-text",
+  "path": "",
+  "files": [
+    { "name": "encoder.onnx", "remoteUrl": "https://cdn.example.com/enc.onnx", "checksum": "sha256-…", "byteSize": 120000000, "supportsRange": true },
+    { "name": "decoder.onnx", "remoteUrl": "https://cdn.example.com/dec.onnx", "checksum": "sha256-…" },
+    { "name": "tokens.txt",   "path": "assets/tokens.txt" }
+  ]
+}
+~~~
+
+- Each member is **either** bundled (`path` under `/assets`) **or** remote (`remoteUrl`) — mix freely (small config in the `.azp`, big weights remote).
+- Each member carries its own **`checksum`** (`sha256-<hex>`), so a host verifies **per file** and re-fetches only a corrupt one — same integrity gate as a single remote asset (above).
+- `supportsRange: true` tells a host the member's `remoteUrl` honors HTTP `Range`, so its resumable download will work (otherwise a host falls back to a clean restart).
+- A host **materializes all members into one directory** and routes that directory by the asset's `role`. This replaces the ad-hoc "a `sherpa-bundle` is secretly a zip" convention every host would otherwise reinvent (and guard against zip-slip) differently.
+
+### Model requirements (`requirements`)
+A model asset MAY carry an optional **`requirements`** block — the numbers a host needs to decide whether it can run the model **before** downloading `byteSize` bytes (distinct from `io`, which it needs to *run* the model afterward). All fields optional; a host uses what it understands:
+
+~~~
+{
+  "type": "onnx",
+  "role": "subject-segmentation",
+  "requirements": {
+    "runtime": "onnxruntime",   // "onnxruntime" | "tflite" | "litert" | "sherpa-onnx"
+    "formatVersion": ">=17",    // ONNX opset / TFLite schema floor
+    "quantization": "int8",     // "float32" | "float16" | "int8" | "dynamic"
+    "accelerator": "cpu",       // "cpu" (runs anywhere) | "gpu" | "nnapi" | "coreml" | "qnn"
+    "minRamMB": 512
+  }
+}
+~~~
+
+A host uses it two ways: **filter/skip at plan time** (don't offer an install it can't honor) and let the **registry filter** on it, so a device only sees models it can run. Purely for *gating* — it never changes how a model runs.
+
+### Model license (`modelLicense`)
+A model `.azp` almost always bundles **third-party weights** whose license — not the package's SPDX `license` — is what governs the user (many Hugging Face models are CC-BY-NC / gated / RAIL; some Vosk models are research-only). An optional per-asset **`modelLicense`** carries the weights' own terms, which a host **MUST surface before install** and a registry can filter on:
+
+~~~
+{
+  "type": "onnx",
+  "role": "image-labeling",
+  "modelLicense": {
+    "spdx": "CC-BY-NC-4.0",                              // or "LicenseRef-…" for a non-SPDX license
+    "commercialUse": false,                               // machine-checkable summary for filter/badge
+    "attributionRequired": true,
+    "attribution": "MobileNet-V3 © Google, CC-BY-NC-4.0", // the exact credit string a host displays
+    "url": "https://…/LICENSE",
+    "sourceUrl": "https://huggingface.co/…"               // provenance of the weights
+  }
+}
+~~~
+
+This keeps azphalt neutral — it's metadata the host displays and the registry filters (`commercialUse`), never enforcement — but it closes a real trap: silently installing a non-commercial model into a monetizable editing pipeline. It is a **different axis** from a paid model's *entitlement* (repository-api.md § Buy-once entitlements): a model can be free-to-download yet non-commercial to *use*.
 
 ## `contributes`
 What the code adds to the host, each with an `id`:

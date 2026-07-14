@@ -33,6 +33,43 @@ describe("azp", () => {
     expect(verifyAzp(azp).ok).toBe(true);
   });
 
+  it("round-trips model-asset delivery fields (files[], requirements, modelLicense, remote checksum)", () => {
+    const assets = [
+      {
+        type: "sherpa-bundle" as const,
+        role: "speech-to-text",
+        path: "",
+        requirements: { runtime: "sherpa-onnx", formatVersion: ">=17", quantization: "int8", accelerator: "cpu", minRamMB: 512 },
+        modelLicense: {
+          spdx: "CC-BY-NC-4.0",
+          commercialUse: false,
+          attributionRequired: true,
+          attribution: "Model © Vendor, CC-BY-NC-4.0",
+          url: "https://example.com/LICENSE",
+          sourceUrl: "https://huggingface.co/vendor/model",
+        },
+        files: [
+          { name: "encoder.onnx", remoteUrl: "https://cdn.example.com/enc.onnx", checksum: "sha256-aaa", byteSize: 120, supportsRange: true },
+          { name: "tokens.txt", path: "assets/tokens.txt" },
+        ],
+      },
+    ];
+    const { azp } = writeAzp({
+      manifest: { ...base, id: "com.hereliesaz.asr", name: "ASR", assets },
+      payload: { "assets/tokens.txt": new TextEncoder().encode("hello world") },
+      license,
+    });
+
+    const a = readAzp(azp).manifest.assets![0];
+    expect(a.requirements?.accelerator).toBe("cpu");
+    expect(a.modelLicense?.commercialUse).toBe(false);
+    expect(a.modelLicense?.attribution).toContain("CC-BY-NC-4.0");
+    expect(a.files?.[0]).toMatchObject({ name: "encoder.onnx", checksum: "sha256-aaa", supportsRange: true });
+    expect(a.files?.[1].path).toBe("assets/tokens.txt");
+    // The one bundled member is a real payload with a digest; remote members aren't, and that's fine.
+    expect(verifyAzp(azp).ok).toBe(true);
+  });
+
   it("flags a digest mismatch when the payload is tampered", () => {
     const { azp } = writeAzp({
       manifest: { ...base, id: "com.hereliesaz.x" },
