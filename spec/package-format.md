@@ -26,8 +26,53 @@ Declared in the manifest as `kind`: `asset` | `code` | `mixed`.
 - `mixed` — both (e.g. a filter shipping its own LUTs).
 
 ## Assets
-- Assets are normalized, host-neutral data: brush tips and grain as PNG (8-bit gray or RGBA), LUTs as `.cube`, patterns/stamps as PNG, shaders and transitions as GLSL source. Per-asset parameters (and a shader's or transition's declared inputs) live in the manifest, never in a host-proprietary blob.
+- Assets are **normalized, host-neutral data** — never a host-proprietary blob. Per-asset parameters (and a shader's or transition's declared inputs) live in the manifest.
 - Importers MUST emit this normalized form — an imported `.abr` becomes `assets/*.png` plus manifest params, not a repackaged `.abr`.
+
+### Wire formats
+Each asset `type` (defined in `extension-manifest.md § assets`) pins the byte format its `path` (or `remoteUrl`) delivers, so any conforming host consumes identical bytes identically. Where a row lists several formats, a host MUST support the **bold** one (the interoperability floor) and MAY support the others; an importer SHOULD emit the bold one unless an asset requires otherwise.
+
+| `type` | Wire format |
+|---|---|
+| `brush`, `pattern`, `stamp` | **PNG** (8-bit gray or RGBA) |
+| `lut` | **`.cube`** (Adobe Cube LUT) |
+| `shader` | GLSL or ISF **source** (UTF-8 text); `params.format` = `glsl` \| `isf` |
+| `transition` | GLSL **source** (UTF-8 text); `params.format` = `gl-transition` |
+| `image` | **PNG**, JPEG, or WebP |
+| `vector` | **SVG** — the *static* SVG 1.1 / SVG Tiny 1.2 profile (see below) |
+| `font` | **SFNT** (`.otf` / `.ttf`), or WOFF2 |
+| `mesh`, `material` | **glTF 2.0** — `.glb` (binary) or `.gltf` with its referenced resources bundled under `/assets`; a `material` travels as a glTF material |
+| `hdri` | **Radiance `.hdr`**, or OpenEXR `.exr` |
+| `audio` | **WAV / PCM** (the uncompressed floor), or Ogg/Opus, FLAC, MP3 |
+| `video` | **MP4** (H.264 + AAC), or WebM (VP9 + Opus) |
+| `motion` | **JSON** keyframe/animation preset — host-neutral, keys per `extension-manifest.md` `params` conventions |
+| `palette` | **JSON** — see [§ Palette format](#palette-format) |
+| `overlay` | **PNG** (or APNG / animated WebP) |
+| `template` | **JSON** layout referencing bundled `image`/`vector` assets, with fillable slots under `params` |
+| `tflite`, `litert`, `onnx`, `sherpa-bundle` | the model's **native** file(s) (`.tflite` / `.onnx` / …); large or multi-part models use the remote-asset / multi-file patterns in `extension-manifest.md § assets` |
+
+**Static SVG profile (`vector`).** A `vector` asset is a self-contained SVG document: **no** `<script>`, **no** active/interactive elements (`<foreignObject>`, `<iframe>`, `<embed>`, `<object>` — `<foreignObject>` in particular can embed arbitrary HTML/XHTML that slips past a naive `<script>` filter), **no** event-handler attributes (`onload`, `on*`), **no** external or remote references (`<image href="http…">`, external `<use>`, CSS `@import`, web-font URLs) — any raster it embeds MUST be a `data:` URI. A host MUST render it as inert graphics and MUST NOT execute script or fetch anything it references.
+
+**Self-containment (the moat).** No asset's bytes may make a host fetch from the network or read outside the package. The **only** sanctioned remote path is the manifest's explicit `remoteUrl` large-file pattern, which is checksum-gated (`extension-manifest.md § assets`). A host MUST ignore — never fetch — any external reference embedded inside asset bytes.
+
+### Palette format
+A `palette` asset (`type: "palette"`) is a UTF-8 **JSON** file under `/assets`. It is an **ordered** list of named sRGB colors — order is significant (swatch order in a picker). Shape:
+
+~~~json
+{
+  "colors": [
+    { "name": "Signal White", "color": "#F2F2F0" },
+    { "name": "Wildfire Red", "color": "#C41E1E", "brand": "MTN 94", "sku": "RV-3020", "finish": "matte" }
+  ]
+}
+~~~
+
+- `colors` — REQUIRED, an ordered array. Each entry:
+  - `name` — REQUIRED, human-readable swatch name.
+  - `color` — REQUIRED, sRGB as `#RRGGBB` (strictly 7 characters, e.g. `#F2F2F0`; shorthand `#RGB` is **not** permitted; lowercase or uppercase hex; no alpha — a palette entry is an opaque swatch).
+  - `brand`, `sku`, `finish` — OPTIONAL **colorant metadata** mapping the swatch to a physical product (e.g. a spray-paint can). `finish` is an open vocabulary; blessed values: `matte` · `satin` · `gloss` · `metallic` · `fluorescent`. A host ignores keys it doesn't understand.
+
+This lets the ecosystem distribute brand-accurate color sets (Montana, MTN, …) as portable `.azp` packages a host can match against real colorants.
 
 ## Code
 - Entry module(s) declared in the manifest (`entry`, `runtime`). `runtime: js` → an ES module on QuickJS-in-WASM; `runtime: wasm` → a WASM module against the host ABI.
