@@ -8,9 +8,14 @@
 import type { AppManifest, Handoff } from "@azphalt/sdk";
 import { formatHandoffIO, safeHttpUrl } from "../lib/format";
 
+/** Friendly display name for a transport platform key. */
+function platformLabel(p: string): string {
+  return p === "pwa" ? "PWA" : p === "android" ? "Android" : p;
+}
+
 /** One handoff row: the function's name/action, its input → output, transports, and any version floor. */
 function HandoffRow({ handoff }: { handoff: Handoff }) {
-  const platforms = Object.keys(handoff.transport);
+  const platforms = Object.keys(handoff.transport).map(platformLabel);
   const floor = handoff.minAppVersion;
   return (
     <li className="handoff">
@@ -65,7 +70,7 @@ export function CompanionPanel({ app }: { app: AppManifest }) {
               <div className="muted">requires versionCode ≥ {android.minVersionCode}</div>
             ) : null}
             {safeHttpUrl(android.install) ? (
-              <a className="btn primary" href={safeHttpUrl(android.install)} rel="noreferrer noopener">
+              <a className="btn primary" href={safeHttpUrl(android.install)} target="_blank" rel="noreferrer noopener">
                 Get it on Google Play
               </a>
             ) : null}
@@ -81,12 +86,12 @@ export function CompanionPanel({ app }: { app: AppManifest }) {
             {pwa.startUrl ? <div className="id">{pwa.startUrl}</div> : null}
             <div className="companion-links">
               {safeHttpUrl(pwa.startUrl) ? (
-                <a className="btn primary" href={safeHttpUrl(pwa.startUrl)} rel="noreferrer noopener">
+                <a className="btn primary" href={safeHttpUrl(pwa.startUrl)} target="_blank" rel="noreferrer noopener">
                   Open web app
                 </a>
               ) : null}
               {safeHttpUrl(pwa.manifestUrl) ? (
-                <a className="btn" href={safeHttpUrl(pwa.manifestUrl)} rel="noreferrer noopener">
+                <a className="btn" href={safeHttpUrl(pwa.manifestUrl)} target="_blank" rel="noreferrer noopener">
                   Install
                 </a>
               ) : null}

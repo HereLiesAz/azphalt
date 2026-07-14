@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getCatalog } from "../lib/catalog";
+import { getCatalog, getPreviewImage } from "../lib/catalog";
 import { formatHandoffIO, formatRating, kindLabel, safeHttpUrl } from "../lib/format";
 
 describe("format helpers", () => {
@@ -80,5 +80,25 @@ describe("catalog", () => {
     const byRating = await registry.list({ sort: "rating" });
     const rated = byRating.filter((p) => p.ratingCount > 0).map((p) => p.rating ?? 0);
     for (let i = 1; i < rated.length; i++) expect(rated[i - 1]).toBeGreaterThanOrEqual(rated[i]);
+  });
+
+  it("serves the in-package preview image, and nothing for packages without one", async () => {
+    const preview = await getPreviewImage("com.studioaz.cinelut");
+    expect(preview?.contentType).toBe("image/svg+xml");
+    expect(new TextDecoder().decode(preview!.bytes)).toContain("<svg");
+    // A code package with no declared preview → null (route answers 404).
+    expect(await getPreviewImage("com.hereliesaz.halftone")).toBeNull();
+    expect(await getPreviewImage("com.does.not.exist")).toBeNull();
+  });
+
+  it("scopes the per-app catalog: a host sees its own companions plus globals", async () => {
+    const { registry } = await getCatalog();
+    const visible = await registry.list({ app: "com.hereliesaz.graffitixr" });
+    const ids = visible.map((p) => p.id);
+    expect(ids).toContain("com.acme.ar-stencil-capture"); // app-scoped companion
+    expect(ids).toContain("com.foldlab.filmluts"); // a global package, also visible
+    // A different app does NOT see the graffitixr-scoped companion.
+    const other = await registry.list({ app: "com.someone.else" });
+    expect(other.map((p) => p.id)).not.toContain("com.acme.ar-stencil-capture");
   });
 });

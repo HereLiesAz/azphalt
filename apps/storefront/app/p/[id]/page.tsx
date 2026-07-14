@@ -73,12 +73,24 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
       </div>
 
       {summary.targetApps?.length ? (
-        <p className="detail-sub" style={{ marginTop: 8 }}>
-          Available in: {summary.targetApps.map((a) => <span className="chip" key={a}>{a}</span>)}
+        <p className="detail-sub" style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          Available in:{" "}
+          {summary.targetApps.map((a) => (
+            <Link className="chip" key={a} href={`/app/${encodeURIComponent(a)}`}>
+              {a}
+            </Link>
+          ))}
         </p>
       ) : null}
 
       {summary.description ? <p className="lede" style={{ marginTop: 16 }}>{summary.description}</p> : null}
+
+      {summary.preview?.image ? (
+        <div className="detail-preview">
+          {/* eslint-disable-next-line @next/next/no-img-element -- served by /api/preview, arbitrary MIME */}
+          <img src={`/api/preview/${encodeURIComponent(summary.id)}`} alt={`${summary.name} preview`} />
+        </div>
+      ) : null}
 
       <div className="btn-row">
         {/* The .azp itself: an app package is header-only, so downloading it fetches the manifest a

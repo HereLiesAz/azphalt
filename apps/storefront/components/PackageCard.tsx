@@ -20,6 +20,12 @@ export function PackageCard({ pkg, price }: PackageCardProps) {
 
   return (
     <article className="card">
+      {pkg.preview?.image ? (
+        <Link href={`/p/${pkg.id}`} className="card-preview" aria-label={`${pkg.name} preview`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- served by /api/preview, arbitrary MIME */}
+          <img src={`/api/preview/${encodeURIComponent(pkg.id)}`} alt="" loading="lazy" />
+        </Link>
+      ) : null}
       <div className="card-title">
         <Link href={`/p/${pkg.id}`}>{pkg.name}</Link>
         {isApp ? (
