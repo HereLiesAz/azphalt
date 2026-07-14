@@ -318,7 +318,7 @@ function storedZip(entries: Array<[string, Uint8Array]>): Uint8Array {
     const lh = new DataView(new ArrayBuffer(30));
     lh.setUint32(0, 0x04034b50, true); // local file header signature
     lh.setUint16(4, 20, true); // version needed
-    lh.setUint16(10, 0, true); // method = stored
+    lh.setUint16(8, 0, true); // method = stored (offset 8; offsets 10/12 = mod time/date, left 0)
     lh.setUint32(14, crc, true);
     lh.setUint32(18, data.length, true); // compressed size
     lh.setUint32(22, data.length, true); // uncompressed size
