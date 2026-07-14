@@ -319,6 +319,93 @@ export function assetBadPanelAzp(): Uint8Array {
   return buildAssetAzp({ panel: { controls: [{ type: "color", key: "k", label: "L", default: "not-a-hex" }] } });
 }
 
+/* ─────────────── companion-app (kind:"app") fixtures ─────────────── */
+
+interface CompanionBuildOpts {
+  compat?: string;
+}
+
+/**
+ * Build a `kind:"app"` companion package — a header (no `/code`, no `/assets`) declaring how a host
+ * installs and invokes an external Android app or PWA and gets a validated result back
+ * (`spec/companion-app.md`). One `edit` handoff: takes an `image`, returns an `image` + a `width`
+ * param — enough surface for the suite to check least-input and return-validation.
+ */
+function buildCompanionAzp(opts: CompanionBuildOpts = {}): Uint8Array {
+  const manifest: Omit<Manifest, "files"> = {
+    azphalt: "0.1",
+    id: "com.azphalt.conformance.companion",
+    name: "Companion Fixture",
+    version: "1.0.0",
+    kind: "app",
+    license: "MIT",
+    compat: opts.compat ?? ">=0.1",
+    targetApps: ["com.azphalt.host"],
+    app: {
+      platforms: {
+        android: {
+          packageId: "com.azphalt.conformance.companion",
+          minSdk: 29,
+          install: "https://example.com/install",
+        },
+        pwa: {
+          manifestUrl: "https://companion.example.com/manifest.webmanifest",
+          startUrl: "https://companion.example.com/",
+          shareTargetUrl: "https://companion.example.com/handoff",
+        },
+      },
+      handoffs: [
+        {
+          id: "edit",
+          action: "edit-image",
+          name: "Edit in Companion",
+          input: { assets: ["image"] },
+          output: { assets: ["image"], params: { width: "number" } },
+          transport: {
+            android: {
+              intentAction: "com.azphalt.conformance.companion.EDIT",
+              resultMimeTypes: ["image/png"],
+            },
+            pwa: {
+              shareTargetUrl: "https://companion.example.com/handoff/edit",
+              return: { kind: "postMessage" },
+            },
+          },
+        },
+      ],
+    },
+  };
+  return writeAzp({ manifest, payload: {}, license: "MIT License" }).azp;
+}
+
+/**
+ * Flip the first byte of the first ZIP entry's compressed data, corrupting it so the package fails
+ * verification (a CRC/digest mismatch on load). Deterministic given `writeAzp`'s fixed layout: the
+ * first local file header sits at offset 0, and its data starts after the name + extra fields.
+ */
+function corruptFirstEntryData(azp: Uint8Array): Uint8Array {
+  const out = azp.slice();
+  const nameLen = out[26] | (out[27] << 8);
+  const extraLen = out[28] | (out[29] << 8);
+  out[30 + nameLen + extraLen] ^= 0xff;
+  return out;
+}
+
+/** A conforming companion package: android + pwa platforms and one `edit` handoff. A host must accept it. */
+export function companionAzp(): Uint8Array {
+  return buildCompanionAzp();
+}
+
+/** A companion package whose payload bytes are corrupted — a host MUST refuse it (fails verification). */
+export function companionTamperedAzp(): Uint8Array {
+  return corruptFirstEntryData(buildCompanionAzp());
+}
+
+/** A valid companion package whose `compat` no `0.1` host satisfies — must be refused on compat. */
+export function companionIncompatibleAzp(): Uint8Array {
+  return buildCompanionAzp({ compat: ">=99.0" });
+}
+
 /* ─────────────── language-neutral conformance fixtures (issue #32) ───────────────
  *
  * A fixed, versioned set of binary `.azp` fixtures + expected verify/trust outcomes, so a host in

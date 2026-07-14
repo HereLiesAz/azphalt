@@ -5,7 +5,7 @@ PWAs a host launches to perform a function and hand a result back. [`ADOPTION.md
 code host (runs sandboxed extensions); [`ADOPTION_ASSET_HOST.md`](ADOPTION_ASSET_HOST.md) covers an asset
 host (consumes data). This profile is different again: the host runs **none** of the companion's code —
 it hands off to a separate OS-level app and ingests a validated result. The normative contract is in
-[`spec/companion-app.md`](specs/companion-app); this is the implementer's how-to.*
+[`spec/companion-app.md`](specs/companion-app.md); this is the implementer's how-to.*
 
 ## Why this profile exists
 
@@ -69,8 +69,18 @@ the opposite of a sandbox. A `kind: "app"` package doesn't put them *in* the san
       shape — and refuses/ignores anything that doesn't match, before ingesting.
 - [ ] Runs **no** code from the package and never executes a returned asset.
 
-A runnable `companion` profile for `@azphalt/conformance` (drive a fixture handoff and assert these lines)
-is on the roadmap ([azphalt #78](https://github.com/HereLiesAz/azphalt/issues/78)).
+`@azphalt/conformance` certifies these lines for you: `runCompanionConformance(host)` drives a fixture
+handoff against your host and asserts each — it verifies the header, refuses a non-`kind:"app"` package
+(you run no code), surfaces the handoff on a platform you support, shows consent, sends only the declared
+input, and validates the return against `output`. It reports `{ ok, checks }`, and a conforming host
+declares a `"companion"` profile so a registry can match package↔host.
+
+~~~ts
+import { runCompanionConformance } from "@azphalt/conformance";
+
+const report = await runCompanionConformance(myHost);
+report.ok; // true ⇒ conforming
+~~~
 
 Meet these and any conforming `kind: "app"` package plugs a full external tool into your editor — safely,
 uniformly, and with the moat intact.

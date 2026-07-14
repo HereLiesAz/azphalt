@@ -19,9 +19,10 @@ import * as fx from "./fixtures.js";
 /**
  * A declared conformance **profile**. A host advertises which profile(s) it supports so a registry
  * can mark package↔host compatibility instead of leaving it to trial-and-error. Open vocabulary; the
- * blessed core is `image` (paint / asset host) and `video-audio` (temporal host).
+ * blessed core is `image` (paint / asset host), `video-audio` (temporal host), and `companion`
+ * (companion-app host — launches an external Android app or PWA over a handoff).
  */
-export type HostProfile = "image" | "video-audio" | (string & {});
+export type HostProfile = "image" | "video-audio" | "companion" | (string & {});
 
 /** A PCM audio block — 32-bit float in `[-1, 1]`, **interleaved** (`samples[f * channels + c]`). */
 export interface ConformanceAudio {
