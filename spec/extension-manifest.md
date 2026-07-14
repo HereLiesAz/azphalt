@@ -60,14 +60,14 @@ An **optional**, self-describing preprocessing/IO block on a model asset (`onnx`
   - `layout` — `NCHW` | `NHWC` (image tensors).
   - `color` — `RGB` | `BGR` (image tensors).
   - `normalization` — per-channel, as **either** `mean`/`std` (`(x/255 − mean) / std`) **or** `scale`/`bias` (`x·scale + bias`); each is a scalar or a per-channel array.
-  - `audio` — for audio models: `sampleRate` (Hz), `window` and `hop` (samples), `channels` (`mono` | `stereo`).
+  - `audio` — for audio models: `sampleRate` (Hz), `window` and `hop` (samples), `channels` (`mono` | `stereo`, or an explicit channel count).
 - `outputs[]` — per output tensor:
   - `name` — the tensor name.
   - `semantics` — how to read it: `logits` | `boxes` | `scores` | `mask` | `embedding`.
   - `shape`, `dtype` — as above.
   - `decode` — any decode parameters the semantics needs (e.g. a detector's anchors/variances, or `{ "decoded": true }` for already-decoded boxes).
-- `labels` — optional path to a labels file bundled in the package (or a `remoteUrl`).
-- `quantization` — the delivered weights' quantization (`type`, plus optional `scale`/`zeroPoint`), so a host picks a compatible runtime path.
+- `labels` — optional labels: a path to a file bundled in the package (or a `remoteUrl`), or an inline array of label strings.
+- `quantization` — the delivered weights' quantization (`type`, plus optional `scale`/`zeroPoint` as a scalar or per-channel array), so a host picks a compatible runtime path.
 
 Example — a `tflite` depth model delivered remotely, fully self-describing:
 ~~~
