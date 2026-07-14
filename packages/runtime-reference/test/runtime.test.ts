@@ -156,6 +156,15 @@ describe("temporal + audio + transitions", () => {
     expect(world.audio!.channels).toBe(2);
   });
 
+  it("rejects an audio write with non-positive channels (negative channels can't slip past `% channels`)", async () => {
+    const bad = defineFilter((ctx) => {
+      ctx.audio.write({ samples: new Float32Array([0, 0, 0, 0]), sampleRate: 48000, channels: -2 });
+    });
+    const m: Manifest = { ...base, capabilities: ["audio"], contributes: { filters: [{ id: "f", name: "F", entry: "f" }] } };
+    const world = createWorld({ audio: { samples: new Float32Array([1, 1, 1, 1]), sampleRate: 48000, channels: 2 } });
+    await expect(runFilter(m, { f: bad }, world)).rejects.toThrow(/channels/);
+  });
+
   it("dispatches a transition: two input frames blended by progress", async () => {
     const crossfade = defineTransition((ctx) => {
       const a = ctx.from.data, b = ctx.to.data, p = ctx.progress;

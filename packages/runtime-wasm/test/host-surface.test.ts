@@ -454,4 +454,40 @@ describe("runtime-wasm temporal + audio + transitions", () => {
     });
     expect(r.bitmap.data).toEqual([25, 50, 10, 255]);
   });
+
+  it("dispatches a 16-bit `transition`: input frames keep depth (values > 255 survive)", async () => {
+    const mod = `
+      import { defineTransition } from "@azphalt/sdk";
+      export const x = defineTransition((ctx) => {
+        if (ctx.from.depth !== 16 || ctx.to.depth !== 16) throw new Error("expected 16-bit inputs, got " + ctx.from.depth + "/" + ctx.to.depth);
+        const a = ctx.from.data, b = ctx.to.data, p = ctx.progress;
+        const out = ctx.bitmap.alloc(ctx.from.width, ctx.from.height, 16);
+        for (let i = 0; i < out.data.length; i++) out.data[i] = Math.round(a[i] * (1 - p) + b[i] * p);
+        ctx.bitmap.write(ctx.target, out);
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: { transitions: [{ id: "x", name: "X", entry: "x" }] } });
+    const r = await runTransition(azp, {
+      params: {},
+      bitmap: { data: [0, 0, 0, 0], width: 1, height: 1, depth: 16 },
+      from: { data: [0, 0, 0, 65535], width: 1, height: 1, depth: 16 },
+      to: { data: [40000, 20000, 10000, 65535], width: 1, height: 1, depth: 16 },
+      progress: 0.5,
+    });
+    expect(r.bitmap.depth).toBe(16);
+    expect(r.bitmap.data).toEqual([20000, 10000, 5000, 65535]); // > 255 — proves no 8-bit truncation
+  });
+
+  it("rejects an audio write with non-positive channels/sampleRate", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        ctx.audio.write({ samples: new Float32Array([0, 0, 0, 0]), sampleRate: 48000, channels: -2 });
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["audio"], contributes: filterContributes });
+    await expect(
+      runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 }, audio: { samples: [1, 1, 1, 1], sampleRate: 48000, channels: 2 } }),
+    ).rejects.toThrow(/audio/);
+  });
 });

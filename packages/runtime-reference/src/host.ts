@@ -178,7 +178,11 @@ export function createHost(manifest: Manifest, world: World): RuntimeHost {
         return { samples: Float32Array.from(world.audio.samples), sampleRate: world.audio.sampleRate, channels: world.audio.channels };
       },
       write: (buffer: AudioBuffer) => {
-        if (buffer.samples.length % buffer.channels !== 0) throw new Error("audio: samples.length must be a multiple of channels");
+        // A negative `channels` can slip past `% channels === 0` (e.g. `4 % -2 === 0`), so validate
+        // positivity explicitly — no zero/negative geometry, no partial frames.
+        if (buffer.channels <= 0 || buffer.sampleRate <= 0 || buffer.samples.length % buffer.channels !== 0) {
+          throw new Error("audio: channels and sampleRate must be positive and samples.length a multiple of channels");
+        }
         world.audio = { samples: Float32Array.from(buffer.samples), sampleRate: buffer.sampleRate, channels: buffer.channels };
       },
     };

@@ -456,8 +456,11 @@ function installHostFunctions(vm: QuickJSContext, world: World, granted: Set<Cap
       const bytes = readGuestBuffer(vm, bufH); // raw bytes of the guest Float32Array
       const samples = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 2);
       const channels = num(chH);
-      if (channels <= 0 || samples.length % channels !== 0) throw new Error("audio: samples.length must be a positive multiple of channels");
-      world.audio = { samples: Float32Array.from(samples), sampleRate: num(srH), channels };
+      const sampleRate = num(srH);
+      if (channels <= 0 || sampleRate <= 0 || samples.length % channels !== 0) {
+        throw new Error("audio: samples.length must be a positive multiple of channels, and sampleRate must be positive");
+      }
+      world.audio = { samples: Float32Array.from(samples), sampleRate, channels };
       return vm.undefined;
     });
   }
@@ -564,8 +567,10 @@ function ctxBootstrap(targetLayerId: string): string {
       };
     }
     if (typeof __txProgress === 'function') {
-      __ctx.from = { data: new Uint8ClampedArray(__txFromBuf()), width: __txFromW(), height: __txFromH() };
-      __ctx.to = { data: new Uint8ClampedArray(__txToBuf()), width: __txToW(), height: __txToH() };
+      var __fd = __txFromDepth();
+      var __td = __txToDepth();
+      __ctx.from = { data: __fd === 16 ? new Uint16Array(__txFromBuf()) : new Uint8ClampedArray(__txFromBuf()), width: __txFromW(), height: __txFromH(), depth: __fd };
+      __ctx.to = { data: __td === 16 ? new Uint16Array(__txToBuf()) : new Uint8ClampedArray(__txToBuf()), width: __txToW(), height: __txToH(), depth: __td };
       __ctx.progress = __txProgress();
     }
     __ctx.target = { id: ${JSON.stringify(targetLayerId)} };
@@ -655,14 +660,20 @@ async function runContribution(
       if (!tx) throw new AzpError("internal: a transition needs from/to/progress");
       assertShape(tx.from, "transition.from");
       assertShape(tx.to, "transition.to");
-      const fromBytes = new Uint8Array(tx.from.data);
-      const toBytes = new Uint8Array(tx.to.data);
+      // Pack at the frame's own depth — `new Uint8Array(u16)` would truncate 16-bit channels to 8
+      // and halve the buffer. The depth crosses too, so the sandbox reconstructs the right view.
+      const fromDepth: BitDepth = tx.from.depth === 16 ? 16 : 8;
+      const toDepth: BitDepth = tx.to.depth === 16 ? 16 : 8;
+      const fromBytes = packBytes(tx.from.data, fromDepth);
+      const toBytes = packBytes(tx.to.data, toDepth);
       inject(vm, "__txFromBuf", () => vm.newArrayBuffer(fromBytes.buffer));
       inject(vm, "__txFromW", () => vm.newNumber(tx.from.width));
       inject(vm, "__txFromH", () => vm.newNumber(tx.from.height));
+      inject(vm, "__txFromDepth", () => vm.newNumber(fromDepth));
       inject(vm, "__txToBuf", () => vm.newArrayBuffer(toBytes.buffer));
       inject(vm, "__txToW", () => vm.newNumber(tx.to.width));
       inject(vm, "__txToH", () => vm.newNumber(tx.to.height));
+      inject(vm, "__txToDepth", () => vm.newNumber(toDepth));
       inject(vm, "__txProgress", () => vm.newNumber(tx.progress));
     }
     unwrap(vm, vm.evalCode(ctxBootstrap(targetLayerId), "azphalt:ctx"));
@@ -792,10 +803,15 @@ function wasmEnv(internal: World, granted: Set<Capability>, getMem: () => WebAss
     env.audioRead = (outFloatIdx: number, outCapFloats: number) => {
       if (!internal.audio) return 0;
       const n = internal.audio.samples.length;
-      if (n <= outCapFloats) new Float32Array(getMem().buffer).set(internal.audio.samples, outFloatIdx);
+      // Scratch too small: write nothing and signal -1, so the guest never reads samples we didn't copy.
+      if (n > outCapFloats) return -1;
+      new Float32Array(getMem().buffer).set(internal.audio.samples, outFloatIdx);
       return n;
     };
     env.audioWrite = (inFloatIdx: number, frames: number, channels: number, sampleRate: number) => {
+      // Validate geometry: a negative `frames` and negative `channels` would multiply to a positive `n`
+      // and slip past `new Float32Array`, installing an invalid negative channel count.
+      if (frames < 0 || channels <= 0 || sampleRate <= 0) throw new RangeError("audioWrite: invalid audio geometry or sample rate");
       const n = frames * channels;
       const src = new Float32Array(getMem().buffer, inFloatIdx * 4, n);
       internal.audio = { samples: Float32Array.from(src), sampleRate, channels };
