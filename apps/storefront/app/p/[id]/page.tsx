@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { getCatalog } from "../../../lib/catalog";
 import { BuyButton } from "../../../components/BuyButton";
 import { CompanionPanel } from "../../../components/CompanionPanel";
-import { formatCount, formatDate, formatMoney, kindLabel } from "../../../lib/format";
+import { formatCount, formatDate, formatMoney, formatRating, kindLabel } from "../../../lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +101,12 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
               <dd>{summary.license}</dd>
               <dt>Downloads</dt>
               <dd>{formatCount(summary.downloads)}</dd>
+              {formatRating(summary.rating, summary.ratingCount) ? (
+                <>
+                  <dt>Rating</dt>
+                  <dd>{formatRating(summary.rating, summary.ratingCount)}</dd>
+                </>
+              ) : null}
               <dt>First published</dt>
               <dd>{formatDate(summary.publishedAt)}</dd>
               <dt>Last updated</dt>

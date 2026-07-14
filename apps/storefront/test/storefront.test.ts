@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getCatalog } from "../lib/catalog";
-import { formatHandoffIO, kindLabel, safeHttpUrl } from "../lib/format";
+import { formatHandoffIO, formatRating, kindLabel, safeHttpUrl } from "../lib/format";
 
 describe("format helpers", () => {
   it("labels every package kind, companion apps included", () => {
@@ -31,6 +31,13 @@ describe("format helpers", () => {
     expect(safeHttpUrl("/relative")).toBeUndefined();
     expect(safeHttpUrl(undefined)).toBeUndefined();
   });
+
+  it("formats a rating as stars + count, or null when untracked", () => {
+    expect(formatRating(4.666, 88)).toBe("★ 4.7 (88)");
+    expect(formatRating(5, 1)).toBe("★ 5.0 (1)");
+    expect(formatRating(undefined, 0)).toBeNull();
+    expect(formatRating(4.5, 0)).toBeNull();
+  });
 });
 
 describe("catalog", () => {
@@ -54,5 +61,24 @@ describe("catalog", () => {
     const { registry } = await getCatalog();
     expect((await registry.getPackage("com.hereliesaz.halftone"))?.summary.kind).toBe("code");
     expect((await registry.getPackage("com.studioaz.cinelut"))?.summary.kind).toBe("asset");
+  });
+
+  it("seeds ratings so the rating badge and sort have signal", async () => {
+    const { registry } = await getCatalog();
+    const halftone = await registry.getPackage("com.hereliesaz.halftone");
+    expect(halftone?.summary.ratingCount).toBeGreaterThan(0);
+    expect(halftone?.summary.rating).toBeGreaterThan(0);
+  });
+
+  it("supports the browse sort and kind filter used by the search page", async () => {
+    const { registry } = await getCatalog();
+    // Kind filter: only app packages.
+    const apps = await registry.list({ kind: "app" });
+    expect(apps.length).toBeGreaterThan(0);
+    expect(apps.every((p) => p.kind === "app")).toBe(true);
+    // Sort by rating: descending average (unrated last).
+    const byRating = await registry.list({ sort: "rating" });
+    const rated = byRating.filter((p) => p.ratingCount > 0).map((p) => p.rating ?? 0);
+    for (let i = 1; i < rated.length; i++) expect(rated[i - 1]).toBeGreaterThanOrEqual(rated[i]);
   });
 });

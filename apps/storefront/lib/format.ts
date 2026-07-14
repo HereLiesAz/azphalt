@@ -28,6 +28,15 @@ export function formatDate(iso: string): string {
 }
 
 /**
+ * Render a package rating as `★ 4.7 (88)` — the average to one decimal plus the count in parens.
+ * Returns `null` when the repository tracks no rating for the package (so callers can omit it).
+ */
+export function formatRating(rating?: number, count?: number): string | null {
+  if (rating == null || !count) return null;
+  return `★ ${rating.toFixed(1)} (${formatCount(count)})`;
+}
+
+/**
  * Return `url` only when it is a safe `http:`/`https:` link, else `undefined`. Companion install /
  * start / manifest URLs come from an untrusted `.azp` manifest, so guard every one before it reaches
  * an `href` — a `javascript:` (or `data:`) URI there would execute on click.
