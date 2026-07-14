@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique — e.g. `com.hereliesaz.halftone`. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed`. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app`. |
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
@@ -19,6 +19,7 @@
 | `entry`, `runtime` | code/mixed | Code entry module and `js` \| `wasm`. |
 | `capabilities` | code/mixed | Declared capabilities (see capability-model.md). |
 | `contributes` | code/mixed | Extension points the code registers (below). |
+| `app` | app | Companion-app block — how to install/invoke an external Android app or PWA + its handoffs. See § `app` and companion-app.md. |
 | `files` | ✔ | Map of payload path → SHA-256 digest (integrity; see package-format.md). |
 
 ## `compat`
@@ -250,6 +251,14 @@ The least-privilege list the code needs (`canvas`, `layers`, `bitmap`, `selectio
 Two are for **temporal / audio hosts** (video, motion editors), both editor-surface, neither on the never-list:
 - `time` — read-only access to the host's playback clock: `currentMs`, `durationMs`, `fps`, `frameIndex`. Lets a filter or transition animate.
 - `audio` — read and write the current PCM audio block (float32, interleaved; see capability-model.md § Audio-buffer ABI).
+
+## `app`
+For a `kind: "app"` **companion app** (an Android app or PWA a host launches to perform a function and hand a result back), the manifest carries an `app` block instead of `assets`/`entry`/`capabilities`. It is a *header* describing how to install and invoke an external OS-level app — it grants **no** capabilities and ships **no** `/code` sandbox payload:
+
+- `platforms` — how to install/invoke per platform: `android` (`packageId`, `minSdk?`, `install?`) and/or `pwa` (`manifestUrl?`, `startUrl?`, `shareTargetUrl?`). At least one is required.
+- `handoffs[]` — the functions the companion offers, each with an `id`, an `action` (the host hook), a declared `input` / `output` (azphalt **assets** and/or structured **params**), and a per-platform `transport` (Android `Intent` + result, or PWA share-target + `postMessage` return).
+
+The moat holds because azphalt grants the companion nothing — the OS governs its permissions, the host never runs its code and **validates** the returned assets/params before use, and the user consents before each handoff. The full contract (transports, return semantics, security, discovery) is normative in **companion-app.md**.
 
 ## Example
 ~~~

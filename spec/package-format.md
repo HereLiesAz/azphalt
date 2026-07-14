@@ -20,10 +20,11 @@ README.md         optional
 Every package MUST contain `manifest.json` and `LICENSE`. `assets/` and/or `code/` are present per `kind`.
 
 ## Package kind
-Declared in the manifest as `kind`: `asset` | `code` | `mixed`.
+Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app`.
 - `asset` — data only (brushes, LUTs, patterns). No executable code; a host MAY load it with no runtime. This is what importers produce.
 - `code` — one or more extensions on the sandbox (JS on QuickJS-in-WASM, or raw WASM).
 - `mixed` — both (e.g. a filter shipping its own LUTs).
+- `app` — a **companion app** (an Android app or PWA the host launches via a declared handoff). Carries **no** `/code` payload and **no** `capabilities` — just an `app` header (see extension-manifest.md § app and companion-app.md). The tree is `manifest.json` + `LICENSE` (+ optional `preview`).
 
 ## Assets
 - Assets are **normalized, host-neutral data** — never a host-proprietary blob. Per-asset parameters (and a shader's or transition's declared inputs) live in the manifest.

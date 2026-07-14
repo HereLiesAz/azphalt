@@ -98,6 +98,41 @@ describe("azp", () => {
     expect(verifyAzp(azp).ok).toBe(true);
   });
 
+  it("round-trips a kind:\"app\" companion package (no code payload, still verifies)", () => {
+    const app = {
+      platforms: {
+        android: { packageId: "com.acme.arstencil", minSdk: 29, install: "https://play.google.com/store/apps/details?id=com.acme.arstencil" },
+        pwa: { manifestUrl: "https://arstencil.acme.com/manifest.webmanifest", shareTargetUrl: "https://arstencil.acme.com/handoff" },
+      },
+      handoffs: [
+        {
+          id: "capture",
+          action: "capture",
+          name: "Capture AR Stencil",
+          input: { assets: ["image" as const], params: { wallWidthMm: "number?" } },
+          output: { assets: ["vector" as const, "image" as const], params: { scaleMm: "number?" } },
+          transport: {
+            android: { intentAction: "com.acme.arstencil.CAPTURE", resultMimeTypes: ["image/svg+xml", "image/png"] },
+            pwa: { shareTargetUrl: "https://arstencil.acme.com/handoff/capture", return: { kind: "postMessage" as const } },
+          },
+        },
+      ],
+    };
+    const { azp } = writeAzp({
+      manifest: { ...base, id: "com.acme.ar-stencil", name: "AR Stencil", kind: "app", app },
+      payload: {}, // an app package ships no /code and no /assets — just manifest + LICENSE
+      license,
+    });
+
+    const back = readAzp(azp).manifest;
+    expect(back.kind).toBe("app");
+    expect(back.app?.platforms.android?.packageId).toBe("com.acme.arstencil");
+    expect(back.app?.handoffs[0].output?.assets).toContain("vector");
+    expect(back.app?.handoffs[0].transport.pwa?.return?.kind).toBe("postMessage");
+    // An app package (manifest + LICENSE only, no code, no capabilities) verifies fine.
+    expect(verifyAzp(azp).ok).toBe(true);
+  });
+
   it("flags a digest mismatch when the payload is tampered", () => {
     const { azp } = writeAzp({
       manifest: { ...base, id: "com.hereliesaz.x" },
