@@ -13,7 +13,9 @@
     "fixtures": "pnpm --filter \"@azphalt/conformance...\" build && pnpm --filter @azphalt/conformance emit",
     "changeset": "changeset",
     "version": "changeset version && pnpm install --lockfile-only",
-    "release": "pnpm build && pnpm test && changeset publish"
+    "release": "pnpm build && pnpm test && changeset publish",
+    "release:staged": "bash scripts/publish-staged.sh",
+    "release:promote": "bash scripts/promote-latest.sh"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
