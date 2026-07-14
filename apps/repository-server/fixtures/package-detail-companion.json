@@ -1,0 +1,97 @@
+{
+  "method": "GET",
+  "path": "/packages/com.demo.companion",
+  "status": 200,
+  "body": {
+    "id": "com.demo.companion",
+    "name": "AR Stencil Capture",
+    "author": "Acme AR",
+    "description": "Capture a wall stencil in AR and hand it back",
+    "version": "1.0.0",
+    "latest": "1.0.0",
+    "types": [],
+    "targetApps": [
+      "com.hereliesaz.graffitixr"
+    ],
+    "priceStatus": "free",
+    "manifest": {
+      "azphalt": "0.1",
+      "id": "com.demo.companion",
+      "name": "AR Stencil Capture",
+      "version": "1.0.0",
+      "description": "Capture a wall stencil in AR and hand it back",
+      "author": "Acme AR",
+      "kind": "app",
+      "license": "MIT",
+      "compat": ">=0.1",
+      "targetApps": [
+        "com.hereliesaz.graffitixr"
+      ],
+      "app": {
+        "platforms": {
+          "android": {
+            "packageId": "com.acme.arstencil",
+            "minSdk": 29,
+            "install": "https://play.google.com/store/apps/details?id=com.acme.arstencil"
+          },
+          "pwa": {
+            "manifestUrl": "https://arstencil.acme.com/manifest.webmanifest",
+            "startUrl": "https://arstencil.acme.com/",
+            "shareTargetUrl": "https://arstencil.acme.com/handoff"
+          }
+        },
+        "handoffs": [
+          {
+            "id": "capture-stencil",
+            "action": "capture",
+            "name": "Capture AR Stencil",
+            "input": {
+              "assets": [
+                "image"
+              ],
+              "params": {
+                "wallWidthMm": "number?"
+              }
+            },
+            "output": {
+              "assets": [
+                "vector",
+                "image"
+              ],
+              "params": {
+                "scaleMm": "number?"
+              }
+            },
+            "transport": {
+              "android": {
+                "intentAction": "com.acme.arstencil.CAPTURE",
+                "resultMimeTypes": [
+                  "image/svg+xml",
+                  "image/png"
+                ]
+              },
+              "pwa": {
+                "shareTargetUrl": "https://arstencil.acme.com/handoff/capture",
+                "return": {
+                  "kind": "postMessage"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "files": {
+        "LICENSE": "sha256-267f7a2e19dfa9df99af774520985a0e521925293ea5b7e767ab06969d06bf91"
+      }
+    },
+    "versions": [
+      {
+        "version": "1.0.0",
+        "publishedAt": "2026-01-01T00:00:00.000Z",
+        "size": 876,
+        "digest": "sha256-4c39914b938b1c184b6ce2bde2a2ff59f9a4077f68867ffd12e07aa36b31ce9c",
+        "yanked": false
+      }
+    ]
+  }
+}

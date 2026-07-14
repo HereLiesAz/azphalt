@@ -110,6 +110,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     name: s.name,
     author: s.author,
     version: s.version,
+    kind: s.kind,
     types: s.assetTypes,
     priceStatus: await priceStatus(s.id),
     targetApps: s.targetApps,

@@ -13,7 +13,8 @@
     ],
     "profiles": [
       "image",
-      "video-audio"
+      "video-audio",
+      "companion"
     ],
     "signingKeys": [
       {
