@@ -26,7 +26,7 @@ const ASSET_DOMAINS: Record<AssetType, MediaDomain[]> = {
   shader: ["image", "video"], transition: ["video"], mesh: ["3d"], material: ["3d"],
   hdri: ["3d"], motion: ["video"], palette: ["image"], image: ["image"], video: ["video"],
   font: ["font"], audio: ["audio"], vector: ["image"],
-  template: ["video"], overlay: ["image", "video"],
+  template: ["image", "video"], overlay: ["image", "video"],
   tflite: ["model"], litert: ["model"], onnx: ["model"], "sherpa-bundle": ["model"],
 };
 
