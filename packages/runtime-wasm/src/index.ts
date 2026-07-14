@@ -627,8 +627,12 @@ async function runContribution(
 
   // Raw WASM entry: run against the shared-memory ABI instead of QuickJS.
   if (manifest.runtime === "wasm") {
-    if (kind !== "filter") throw new AzpError(`runtime: "wasm" supports filter entries in this runtime (${kind} runs on the js runtime)`);
-    return runWasmFilter(payload[entry], c.entry, world, granted, payload);
+    if (kind === "filter") return runWasmFilter(payload[entry], c.entry, world, granted, payload);
+    if (kind === "transition") {
+      if (!tx) throw new AzpError("internal: a transition needs from/to/progress");
+      return runWasmTransition(payload[entry], c.entry, world, granted, payload, tx);
+    }
+    throw new AzpError(`runtime: "wasm" supports filter and transition entries (${kind} runs on the js runtime)`);
   }
   if (manifest.runtime && manifest.runtime !== "js") {
     throw new AzpError(`unknown runtime '${manifest.runtime}'`);
@@ -879,6 +883,92 @@ async function runWasmFilter(
     throw new AzpError(`wasm: entry threw: ${e instanceof Error ? e.message : String(e)}`);
   }
   target.bytes = new Uint8Array(memory.buffer).slice(ptr, ptr + target.bytes.length);
+  return readback(internal, targetId);
+}
+
+/**
+ * Run a raw `runtime: "wasm"` **transition** against the shared-memory ABI. The module exports
+ * `memory` and the entry `entry(fromPtr, toPtr, outPtr, width, height, stride)`; the host writes the
+ * two input frames into memory at `fromPtr`/`toPtr`, the module composes the blended frame into
+ * `outPtr`, and the host reads it back into the target layer. `progress` (0→1) crosses as the nullary
+ * `env.txProgress()` import (an f64), not a capability. Because the layout is rigid (three fixed
+ * offsets), the two inputs and the target layer MUST share width, height, and depth. `bitmap` is
+ * required.
+ */
+async function runWasmTransition(
+  wasmBytes: Uint8Array,
+  entryName: string,
+  world: SandboxWorld,
+  granted: Set<Capability>,
+  defaultAssets: Record<string, Uint8Array>,
+  tx: TransitionInput,
+): Promise<SandboxResult> {
+  const internal = normalizeWorld(world, defaultAssets);
+  const targetId = world.targetLayerId ?? internal.activeLayerId;
+  const target = internal.layers.find((l) => l.id === targetId) ?? internal.layers[0];
+
+  assertShape(tx.from, "transition.from");
+  assertShape(tx.to, "transition.to");
+  const fromDepth: BitDepth = tx.from.depth === 16 ? 16 : 8;
+  const toDepth: BitDepth = tx.to.depth === 16 ? 16 : 8;
+  if (
+    tx.from.width !== target.width || tx.from.height !== target.height ||
+    tx.to.width !== target.width || tx.to.height !== target.height ||
+    fromDepth !== target.depth || toDepth !== target.depth
+  ) {
+    throw new AzpError("wasm transition: from, to, and the target layer must share width, height, and depth");
+  }
+
+  let mem: WebAssembly.Memory | undefined;
+  const env = wasmEnv(internal, granted, () => {
+    if (!mem) throw new AzpError("wasm: memory accessed before instantiation");
+    return mem;
+  });
+  // `progress` is the transition's only extra input — a nullary import, present for transitions only.
+  env.txProgress = () => tx.progress;
+
+  let instance: WebAssembly.Instance;
+  try {
+    const source = await WebAssembly.instantiate(wasmBytes as BufferSource, { env });
+    instance = source.instance;
+  } catch (e) {
+    throw new AzpError(`wasm: instantiation failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  const memory = instance.exports.memory as WebAssembly.Memory | undefined;
+  mem = memory instanceof WebAssembly.Memory ? memory : undefined;
+  const entry = instance.exports[entryName] as
+    | ((fromPtr: number, toPtr: number, outPtr: number, w: number, h: number, stride: number) => void)
+    | undefined;
+  if (!(memory instanceof WebAssembly.Memory)) throw new AzpError("wasm: module must export a `memory`");
+  if (typeof entry !== "function") throw new AzpError(`wasm: module must export the entry '${entryName}'`);
+  if (!granted.has("bitmap")) throw new AzpError("wasm: the `bitmap` capability is required for a wasm transition");
+
+  const fromBytes = packBytes(tx.from.data, fromDepth);
+  const toBytes = packBytes(tx.to.data, toDepth);
+  const len = fromBytes.length; // == toBytes.length == output length (shared geometry)
+  const stride = target.width * 4 * bytesPerChannel(target.depth);
+  // Three non-overlapping buffers laid end to end: from | to | out.
+  const fromPtr = 0;
+  const toPtr = len;
+  const outPtr = 2 * len;
+  const need = 3 * len;
+  if (memory.buffer.byteLength < need) {
+    try {
+      memory.grow(Math.ceil((need - memory.buffer.byteLength) / 65536));
+    } catch (e) {
+      throw new AzpError(`wasm: failed to grow memory to ${need} bytes: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  try {
+    const u8 = new Uint8Array(memory.buffer);
+    u8.set(fromBytes, fromPtr);
+    u8.set(toBytes, toPtr);
+    entry(fromPtr, toPtr, outPtr, target.width, target.height, stride);
+  } catch (e) {
+    throw new AzpError(`wasm: entry threw: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  target.bytes = new Uint8Array(memory.buffer).slice(outPtr, outPtr + len);
   return readback(internal, targetId);
 }
 

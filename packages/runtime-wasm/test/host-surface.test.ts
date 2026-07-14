@@ -340,10 +340,95 @@ function buildParamsWasm(): Uint8Array {
   return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...imports, ...funcs, ...mem, ...exports, ...code]);
 }
 
+/**
+ * Hand-assemble a raw-wasm **transition** module: exports `memory` + `transition(fromPtr, toPtr,
+ * outPtr, w, h, stride)` which copies the `from` OR `to` frame into `out` depending on the imported
+ * `env.txProgress()` (a nullary f64) — `to` at `progress ≥ 0.5`, else `from`. A progress-picked cut
+ * is trivial to assemble yet exercises the whole ABI: the progress import, both input buffers at
+ * their fixed offsets, and the output buffer.
+ */
+function buildTransitionWasm(): Uint8Array {
+  const uleb = (n: number): number[] => {
+    const out: number[] = [];
+    do { let b = n & 0x7f; n >>>= 7; if (n) b |= 0x80; out.push(b); } while (n);
+    return out;
+  };
+  const section = (id: number, content: number[]): number[] => [id, ...uleb(content.length), ...content];
+  const str = (s: string): number[] => [...uleb(s.length), ...[...s].map((c) => c.charCodeAt(0))];
+
+  // Types: t0 = () -> f64 (txProgress); t1 = (i32×6) -> () (transition).
+  const types = section(1, [0x02, 0x60, 0x00, 0x01, 0x7c, 0x60, 0x06, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x00]);
+  const imports = section(2, [0x01, ...str("env"), ...str("txProgress"), 0x00, 0x00]); // funcidx 0
+  const funcs = section(3, [0x01, 0x01]); // transition uses t1 (funcidx 1)
+  const mem = section(5, [0x01, 0x00, 0x01]); // min 1 page (host grows to fit 3× the frame)
+  const exports = section(7, [0x02, ...str("memory"), 0x02, 0x00, ...str("transition"), 0x00, 0x01]);
+  // Locals (after the 6 params, idx 0..5): 6 = src, 7 = i, 8 = n.
+  const body = [
+    0x20, 0x00, 0x21, 0x06, // src = fromPtr
+    0x10, 0x00, // txProgress()
+    0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xe0, 0x3f, // f64.const 0.5
+    0x66, // f64.ge
+    0x04, 0x40, 0x20, 0x01, 0x21, 0x06, 0x0b, // if (>=0.5) { src = toPtr }
+    0x20, 0x04, 0x20, 0x05, 0x6c, 0x21, 0x08, // n = h * stride
+    0x41, 0x00, 0x21, 0x07, // i = 0
+    0x02, 0x40, 0x03, 0x40, // block { loop {
+    0x20, 0x07, 0x20, 0x08, 0x4f, 0x0d, 0x01, // if i >= n br 1
+    0x20, 0x02, 0x20, 0x07, 0x6a, // addr = outPtr + i
+    0x20, 0x06, 0x20, 0x07, 0x6a, 0x2d, 0x00, 0x00, // val = mem[src + i]
+    0x3a, 0x00, 0x00, // mem[addr] = val
+    0x20, 0x07, 0x41, 0x01, 0x6a, 0x21, 0x07, // i = i + 1
+    0x0c, 0x00, // br 0
+    0x0b, 0x0b, // } }
+    0x0b, // end func
+  ];
+  const funcBody = [0x01, 0x03, 0x7f, ...body]; // 1 group of 3 i32 locals
+  const code = section(10, [0x01, ...uleb(funcBody.length), ...funcBody]);
+  return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...imports, ...funcs, ...mem, ...exports, ...code]);
+}
+
 describe("runtime-wasm raw wasm entry", () => {
   it("assembles a valid wasm module", () => {
     expect(WebAssembly.validate(buildInvertWasm().slice().buffer as ArrayBuffer)).toBe(true);
     expect(WebAssembly.validate(buildParamsWasm().slice().buffer as ArrayBuffer)).toBe(true);
+    expect(WebAssembly.validate(buildTransitionWasm().slice().buffer as ArrayBuffer)).toBe(true);
+  });
+
+  it("runs a runtime:\"wasm\" transition over the shared-memory ABI (from/to frames + txProgress import)", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/transition.wasm",
+      bytesEntry: buildTransitionWasm(),
+      capabilities: ["bitmap"],
+      contributes: { transitions: [{ id: "x", name: "X", entry: "transition" }] },
+    });
+    const from = { data: [10, 20, 30, 255], width: 1, height: 1 };
+    const to = { data: [100, 200, 40, 128], width: 1, height: 1 };
+    const bitmap = { data: [0, 0, 0, 0], width: 1, height: 1 };
+    const late = await runTransition(azp, { params: {}, bitmap, from, to, progress: 0.75 });
+    expect(late.bitmap.data).toEqual([100, 200, 40, 128]); // progress ≥ 0.5 → `to`
+    const early = await runTransition(azp, { params: {}, bitmap, from, to, progress: 0.25 });
+    expect(early.bitmap.data).toEqual([10, 20, 30, 255]); // progress < 0.5 → `from`
+  });
+
+  it("rejects a raw-wasm transition whose from/to/target geometry disagree", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/transition.wasm",
+      bytesEntry: buildTransitionWasm(),
+      capabilities: ["bitmap"],
+      contributes: { transitions: [{ id: "x", name: "X", entry: "transition" }] },
+    });
+    await expect(
+      runTransition(azp, {
+        params: {},
+        bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 },
+        from: { data: [0, 0, 0, 0, 0, 0, 0, 0], width: 2, height: 1 }, // 2×1 vs a 1×1 target
+        to: { data: [0, 0, 0, 0], width: 1, height: 1 },
+        progress: 0.5,
+      }),
+    ).rejects.toThrow(/share width, height, and depth/);
   });
 
   it("bridges params + canvas to a wasm filter via the string-marshaling env ABI", async () => {
