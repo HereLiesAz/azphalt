@@ -1,0 +1,52 @@
+{
+  "method": "GET",
+  "path": "/packages",
+  "status": 200,
+  "body": {
+    "packages": [
+      {
+        "id": "com.demo.free",
+        "name": "Free Grade",
+        "author": "Az",
+        "version": "1.1.0",
+        "types": [
+          "lut"
+        ],
+        "priceStatus": "free",
+        "targetApps": [],
+        "downloads": 0,
+        "ratingCount": 0,
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "byteSize": 709,
+        "mediaDomains": [
+          "image",
+          "video"
+        ],
+        "latest": "1.1.0"
+      },
+      {
+        "id": "com.demo.paid",
+        "name": "Cinematic Pack",
+        "author": "SFX Studio",
+        "version": "1.0.0",
+        "types": [
+          "lut"
+        ],
+        "priceStatus": "paid",
+        "targetApps": [],
+        "downloads": 0,
+        "ratingCount": 0,
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "byteSize": 743,
+        "mediaDomains": [
+          "image",
+          "video"
+        ],
+        "latest": "1.0.0"
+      }
+    ],
+    "total": 2,
+    "page": 1,
+    "pages": 1
+  }
+}

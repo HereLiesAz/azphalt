@@ -1,0 +1,11 @@
+{
+  "method": "GET",
+  "path": "/packages/com.demo.paid/versions/1.0.0/download",
+  "status": 401,
+  "body": {
+    "error": {
+      "code": "unauthorized",
+      "message": "authentication required to download a paid package"
+    }
+  }
+}
