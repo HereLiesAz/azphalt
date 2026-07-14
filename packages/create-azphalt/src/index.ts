@@ -14,6 +14,11 @@ const TEMPLATES = [
     description: "A sandboxed filter + transition you can test locally, build, and submit."
   },
   {
+    title: "Companion App (For Developers)",
+    value: "template-companion-app",
+    description: "A kind:\"app\" header that lets a host launch your Android app or PWA via a handoff."
+  },
+  {
     title: "Asset Pack (For Creators)",
     value: "template-asset-pack",
     description: "Boilerplate workspace for bundling images, audio, or 3D assets."
