@@ -13,7 +13,7 @@
 export const FORMAT_VERSION = "0.1" as const;
 
 /* ───────────────────────────── Manifest ───────────────────────────── */
-export type Kind = "asset" | "code" | "mixed";
+export type Kind = "asset" | "code" | "mixed" | "app";
 export type Runtime = "js" | "wasm";
 
 /** 
@@ -435,6 +435,14 @@ export interface Manifest {
   contributes?: Contributes;
 
   /**
+   * For a `kind: "app"` **companion app** — an Android app or PWA a host launches to perform a function
+   * and hand a result back. It carries no `/code` sandbox payload and no `capabilities`; azphalt only
+   * standardizes the handoff (declared input → OS transport → declared, validated output). See
+   * {@link AppManifest} and `spec/companion-app.md`.
+   */
+  app?: AppManifest;
+
+  /**
    * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffitixr"]`).
    * A repository shows an app-scoped package only to a matching app; **absent or empty means the
    * package is global** (available to every app). Scoping is a discovery filter, not access control.
@@ -447,6 +455,89 @@ export interface Manifest {
 
   /** Payload path → SHA-256 digest (integrity; see `spec/package-format.md`). */
   files: Record<string, string>;
+}
+
+/* ───────────────────────────── Companion app (`kind: "app"`) ───────────────────────────── */
+
+/** A record where **at least one** of `T`'s keys must be present (the rest optional) — no empty object. */
+export type AtLeastOne<T> = Partial<T> & { [K in keyof T]: Required<Pick<T, K>> }[keyof T];
+
+/**
+ * The `app` block of a `kind: "app"` package — a **companion app** (Android app or PWA) a host launches
+ * to perform a function and hand a result back. It is a manifest *header* describing how to install and
+ * invoke an external OS-level app; it grants no azphalt capabilities and runs no sandboxed code. See
+ * `spec/companion-app.md`.
+ */
+export interface AppManifest {
+  /** How to install/invoke the app on each platform — **at least one** of `android` / `pwa` is required. */
+  platforms: AtLeastOne<{ android: AndroidPlatform; pwa: PwaPlatform }>;
+  /** The functions the companion offers the host, each a declared input → transport → validated output. */
+  handoffs: Handoff[];
+}
+
+/** Android target: the Play package id + install pointer for a companion app. */
+export interface AndroidPlatform {
+  /** Play package id — the intent target and install identity, e.g. `"com.acme.arstencil"`. */
+  packageId: string;
+  /** Minimum Android SDK level the app needs. */
+  minSdk?: number;
+  /** Install/store URL a host deep-links to when the app isn't present. */
+  install?: string;
+}
+
+/** PWA target: the installable web app + the share endpoint the host POSTs input to. */
+export interface PwaPlatform {
+  /** The PWA's web app manifest URL — for *install* only. */
+  manifestUrl?: string;
+  /** The PWA's start URL. */
+  startUrl?: string;
+  /**
+   * The endpoint the host POSTs handoff input to (Web Share Target-style), declared here so the host
+   * never has to fetch the web manifest cross-origin (CORS). A per-handoff transport MAY override it.
+   */
+  shareTargetUrl?: string;
+}
+
+/** One function a companion offers: a declared input, per-platform transport, and a declared output. */
+export interface Handoff {
+  /** Stable id within the package. */
+  id: string;
+  /** The host action this registers (open vocabulary; e.g. `capture` · `edit-image` · `generate`). */
+  action: string;
+  /** Human-readable label. */
+  name?: string;
+  /** What the host hands off. Omit for a no-input handoff. */
+  input?: HandoffIO;
+  /** What the companion returns. Omit for a `fire-and-forget` handoff (no return). */
+  output?: HandoffIO;
+  /** Per-platform mechanics — **at least one** transport (matching a listed platform) is required. */
+  transport: AtLeastOne<{ android: AndroidTransport; pwa: PwaTransport }>;
+}
+
+/**
+ * The shape of a handoff's input or output: normalized azphalt **assets** (by `AssetType`, in their
+ * pinned wire format) and/or structured **params** (a JSON object; a value like `"number?"` marks an
+ * optional typed field). A host validates a returned asset/params against this before use.
+ */
+export interface HandoffIO {
+  assets?: AssetType[];
+  params?: Record<string, string>;
+}
+
+/** Android transport: an intent action + the MIME types the result may carry. */
+export interface AndroidTransport {
+  /** The `Intent` action the host launches (for result). */
+  intentAction: string;
+  /** MIME types a returned asset may use, e.g. `["image/png", "image/svg+xml"]`. */
+  resultMimeTypes?: string[];
+}
+
+/** PWA transport: the share endpoint + how the companion returns (default `postMessage`). */
+export interface PwaTransport {
+  /** Overrides {@link PwaPlatform.shareTargetUrl} for this handoff. */
+  shareTargetUrl?: string;
+  /** How the result comes back: `postMessage` (default round-trip) or `fire-and-forget` (no return). */
+  return?: { kind: "postMessage" | "fire-and-forget" };
 }
 
 /* ───────────────────────────── UI schema ───────────────────────────── */
