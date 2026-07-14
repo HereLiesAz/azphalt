@@ -7,7 +7,7 @@ Integrating `azphalt` into your host application (whether it's a digital art can
 To securely open and read an `.azp` file (which is a standard ZIP archive), you can use `@azphalt/azp`:
 
 ```bash
-npm install @azphalt/azp @azphalt/sdk
+npm install @azphalt/azp @azphalt/azdk
 ```
 
 ```typescript

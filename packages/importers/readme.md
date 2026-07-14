@@ -59,4 +59,4 @@ Tests round-trip the output back through `verifyAzp` to prove the container is v
 
 ## Adding an importer
 
-Model a new one on [`cube`](cube) (the cleanest 1:1 case) or [`abr`](abr) (the reference for a lossy native format that must be *normalized*, not repacked). Mirror the CLI flag set and the `license` / `licenseText` options, validate the input up front, and add the target to the `AssetType` union in [`@azphalt/sdk`](../sdk) if it's a new kind. An [asset host](../../docs/ADOPTION_ASSET_HOST.md) applies each `type` with its own engine, so the value is only real once at least one host consumes it.
+Model a new one on [`cube`](cube) (the cleanest 1:1 case) or [`abr`](abr) (the reference for a lossy native format that must be *normalized*, not repacked). Mirror the CLI flag set and the `license` / `licenseText` options, validate the input up front, and add the target to the `AssetType` union in [`@azphalt/azdk`](../sdk) if it's a new kind. An [asset host](../../docs/ADOPTION_ASSET_HOST.md) applies each `type` with its own engine, so the value is only real once at least one host consumes it.

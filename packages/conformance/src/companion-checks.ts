@@ -9,7 +9,7 @@
  * least-input, transport, return-validation).
  */
 import { readAzp } from "@azphalt/azp";
-import type { AppManifest, Handoff, HandoffIO, Manifest } from "@azphalt/sdk";
+import type { AppManifest, Handoff, HandoffIO, Manifest } from "@azphalt/azdk";
 import { pass, fail, satisfiesCompat, type CheckResult } from "./checks.js";
 import type { HostProfile } from "./video-audio-checks.js";
 import * as fx from "./fixtures.js";
@@ -31,7 +31,7 @@ export interface CompanionLoadReport {
 
 /** The result a companion would hand back — the suite passes this to `invoke` for the host to validate. */
 export interface CompanionReturn {
-  /** Assets returned, by declared {@link import("@azphalt/sdk").AssetType}. */
+  /** Assets returned, by declared {@link import("@azphalt/azdk").AssetType}. */
   assets?: string[];
   /** Structured params returned. */
   params?: Record<string, unknown>;

@@ -1,5 +1,5 @@
 import { writeAzp } from "@azphalt/azp";
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/azdk";
 
 const LICENSE = "MIT License\n\nCopyright (c) 2026 Az\n";
 

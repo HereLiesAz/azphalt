@@ -3,7 +3,7 @@
  * able to render natively. Returns a list of problems (empty ⇒ valid). Used by the conformance
  * suite's UI check, but exported for hosts and importers to validate panels they emit/consume.
  */
-import type { Control, Panel } from "@azphalt/sdk";
+import type { Control, Panel } from "@azphalt/azdk";
 
 /** Every control `type` in `0.1`. A host claiming conformance must render all of them. */
 export const CONTROL_TYPES_0_1 = [

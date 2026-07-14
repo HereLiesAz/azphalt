@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@azphalt/azp": "workspace:*",
-    "@azphalt/sdk": "workspace:*"
+    "@azphalt/azdk": "workspace:*"
   },
   "devDependencies": {
     "@azphalt/runtime-wasm": "workspace:*",

@@ -1,6 +1,6 @@
 import { example, utf8, type Example } from "../shared.js";
 
-const INVERT_JS = `import { defineFilter } from "@azphalt/sdk";
+const INVERT_JS = `import { defineFilter } from "@azphalt/azdk";
 export const invert = defineFilter((ctx) => {
   const bmp = ctx.bitmap.read(ctx.target);
   for (let i = 0; i < bmp.data.length; i += 4) {
@@ -13,7 +13,7 @@ export const invert = defineFilter((ctx) => {
 });
 `;
 
-const BRIGHTNESS_JS = `import { defineFilter } from "@azphalt/sdk";
+const BRIGHTNESS_JS = `import { defineFilter } from "@azphalt/azdk";
 export const brightness = defineFilter((ctx) => {
   const amount = ctx.params.number("amount"); // -255..255
   const bmp = ctx.bitmap.read(ctx.target);

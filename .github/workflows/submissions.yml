@@ -17,6 +17,6 @@ jobs:
           node-version: 22
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      # Build the checker and its dependencies (@azphalt/azp, @azphalt/sdk).
+      # Build the checker and its dependencies (@azphalt/azp, @azphalt/azdk).
       - run: pnpm --filter "@azphalt/submit-check..." build
       - run: pnpm --filter @azphalt/submit-check validate

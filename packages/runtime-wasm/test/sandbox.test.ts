@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { writeAzp } from "@azphalt/azp";
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/azdk";
 import { runFilterSandboxed, runFilter, loadExtension, evalInSandbox } from "../src/index";
 
 describe("runtime-wasm sandbox (expression probe)", () => {
@@ -95,9 +95,9 @@ describe("runtime-wasm sandbox (expression probe)", () => {
 
 /* ─────────────── real .azp code-entry loading (runFilter) ─────────────── */
 
-/** The invert extension, written against `@azphalt/sdk` exactly as `examples/invert` is. */
+/** The invert extension, written against `@azphalt/azdk` exactly as `examples/invert` is. */
 const INVERT_MODULE = `
-  import { defineFilter } from "@azphalt/sdk";
+  import { defineFilter } from "@azphalt/azdk";
   export const invert = defineFilter((ctx) => {
     const s = Math.max(0, Math.min(1, ctx.params.number("strength")));
     const bmp = ctx.bitmap.read(ctx.target);
@@ -167,14 +167,14 @@ describe("runtime-wasm real .azp code entry (runFilter)", () => {
   });
 
   it("denies a module importing anything outside the package (no ambient authority)", async () => {
-    const evil = `import "node:fs"; import { defineFilter } from "@azphalt/sdk"; export const invert = defineFilter(() => {});`;
+    const evil = `import "node:fs"; import { defineFilter } from "@azphalt/azdk"; export const invert = defineFilter(() => {});`;
     const azp = buildExtensionAzp(evil);
     await expect(runFilter(azp, { params: {}, bitmap: { ...bitmap } })).rejects.toThrow(/module not found/);
   });
 
   it("runs an async filter to completion", async () => {
     const asyncMod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const invert = defineFilter(async (ctx) => {
         await Promise.resolve();
         const bmp = ctx.bitmap.read(ctx.target);

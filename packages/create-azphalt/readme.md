@@ -28,6 +28,6 @@ npm run dev
 
 ## Related
 
-- [`@azphalt/sdk`](../sdk) — the typed API extensions are written against.
+- [`@azphalt/azdk`](../sdk) — the typed API extensions are written against.
 - [`@azphalt/azp`](../azp) — build, verify, and sign the `.azp` container.
 - [`docs/ADOPTION.md`](../../docs/ADOPTION.md) — becoming a conforming host.

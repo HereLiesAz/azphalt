@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readAzp, verifyAzp } from "@azphalt/azp";
 import { runCompanionConformance, satisfiesCompat, type CompanionHost } from "../src/index";
-import type { HandoffIO, Manifest } from "@azphalt/sdk";
+import type { HandoffIO, Manifest } from "@azphalt/azdk";
 
 /**
  * A reference conforming companion-app host — the worked example a real store-providing app (GraffitiXR,

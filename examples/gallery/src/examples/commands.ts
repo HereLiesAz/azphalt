@@ -1,6 +1,6 @@
 import { example, utf8, type Example } from "../shared.js";
 
-const CLEAR_JS = `import { defineCommand } from "@azphalt/sdk";
+const CLEAR_JS = `import { defineCommand } from "@azphalt/azdk";
 export const clear = defineCommand((ctx) => {
   const bmp = ctx.bitmap.read(ctx.target);
   for (let i = 0; i < bmp.data.length; i++) bmp.data[i] = 0;
@@ -8,7 +8,7 @@ export const clear = defineCommand((ctx) => {
 });
 `;
 
-const SET_COLOR_JS = `import { defineCommand } from "@azphalt/sdk";
+const SET_COLOR_JS = `import { defineCommand } from "@azphalt/azdk";
 export const setColor = defineCommand((ctx) => {
   ctx.color.setActive({ r: 16, g: 32, b: 48, a: 255 });
 });

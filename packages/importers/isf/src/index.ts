@@ -5,7 +5,7 @@
  * natively and applies the shader with its own engine. See `spec/package-format.md` § Assets.
  */
 import { writeAzp, type WriteResult } from "@azphalt/azp";
-import type { Manifest, Panel } from "@azphalt/sdk";
+import type { Manifest, Panel } from "@azphalt/azdk";
 import { parseIsf, type ParsedIsf } from "./parse-isf.js";
 import { inputsToPanel, isHostBound } from "./ui.js";
 

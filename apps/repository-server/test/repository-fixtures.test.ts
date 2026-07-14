@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { writeAzp } from "@azphalt/azp";
 import { InMemoryStore, Marketplace, Registry } from "@azphalt/registry";
-import type { Manifest, RepositoryIndex } from "@azphalt/sdk";
+import type { Manifest, RepositoryIndex } from "@azphalt/azdk";
 import { createRepositoryHandler, InMemoryAuthorizer, type RepoRequest } from "../src/index";
 
 /**

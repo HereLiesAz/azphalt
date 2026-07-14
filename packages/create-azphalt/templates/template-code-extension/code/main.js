@@ -5,7 +5,7 @@
 // capabilities you declared in the manifest. Anything you didn't declare is
 // absent (deny-by-default). There is no way to reach the camera, sensors, the
 // filesystem, the network, or the host's engine — by design.
-import { defineFilter, defineTransition } from "@azphalt/sdk";
+import { defineFilter, defineTransition } from "@azphalt/azdk";
 
 /** A filter: brighten the active layer by the `amount` slider (−1..1). */
 export const brightness = defineFilter((ctx) => {

@@ -2,7 +2,7 @@ name: Publish single package (retry)
 
 # Precise, resilient publish of ONE package with backoff on npm's E429
 # new-package rate limit. The initial release published 26/27 packages, then
-# npm rate-limited the last name (@azphalt/sdk); re-running the full Release
+# npm rate-limited the last name (@azphalt/azdk); re-running the full Release
 # just re-attempts it immediately and re-trips the limit. This retries that one
 # package alone with growing waits (see scripts/publish-one-retry.sh).
 #
@@ -18,13 +18,13 @@ on:
       package:
         description: "Package name to publish (must already be at its target version in the repo)"
         required: true
-        default: "@azphalt/sdk"
+        default: "@azphalt/azdk"
 
 # The package to publish. `workflow_dispatch` supplies it; `push` defaults to sdk.
 env:
-  PACKAGE: ${{ inputs.package || '@azphalt/sdk' }}
+  PACKAGE: ${{ inputs.package || '@azphalt/azdk' }}
 
-concurrency: ${{ github.workflow }}-${{ inputs.package || '@azphalt/sdk' }}
+concurrency: ${{ github.workflow }}-${{ inputs.package || '@azphalt/azdk' }}
 
 jobs:
   publish:

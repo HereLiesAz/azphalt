@@ -21,7 +21,7 @@
  * lives only on listings, never in the open registry.
  */
 import { RegistryError, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
-import type { PackageSearchResponse, PackageSummary, RepositoryErrorCode, RepositoryIndex } from "@azphalt/sdk";
+import type { PackageSearchResponse, PackageSummary, RepositoryErrorCode, RepositoryIndex } from "@azphalt/azdk";
 import { denyAllAuthorizer, type DownloadAuthorizer } from "./authorize.js";
 
 /** Map the HTTP `sort` vocabulary (`popular`/`recent`/`rating`/`name`) onto registry summaries. */

@@ -45,7 +45,7 @@ This is **not** an auth failure. The tarball packs, the token authenticates, the
 
 Re-running the full **Release** workflow is the wrong fix: it re-attempts the blocked name immediately and re-trips the limit. Instead, publish the missing package **alone, with backoff**:
 
-- **`.github/workflows/publish-package.yml`** ("Publish single package (retry)") publishes ONE package, short-circuiting if it's already live and otherwise retrying with growing waits (0 / 60 / 180 / 420 / 600 / 900 s) so the limit can clear inside a single run. It runs automatically on every push to `main` (defaulting to `@azphalt/sdk`, the keystone dependency) and is also `workflow_dispatch`-able for any package: **Actions → "Publish single package (retry)" → Run workflow**, set `package`.
+- **`.github/workflows/publish-package.yml`** ("Publish single package (retry)") publishes ONE package, short-circuiting if it's already live and otherwise retrying with growing waits (0 / 60 / 180 / 420 / 600 / 900 s) so the limit can clear inside a single run. It runs automatically on every push to `main` (defaulting to `@azphalt/azdk`, the keystone dependency) and is also `workflow_dispatch`-able for any package: **Actions → "Publish single package (retry)" → Run workflow**, set `package`.
 - It's a **no-op once the target is live**, so it's safe as a standing self-heal guard: any later push to `main` re-attempts a still-missing package for free.
 
 If a single backoff run still exhausts on E429, the window is on a longer (multi-hour) span — wait a few hours (or until the next day) and run it once more. The underlying script is **`scripts/publish-one-retry.sh`**.

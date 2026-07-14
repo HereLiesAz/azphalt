@@ -26,7 +26,7 @@ importers:
       '@azphalt/repository-client':
         specifier: workspace:*
         version: link:../../packages/repository-client
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       react:
@@ -78,7 +78,7 @@ importers:
       '@azphalt/registry':
         specifier: workspace:*
         version: link:../../packages/registry
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../packages/sdk
     devDependencies:
@@ -103,7 +103,7 @@ importers:
       '@azphalt/registry':
         specifier: workspace:*
         version: link:../../packages/registry
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       next:
@@ -146,7 +146,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../packages/azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../packages/sdk
     devDependencies:
@@ -165,7 +165,7 @@ importers:
 
   examples/invert:
     dependencies:
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../packages/sdk
     devDependencies:
@@ -184,7 +184,7 @@ importers:
 
   packages/azp:
     dependencies:
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
       fflate:
@@ -206,7 +206,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
     devDependencies:
@@ -247,7 +247,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
       fflate:
@@ -269,7 +269,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -278,7 +278,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
     devDependencies:
@@ -297,7 +297,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -306,7 +306,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -315,7 +315,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -324,7 +324,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -333,7 +333,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -342,7 +342,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -351,7 +351,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -360,7 +360,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -369,7 +369,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
     devDependencies:
@@ -388,7 +388,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -397,7 +397,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -406,7 +406,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -415,7 +415,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
     devDependencies:
@@ -434,7 +434,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -443,7 +443,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
 
@@ -452,7 +452,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
       '@modelcontextprotocol/sdk':
@@ -477,7 +477,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
     devDependencies:
@@ -496,7 +496,7 @@ importers:
 
   packages/repository-client:
     dependencies:
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
 
@@ -505,7 +505,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
     devDependencies:
@@ -524,7 +524,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
       quickjs-emscripten:
@@ -552,7 +552,7 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../azp
-      '@azphalt/sdk':
+      '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
     devDependencies:

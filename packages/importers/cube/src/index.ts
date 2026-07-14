@@ -5,7 +5,7 @@
  * manifest. See RATIONALE § 1.3.
  */
 import { writeAzp, type WriteResult } from "@azphalt/azp";
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/azdk";
 import { parseCube, type CubeLut } from "./parse-cube.js";
 
 /** Manifest/format version this importer targets. */

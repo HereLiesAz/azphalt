@@ -3,7 +3,7 @@
  * computed `files`), its payload bytes, and — for code examples — a small runnable check. The build
  * script turns each into a real `.azp` via `writeAzp`; the test verifies each and runs the code ones.
  */
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/azdk";
 import type { SandboxResult, SandboxWorld } from "@azphalt/runtime-wasm";
 
 export const utf8 = (s: string): Uint8Array => new TextEncoder().encode(s);
