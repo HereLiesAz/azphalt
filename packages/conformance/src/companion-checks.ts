@@ -153,11 +153,13 @@ export async function checkCompanionOffersHandoff(host: CompanionHost): Promise<
   if (!r.offered?.includes(handoff.id)) {
     return fail(id, title, `host did not surface the '${handoff.id}' handoff (offered=${JSON.stringify(r.offered)})`);
   }
+  // The title asserts a supported platform, so a host that never reports one fails — not passes by omission.
+  if (!r.platform) return fail(id, title, "host did not report the platform it matched");
   const supported = new Set(host.platforms ?? []);
-  if (r.platform && !supported.has(r.platform)) {
+  if (!supported.has(r.platform)) {
     return fail(id, title, `host matched platform '${r.platform}' it does not declare support for`);
   }
-  return pass(id, title, `offered ${r.offered.join(", ")} on ${r.platform ?? "?"}`);
+  return pass(id, title, `offered ${r.offered.join(", ")} on ${r.platform}`);
 }
 
 /** Checklist: shows OS-style consent before launching a handoff (spec § Security "Consent, every time"). */
@@ -177,6 +179,8 @@ export async function checkCompanionLeastInput(host: CompanionHost): Promise<Che
   const { handoff } = fixtureHandoff(azp);
   const r = await tryInvoke(host, azp, handoff.id, { assets: ["image"], params: { width: 100 } });
   if (!r.accepted) return fail(id, title, `host refused a valid return: ${r.reason ?? ""}`);
+  // A host that reports no input at all can't be certified least-input — that would pass vacuously.
+  if (!r.sentInput) return fail(id, title, "host did not report the input it handed off");
   const excess = ioExceeds(r.sentInput, handoff.input);
   return excess ? fail(id, title, excess) : pass(id, title);
 }
