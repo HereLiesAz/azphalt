@@ -83,7 +83,7 @@ A `.cube` file carries only a table plus `DOMAIN_MIN`/`DOMAIN_MAX`; it says noth
 - **Leave alpha untouched.** A LUT transforms RGB only; the alpha channel passes through unchanged.
 - Sample at **≥ 8-bit** precision (higher is fine); coarse LUTs (`LUT_3D_SIZE ≤ 17`) especially depend on the interpolation floor to agree across hosts.
 
-**`strength` blend.** After sampling, a host applies the `lut` asset's `params.strength` (number `0..1`, default `1`) as a per-channel dry/wet blend with the original RGB — `out = lerp(original, graded, strength)` — so the same value means the same partial-grade everywhere (see extension-manifest.md § Per-type `params`). A host renders it from the asset's canonical `ui` panel (a single `strength` slider) when present.
+**`strength` blend.** After sampling, a host applies the `lut` asset's `params.strength` (number `0..1`, default `1`) as a per-channel dry/wet blend with the original RGB — `out = lerp(original, graded, strength)` — **blended in the same encoded domain the LUT is sampled in** (sRGB-gamma by default, or the declared `inputTransfer` domain), **not** the host's own working/compositor space. Pinning the blend domain is what makes a fractional `strength` reproduce the same partial-grade on every host (a `lerp` in linear space gives a visibly different result). See [extension-manifest.md § Per-type `params`](./extension-manifest.md#per-type-params-conventions). A host renders the control from the asset's canonical `ui` panel (a single `strength` slider) when present.
 
 ## Code
 - Entry module(s) declared in the manifest (`entry`, `runtime`). `runtime: js` → an ES module on QuickJS-in-WASM; `runtime: wasm` → a WASM module against the host ABI.

@@ -73,7 +73,7 @@ These are **data** assets — they render in the host's own compositor, exactly 
 | `overlay` | `opacity` / `anchor` / `scale` | `0..1` (`1`) / `top-left`…`center`…`bottom-right` / number | user |
 | `template` | `fields` / `safeArea` | named text slots / inset rect | user / author |
 
-The LUT application semantics behind `strength` / `inputTransfer` (interpolation floor, input-transfer conversion, clamp, alpha) are pinned in package-format.md § LUT application.
+The LUT application semantics behind `strength` / `inputTransfer` (interpolation floor, input-transfer conversion, clamp, alpha) are pinned in [package-format.md § LUT application](./package-format.md#lut-application).
 
 **Canonical `lut` panel.** The conventional control for `strength` is a single `slider` bound to the `strength` key, so every host renders the same dry/wet control:
 
