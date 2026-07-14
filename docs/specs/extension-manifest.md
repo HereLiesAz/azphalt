@@ -51,7 +51,7 @@ For extremely large files like AI models (e.g. multi-gigabyte `.task` files), bu
 
 Beyond paint-shaped assets, the standard covers the reusable **video-catalog** assets an editor shares: `transition`, `motion` (keyframe/animation preset), `video`, `audio`, and `font`, plus two graphic-overlay types:
 
-- **`template`** — a **title / lower-third** template: pre-designed text-over-video graphics with named text slots the host fills in. Typically a `video`-domain asset. Author its fillable slots and layout under `params` (e.g. `fields`, `safeArea`).
+- **`template`** — a **title / lower-third** template: pre-designed text-over-video or text-over-image graphics with named text slots the host fills in. An `image` + `video`-domain asset (titles / graphic layouts apply to stills too, lower-thirds to footage). Author its fillable slots and layout under `params` (e.g. `fields`, `safeArea`).
 - **`overlay`** — a **PNG or animated overlay** composited onto the frame (watermarks, badges, animated stickers). An `image`+`video`-domain asset. Author its default placement under `params` (e.g. `opacity`, `anchor`, `scale`).
 
 These are **data** assets — they render in the host's own compositor, exactly like `lut`/`shader`, and carry no code. An asset-only host (`kind: "asset"`, or the asset half of a `kind: "mixed"` package) can install and use them without any runtime.
@@ -164,6 +164,9 @@ Two are for **temporal / audio hosts** (video, motion editors), both editor-surf
 }
 ~~~
 
+## Resolved
+
+- **Inter-package dependencies are out of scope for `0.1`.** A package is **self-contained**: it declares no dependency on another package, and a host resolves nothing transitively. Everything a package needs is either in its own payload or reachable through a granted capability. A dependency mechanism (and the resolution, versioning, and trust questions it brings) is deferred to a later version. *(An author who needs shared logic vendors it into the package.)*
+
 ## Open
-- Localization of `name` / `description` / UI labels.
-- Inter-package dependencies — whether an extension may ever require another.
+- Localization of `name` / `description` / UI labels (the registry surface is tracked in the repository-API discussion; the manifest/UI surface is still open).
