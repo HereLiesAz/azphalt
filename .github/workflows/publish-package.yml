@@ -1,0 +1,36 @@
+name: Publish single package (retry)
+
+# Precise, on-demand publish of ONE package with backoff on npm's E429
+# new-package rate limit. Use this to finish a release where most packages
+# published but one got rate-limited (see scripts/publish-one-retry.sh).
+# Does not re-run the full test suite or re-attempt already-published packages.
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package name to publish (must already be at its target version in the repo)"
+        required: true
+        default: "@azphalt/sdk"
+
+concurrency: ${{ github.workflow }}-${{ inputs.package }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      # Build just the target package and its workspace build-deps.
+      - run: pnpm --filter "${{ inputs.package }}..." build
+      - name: Publish with E429 backoff
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+        run: bash scripts/publish-one-retry.sh "${{ inputs.package }}"
