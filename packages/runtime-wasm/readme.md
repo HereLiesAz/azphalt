@@ -50,9 +50,30 @@ The **full `Host` surface** is bridged, each gated by its capability: `canvas`, 
 A `runtime: "wasm"` extension runs on the host's own `WebAssembly` (it *is* the sandbox), against the
 shared-memory image ABI from `spec/capability-model.md`. The module **exports** `memory` and the
 entry `filter(ptr, width, height, stride)`; the runtime writes the target layer's RGBA8 bytes into
-the module's memory at `ptr`, calls the entry, and reads them back. Capability-gated host functions
-are passed as `env` imports (this first cut wires `canvas`'s `requestRedraw`; the `bitmap` capability
-is required). `runFilter` dispatches here automatically when `manifest.runtime === "wasm"`.
+the module's memory at `ptr`, calls the entry, and reads them back. `runFilter` dispatches here
+automatically when `manifest.runtime === "wasm"`; the `bitmap` capability is required.
+
+### The `env` import ABI
+
+Capability-gated host functions are passed as `env` imports — only those for granted capabilities are
+present, so importing an ungranted one fails instantiation (deny-by-default). Everything crosses
+through the module's own linear memory: an **input** the module supplies is a `(ptr, len)` pair it
+wrote there; an **output** the host returns is written into a module-supplied `(outPtr, outCap)`
+scratch buffer, and the call returns the byte length (compare it to your `cap` to detect truncation;
+`-1` means not-found).
+
+| capability  | import (signature → result) | marshaling |
+| ----------- | --------------------------- | ---------- |
+| `canvas`    | `requestRedraw()`, `canvasWidth() → i32`, `canvasHeight() → i32`, `canvasDpi() → i32` | scalars |
+| `params`    | `paramNumber(kPtr,kLen) → f64`, `paramBool(kPtr,kLen) → i32`, `paramString(kPtr,kLen,outPtr,outCap) → i32` | key is a UTF-8 `(ptr,len)`; `paramString` writes the value into the scratch buffer |
+| `color`     | `colorActive(outPtr)`, `colorSetActive(inPtr)` | 4 bytes RGBA at the pointer |
+| `assets`    | `assetRead(pPtr,pLen,outPtr,outCap) → i32` | path is a UTF-8 `(ptr,len)`; bytes written into the scratch buffer |
+| `selection` | `selectionSize() → i32`, `selectionRead(outPtr)` | size then a copy of the mask bytes |
+| `layers`    | `layerCount() → i32` | scalar |
+
+The module owns its memory layout: it picks where keys, scratch buffers, and the bitmap-`ptr` region
+live. The bitmap crosses at `ptr = 0` in this runtime (a module reserving low memory would want a
+host-provided offset or an `alloc` export — see Scope).
 
 ## Probe with a bare expression
 
@@ -76,9 +97,8 @@ const { bitmap, redraws } = await runFilterSandboxed(
 
 ## Scope
 
-The full `Host` surface and both entry runtimes (`js` on QuickJS-in-WASM, raw `wasm`) are covered.
-The raw-wasm ABI is a **first cut**: it wires the shared-memory bitmap + `canvas.requestRedraw`, and
-writes the bitmap at `ptr = 0` (a real module reserving low memory would want a host-provided offset
-or an `alloc` export). Passing string params and the richer `Host` sub-APIs across the raw-wasm
-boundary — which need a memory-marshaling convention — are the next steps there; the QuickJS `js`
-path already bridges them all.
+The full `Host` surface and both entry runtimes (`js` on QuickJS-in-WASM, raw `wasm`) are covered,
+including the raw-wasm `env` ABI above (`canvas` / `params` / `color` / `assets` / `selection` /
+`layers`, with the string/buffer marshaling convention). The one simplification left is memory
+layout: the bitmap crosses at a fixed `ptr = 0`, so a module reserving low memory for its own data
+would want a host-provided offset or an `alloc` export to negotiate the region — a natural next step.
