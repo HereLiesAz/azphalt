@@ -6,18 +6,31 @@
  *
  * It implements every endpoint in `spec/repository-api.md`:
  * - `GET /.well-known/azphalt-repository.json` — the repository index.
- * - `GET /packages` — search/browse (`q`, `types`, `tags`, `page`).
+ * - `GET /packages` — search/browse (`q`, `types`, `tags`, `app`, `capabilities`, `mediaDomains`,
+ *   `sort`, `page`), returning ranking/preview metadata on each summary.
  * - `GET /packages/{id}` — full metadata + version history + the latest manifest.
  * - `GET /packages/{id}/versions/{version}/download` — the binary `.azp`, gated `401`/`402` when paid.
+ * - `GET /revocations?since=` — the host-pollable feed of versions pulled post-publish.
  *
  * The free/paid split comes from the {@link Marketplace} overlay: a package with an *active* listing
  * is `paid` and its download runs through the {@link DownloadAuthorizer}; everything else is `free`
  * and served unconditionally. That is the same lane separation the rest of the standard keeps — money
  * lives only on listings, never in the open registry.
  */
-import { RegistryError, type Marketplace, type Registry } from "@azphalt/registry";
+import { RegistryError, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
 import type { PackageSearchResponse, PackageSummary, RepositoryIndex } from "@azphalt/sdk";
 import { denyAllAuthorizer, type DownloadAuthorizer } from "./authorize.js";
+
+/** Map the HTTP `sort` vocabulary (`popular`/`recent`/`rating`/`name`) onto registry summaries. */
+function applySort(list: RegistrySummary[], sort: string | null): RegistrySummary[] {
+  if (!sort) return list;
+  const out = [...list];
+  if (sort === "name") out.sort((a, b) => a.name.localeCompare(b.name));
+  else if (sort === "recent") out.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
+  else if (sort === "rating") out.sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1) || b.downloads - a.downloads);
+  else if (sort === "popular") out.sort((a, b) => b.downloads - a.downloads);
+  return out; // unknown sort ⇒ natural order (relevance for search, downloads for browse)
+}
 
 /** A transport-neutral request the {@link RepositoryHandler} understands. */
 export interface RepoRequest {
@@ -72,7 +85,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     return listing && listing.status === "active" ? "paid" : "free";
   };
 
-  const toSdkSummary = async (s: { id: string; name: string; author?: string; version: string; assetTypes: string[]; targetApps: string[] }): Promise<PackageSummary> => ({
+  const toSdkSummary = async (s: RegistrySummary): Promise<PackageSummary> => ({
     id: s.id,
     name: s.name,
     author: s.author,
@@ -80,6 +93,13 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     types: s.assetTypes,
     priceStatus: await priceStatus(s.id),
     targetApps: s.targetApps,
+    downloads: s.downloads,
+    rating: s.rating,
+    ratingCount: s.ratingCount,
+    updatedAt: s.updatedAt,
+    byteSize: s.byteSize,
+    mediaDomains: s.mediaDomains,
+    preview: s.preview,
   });
 
   async function search(req: RepoRequest): Promise<RepoResponse> {
@@ -103,6 +123,21 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
         return tags.every((t) => hay.includes(t));
       });
     }
+    // Media-domain filter: keep packages whose domains intersect what the host can run.
+    const mdParam = req.query.get("mediaDomains");
+    if (mdParam) {
+      const want = new Set(mdParam.split(",").map((d) => d.trim()).filter(Boolean));
+      summaries = summaries.filter((s) => s.mediaDomains.some((d) => want.has(d)));
+    }
+    // Capability filter: the host advertises the capabilities it can grant; keep only packages whose
+    // required capabilities are a **subset** — i.e. packages the host could actually run.
+    const capParam = req.query.get("capabilities");
+    if (capParam) {
+      const supported = new Set(capParam.split(",").map((c) => c.trim()).filter(Boolean));
+      summaries = summaries.filter((s) => s.capabilities.every((c) => supported.has(c)));
+    }
+    // Ranking: honor an explicit `sort` (popular / recent / rating / name).
+    summaries = applySort(summaries, req.query.get("sort"));
 
     const total = summaries.length;
     const pages = Math.max(1, Math.ceil(total / pageSize));
@@ -137,6 +172,12 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     });
   }
 
+  async function revocations(req: RepoRequest): Promise<RepoResponse> {
+    const since = req.query.get("since")?.trim() || undefined;
+    const list = await registry.revocations(since);
+    return json(200, { revocations: list });
+  }
+
   async function download(id: string, version: string, req: RepoRequest): Promise<RepoResponse> {
     const resolved = await registry.getVersion(id, version);
     if (!resolved) return fail(404, `not found: ${id}@${version}`);
@@ -159,6 +200,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
   return async function handle(req: RepoRequest): Promise<RepoResponse> {
     if (req.method !== "GET") return fail(405, `method not allowed: ${req.method}`);
     if (req.path === "/.well-known/azphalt-repository.json") return json(200, index);
+    if (req.path === "/revocations") return await revocations(req);
 
     try {
       // `decodeURIComponent` throws a URIError on a malformed percent-escape — keep it inside the

@@ -5,7 +5,7 @@
  * stays neutral (see `docs/ARCHITECTURE.md § The marketplace — consignment model`).
  */
 import { digest, readAzp, verifyAzp } from "@azphalt/azp";
-import type { AssetType, Capability, Manifest } from "@azphalt/sdk";
+import type { AssetType, Capability, Manifest, MediaDomain } from "@azphalt/sdk";
 import { InMemoryStore, type RegistryStore } from "./store.js";
 import type {
   ListQuery,
@@ -13,8 +13,38 @@ import type {
   PackageVersion,
   PublishResult,
   RegistryPackage,
+  RevocationEntry,
   SearchResult,
 } from "./types.js";
+
+/**
+ * Which media domain(s) each asset type belongs to. A type can span domains — a LUT and a shader
+ * apply to both stills and video frames — so a video host still surfaces them.
+ */
+const ASSET_DOMAINS: Record<AssetType, MediaDomain[]> = {
+  brush: ["image"], lut: ["image", "video"], pattern: ["image"], stamp: ["image"],
+  shader: ["image", "video"], transition: ["video"], mesh: ["3d"], material: ["3d"],
+  hdri: ["3d"], motion: ["video"], palette: ["image"], image: ["image"], video: ["video"],
+  font: ["font"], audio: ["audio"], vector: ["image"],
+  tflite: ["model"], litert: ["model"], onnx: ["model"], "sherpa-bundle": ["model"],
+};
+
+/**
+ * Compute the coarse media domains a package touches, from its asset types + capabilities +
+ * contributions. Raster editor capabilities imply `image`; `time`/`transitions` imply `video`;
+ * `audio` implies `audio`. Used for host-capability discovery filtering.
+ */
+export function mediaDomainsForManifest(m: Manifest): MediaDomain[] {
+  const set = new Set<MediaDomain>();
+  for (const a of m.assets ?? []) for (const d of ASSET_DOMAINS[a.type] ?? []) set.add(d);
+  for (const c of m.capabilities ?? []) {
+    if (c === "canvas" || c === "layers" || c === "bitmap" || c === "selection" || c === "color") set.add("image");
+    else if (c === "time") set.add("video");
+    else if (c === "audio") set.add("audio");
+  }
+  if ((m.contributes?.transitions?.length ?? 0) > 0) set.add("video");
+  return [...set];
+}
 
 /** Thrown when a publish is rejected (bad container, bad manifest, or a version conflict). */
 export class RegistryError extends Error {
@@ -147,6 +177,7 @@ export class Registry {
       commands: m.contributes?.commands?.length ?? 0,
     };
     const times = vs.map((v) => v.publishedAt).sort();
+    const { rating, ratingCount } = await this.store.getRating(id);
 
     return {
       id: m.id,
@@ -164,6 +195,11 @@ export class Registry {
       publishedAt: times[0],
       updatedAt: times[times.length - 1],
       downloads: await this.store.getDownloads(id),
+      byteSize: latest.size,
+      mediaDomains: mediaDomainsForManifest(m),
+      preview: m.preview,
+      rating,
+      ratingCount,
     };
   }
 
@@ -189,8 +225,12 @@ export class Registry {
     return { version: resolved, bytes };
   }
 
-  /** Hide a version from `latest`/search while keeping it resolvable by exact version. */
-  async yank(id: string, version: string, yanked = true): Promise<void> {
+  /**
+   * Hide a version from `latest`/search while keeping it resolvable by exact version. Yanking (the
+   * default) appends a {@link RevocationEntry} to the host-pollable feed with an optional [reason];
+   * un-yanking (`yanked = false`) clears the flag without touching the feed.
+   */
+  async yank(id: string, version: string, yanked = true, reason?: string): Promise<void> {
     const v = await this.store.getVersion(id, version);
     if (!v) throw new RegistryError(`not found: ${id}@${version}`);
     const bytes = await this.store.getBytes(id, version);
@@ -198,6 +238,16 @@ export class Registry {
     // corrupt) the stored payload. Fail loudly instead.
     if (!bytes) throw new RegistryError(`bytes missing: ${id}@${version}`);
     await this.store.putVersion({ ...v, yanked }, bytes);
+    if (yanked) await this.store.putRevocation({ id, version, reason, revokedAt: new Date().toISOString() });
+  }
+
+  /**
+   * The host-pollable revocation feed: versions pulled post-publish, newest-first. A host that has
+   * already installed a package polls this (optionally `since` its last check) to learn a version it
+   * trusted was later revoked, and can warn or disable it.
+   */
+  async revocations(since?: string): Promise<RevocationEntry[]> {
+    return this.store.getRevocations(since);
   }
 
   /** Browse the catalog with optional filters and sorting. One summary per package. */
@@ -211,6 +261,11 @@ export class Registry {
     if (query.kind) out = out.filter((s) => s.kind === query.kind);
     if (query.assetType) out = out.filter((s) => s.assetTypes.includes(query.assetType!));
     if (query.capability) out = out.filter((s) => s.capabilities.includes(query.capability!));
+    // Media-domain filter: keep a package whose domains intersect the host's runnable domains.
+    if (query.mediaDomains && query.mediaDomains.length > 0) {
+      const want = new Set(query.mediaDomains);
+      out = out.filter((s) => s.mediaDomains.some((d) => want.has(d)));
+    }
     if (query.author) out = out.filter((s) => s.author === query.author);
     // App scoping: a global package (no targetApps) shows everywhere; an app-scoped one shows only to
     // an app it targets. With no `app` set, everything is returned (no filter).
@@ -220,6 +275,13 @@ export class Registry {
     out.sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
       if (sort === "updated") return a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0;
+      // Rating: higher first; unrated (rating undefined) sorts last, ties break on downloads.
+      if (sort === "rating") {
+        const ra = a.rating ?? -1;
+        const rb = b.rating ?? -1;
+        if (ra !== rb) return rb - ra;
+        return b.downloads - a.downloads;
+      }
       return b.downloads - a.downloads;
     });
 

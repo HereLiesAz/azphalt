@@ -7,7 +7,7 @@
  * package can live in the registry forever with no listing, and the money model never leaks into the
  * open lane.
  */
-import type { AssetType, Capability, Kind, Manifest } from "@azphalt/sdk";
+import type { AssetType, Capability, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/sdk";
 
 /** One published, immutable version of a package. */
 export interface PackageVersion {
@@ -51,6 +51,26 @@ export interface PackageSummary {
   updatedAt: string;
   /** Total served downloads across every version. */
   downloads: number;
+  /** Size of the latest version's `.azp` container, in bytes. */
+  byteSize: number;
+  /** Coarse media domains this package touches, derived from its asset types + capabilities. */
+  mediaDomains: MediaDomain[];
+  /** The latest manifest's static store-card preview, if any. */
+  preview?: PreviewRef;
+  /** Average user rating 0–5, if the store tracks ratings (absent when untracked). */
+  rating?: number;
+  /** Number of ratings behind `rating` (0 when none / untracked). */
+  ratingCount: number;
+}
+
+/** One revocation record — a version pulled post-publish, for the host-pollable revocation feed. */
+export interface RevocationEntry {
+  id: string;
+  version: string;
+  /** Why it was pulled (optional, author/registry-supplied). */
+  reason?: string;
+  /** ISO-8601 instant the version was revoked. */
+  revokedAt: string;
 }
 
 /** A package with its full version history — the package-detail view. */
@@ -77,6 +97,12 @@ export interface ListQuery {
   kind?: Kind;
   assetType?: AssetType;
   capability?: Capability;
+  /**
+   * Media domains the caller (host) can run. A package is kept when its own `mediaDomains`
+   * **intersect** this set — a video/audio host (`["video","audio"]`) keeps a LUT
+   * (`["image","video"]`) and audio SFX but drops a paint-only brush (`["image"]`).
+   */
+  mediaDomains?: MediaDomain[];
   author?: string;
   /**
    * The requesting host app's reverse-DNS id. When set, results are the packages **visible to that
@@ -84,8 +110,8 @@ export interface ListQuery {
    * unset, no app filter is applied (every package, including app-scoped ones, is returned).
    */
   app?: string;
-  /** Default `"downloads"`. */
-  sort?: "downloads" | "updated" | "name";
+  /** Default `"downloads"`. `"rating"` orders by average rating (unrated packages last). */
+  sort?: "downloads" | "updated" | "name" | "rating";
   limit?: number;
   offset?: number;
 }

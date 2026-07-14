@@ -14,6 +14,7 @@
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
 | `targetApps` | — | Reverse-DNS host-app ids this package is scoped to (e.g. `["com.hereliesaz.graffitixr"]`). Empty/absent = **global** (every app). A repository shows an app-scoped package only to a matching app — see repository-api.md § App scoping. Discovery filter, not access control. |
+| `preview` | — | Static store-card preview `{ image?, clip? }` — each an in-package path or `https:` URL. `image` is a still (LUT swatch, brush stroke, shader still); `clip` an optional short motion preview for time-based packages. Surfaced in search so a host renders a browse grid without downloading/executing — see repository-api.md § Static previews. |
 | `assets` | asset/mixed | Contributed assets (below). |
 | `entry`, `runtime` | code/mixed | Code entry module and `js` \| `wasm`. |
 | `capabilities` | code/mixed | Declared capabilities (see capability-model.md). |
