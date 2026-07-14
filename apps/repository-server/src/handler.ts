@@ -72,18 +72,21 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     return listing && listing.status === "active" ? "paid" : "free";
   };
 
-  const toSdkSummary = async (s: { id: string; name: string; author?: string; version: string; assetTypes: string[] }): Promise<PackageSummary> => ({
+  const toSdkSummary = async (s: { id: string; name: string; author?: string; version: string; assetTypes: string[]; targetApps: string[] }): Promise<PackageSummary> => ({
     id: s.id,
     name: s.name,
     author: s.author,
     version: s.version,
     types: s.assetTypes,
     priceStatus: await priceStatus(s.id),
+    targetApps: s.targetApps,
   });
 
   async function search(req: RepoRequest): Promise<RepoResponse> {
     const q = (req.query.get("q") ?? "").trim();
-    let summaries = q ? (await registry.search(q)).map((r) => r.package) : await registry.list({});
+    // App scoping: `?app=<id>` returns global packages plus those targeting that app. Absent = all.
+    const app = req.query.get("app")?.trim() || undefined;
+    let summaries = q ? (await registry.search(q, { app })).map((r) => r.package) : await registry.list({ app });
 
     const typesParam = req.query.get("types");
     if (typesParam) {
@@ -121,6 +124,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
       description: pkg.summary.description,
       version: pkg.summary.version,
       types: pkg.summary.assetTypes,
+      targetApps: pkg.summary.targetApps,
       priceStatus: await priceStatus(id),
       manifest: latest?.manifest,
       versions: pkg.versions.map((v) => ({

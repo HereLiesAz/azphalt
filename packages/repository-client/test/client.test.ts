@@ -75,4 +75,23 @@ describe("RepositoryClient", () => {
     expect(bytes).toBeDefined();
     expect(bytes.length).toBe(3);
   });
+
+  it("sends the app id as ?app= when scoped", async () => {
+    const seen: string[] = [];
+    // @ts-ignore capture the requested URL
+    global.fetch = (url: string) => {
+      seen.push(url);
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ packages: [], total: 0, page: 1, pages: 1 }) });
+    };
+    // Client-level app applies to every search.
+    await new RepositoryClient({ url: "https://api.example.com", app: "com.app.x" }).search({ q: "lut" });
+    // Per-call app overrides the client default.
+    await new RepositoryClient({ url: "https://api.example.com", app: "com.app.x" }).search({ app: "com.app.y" });
+    // No app configured → no app param.
+    await new RepositoryClient({ url: "https://api.example.com" }).search({ q: "lut" });
+
+    expect(seen[0]).toContain("app=com.app.x");
+    expect(seen[1]).toContain("app=com.app.y");
+    expect(seen[2]).not.toContain("app=");
+  });
 });

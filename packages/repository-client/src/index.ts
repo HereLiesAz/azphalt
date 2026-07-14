@@ -8,6 +8,11 @@ import type {
 export interface ClientOptions {
   url: string;
   token?: string;
+  /**
+   * This host app's reverse-DNS id. When set, browse/search results are scoped to this app: global
+   * packages plus those whose `targetApps` include it. Per-call `SearchOptions.app` overrides it.
+   */
+  app?: string;
 }
 
 export interface SearchOptions {
@@ -15,15 +20,19 @@ export interface SearchOptions {
   types?: AssetType[];
   tags?: string[];
   page?: number;
+  /** Override the client's `app` for this search (see {@link ClientOptions.app}). */
+  app?: string;
 }
 
 export class RepositoryClient {
   private baseUrl: string;
   private token?: string;
+  private app?: string;
 
   constructor(opts: ClientOptions) {
     this.baseUrl = opts.url.replace(/\/$/, "");
     this.token = opts.token;
+    this.app = opts.app;
   }
   
   public setToken(token: string) {
@@ -52,6 +61,8 @@ export class RepositoryClient {
     if (opts.types && opts.types.length > 0) params.set("types", opts.types.join(","));
     if (opts.tags && opts.tags.length > 0) params.set("tags", opts.tags.join(","));
     if (opts.page) params.set("page", opts.page.toString());
+    const app = opts.app ?? this.app;
+    if (app) params.set("app", app);
 
     const query = params.toString() ? `?${params.toString()}` : "";
     const res = await fetch(`${this.baseUrl}/packages${query}`, { headers: this.headers });
