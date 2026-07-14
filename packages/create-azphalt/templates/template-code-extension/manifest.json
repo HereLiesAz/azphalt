@@ -1,0 +1,21 @@
+{
+  "azphalt": "0.1",
+  "id": "com.example.my-extension",
+  "name": "My Extension",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "code",
+  "runtime": "js",
+  "entry": "code/main.js",
+  "capabilities": ["bitmap", "params", "canvas"],
+  "contributes": {
+    "filters": [
+      { "id": "brightness", "name": "Brightness", "entry": "brightness", "ui": "ui/panel.json" }
+    ],
+    "transitions": [
+      { "id": "crossfade", "name": "Crossfade", "entry": "crossfade" }
+    ]
+  }
+}

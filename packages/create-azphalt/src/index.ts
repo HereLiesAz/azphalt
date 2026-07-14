@@ -9,6 +9,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const TEMPLATES = [
   {
+    title: "Code Extension (For Developers)",
+    value: "template-code-extension",
+    description: "A sandboxed filter + transition you can test locally, build, and submit."
+  },
+  {
     title: "Asset Pack (For Creators)",
     value: "template-asset-pack",
     description: "Boilerplate workspace for bundling images, audio, or 3D assets."
@@ -101,7 +106,7 @@ async function init() {
   console.log(`\n${green('Done.')} Now run:\n`);
   console.log(`  cd ${projectName}`);
   console.log(`  npm install`);
-  console.log(`  npm run dev\n`);
+  console.log(`  ${yellow('# then see readme.md for the build / test / dev steps')}\n`);
 }
 
 init().catch((e) => {
