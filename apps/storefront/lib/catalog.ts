@@ -44,6 +44,8 @@ interface Seed {
   payload: Record<string, Uint8Array>;
   /** Extra download count to simulate (via repeated `serve`) so browse-by-popularity has signal. */
   simulatedDownloads?: number;
+  /** Star ratings (0–5) to seed, so the "rating" sort and the rating badges have signal. */
+  ratings?: number[];
   /** When set, the package is consigned for sale at this price (minor units + ISO-4217 currency). */
   listPriceCents?: number;
   /** The consigning creator's marketplace account id (only used when `listPriceCents` is set). */
@@ -114,6 +116,7 @@ const SEEDS: Seed[] = [
       ),
     },
     simulatedDownloads: 2140,
+    ratings: [5, 5, 4, 5, 4, 5, 3, 5, 4, 5],
     listPriceCents: 600,
     sellerId: "seller_hereliesaz",
   },
@@ -145,6 +148,7 @@ const SEEDS: Seed[] = [
       "assets/night-moody.cube": cubeLut("Night / Moody"),
     },
     simulatedDownloads: 1310,
+    ratings: [5, 4, 5, 5, 4, 4],
     listPriceCents: 1200,
     sellerId: "seller_studioaz",
   },
@@ -199,6 +203,7 @@ const SEEDS: Seed[] = [
       "assets/ink-flat.brush": utf8("azphalt-brush:ink-flat"),
     },
     simulatedDownloads: 1725,
+    ratings: [5, 5, 5, 4, 5, 4, 5],
   },
   {
     // A pattern pack — free.
@@ -292,6 +297,7 @@ const SEEDS: Seed[] = [
     },
     payload: {},
     simulatedDownloads: 760,
+    ratings: [5, 4, 5, 4],
   },
   {
     // A second free code extension — a dither filter — with a version history to exercise the UI.
@@ -394,6 +400,11 @@ async function seed(): Promise<void> {
   for (const s of SEEDS) {
     const n = s.simulatedDownloads ?? 0;
     for (let i = 0; i < n; i++) await registry.serve(s.manifest.id);
+  }
+
+  // Seed a few star ratings so the "rating" sort and the rating badges have signal.
+  for (const s of SEEDS) {
+    for (const stars of s.ratings ?? []) store.addRating(s.manifest.id, stars);
   }
 
   // Consign the packages flagged for sale onto the paid lane.

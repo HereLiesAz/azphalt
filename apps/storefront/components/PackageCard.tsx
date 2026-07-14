@@ -5,7 +5,7 @@
  */
 import Link from "next/link";
 import type { Money, PackageSummary } from "@azphalt/registry";
-import { formatCount, formatMoney, kindLabel } from "../lib/format";
+import { formatCount, formatMoney, formatRating, kindLabel } from "../lib/format";
 
 export interface PackageCardProps {
   pkg: PackageSummary;
@@ -51,6 +51,9 @@ export function PackageCard({ pkg, price }: PackageCardProps) {
         <span>v{pkg.version}</span>
         {pkg.author ? <span>by {pkg.author}</span> : null}
         <span>{formatCount(pkg.downloads)} downloads</span>
+        {formatRating(pkg.rating, pkg.ratingCount) ? (
+          <span className="rating">{formatRating(pkg.rating, pkg.ratingCount)}</span>
+        ) : null}
       </div>
     </article>
   );
