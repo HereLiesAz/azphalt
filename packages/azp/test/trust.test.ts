@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
-import { writeAzp, signAzp, generateSigningKey, verifyTrust, countersign, EPOCH, type TrustStore } from "../src/index";
+import { writeAzp, signAzp, generateSigningKey, verifyTrust, countersign, trustStoreFromKeys, EPOCH, type TrustStore } from "../src/index";
 
 /** A minimal asset `.azp` to sign and trust-check. */
 function sampleAzp() {
@@ -85,6 +85,23 @@ describe("trust model", () => {
     expect(r.ok).toBe(true);
     expect(r.trusted).toBe(false);
     expect(r.reason).toMatch(/reaches no trusted key/);
+  });
+
+  it("bootstraps a trust store from advertised keys (.well-known signingKeys)", () => {
+    const author = generateSigningKey();
+    const registry = generateSigningKey();
+    const signed = signAzp(sampleAzp(), { privateKey: author.privateKey });
+    const countersigned = countersign(signed, { registryPrivateKey: registry.privateKey, keyId: "reg-1" });
+
+    // A host advertised the registry key via .well-known; trust it once, transitively trust the author.
+    const advertised = [{ publicKey: registry.publicKey, keyId: "reg-1", label: "Official" }];
+    const store = trustStoreFromKeys(advertised);
+    expect(store.keys).toEqual(advertised);
+    expect(verifyTrust(countersigned, store).trusted).toBe(true);
+
+    // Malformed advertised entries are dropped, not thrown.
+    expect(trustStoreFromKeys([{ keyId: "x" } as never, null as never]).keys).toEqual([]);
+    expect(trustStoreFromKeys(undefined).keys).toEqual([]);
   });
 
   it("countersign refuses an unsigned package", () => {

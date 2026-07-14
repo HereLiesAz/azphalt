@@ -30,6 +30,14 @@ export {
   type MarketplaceOptions,
 } from "./consignment.js";
 export { StripePaymentProvider, stripeConfigFromEnv, type StripeConfig } from "./stripe.js";
+export {
+  issueEntitlement,
+  verifyEntitlement,
+  canonicalClaims,
+  type EntitlementClaims,
+  type EntitlementToken,
+  type EntitlementResult,
+} from "./entitlement.js";
 export type {
   Money,
   Listing,
