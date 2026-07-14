@@ -1,32 +1,19 @@
-# React + TypeScript + Vite
+# @azphalt/marketplace
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A small **reference storefront UI** — a Vite + React app that browses and views packages over the azphalt [Repository API](../../spec/repository-api.md) using [`@azphalt/repository-client`](../../packages/repository-client). It's a demo of the *client* side of the standard.
 
-Currently, two official plugins are available:
+By default it points at a repository running on `http://localhost:3000` — the bundled [`@azphalt/mock-backend`](../mock-backend) serves exactly that. For a spec-complete backend over the real registry, use [`@azphalt/repository-server`](../repository-server) instead.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+> Not to be confused with [`apps/storefront`](../storefront), the Next.js **consignment** storefront that sits directly on [`@azphalt/registry`](../../packages/registry). This app is the lighter, client-only browse UI.
 
-## React Compiler
+## Run it
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+~~~sh
+# terminal 1 — the API the UI reads from
+pnpm --filter @azphalt/mock-backend start
 
-## Expanding the Oxlint configuration
+# terminal 2 — the UI
+pnpm --filter @azphalt/marketplace dev
+~~~
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Then open the printed Vite URL. Point it at a different repository by changing the `RepositoryClient` `url` in `src/App.tsx`.

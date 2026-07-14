@@ -48,7 +48,7 @@ standard: it never touches azphalt's editor surface, only its packages.
 
 ## Conformance checklist (asset host)
 
-Check your host against **[`@azphalt/conformance`](../packages/conformance)** —
+Check your host against **`@azphalt/conformance`** —
 `runAssetConformance(host)` drives your host's `load` through these lines and returns a pass/fail
 report — rather than against prose.
 

@@ -1,5 +1,5 @@
 /**
- * The conformance checks. Each maps to a line of the `docs-old/ADOPTION.md` conformance checklist
+ * The conformance checks. Each maps to a line of the `docs/ADOPTION.md` conformance checklist
  * and returns a {@link CheckResult}. Package-level checks (verify, unsafe paths) run against
  * `@azphalt/azp` directly; the rest drive a {@link CodeHost} — any host exposing the bytes-in
  * `runFilter` contract (`@azphalt/runtime-wasm` is the worked example).

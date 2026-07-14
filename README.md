@@ -22,17 +22,41 @@ Anyone can implement azphalt and run their own store. Ours is just the flagship.
 ## Layout
 
 ~~~
-/spec/          normative, language-neutral (package format, manifest, capabilities, UI schema)
-/packages/      sdk · importers · runtime-reference · registry
-/apps/          storefront (the marketplace)
+/spec/          normative, language-neutral (capabilities, package format, manifest, UI schema, repository API)
+/packages/      the standard's libraries (see below)
+/apps/          storefront (the marketplace) · repository-server (reference backend)
 /examples/      sample extensions
-/docs/          ARCHITECTURE.md · RATIONALE.md · ADOPTION.md · GOVERNANCE.md
+/docs/          the docs site + design/adoption guides (ARCHITECTURE · RATIONALE · ADOPTION · GOVERNANCE)
 LICENSE         MIT
 ~~~
 
+### Packages
+
+| Package | What it is |
+|---|---|
+| [`@azphalt/sdk`](packages/sdk) | The typed surface an extension is written against. |
+| [`@azphalt/azp`](packages/azp) | Read / write / verify / **sign** `.azp` containers (Ed25519 + trust store). |
+| [`@azphalt/importer-*`](packages/importers) | Normalize `.abr`, `.cube`, ISF, gl-transitions, glTF, ML models … **into** `.azp`. |
+| [`@azphalt/runtime-reference`](packages/runtime-reference) | In-process host that proves the capability contract. |
+| [`@azphalt/runtime-wasm`](packages/runtime-wasm) | The real sandbox — QuickJS-in-WASM (`js`) and raw WebAssembly (`wasm`). |
+| [`@azphalt/conformance`](packages/conformance) | Executable pass/fail battery for code hosts and asset hosts. |
+| [`@azphalt/registry`](packages/registry) | Verify · index · version · serve · search, plus the consignment marketplace overlay. |
+| [`@azphalt/repository-client`](packages/repository-client) | Client SDK for the Repository API. |
+| [`@azphalt/mcp`](packages/mcp) | An MCP server exposing `.azp` verify/inspect/extract to any MCP host. |
+| [`create-azphalt`](packages/create-azphalt) | Scaffolder for a new extension package. |
+
+## Documentation
+
+- **Design & reasoning:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/RATIONALE.md`](docs/RATIONALE.md) · [`docs/GOVERNANCE.md`](docs/GOVERNANCE.md)
+- **Adopting azphalt in your app:** [`docs/ADOPTION.md`](docs/ADOPTION.md) (runs code) · [`docs/ADOPTION_ASSET_HOST.md`](docs/ADOPTION_ASSET_HOST.md) (assets only)
+- **Normative specs:** [`spec/`](spec) — capability model, package format, manifest, UI schema, repository API
+- **Releasing:** [`RELEASING.md`](RELEASING.md)
+
+The `docs/` tree also builds as a VitePress site (`pnpm --filter docs build`).
+
 ## Status
 
-Spec-first and early. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and its reasoning, and [`docs/RATIONALE.md`](docs/RATIONALE.md) for the research it's built on. The first conforming host is [GraffitiXR](https://github.com/HereLiesAz/GraffitiXR).
+Spec-first, and now substantially built: the SDK, the `.azp` container with signing and a trust model, a wide importer family, both runtimes (the reference contract and the QuickJS-in-WASM / raw-WASM sandbox), a conformance suite, and the registry with its consignment marketplace and a reference repository backend. The first conforming native host is [GraffitiXR](https://github.com/HereLiesAz/GraffitiXR); see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and its reasoning.
 
 ## License
 

@@ -1,6 +1,6 @@
 /**
  * `@azphalt/conformance` — a runnable conformance suite for azphalt hosts. It turns the checklist in
- * `docs-old/ADOPTION.md` and the normative specs into an executable battery: give it a {@link CodeHost}
+ * `docs/ADOPTION.md` and the normative specs into an executable battery: give it a {@link CodeHost}
  * (any host exposing the bytes-in `runFilter` contract — `@azphalt/runtime-reference`'s sandboxed
  * sibling `@azphalt/runtime-wasm` is the worked example) and it certifies each conformance line.
  *
@@ -58,7 +58,7 @@ export async function runConformance(host: CodeHost): Promise<ConformanceReport>
 
 /**
  * Run the **asset-host** conformance battery against `host` — the lighter profile for an app that
- * consumes `asset` `.azp` but runs no code (`docs-old/ADOPTION_ASSET_HOST.md`).
+ * consumes `asset` `.azp` but runs no code (`docs/ADOPTION_ASSET_HOST.md`).
  */
 export async function runAssetConformance(host: AssetHost): Promise<ConformanceReport> {
   const checks: CheckResult[] = [

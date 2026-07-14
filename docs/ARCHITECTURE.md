@@ -38,24 +38,35 @@ Keeping these separable is the core constraint: anyone can implement azphalt and
 
 The native host that embeds the engine and renders the schema is **each app's own conforming implementation** (GraffitiXR writes the Kotlin one). This repo ships the language-neutral spec plus the TS/JS reference so any host can be checked against it.
 
-## Repo layout (monorepo — pnpm/turbo workspaces)
+## Repo layout (monorepo — pnpm workspaces)
 
 ~~~
-/spec/                      normative, language-neutral
-  package-format.md         the .azp package (assets + code, manifest, signing)
+/spec/                      normative, language-neutral (mirrored under /docs/specs for the site)
+  package-format.md         the .azp package (assets + code, manifest, signing, trust)
   extension-manifest.md     entry points, permissions, declared capabilities
   capability-model.md       what an extension may touch: layers, bitmaps, canvas — and nothing else
   ui-schema.md              the declarative UI controls hosts render natively
+  repository-api.md         the HTTP interface a discovery/distribution repository exposes
 /packages/
   sdk/                      TS SDK authors build against (typed editor extension points)
-  importers/                .abr, .brushset, .kpp/.gbr, .cube -> normalized into .azp
-  runtime-reference/        reference host that loads + runs an extension (proves the contract)
-  registry/                 Node/TS service: host, version, search, serve packages
+  azp/                      read/write/verify/sign .azp containers (Ed25519 + trust store)
+  importers/                .abr, .cube, ISF, gl-transitions, glTF, ML models … -> normalized into .azp
+  runtime-reference/        in-process reference host that proves the capability contract
+  runtime-wasm/             the real sandbox — QuickJS-in-WASM (js) + raw WebAssembly (wasm)
+  conformance/              an executable pass/fail battery for code hosts and asset hosts
+  registry/                 verify · index · version · serve · search, plus the consignment overlay
+  repository-client/        client SDK for the Repository API
+  mcp/                      an MCP server exposing azp verify/inspect/extract to any MCP host
+  create-azphalt/           scaffolder for a new extension package
 /apps/
   storefront/               the marketplace — Next.js consignment store (the business layer)
-/examples/                  sample extensions; doubles as commodity reference tools as templates
-/docs/
-  ADOPTION.md               how another app implements a conforming host
+  repository-server/        a reference Repository API backend over @azphalt/registry
+/examples/                  sample extensions; double as reference templates
+/docs/                      the docs site (VitePress) + these design/adoption guides
+  ARCHITECTURE.md           this document
+  RATIONALE.md              the research it's built on
+  ADOPTION.md               how another app implements a conforming (code) host
+  ADOPTION_ASSET_HOST.md    the lighter, data-only host profile
   GOVERNANCE.md             neutrality + how decisions get made
 LICENSE                     MIT
 README.md
@@ -104,11 +115,11 @@ So: keep the standard open and self-hostable, require nobody to touch the store 
 
 ## Sequencing
 
-1. **Spec skeleton** — package format, extension manifest, capability model, UI schema. The seed.
-2. **SDK + first importers** — `.abr` and `.cube` (highest ROI, cleanest fidelity), targeting `.azp`.
-3. **Reference runtime** — prove an extension actually runs against the contract.
-4. **GraffitiXR native host** — embed the engine, render the UI schema in Compose. The first real consumer.
-5. **Registry + marketplace** — Phase 2+, once there's an audience.
+1. **Spec skeleton** — package format, extension manifest, capability model, UI schema. The seed. *(built)*
+2. **SDK + first importers** — `.abr` and `.cube` first; now a wide importer family targeting `.azp`. *(built)*
+3. **Reference runtime + real sandbox** — `runtime-reference` proves the contract; `runtime-wasm` runs it under QuickJS-in-WASM and raw WebAssembly. *(built)*
+4. **GraffitiXR native host** — embed the engine, render the UI schema in Compose. The first real consumer, and the one piece that lives outside this repo.
+5. **Registry + marketplace** — `registry` (open lane) and its consignment overlay + `repository-server` are built; the hosted marketplace grows once there's an audience.
 
 ## Execution engine — decided
 
@@ -124,5 +135,6 @@ So: keep the standard open and self-hostable, require nobody to touch the store 
 
 1. **UI schema expressiveness:** rich enough for real tool UIs, constrained enough to render natively on every host.
 2. **Importer distribution:** shared TS/WASM modules any host runs, vs per-host native reimplementation.
-3. **Registry:** adopt/fork Open VSX's implementation vs build from scratch.
-4. **Governance model.**
+3. **Governance model** — see [Governance](./GOVERNANCE.md); moves to a neutral foundation if traction warrants.
+
+*Resolved since:* the registry was built from scratch (`packages/registry`) rather than forking Open VSX, with a reference HTTP backend (`apps/repository-server`); the image-buffer ABI is pinned (straight alpha, 8-bit default with 16-bit opt-in).

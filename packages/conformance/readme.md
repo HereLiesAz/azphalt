@@ -1,7 +1,7 @@
 # @azphalt/conformance
 
 A runnable conformance suite for azphalt **hosts**. It turns the checklist in
-[`ADOPTION.md`](../../docs-old/ADOPTION.md) and the normative specs
+[`ADOPTION.md`](../../docs/ADOPTION.md) and the normative specs
 ([capability-model](../../spec/capability-model.md), [ui-schema](../../spec/ui-schema.md),
 [package-format](../../spec/package-format.md)) into an executable battery, so an adopter can
 **self-certify** instead of checking their host against prose.

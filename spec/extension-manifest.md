@@ -20,7 +20,20 @@
 | `files` | ✔ | Map of payload path → SHA-256 digest (integrity; see package-format.md). |
 
 ## `assets`
-Each entry: `type` (`brush` \| `lut` \| `pattern` \| `stamp` \| `shader` \| `transition`), `path` (into `/assets`), an optional `ui` panel (a host-rendered control schema, see ui-schema.md), and `params` — normalized, host-neutral settings. A brush's params might be `spacing`, `angle`, `roundness`, `grainPath`, `flowByPressure`; a shader's or transition's are its declared inputs. Losses versus the source engine are expected (RATIONALE § 1.3).
+Each entry requires a `type`, which determines the format of the asset. The supported primitives are:
+- **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector`
+- **AI Models**: `tflite` | `litert` | `onnx` | `sherpa-bundle`
+
+Each entry also requires a `path` (relative path into `/assets` inside the `.azp` archive) OR a `remoteUrl` (see below).
+
+**Remote Assets (The VSCode Header Pattern):**
+For extremely large files like AI models (e.g. multi-gigabyte `.task` files), bundling the file inside the `.azp` archive is hostile to mobile environments. If an asset is too large to bundle, creators can omit `path` (leave it empty) and provide a `remoteUrl` and `checksum` (SHA-256) instead. The `.azp` acts as a lightweight header, and host applications are responsible for using their own resumable background download managers to fetch the file to local storage. You should also provide a `byteSize` to help hosts allocate space.
+
+**Metadata Fields:**
+- `role`: Optional semantic role (e.g., `type: "tflite", role: "depth"`). Crucial for routing generic model graphs to the correct host engine.
+- `params`: Normalized, host-neutral settings. A brush's params might be `spacing`, `angle`, `roundness`. 
+- `ui`: Optional UI panel path to a control panel schema (see ui-schema.md).
+- `tags`: Optional tags (e.g., `["sfx", "impact"]`) for marketplace filtering.
 
 ## `contributes`
 What the code adds to the host, each with an `id`:
