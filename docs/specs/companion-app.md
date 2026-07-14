@@ -163,7 +163,9 @@ cross-origin fetch/`blob:` access is blocked.
   unreadable:
   - `postMessage` — the companion calls `window.opener.postMessage({ nonce, params, assets }, hostOrigin, transfer)`.
     Assets travel as transferable `ArrayBuffer`s (or structured-clone-copied `Blob`s) — **not** as `blob:`
-    URLs (those are bound to the companion's origin and would fail cross-origin).
+    URLs (those are bound to the companion's origin and would fail cross-origin). The `transfer` array
+    lists **only** the `ArrayBuffer`s; placing a `Blob` there throws `DataCloneError` (it is copied, not
+    transferred).
   - `fire-and-forget` — no return (the `fire-and-forget` shape).
 
 #### The `postMessage` handshake (normative)
@@ -185,10 +187,12 @@ pinned down. All four of these are MUSTs; a host that skips any one MUST NOT acc
 3. **Transferable lifetime.** Assets cross **by value**: an `ArrayBuffer` in the message's `transfer`
    array is *moved* — ownership passes to the host and the companion's copy is neutered — while a `Blob`
    (not a transferable type) is *copied* by structured clone. Neither is a `blob:` URL (which the SOP
-   makes unreadable cross-origin and whose lifetime the companion controls). The host **copies the bytes
-   into its own buffers immediately** on receipt (before any `await`), then validates format/bounds/size;
-   it MUST NOT retain a live reference into companion-owned memory. Oversize payloads are rejected
-   against the same size cap as Android.
+   makes unreadable cross-origin and whose lifetime the companion controls). For an `ArrayBuffer` the
+   host **copies the bytes into its own buffer synchronously** on receipt (before any `await`), so a
+   shared/non-transferred buffer can't be mutated out from under it; a `Blob` is immutable and read
+   asynchronously (`blob.arrayBuffer()`), so the host simply **initiates the read immediately**. It then
+   validates format/bounds/size and MUST NOT retain a live reference into companion-owned memory.
+   Oversize payloads are rejected against the same size cap as Android.
 4. **Popup-blocked fallback.** If the popup is blocked or the platform forbids `window.opener` (e.g. a
    `noopener` navigation), the host falls back to a **one-time upload URL on the host's own origin**,
    carried in the same input `POST`; the companion `POST`s the result there and the host reads it back.
