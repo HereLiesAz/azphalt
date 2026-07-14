@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+
+# Local agent/editor tooling (dev-server launch config, etc.)
+.claude/
