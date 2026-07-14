@@ -1,0 +1,12 @@
+{
+  "name": "my-azphalt-companion",
+  "version": "1.0.0",
+  "description": "A companion-app (kind:\"app\") package for azphalt — an Android app or PWA a host launches via a handoff.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@azphalt/azp": "^0.1.0"
+  }
+}

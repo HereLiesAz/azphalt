@@ -1,0 +1,38 @@
+{
+  "azphalt": "0.1",
+  "id": "com.example.my-companion",
+  "name": "My Companion App",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "app",
+  "targetApps": ["com.example.host-app"],
+  "app": {
+    "platforms": {
+      "android": {
+        "packageId": "com.example.mycompanion",
+        "minSdk": 29,
+        "install": "https://play.google.com/store/apps/details?id=com.example.mycompanion"
+      },
+      "pwa": {
+        "manifestUrl": "https://mycompanion.example.com/manifest.webmanifest",
+        "startUrl": "https://mycompanion.example.com/",
+        "shareTargetUrl": "https://mycompanion.example.com/handoff"
+      }
+    },
+    "handoffs": [
+      {
+        "id": "edit",
+        "action": "edit-image",
+        "name": "Edit in My Companion",
+        "input": { "assets": ["image"] },
+        "output": { "assets": ["image"] },
+        "transport": {
+          "android": { "intentAction": "com.example.mycompanion.EDIT", "resultMimeTypes": ["image/png"] },
+          "pwa": { "shareTargetUrl": "https://mycompanion.example.com/handoff/edit", "return": { "kind": "postMessage" } }
+        }
+      }
+    ]
+  }
+}
