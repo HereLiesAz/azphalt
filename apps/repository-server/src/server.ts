@@ -18,6 +18,13 @@ function normalizeHeaders(raw: IncomingMessage["headers"]): Record<string, strin
  * Build (but do not start) a Node HTTP server implementing the Repository API. Call `.listen(port)`
  * to serve. The `host` in incoming URLs is irrelevant — only the path and query are used.
  */
+const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
+/** Emit the normative `{ error: { code, message } }` envelope for adapter-level failures. */
+const errorBody = (code: string, message: string) => JSON.stringify({ error: { code, message } });
+
+/** Cap a buffered request body (only `POST /updates` has one) so one client can't exhaust memory. */
+const MAX_BODY_BYTES = 1 << 20; // 1 MiB
+
 export function createRepositoryServer(opts: RepositoryHandlerOptions): Server {
   const handle = createRepositoryHandler(opts);
   return createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -34,18 +41,55 @@ export function createRepositoryServer(opts: RepositoryHandlerOptions): Server {
         headers: normalizeHeaders(req.headers),
       };
     } catch {
-      res.writeHead(400, { "content-type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ error: "bad request: malformed URL" }));
+      res.writeHead(400, JSON_HEADERS);
+      res.end(errorBody("bad_request", "bad request: malformed URL"));
       return;
     }
-    handle(repoReq)
-      .then((out) => {
-        res.writeHead(out.status, out.headers);
-        res.end(typeof out.body === "string" ? out.body : Buffer.from(out.body));
-      })
-      .catch((e: unknown) => {
-        res.writeHead(500, { "content-type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ error: `internal error: ${e instanceof Error ? e.message : String(e)}` }));
-      });
+
+    const run = () =>
+      handle(repoReq)
+        .then((out) => {
+          res.writeHead(out.status, out.headers);
+          res.end(typeof out.body === "string" ? out.body : Buffer.from(out.body));
+        })
+        .catch((e: unknown) => {
+          res.writeHead(500, JSON_HEADERS);
+          res.end(errorBody("server_error", `internal error: ${e instanceof Error ? e.message : String(e)}`));
+        });
+
+    // GET/HEAD carry no body; anything else may (the handler only reads it for POST /updates). Buffer
+    // it with a hard cap, then dispatch.
+    if (req.method === "GET" || req.method === "HEAD") {
+      void run();
+      return;
+    }
+    const chunks: Buffer[] = [];
+    let size = 0;
+    // A single-shot guard: once we've responded (overflow / stream error) or dispatched, ignore every
+    // later event, so we never call res.writeHead/end twice ("headers already sent").
+    let done = false;
+    const failRequest = (status: number, code: string, message: string) => {
+      if (done) return;
+      done = true;
+      res.writeHead(status, JSON_HEADERS);
+      res.end(errorBody(code, message));
+      req.destroy(); // stop the client uploading — don't keep draining an oversize/garbage body (DoS).
+    };
+    req.on("data", (chunk: Buffer) => {
+      if (done) return;
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        failRequest(413, "bad_request", "request body too large");
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      if (done) return;
+      done = true;
+      repoReq.body = Buffer.concat(chunks).toString("utf8");
+      void run();
+    });
+    req.on("error", () => failRequest(400, "bad_request", "error reading request body"));
   });
 }

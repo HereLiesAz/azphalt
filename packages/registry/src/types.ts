@@ -36,6 +36,9 @@ export interface PackageSummary {
   kind: Kind;
   license: string;
   description?: string;
+  /** Localized `name` / `description` (BCP-47 tag → string) from the manifest; flat fields are the fallback. */
+  nameLocalized?: Record<string, string>;
+  descriptionLocalized?: Record<string, string>;
   author?: string;
   homepage?: string;
   /** Distinct asset types this package contributes (`brush` / `lut` / `pattern` / `stamp`). */

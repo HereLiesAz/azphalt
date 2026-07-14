@@ -187,6 +187,8 @@ export class Registry {
       kind: m.kind,
       license: m.license,
       description: m.description,
+      nameLocalized: m.nameLocalized,
+      descriptionLocalized: m.descriptionLocalized,
       author: m.author,
       homepage: m.homepage,
       assetTypes,
@@ -202,6 +204,24 @@ export class Registry {
       rating,
       ratingCount,
     };
+  }
+
+  /**
+   * Batch update check: for each installed `{ id, version }`, resolve the newest installable
+   * (non-yanked) version and return only the ids that have something **strictly newer**. Lets a host
+   * refresh a whole installed library in one round-trip instead of one `GET /packages/{id}` each.
+   * Unknown ids (and ids already current or ahead) are simply omitted.
+   */
+  async updates(installed: Array<{ id: string; version: string }>): Promise<Array<{ id: string; latest: string }>> {
+    // Resolve every package's latest in parallel — a DB-backed store makes each `latest` a round-trip,
+    // so a sequential loop would be O(n) latency for a large library. Order is preserved.
+    const resolved = await Promise.all(
+      installed.map(async ({ id, version }) => {
+        const newest = await this.latest(id);
+        return newest && compareSemver(newest.version, version) > 0 ? { id, latest: newest.version } : null;
+      }),
+    );
+    return resolved.filter((x): x is { id: string; latest: string } => x !== null);
   }
 
   /** The full package (summary + newest-first versions), or `undefined`. */

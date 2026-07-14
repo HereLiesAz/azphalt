@@ -49,8 +49,11 @@ Queries the repository for available packages. Host applications should use quer
     {
       "id": "com.sfx.explosions-pack",
       "name": "Cinematic Explosions",
+      "nameLocalized": { "en": "Cinematic Explosions", "es": "Explosiones Cinematográficas" },
+      "descriptionLocalized": { "en": "High-quality SFX…", "es": "Efectos de sonido…" },
       "author": "SFX Studio",
       "version": "1.2.0",
+      "latest": "1.2.0",
       "types": ["audio"],
       "priceStatus": "paid",
       "targetApps": [],
@@ -77,10 +80,14 @@ The ranking/preview fields (`downloads`, `rating`, `ratingCount`, `updatedAt`, `
 
 **Static previews.** A package MAY set a top-level `preview` in its manifest — `{ "image"?, "clip"? }`, each an in-package path or an `https:` URL. `image` is a still for the store card (a LUT swatch, brush stroke, shader still); `clip` is an optional short motion preview for time-based packages (`transition` / `motion` / `video`). The repository surfaces `preview` in the search response so a host can render a browse grid **without downloading or executing** the package. Previews are advisory metadata, never a substitute for verifying the `.azp` before use.
 
+**Localized strings.** The flat `name` / `description` are single-language and **always present** (the fallback). A package MAY additionally carry `nameLocalized` / `descriptionLocalized` — a **BCP-47 language-tag → string** map (sourced from the same-named optional manifest fields) — and the repository surfaces them on each summary and on the detail object. A localized host picks the entry matching the user's locale (with sensible fallback, e.g. `es-MX` → `es` → the flat field). Absent means "only the flat string is available". This is the registry surface of the localization open question in extension-manifest.md / ui-schema.md.
+
+**`latest`.** Each summary carries `latest` — the **newest installable version's** semver — so a host doesn't re-implement version precedence over `versions[]`. In a summary it equals `version`; it is also surfaced on the detail object (below), where the full history is present.
+
 ### 3. Get Package Details
 `GET /packages/{id}`
 
-Retrieves the full metadata and history for a specific package, including the JSON `Manifest`.
+Retrieves the full metadata and history for a specific package, including the JSON `Manifest`. The response carries a top-level **`latest`** (the newest installable version's semver, disambiguating the `versions[]` history), the flat `name` / `description`, and the optional `nameLocalized` / `descriptionLocalized` maps (see § Localized strings).
 
 ### 4. Download Package
 `GET /packages/{id}/versions/{version}/download`
@@ -125,6 +132,36 @@ A host-pollable feed of package **versions pulled after publish** (a bad or mali
 ```
 
 Entries are newest-first. `reason` is optional. A per-version `yanked` flag is also present in the version history from `GET /packages/{id}`; the feed is the efficient way for an installed host to discover revocations it wasn't watching for.
+
+### 6. Batch Update Check
+`POST /updates`
+
+Checks a whole installed library for updates in **one** request, instead of one `GET /packages/{id}` per installed package. The body is a JSON array of the host's installed `{ id, version }`; the response lists **only** the ids that have a strictly newer installable (non-yanked) version.
+
+**Request body:**
+```json
+[
+  { "id": "com.sfx.explosions-pack", "version": "1.1.0" },
+  { "id": "com.hereliesaz.halftone",  "version": "1.2.0" }
+]
+```
+
+**Response (200 OK):**
+```json
+{ "updates": [ { "id": "com.sfx.explosions-pack", "latest": "1.2.0" } ] }
+```
+
+Only ids with something newer appear; an id that is current, ahead, or unknown is silently omitted (a host treats "absent" as "up to date"). `latest` uses the same newest-non-yanked resolution as everywhere else. A malformed body (not a JSON array of `{ id: string, version: string }`) returns `400` with the error envelope below. This is the only non-`GET` endpoint in the API; it is read-only despite the verb (a `POST` because the request carries a body).
+
+## Error responses
+
+Every non-2xx response carries a normative JSON **error envelope** so a host can branch on a stable machine code and show a human message, rather than parsing a bare status:
+
+```json
+{ "error": { "code": "payment_required", "message": "This package requires a license." } }
+```
+
+`code` is drawn from a fixed vocabulary: `bad_request` (`400`), `unauthorized` (`401`), `payment_required` (`402`), `not_found` (`404`), `method_not_allowed` (`405`), `rate_limited` (`429`), `server_error` (`500`). `message` is human-readable and MAY change; branch on `code`, display `message`. (The `401` / `402` download gate and the `400` validation failures above all use this shape.)
 
 ## Reference implementation
 
