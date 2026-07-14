@@ -75,7 +75,9 @@ export class EntitlementAuthorizer implements DownloadAuthorizer {
   constructor(private readonly trustedKeys: string[]) {}
 
   authorize({ token, packageId }: AuthInput): AuthDecision {
-    if (!token) return { authenticated: false, licensed: false };
+    // Cap the untrusted token before base64-decoding + JSON.parse — a real entitlement is a few
+    // hundred bytes, so a large one is abuse. Bounds CPU/memory (DoS guard).
+    if (!token || token.length > 4096) return { authenticated: false, licensed: false };
     let parsed: EntitlementToken;
     try {
       parsed = JSON.parse(Buffer.from(token, "base64").toString("utf8"));

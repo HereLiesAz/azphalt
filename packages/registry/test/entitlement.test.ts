@@ -57,4 +57,17 @@ describe("entitlement (buy-once, offline-verifiable)", () => {
   it("rejects a malformed token without throwing", () => {
     expect(verifyEntitlement({} as never, { trustedKeys: [registry.publicKey] }).valid).toBe(false);
   });
+
+  it("rejects structurally-bad claims with a clear reason (before crypto)", () => {
+    const token = issueEntitlement(registry.privateKey, perpetual);
+    const bad = { ...token, claims: { ...token.claims, kind: "lifetime" } as never };
+    const r = verifyEntitlement(bad, { trustedKeys: [registry.publicKey] });
+    expect(r.valid).toBe(false);
+    expect(r.reason).toMatch(/malformed/);
+  });
+
+  it("tolerates a non-array trustedKeys option", () => {
+    const token = issueEntitlement(registry.privateKey, perpetual);
+    expect(verifyEntitlement(token, { trustedKeys: undefined as never }).trustedIssuer).toBe(false);
+  });
 });

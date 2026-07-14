@@ -92,8 +92,22 @@ export function verifyEntitlement(
   const fail = (reason: string, extra: Partial<EntitlementResult> = {}): EntitlementResult => ({
     signatureValid: false, trustedIssuer: false, live: false, packageMatch: false, valid: false, reason, ...extra,
   });
-  if (!token || typeof token !== "object" || !token.claims || typeof token.signature !== "string" || typeof token.publicKey !== "string") {
+  if (
+    !token || typeof token !== "object" || !token.claims || typeof token.claims !== "object" ||
+    typeof token.signature !== "string" || typeof token.publicKey !== "string"
+  ) {
     return fail("malformed entitlement token");
+  }
+  // Defensive: fully validate the untrusted claims shape before touching crypto (a tampered token
+  // would fail the signature check anyway, but fail fast with a clear reason).
+  const c = token.claims as unknown as Record<string, unknown>;
+  if (
+    typeof c.packageId !== "string" || typeof c.subject !== "string" ||
+    (c.kind !== "perpetual" && c.kind !== "subscription") || typeof c.issuedAt !== "string" ||
+    (c.expiresAt !== undefined && typeof c.expiresAt !== "string") ||
+    (c.keyId !== undefined && typeof c.keyId !== "string")
+  ) {
+    return fail("malformed entitlement claims");
   }
 
   let signatureValid = false;
@@ -107,7 +121,7 @@ export function verifyEntitlement(
   }
   if (!signatureValid) return fail("signature does not verify", { claims: token.claims });
 
-  const trustedIssuer = (opts.trustedKeys ?? []).includes(token.publicKey);
+  const trustedIssuer = Array.isArray(opts?.trustedKeys) && opts.trustedKeys.includes(token.publicKey);
   const nowMs = opts.now ? new Date(opts.now).getTime() : Date.now();
   const live = token.claims.expiresAt === undefined || new Date(token.claims.expiresAt).getTime() > nowMs;
   const packageMatch = opts.packageId === undefined || token.claims.packageId === opts.packageId;

@@ -209,7 +209,13 @@ export function countersign(azp: Uint8Array, opts: CountersignOptions): Uint8Arr
  */
 export function trustStoreFromKeys(keys: Array<{ publicKey: string; keyId?: string; label?: string }> | undefined | null): TrustStore {
   const clean = (Array.isArray(keys) ? keys : []).filter((k) => k && typeof k.publicKey === "string");
-  return { keys: clean.map((k) => ({ publicKey: k.publicKey, keyId: k.keyId, label: k.label })) };
+  return {
+    keys: clean.map((k) => ({
+      publicKey: k.publicKey,
+      keyId: typeof k.keyId === "string" ? k.keyId : undefined,
+      label: typeof k.label === "string" ? k.label : undefined,
+    })),
+  };
 }
 
 /** Convenience: a registry key is just an Ed25519 key. Re-exported for symmetry with signing. */

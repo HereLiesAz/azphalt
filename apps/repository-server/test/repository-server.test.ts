@@ -215,6 +215,7 @@ describe("repository handler — spec/repository-api.md", () => {
     const dl = (authorization?: string) => handle({ method: "GET", path, query: new URLSearchParams(), headers: authorization ? { authorization } : {} });
 
     expect((await dl()).status).toBe(401); // no token
+    expect((await dl("Bearer " + "A".repeat(5000))).status).toBe(401); // oversized token rejected (DoS cap)
     expect((await dl(bearer("com.demo.other"))).status).toBe(402); // valid registry token, wrong package
     const ok = await dl(bearer("com.demo.buyonce")); // valid buy-once token for this package
     expect(ok.status).toBe(200);
