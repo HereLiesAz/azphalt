@@ -4,8 +4,8 @@
  * in-package paths. This packages each folder into a `.azp` and checks it — the same gate the
  * submission PR workflow runs (see `submissions/README.md`).
  */
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { basename, join, sep } from "node:path";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { basename, join } from "node:path";
 import { writeAzp, verifyAzp } from "@azphalt/azp";
 import type { Manifest } from "@azphalt/sdk";
 
@@ -26,11 +26,12 @@ const KINDS = ["asset", "code", "mixed"];
 /** All files under `dir`, as `/`-separated paths relative to `dir`. */
 function walk(dir: string, prefix = ""): string[] {
   const out: string[] = [];
-  for (const name of readdirSync(dir)) {
-    const abs = join(dir, name);
-    const rel = prefix ? `${prefix}/${name}` : name;
-    if (statSync(abs).isDirectory()) out.push(...walk(abs, rel));
-    else out.push(rel.split(sep).join("/"));
+  // `withFileTypes` reads the type from the dirent (no per-entry stat) and does not follow symlinks,
+  // so a broken or circular symlink can't crash or loop the walk.
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...walk(join(dir, entry.name), rel));
+    else if (entry.isFile()) out.push(rel);
   }
   return out;
 }
@@ -72,12 +73,21 @@ export function validateSubmission(dir: string): SubmissionResult {
     payload[rel] = new Uint8Array(readFileSync(join(dir, rel)));
   }
 
-  // Referenced payload must exist (or be a declared remote asset).
-  for (const a of manifest.assets ?? []) {
-    if (a.path) {
-      if (!(a.path in payload)) errors.push(`asset path not found in folder: ${a.path}`);
-    } else if (!a.remoteUrl) {
-      errors.push(`asset of type '${a.type}' has an empty path but no remoteUrl`);
+  // Referenced payload must exist (or be a declared remote asset). Guard against a malformed manifest
+  // where `assets` isn't an array or an entry isn't an object.
+  if (manifest.assets !== undefined && !Array.isArray(manifest.assets)) {
+    errors.push("assets must be an array");
+  } else {
+    for (const a of manifest.assets ?? []) {
+      if (!a || typeof a !== "object") {
+        errors.push("invalid asset entry (expected an object)");
+        continue;
+      }
+      if (a.path) {
+        if (!(a.path in payload)) errors.push(`asset path not found in folder: ${a.path}`);
+      } else if (!a.remoteUrl) {
+        errors.push(`asset of type '${a.type}' has an empty path but no remoteUrl`);
+      }
     }
   }
   if (manifest.entry && !(manifest.entry in payload)) errors.push(`entry module not found in folder: ${manifest.entry}`);
@@ -101,8 +111,9 @@ export function validateSubmission(dir: string): SubmissionResult {
 /** Validate every submission folder directly under `root` (ignoring files like `README.md`). */
 export function validateSubmissions(root: string): SubmissionResult[] {
   if (!existsSync(root)) return [];
-  return readdirSync(root)
-    .filter((name) => statSync(join(root, name)).isDirectory())
+  return readdirSync(root, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name)
     .sort()
     .map((name) => validateSubmission(join(root, name)));
 }
