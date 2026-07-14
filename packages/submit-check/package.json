@@ -1,0 +1,31 @@
+{
+  "name": "@azphalt/submit-check",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Validate registry submissions (submissions/<id>/) by packaging each into a verifiable .azp.",
+  "license": "MIT",
+  "author": "Az (https://hereliesaz.com)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": { "azphalt-submit-check": "./dist/cli.js" },
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "validate": "node dist/cli.js ../../submissions",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@azphalt/azp": "workspace:*",
+    "@azphalt/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "@types/node": "^22.0.0"
+  },
+  "sideEffects": false
+}

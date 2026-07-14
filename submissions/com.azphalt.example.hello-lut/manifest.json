@@ -1,0 +1,13 @@
+{
+  "azphalt": "0.1",
+  "id": "com.azphalt.example.hello-lut",
+  "name": "Hello LUT",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "description": "A minimal example submission: a neutral pass-through .cube LUT.",
+  "author": "azphalt",
+  "capabilities": ["assets", "bitmap"],
+  "assets": [{ "type": "lut", "path": "assets/hello.cube", "tags": ["example"] }]
+}

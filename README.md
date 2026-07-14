@@ -50,6 +50,7 @@ LICENSE         MIT
 - **Design & reasoning:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/RATIONALE.md`](docs/RATIONALE.md) · [`docs/GOVERNANCE.md`](docs/GOVERNANCE.md)
 - **Adopting azphalt in your app:** [`docs/ADOPTION.md`](docs/ADOPTION.md) (runs code) · [`docs/ADOPTION_ASSET_HOST.md`](docs/ADOPTION_ASSET_HOST.md) (assets only)
 - **Normative specs:** [`spec/`](spec) — capability model, package format, manifest, UI schema, repository API
+- **Publishing a package:** [`submissions/README.md`](submissions) — submit a plugin, extension, or asset by pull request
 - **Releasing:** [`RELEASING.md`](RELEASING.md)
 
 The `docs/` tree also builds as a VitePress site (`pnpm --filter docs build`).
