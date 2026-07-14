@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCatalog } from "../../../lib/catalog";
 import { BuyButton } from "../../../components/BuyButton";
+import { CompanionPanel } from "../../../components/CompanionPanel";
 import { formatCount, formatDate, formatMoney, kindLabel } from "../../../lib/format";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,11 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
   const listing = await market.getListing(id);
   const forSale = listing?.status === "active";
   const breakdown = forSale ? await market.quote(id) : null;
+
+  // A companion package (kind:"app") carries no code/assets — just an `app` header describing how to
+  // install and invoke an external Android app / PWA. Read it from the latest version's manifest.
+  const isApp = summary.kind === "app";
+  const app = isApp ? (await registry.latest(id))?.manifest.app : undefined;
 
   const contributionTotal =
     summary.contributes.filters + summary.contributes.tools + summary.contributes.commands;
@@ -56,7 +62,9 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
           </div>
         </div>
         <div>
-          {forSale && listing ? (
+          {isApp ? (
+            <span className="kind-badge app">Companion app</span>
+          ) : forSale && listing ? (
             <span className="price-badge">{formatMoney(listing.price)}</span>
           ) : (
             <span className="free-badge">Free · registry lane</span>
@@ -64,12 +72,19 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
         </div>
       </div>
 
+      {summary.targetApps.length ? (
+        <p className="detail-sub" style={{ marginTop: 8 }}>
+          Available in: {summary.targetApps.map((a) => <span className="chip" key={a}>{a}</span>)}
+        </p>
+      ) : null}
+
       {summary.description ? <p className="lede" style={{ marginTop: 16 }}>{summary.description}</p> : null}
 
       <div className="btn-row">
-        {/* Download is the free lane: GET the .azp bytes straight from the registry. */}
+        {/* The .azp itself: an app package is header-only, so downloading it fetches the manifest a
+            host reads to wire up the handoff — the install happens through the companion panel. */}
         <a className="btn primary" href={`/api/download/${encodeURIComponent(summary.id)}`}>
-          Download .azp (v{summary.version})
+          {isApp ? "Download header (.azp)" : `Download .azp (v${summary.version})`}
         </a>
       </div>
 
@@ -123,7 +138,9 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
         </div>
 
         <div>
-          {forSale && listing && breakdown ? (
+          {app ? (
+            <CompanionPanel app={app} />
+          ) : forSale && listing && breakdown ? (
             <div className="panel">
               <h3>Consignment</h3>
               <p className="detail-sub" style={{ marginBottom: 12 }}>

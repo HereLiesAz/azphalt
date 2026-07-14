@@ -227,6 +227,73 @@ const SEEDS: Seed[] = [
     simulatedDownloads: 540,
   },
   {
+    // A companion app (kind:"app") — an external Android app / PWA the host launches over a handoff
+    // and gets a validated result back (companion-app.md). App-scoped to GraffitiXR's store. Carries
+    // no /code and no assets — just the header that says how to install and invoke the app.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.acme.ar-stencil-capture",
+      name: "AR Stencil Capture",
+      version: "1.0.0",
+      kind: "app",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "Capture a wall stencil in AR and hand it straight back to your editor. A companion app: it " +
+        "runs in the OS's own sandbox with its own camera permission — azphalt only standardizes the " +
+        "handoff, so the moat holds.",
+      author: "Acme AR",
+      homepage: "https://arstencil.acme.com",
+      targetApps: ["com.hereliesaz.graffitixr"],
+      app: {
+        platforms: {
+          android: {
+            packageId: "com.acme.arstencil",
+            minSdk: 29,
+            minVersionCode: 120,
+            install: "https://play.google.com/store/apps/details?id=com.acme.arstencil",
+          },
+          pwa: {
+            manifestUrl: "https://arstencil.acme.com/manifest.webmanifest",
+            startUrl: "https://arstencil.acme.com/",
+            version: "2026-06-01T00:00:00Z",
+            shareTargetUrl: "https://arstencil.acme.com/handoff",
+          },
+        },
+        handoffs: [
+          {
+            id: "capture-stencil",
+            action: "capture",
+            name: "Capture AR Stencil",
+            input: { assets: ["image"], params: { wallWidthMm: "number?" } },
+            output: { assets: ["vector", "image"], params: { scaleMm: "number?" } },
+            transport: {
+              android: {
+                intentAction: "com.acme.arstencil.CAPTURE",
+                resultMimeTypes: ["image/svg+xml", "image/png"],
+              },
+              pwa: { shareTargetUrl: "https://arstencil.acme.com/handoff/capture", return: { kind: "postMessage" } },
+            },
+          },
+          {
+            id: "measure-wall",
+            action: "measure",
+            name: "Measure Wall",
+            input: { assets: ["image"] },
+            output: { params: { widthMm: "number", heightMm: "number" } },
+            minAppVersion: { android: 130, pwa: "2026-06-15T00:00:00Z" },
+            transport: {
+              android: { intentAction: "com.acme.arstencil.MEASURE" },
+              pwa: { return: { kind: "postMessage" } },
+            },
+          },
+        ],
+      },
+    },
+    payload: {},
+    simulatedDownloads: 760,
+  },
+  {
     // A second free code extension — a dither filter — with a version history to exercise the UI.
     manifest: {
       azphalt: "0.1",
