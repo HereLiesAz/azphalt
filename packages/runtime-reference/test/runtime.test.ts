@@ -62,6 +62,39 @@ describe("runtime-reference", () => {
     expect(host.params!.color("ink")).toEqual({ r: 0x20, g: 0x40, b: 0x80, a: 255 });
   });
 
+  it("supports opt-in 16-bit bitmaps (read/write/alloc preserve depth and >255 values)", () => {
+    const world = createWorld({ width: 1, height: 1 });
+    world.layers[0].bitmap = { data: new Uint16Array([1000, 2, 3, 4]), width: 1, height: 1, depth: 16 };
+    const host = createHost(manifest, world);
+    const ref = { id: world.layers[0].id };
+
+    const bmp = host.bitmap!.read(ref);
+    expect(bmp.depth).toBe(16);
+    expect(bmp.data instanceof Uint16Array).toBe(true);
+    expect(bmp.data[0]).toBe(1000);
+
+    (bmp.data as Uint16Array)[0] = 40000; // > 255 — only representable at 16-bit
+    host.bitmap!.write(ref, bmp);
+    expect((world.layers[0].bitmap.data as Uint16Array)[0]).toBe(40000);
+
+    const alloc16 = host.bitmap!.alloc(2, 2, 16);
+    expect(alloc16.depth).toBe(16);
+    expect(alloc16.data instanceof Uint16Array).toBe(true);
+    expect(alloc16.data.length).toBe(2 * 2 * 4);
+
+    // 8-bit alloc is unchanged: no depth field, Uint8ClampedArray.
+    const alloc8 = host.bitmap!.alloc(1, 1);
+    expect(alloc8.depth).toBeUndefined();
+    expect(alloc8.data instanceof Uint8ClampedArray).toBe(true);
+  });
+
+  it("rejects a bitmap whose declared depth disagrees with its data type", () => {
+    const world = createWorld({ width: 1, height: 1 });
+    const host = createHost(manifest, world);
+    const bad = { data: new Uint8ClampedArray(4), width: 1, height: 1, depth: 16 as const };
+    expect(() => host.bitmap!.write({ id: world.layers[0].id }, bad)).toThrow(/depth/);
+  });
+
   it("open() rejects bytes that fail verification", () => {
     expect(() => open(new Uint8Array([1, 2, 3, 4]))).toThrow(AzpError);
   });

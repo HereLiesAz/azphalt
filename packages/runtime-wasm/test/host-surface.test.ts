@@ -122,6 +122,50 @@ describe("runtime-wasm full Host surface", () => {
     expect(r.bitmap.data[1]).toBe(7);
   });
 
+  it("round-trips a 16-bit bitmap through the QuickJS bridge (depth, >255 values, alloc)", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        const bmp = ctx.bitmap.read(ctx.target);
+        if (bmp.depth !== 16) throw new Error("expected 16-bit, got " + bmp.depth);
+        bmp.data[0] = 40000;             // > 255 — only representable at 16-bit
+        bmp.data[1] = bmp.data[1] + 1;
+        ctx.bitmap.write(ctx.target, bmp);
+        const a = ctx.bitmap.alloc(1, 1, 16);
+        if (a.depth !== 16) throw new Error("alloc must honor depth");
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [1000, 2, 3, 4], width: 1, height: 1, depth: 16 } });
+    expect(r.bitmap.depth).toBe(16);
+    expect(r.bitmap.data[0]).toBe(40000);
+    expect(r.bitmap.data[1]).toBe(3);
+  });
+
+  it("clamps 8-bit channel values instead of wrapping them (input out of 0–255)", async () => {
+    const azp = buildAzp({
+      source: `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter(() => {});`,
+      capabilities: ["bitmap"],
+      contributes: filterContributes,
+    });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [300, -5, 256, 128], width: 1, height: 1 } });
+    expect(r.bitmap.data).toEqual([255, 0, 255, 128]); // clamp, not 300%256=44 / -5→251 / 256→0
+  });
+
+  it("writes a partial-view bitmap correctly (data is a subarray of a larger buffer)", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        const big = new Uint8ClampedArray(12);
+        big.set([9, 8, 7, 6], 4);
+        ctx.bitmap.write(ctx.target, { data: big.subarray(4, 8), width: 1, height: 1 }); // byteOffset 4
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 } });
+    expect(r.bitmap.data).toEqual([9, 8, 7, 6]);
+  });
+
   it("gates a new capability: ctx.layers is absent when not granted", async () => {
     const mod = `
       import { defineFilter } from "@azphalt/sdk";
@@ -328,6 +372,23 @@ describe("runtime-wasm raw wasm entry", () => {
     });
     const r = await runFilter(azp, { params: {}, bitmap: { data: [10, 20, 30, 255, 200, 100, 50, 128], width: 2, height: 1 } });
     expect(r.bitmap.data).toEqual([245, 235, 225, 0, 55, 155, 205, 127]);
+    expect(r.redraws).toBe(1);
+  });
+
+  it("runs a 16-bit wasm filter: doubled byte stride, values round-trip as Uint16", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/filter.wasm",
+      bytesEntry: buildInvertWasm(),
+      capabilities: ["bitmap", "canvas"],
+      contributes: { filters: [{ id: "f", name: "F", entry: "filter" }] },
+    });
+    // 1×1 RGBA @ 16-bit = 4 channels = 8 bytes; stride = 1*4*2 = 8, so the byte-wise invert covers
+    // every byte of both channels. Each channel's little-endian bytes are inverted, then re-read as u16.
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [256, 1, 65535, 0], width: 1, height: 1, depth: 16 } });
+    expect(r.bitmap.depth).toBe(16);
+    expect(r.bitmap.data).toEqual([65279, 65534, 0, 65535]);
     expect(r.redraws).toBe(1);
   });
 });

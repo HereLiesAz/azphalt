@@ -20,13 +20,18 @@
  */
 import { getQuickJS, type QuickJSContext, type QuickJSHandle } from "quickjs-emscripten";
 import { readAzp, verifyAzp } from "@azphalt/azp";
-import type { Capability, Manifest } from "@azphalt/sdk";
+import { bytesPerChannel, type BitDepth, type Capability, type Manifest } from "@azphalt/sdk";
 
-/** A bitmap marshaled across the sandbox boundary (RGBA8, `data.length === width*height*4`). */
+/**
+ * A bitmap marshaled across the sandbox boundary. 4 channels per pixel, so `data.length ===
+ * width * height * 4` at any depth. `depth` is opt-in and defaults to 8: absent/`8` ⇒ channels
+ * `0–255`, `16` ⇒ channels `0–65535`.
+ */
 export interface SandboxBitmap {
   data: number[];
   width: number;
   height: number;
+  depth?: BitDepth;
 }
 
 /** Channels 0–255. */
@@ -119,11 +124,29 @@ const SDK_SHIM = `
 interface Layer {
   id: string;
   name: string;
+  /** Raw channel bytes (little-endian at 16-bit); `bytes.length === width * height * 4 * bytesPerChannel(depth)`. */
   bytes: Uint8Array;
   width: number;
   height: number;
+  depth: BitDepth;
   opacity: number;
   blendMode: string;
+}
+
+/** Pack a channel-value array into raw bytes for a depth (16-bit ⇒ little-endian `Uint16`). */
+function packBytes(data: number[] | ArrayLike<number>, depth: BitDepth): Uint8Array {
+  // 8-bit clamps (matching the Uint8ClampedArray ABI), not wraps mod 256.
+  return depth === 16
+    ? new Uint8Array(Uint16Array.from(data as ArrayLike<number>).buffer)
+    : new Uint8Array(Uint8ClampedArray.from(data as ArrayLike<number>));
+}
+
+/** Unpack raw bytes back into a channel-value array for a depth. */
+function unpackBytes(bytes: Uint8Array, depth: BitDepth): number[] {
+  if (depth !== 16) return Array.from(bytes);
+  // `Uint16Array` needs a 2-byte-aligned offset; copy to a fresh (offset-0) buffer if the view is odd.
+  const src = bytes.byteOffset % 2 === 0 ? bytes : new Uint8Array(bytes);
+  return Array.from(new Uint16Array(src.buffer, src.byteOffset, src.byteLength >> 1));
 }
 
 interface World {
@@ -146,12 +169,14 @@ function assertShape(b: SandboxBitmap, what: string): void {
 
 function toLayer(l: SandboxLayer): Layer {
   assertShape(l.bitmap, `layer '${l.id}'`);
+  const depth: BitDepth = l.bitmap.depth === 16 ? 16 : 8;
   return {
     id: l.id,
     name: l.name ?? l.id,
-    bytes: new Uint8Array(l.bitmap.data),
+    bytes: packBytes(l.bitmap.data, depth),
     width: l.bitmap.width,
     height: l.bitmap.height,
+    depth,
     opacity: l.opacity ?? 1,
     blendMode: l.blendMode ?? "normal",
   };
@@ -191,7 +216,10 @@ function normalizeWorld(world: SandboxWorld, defaultAssets: Record<string, Uint8
   };
 }
 
-const layerBitmap = (l: Layer): SandboxBitmap => ({ data: Array.from(l.bytes), width: l.width, height: l.height });
+const layerBitmap = (l: Layer): SandboxBitmap =>
+  l.depth === 16
+    ? { data: unpackBytes(l.bytes, 16), width: l.width, height: l.height, depth: 16 }
+    : { data: unpackBytes(l.bytes, 8), width: l.width, height: l.height };
 
 /** Read the mutated world back into a {@link SandboxResult}, with `bitmap` = the target layer. */
 function readback(world: World, targetId: string): SandboxResult {
@@ -260,9 +288,9 @@ function readGuestBuffer(vm: QuickJSContext, bufH: QuickJSHandle): Uint8Array {
   }
 }
 
-function validateBitmap(out: Uint8Array, w: number, h: number): void {
-  if (!Number.isInteger(w) || !Number.isInteger(h) || w < 0 || h < 0 || out.length !== w * h * 4) {
-    throw new Error("invalid bitmap written from sandbox: stride must be width * 4");
+function validateBitmap(out: Uint8Array, w: number, h: number, depth: BitDepth = 8): void {
+  if (!Number.isInteger(w) || !Number.isInteger(h) || w < 0 || h < 0 || out.length !== w * h * 4 * bytesPerChannel(depth)) {
+    throw new Error("invalid bitmap written from sandbox: byte length must be width * height * 4 * bytesPerChannel(depth)");
   }
 }
 
@@ -297,16 +325,19 @@ function installHostFunctions(vm: QuickJSContext, world: World, granted: Set<Cap
     inject(vm, "__activeLayer", () => vm.newString(world.activeLayerId));
     inject(vm, "__bitmapW", (idH) => vm.newNumber(layerById(world, str(idH)).width));
     inject(vm, "__bitmapH", (idH) => vm.newNumber(layerById(world, str(idH)).height));
+    inject(vm, "__bitmapDepth", (idH) => vm.newNumber(layerById(world, str(idH)).depth));
     inject(vm, "__bitmapRead", (idH) => vm.newArrayBuffer(layerById(world, str(idH)).bytes.buffer));
-    inject(vm, "__bitmapWrite", (idH, bufH, wH, hH) => {
+    inject(vm, "__bitmapWrite", (idH, bufH, wH, hH, dH) => {
       const layer = layerById(world, str(idH));
       const out = readGuestBuffer(vm, bufH);
       const w = num(wH);
       const h = num(hH);
-      validateBitmap(out, w, h);
+      const depth: BitDepth = num(dH) === 16 ? 16 : 8;
+      validateBitmap(out, w, h, depth);
       layer.bytes = out;
       layer.width = w;
       layer.height = h;
+      layer.depth = depth;
       return vm.undefined;
     });
   }
@@ -321,6 +352,7 @@ function installHostFunctions(vm: QuickJSContext, world: World, granted: Set<Cap
         bytes: new Uint8Array(world.canvas.width * world.canvas.height * 4),
         width: world.canvas.width,
         height: world.canvas.height,
+        depth: 8,
         opacity: 1,
         blendMode: "normal",
       });
@@ -413,9 +445,26 @@ function ctxBootstrap(targetLayerId: string): string {
     }
     if (typeof __bitmapRead === 'function') {
       __ctx.bitmap = {
-        read: function (layer) { var id = __lid(layer); return { data: new Uint8ClampedArray(__bitmapRead(id)), width: __bitmapW(id), height: __bitmapH(id) }; },
-        write: function (a, b) { var layer = b === undefined ? null : a; var bmp = b === undefined ? a : b; __bitmapWrite(__lid(layer), bmp.data.buffer, bmp.width, bmp.height); },
-        alloc: function (w, h) { return { data: new Uint8ClampedArray(w * h * 4), width: w, height: h }; },
+        read: function (layer) {
+          var id = __lid(layer);
+          var d = __bitmapDepth(id);
+          var buf = __bitmapRead(id);
+          return { data: d === 16 ? new Uint16Array(buf) : new Uint8ClampedArray(buf), width: __bitmapW(id), height: __bitmapH(id), depth: d };
+        },
+        write: function (a, b) {
+          var layer = b === undefined ? null : a;
+          var bmp = b === undefined ? a : b;
+          var buf = bmp.data.buffer;
+          // If data is a partial view of a larger buffer, pass just its bytes (else the host over-reads).
+          if (bmp.data.byteOffset !== 0 || bmp.data.byteLength !== buf.byteLength) {
+            buf = buf.slice(bmp.data.byteOffset, bmp.data.byteOffset + bmp.data.byteLength);
+          }
+          __bitmapWrite(__lid(layer), buf, bmp.width, bmp.height, bmp.depth || 8);
+        },
+        alloc: function (w, h, depth) {
+          var d = depth === 16 ? 16 : 8;
+          return { data: d === 16 ? new Uint16Array(w * h * 4) : new Uint8ClampedArray(w * h * 4), width: w, height: h, depth: d };
+        },
       };
     }
     if (typeof __layerList === 'function') {
@@ -666,7 +715,8 @@ async function runWasmFilter(
   if (typeof entry !== "function") throw new AzpError(`wasm: module must export the entry '${entryName}'`);
   if (!granted.has("bitmap")) throw new AzpError("wasm: the `bitmap` capability is required for a wasm filter");
 
-  const stride = target.width * 4;
+  // Byte stride accounts for depth: 16-bit channels are two bytes each.
+  const stride = target.width * 4 * bytesPerChannel(target.depth);
   const ptr = 0;
   const need = ptr + target.bytes.length;
   if (memory.buffer.byteLength < need) {
