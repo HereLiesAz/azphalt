@@ -10,11 +10,12 @@ import { PackageCard } from "../../components/PackageCard";
 export const dynamic = "force-dynamic";
 
 interface SearchPageProps {
-  searchParams: { q?: string | string[] };
+  // Next 15: searchParams is delivered as a Promise.
+  searchParams: Promise<{ q?: string | string[] }>;
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const raw = searchParams.q;
+  const raw = (await searchParams).q;
   const q = (Array.isArray(raw) ? raw[0] : raw ?? "").trim();
 
   const { registry, market } = await getCatalog();

@@ -3,7 +3,7 @@
  * (used by tests and the reference server); a production deployment implements {@link RegistryStore}
  * over a database + object store without touching the {@link Registry}/{@link Marketplace} logic.
  */
-import type { Listing, PackageVersion } from "./types.js";
+import type { Listing, PackageVersion, RevocationEntry } from "./types.js";
 
 export interface RegistryStore {
   /** Persist a version's metadata and its `.azp` bytes together. */
@@ -20,6 +20,16 @@ export interface RegistryStore {
   incrementDownloads(id: string, version: string, by?: number): Promise<void>;
   /** Total downloads across all of a package's versions. */
   getDownloads(id: string): Promise<number>;
+  /**
+   * A package's aggregate rating. Ratings are a backend concern (a store may collect them, the open
+   * registry need not); the default store tracks none and returns `{ ratingCount: 0 }`.
+   */
+  getRating(id: string): Promise<{ rating?: number; ratingCount: number }>;
+
+  /** Append a revocation record (a version pulled post-publish). */
+  putRevocation(entry: RevocationEntry): Promise<void>;
+  /** Revocation records, newest-first; when [since] is given, only those with `revokedAt` > [since]. */
+  getRevocations(since?: string): Promise<RevocationEntry[]>;
 
   /** Create or replace a package's consignment listing. */
   putListing(listing: Listing): Promise<void>;
@@ -34,6 +44,8 @@ export class InMemoryStore implements RegistryStore {
   private readonly versions = new Map<string, PackageVersion>(); // `${id}@${version}`
   private readonly bytes = new Map<string, Uint8Array>(); // `${id}@${version}`
   private readonly downloads = new Map<string, number>(); // `${id}@${version}`
+  private readonly ratings = new Map<string, { sum: number; count: number }>(); // packageId
+  private readonly revocations: RevocationEntry[] = []; // append-only log
   private readonly listings = new Map<string, Listing>(); // packageId
 
   private key(id: string, version: string): string {
@@ -76,6 +88,27 @@ export class InMemoryStore implements RegistryStore {
     let total = 0;
     for (const [k, n] of this.downloads) if (k.startsWith(`${id}@`)) total += n;
     return total;
+  }
+
+  /** Record one rating (0–5) for a package — a test/backend hook; not part of {@link RegistryStore}. */
+  addRating(id: string, stars: number): void {
+    const r = this.ratings.get(id) ?? { sum: 0, count: 0 };
+    this.ratings.set(id, { sum: r.sum + stars, count: r.count + 1 });
+  }
+
+  async getRating(id: string): Promise<{ rating?: number; ratingCount: number }> {
+    const r = this.ratings.get(id);
+    if (!r || r.count === 0) return { ratingCount: 0 };
+    return { rating: r.sum / r.count, ratingCount: r.count };
+  }
+
+  async putRevocation(entry: RevocationEntry): Promise<void> {
+    this.revocations.push(entry);
+  }
+
+  async getRevocations(since?: string): Promise<RevocationEntry[]> {
+    const all = [...this.revocations].sort((a, b) => (a.revokedAt < b.revokedAt ? 1 : a.revokedAt > b.revokedAt ? -1 : 0));
+    return since ? all.filter((r) => r.revokedAt > since) : all;
   }
 
   async putListing(listing: Listing): Promise<void> {

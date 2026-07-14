@@ -17,7 +17,7 @@
  * const { session, breakdown } = await market.checkout("com.you.thing", "buyer_1");
  * ```
  */
-export { Registry, RegistryError, compareSemver } from "./registry.js";
+export { Registry, RegistryError, compareSemver, mediaDomainsForManifest } from "./registry.js";
 export { InMemoryStore, type RegistryStore } from "./store.js";
 export {
   Marketplace,
@@ -38,6 +38,7 @@ export type {
   PackageSummary,
   PackageVersion,
   RegistryPackage,
+  RevocationEntry,
   SearchResult,
   PublishResult,
   ListQuery,

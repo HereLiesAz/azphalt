@@ -154,6 +154,51 @@ describe("repository handler — spec/repository-api.md", () => {
     const forx = scoped.packages.find((p: { id: string }) => p.id === "com.demo.forx");
     expect(forx.targetApps).toEqual(["com.app.x"]);
   });
+
+  it("surfaces ranking metadata and filters by media domain + capability subset", async () => {
+    const registry = new Registry();
+    await registry.publish(azp("com.demo.brush", { name: "Brush", capabilities: ["bitmap"], assets: [{ type: "brush", path: "assets/x.cube" }] }));
+    await registry.publish(azp("com.demo.sfx", { name: "SFX", capabilities: ["audio"], assets: [{ type: "audio", path: "assets/x.cube" }] }));
+    const handle = createRepositoryHandler({ registry, index: INDEX });
+    const list = (qs: string) =>
+      handle({ method: "GET", path: "/packages", query: new URL("http://x/packages" + qs).searchParams, headers: {} }).then((r) => JSON.parse(r.body as string));
+
+    const brush = (await list("")).packages.find((p: { id: string }) => p.id === "com.demo.brush");
+    expect(brush.byteSize).toBeGreaterThan(0);
+    expect(brush.mediaDomains).toEqual(["image"]);
+    expect(typeof brush.downloads).toBe("number");
+
+    // A video/audio host keeps the audio SFX and drops the paint-only brush.
+    expect((await list("?mediaDomains=audio")).packages.map((p: { id: string }) => p.id)).toEqual(["com.demo.sfx"]);
+    // A host granting only {audio, assets} can't run the bitmap brush (needs `bitmap`).
+    expect((await list("?capabilities=audio,assets")).packages.map((p: { id: string }) => p.id)).toEqual(["com.demo.sfx"]);
+  });
+
+  it("sorts by name via the `sort` parameter", async () => {
+    const registry = new Registry();
+    await registry.publish(azp("com.demo.zeb", { name: "Zebra" }));
+    await registry.publish(azp("com.demo.app", { name: "Apple" }));
+    const handle = createRepositoryHandler({ registry, index: INDEX });
+    const res = await handle({ method: "GET", path: "/packages", query: new URL("http://x/packages?sort=name").searchParams, headers: {} });
+    expect(JSON.parse(res.body as string).packages.map((p: { name: string }) => p.name)).toEqual(["Apple", "Zebra"]);
+  });
+
+  it("serves the /revocations feed for yanked versions", async () => {
+    const registry = new Registry();
+    await registry.publish(azp("com.demo.bad", { version: "1.0.0" }));
+    await registry.publish(azp("com.demo.bad", { version: "1.1.0" }));
+    await registry.yank("com.demo.bad", "1.0.0", true, "malware");
+    const handle = createRepositoryHandler({ registry, index: INDEX });
+    const res = await handle({ method: "GET", path: "/revocations", query: new URLSearchParams(), headers: {} });
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body as string);
+    expect(body.revocations).toHaveLength(1);
+    expect(body.revocations[0]).toMatchObject({ id: "com.demo.bad", version: "1.0.0", reason: "malware" });
+
+    // A malformed `since` is a 400, not a broken lexical comparison.
+    const bad = await handle({ method: "GET", path: "/revocations", query: new URL("http://x/revocations?since=not-a-date").searchParams, headers: {} });
+    expect(bad.status).toBe(400);
+  });
 });
 
 describe("repository server — end-to-end over @azphalt/repository-client", () => {

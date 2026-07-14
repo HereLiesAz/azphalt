@@ -13,11 +13,12 @@ import { formatCount, formatDate, formatMoney, kindLabel } from "../../../lib/fo
 export const dynamic = "force-dynamic";
 
 interface DetailPageProps {
-  params: { id: string };
+  // Next 15: dynamic route params are delivered as a Promise.
+  params: Promise<{ id: string }>;
 }
 
 export default async function PackageDetailPage({ params }: DetailPageProps) {
-  const id = decodeURIComponent(params.id);
+  const id = decodeURIComponent((await params).id);
   const { registry, market } = await getCatalog();
 
   const pkg = await registry.getPackage(id);

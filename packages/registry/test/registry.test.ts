@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { unzipSync, zipSync } from "fflate";
-import { Registry, RegistryError, compareSemver } from "../src/registry.js";
+import { Registry, RegistryError, compareSemver, mediaDomainsForManifest } from "../src/registry.js";
+import { InMemoryStore } from "../src/store.js";
 import { makeAzp } from "./make.js";
 
 describe("compareSemver", () => {
@@ -141,5 +142,82 @@ describe("Registry app scoping", () => {
     const r = await seeded();
     const forY = await r.search("for", { app: "com.app.y" });
     expect(forY.map((h) => h.package.id).sort()).toEqual(["com.hereliesaz.forxy"]); // "For X and Y" matches, "For X" is out of scope
+  });
+});
+
+describe("mediaDomainsForManifest", () => {
+  const m = (extra: Record<string, unknown>) =>
+    ({ azphalt: "0.1", id: "com.x.y", name: "Y", version: "1.0.0", kind: "asset", license: "MIT", compat: ">=0.1", files: {}, ...extra }) as never;
+
+  it("maps asset types to domains, spanning where a type fits more than one", () => {
+    expect(mediaDomainsForManifest(m({ assets: [{ type: "brush", path: "a" }] })).sort()).toEqual(["image"]);
+    expect(mediaDomainsForManifest(m({ assets: [{ type: "lut", path: "a" }] })).sort()).toEqual(["image", "video"]);
+    expect(mediaDomainsForManifest(m({ assets: [{ type: "audio", path: "a" }] }))).toEqual(["audio"]);
+    expect(mediaDomainsForManifest(m({ assets: [{ type: "onnx", path: "", remoteUrl: "u" }] }))).toEqual(["model"]);
+  });
+
+  it("derives domains from capabilities and a transitions contribution", () => {
+    expect(mediaDomainsForManifest(m({ kind: "code", capabilities: ["bitmap"] }))).toEqual(["image"]);
+    expect(mediaDomainsForManifest(m({ kind: "code", capabilities: ["audio"] }))).toEqual(["audio"]);
+    const tx = mediaDomainsForManifest(m({ kind: "code", capabilities: ["time"], contributes: { transitions: [{ id: "x", name: "X", entry: "x" }] } }));
+    expect(tx).toEqual(["video"]);
+  });
+});
+
+describe("Registry discovery metadata (byteSize / preview / mediaDomains / rating) + revocations", () => {
+  it("surfaces byteSize, preview, and mediaDomains on the summary", async () => {
+    const r = new Registry();
+    await r.publish(
+      makeAzp("com.hereliesaz.card", "1.0.0", {
+        assets: [{ type: "lut", path: "assets/x.bin" }],
+        preview: { image: "preview/card.png", clip: "https://cdn.example/clip.mp4" },
+      } as never),
+    );
+    const s = await r.getSummary("com.hereliesaz.card");
+    expect(s!.byteSize).toBeGreaterThan(0);
+    expect(s!.preview).toEqual({ image: "preview/card.png", clip: "https://cdn.example/clip.mp4" });
+    expect(s!.mediaDomains.sort()).toEqual(["image", "video"]);
+    expect(s!.ratingCount).toBe(0);
+    expect(s!.rating).toBeUndefined();
+  });
+
+  it("filters by media domain (intersection): a video host keeps a LUT, drops a paint-only brush", async () => {
+    const r = new Registry();
+    await r.publish(makeAzp("com.hereliesaz.brush", "1.0.0", { assets: [{ type: "brush", path: "assets/x.bin" }] } as never));
+    await r.publish(makeAzp("com.hereliesaz.lut", "1.0.0", { assets: [{ type: "lut", path: "assets/x.bin" }] } as never));
+    await r.publish(makeAzp("com.hereliesaz.sfx", "1.0.0", { assets: [{ type: "audio", path: "assets/x.bin" }] } as never));
+    const forVideoAudio = await r.list({ mediaDomains: ["video", "audio"] });
+    expect(forVideoAudio.map((s) => s.id).sort()).toEqual(["com.hereliesaz.lut", "com.hereliesaz.sfx"]);
+  });
+
+  it("sorts by rating, unrated last", async () => {
+    const store = new InMemoryStore();
+    const r = new Registry(store);
+    await r.publish(makeAzp("com.hereliesaz.a", "1.0.0"));
+    await r.publish(makeAzp("com.hereliesaz.b", "1.0.0"));
+    await r.publish(makeAzp("com.hereliesaz.c", "1.0.0")); // unrated
+    store.addRating("com.hereliesaz.a", 3);
+    store.addRating("com.hereliesaz.b", 5);
+    const ranked = await r.list({ sort: "rating" });
+    expect(ranked.map((s) => s.id)).toEqual(["com.hereliesaz.b", "com.hereliesaz.a", "com.hereliesaz.c"]);
+    expect((await r.getSummary("com.hereliesaz.b"))!.rating).toBe(5);
+  });
+
+  it("records a revocation on yank and serves the feed, filtered by `since`", async () => {
+    const r = new Registry();
+    await r.publish(makeAzp("com.hereliesaz.bad", "1.0.0"));
+    await r.publish(makeAzp("com.hereliesaz.bad", "1.1.0"));
+    const cut = new Date(Date.now() - 1000).toISOString(); // safely before the yank (ms-resolution)
+    await r.yank("com.hereliesaz.bad", "1.0.0", true, "security");
+    const all = await r.revocations();
+    expect(all).toHaveLength(1);
+    expect(all[0]).toMatchObject({ id: "com.hereliesaz.bad", version: "1.0.0", reason: "security" });
+    expect(typeof all[0].revokedAt).toBe("string");
+    // Since a moment before the yank, it's included; since a moment after, it's not.
+    expect(await r.revocations(cut)).toHaveLength(1);
+    expect(await r.revocations(new Date(Date.now() + 1000).toISOString())).toHaveLength(0);
+    // Re-yanking an already-yanked version doesn't append a duplicate.
+    await r.yank("com.hereliesaz.bad", "1.0.0", true, "security");
+    expect(await r.revocations()).toHaveLength(1);
   });
 });

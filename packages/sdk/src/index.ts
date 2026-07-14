@@ -95,6 +95,17 @@ export interface Contributes {
   transitions?: TransitionContribution[];
 }
 
+/**
+ * A static store-card preview a host can render **without downloading or executing** the package —
+ * a LUT swatch, a brush stroke, a shader still. See `spec/repository-api.md` § Static previews.
+ */
+export interface PreviewRef {
+  /** A still image — an in-package path (e.g. `preview/card.png`) or an `https:` URL. */
+  image?: string;
+  /** An optional short clip for time-based packages (`transition` / `motion` / `video`) — path or `https:` URL. */
+  clip?: string;
+}
+
 /** The root `manifest.json` of a `.azp`. See `spec/extension-manifest.md`. */
 export interface Manifest {
   /** Format version, e.g. `"0.1"`. */
@@ -127,6 +138,9 @@ export interface Manifest {
    * See `spec/repository-api.md` § App scoping.
    */
   targetApps?: string[];
+
+  /** A static preview for the store card (see {@link PreviewRef}), surfaced in search responses. */
+  preview?: PreviewRef;
 
   /** Payload path → SHA-256 digest (integrity; see `spec/package-format.md`). */
   files: Record<string, string>;
@@ -464,6 +478,13 @@ export interface RepositoryIndex {
   };
 }
 
+/**
+ * A coarse media domain a package operates in, so a host filters browse/search to what it can run
+ * (a video/audio host hides paint-only extensions). Derived from a package's asset types +
+ * capabilities — see `spec/repository-api.md` § Media domains.
+ */
+export type MediaDomain = "image" | "video" | "audio" | "3d" | "model" | "font";
+
 export interface PackageSummary {
   id: string;
   name: string;
@@ -477,6 +498,22 @@ export interface PackageSummary {
    * § App scoping.
    */
   targetApps?: string[];
+
+  /* Discovery / ranking metadata — a gallery ranks and previews on these without a download. */
+  /** Total served downloads across all versions. */
+  downloads?: number;
+  /** Average user rating 0–5, if the repository tracks ratings (absent when untracked). */
+  rating?: number;
+  /** Number of ratings behind `rating` (0 when none / untracked). */
+  ratingCount?: number;
+  /** Latest-publish instant (ISO-8601), for a `recent` sort. */
+  updatedAt?: string;
+  /** Size of the latest version's `.azp` container, in bytes. */
+  byteSize?: number;
+  /** Coarse media domains this package touches (image / video / audio / 3d / model / font). */
+  mediaDomains?: MediaDomain[];
+  /** A static preview for the store card (no download / execute needed). */
+  preview?: PreviewRef;
 }
 
 export interface PackageSearchResponse {
