@@ -1,0 +1,61 @@
+{
+  "method": "GET",
+  "path": "/packages/com.demo.free",
+  "status": 200,
+  "body": {
+    "id": "com.demo.free",
+    "name": "Free Grade",
+    "author": "Az",
+    "version": "1.1.0",
+    "latest": "1.1.0",
+    "types": [
+      "lut"
+    ],
+    "targetApps": [],
+    "priceStatus": "free",
+    "manifest": {
+      "azphalt": "0.1",
+      "id": "com.demo.free",
+      "name": "Free Grade",
+      "version": "1.1.0",
+      "kind": "asset",
+      "license": "MIT",
+      "compat": ">=0.1",
+      "capabilities": [
+        "assets",
+        "bitmap"
+      ],
+      "assets": [
+        {
+          "type": "lut",
+          "path": "assets/x.cube",
+          "params": {
+            "format": "cube",
+            "strength": 1
+          }
+        }
+      ],
+      "author": "Az",
+      "files": {
+        "assets/x.cube": "sha256-c8bce4299c8606d5ca59a4724f46e484e430c42d506cfc2a3f30bbe84d5199cc",
+        "LICENSE": "sha256-267f7a2e19dfa9df99af774520985a0e521925293ea5b7e767ab06969d06bf91"
+      }
+    },
+    "versions": [
+      {
+        "version": "1.1.0",
+        "publishedAt": "2026-01-01T00:00:00.000Z",
+        "size": 709,
+        "digest": "sha256-5e7c059842dfdd623875e1acb488e078da505238f3d1c90164b628d46a5f9370",
+        "yanked": false
+      },
+      {
+        "version": "1.0.0",
+        "publishedAt": "2026-01-01T00:00:00.000Z",
+        "size": 734,
+        "digest": "sha256-7974e8812a5d7f269d37577752ae05ef5361aff3a45f72a885223f13ab9e69d1",
+        "yanked": false
+      }
+    ]
+  }
+}

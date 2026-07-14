@@ -1,0 +1,26 @@
+{
+  "method": "GET",
+  "path": "/.well-known/azphalt-repository.json",
+  "status": 200,
+  "body": {
+    "name": "Sample azphalt Repository",
+    "version": "0.1",
+    "description": "Reference sample responses for a host's registry client.",
+    "supportedTypes": [
+      "lut",
+      "audio",
+      "transition"
+    ],
+    "profiles": [
+      "image",
+      "video-audio"
+    ],
+    "signingKeys": [
+      {
+        "publicKey": "MCowBQYDK2VwAyEA…",
+        "keyId": "reg-2026",
+        "label": "Sample Repository"
+      }
+    ]
+  }
+}

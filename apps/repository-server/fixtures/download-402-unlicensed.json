@@ -1,0 +1,11 @@
+{
+  "method": "GET",
+  "path": "/packages/com.demo.paid/versions/1.0.0/download",
+  "status": 402,
+  "body": {
+    "error": {
+      "code": "payment_required",
+      "message": "payment required: no license for this package"
+    }
+  }
+}
