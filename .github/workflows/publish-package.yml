@@ -46,6 +46,6 @@ jobs:
       - run: pnpm --filter "$PACKAGE..." build
       - name: Publish with E429 backoff
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: bash scripts/publish-one-retry.sh "$PACKAGE"
