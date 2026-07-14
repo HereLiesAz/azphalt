@@ -168,6 +168,77 @@ export function uiPanelAzp(): Uint8Array {
   });
 }
 
+/* ─────────────── temporal (video / audio) fixtures ─────────────── */
+
+/** Build a `code`-kind `.azp` with one contribution — used by the video/audio conformance profile. */
+function buildContribAzp(
+  id: string,
+  moduleSource: string,
+  capabilities: Manifest["capabilities"],
+  contributes: Manifest["contributes"],
+): Uint8Array {
+  const manifest: Omit<Manifest, "files"> = {
+    azphalt: "0.1",
+    id,
+    name: "Temporal Fixture",
+    version: "1.0.0",
+    kind: "code",
+    license: "MIT",
+    compat: ">=0.1",
+    entry: "code/main.js",
+    runtime: "js",
+    capabilities,
+    contributes,
+  };
+  return writeAzp({ manifest, payload: { "code/main.js": enc(moduleSource) }, license: "MIT License" }).azp;
+}
+
+/** An audio effect that zeroes channel 1 of every frame — proves the interleaved float32 ABI round-trips. */
+const AUDIO_GATE_MODULE = `
+  import { defineFilter } from "@azphalt/sdk";
+  export const gate = defineFilter((ctx) => {
+    const buf = ctx.audio.read();
+    const s = buf.samples, ch = buf.channels;
+    for (let f = 0; f * ch < s.length; f++) s[f * ch + 1] = 0;
+    ctx.audio.write(buf);
+  });
+`;
+
+/**
+ * A `transitions` contribution: a linear crossfade over `from`/`to` by `progress`. Reads
+ * `ctx.from`/`ctx.to`/`ctx.progress` (the two-input transition dispatch) and writes the blend to
+ * `ctx.target`.
+ */
+export function transitionAzp(): Uint8Array {
+  const mod = `
+    import { defineTransition } from "@azphalt/sdk";
+    export const cross = defineTransition((ctx) => {
+      const a = ctx.from, b = ctx.to, p = ctx.progress;
+      const out = ctx.bitmap.read(ctx.target);
+      const d = out.data, ad = a.data, bd = b.data;
+      for (let i = 0; i < d.length; i++) d[i] = Math.round(ad[i] + (bd[i] - ad[i]) * p);
+      ctx.bitmap.write(ctx.target, out);
+    });
+  `;
+  return buildContribAzp("com.azphalt.conformance.transition", mod, ["bitmap"], {
+    transitions: [{ id: "cross", name: "Crossfade", entry: "cross" }],
+  });
+}
+
+/** An audio filter that declares (and is granted) `audio` — must run and round-trip the PCM block. */
+export function audioAzp(): Uint8Array {
+  return buildContribAzp("com.azphalt.conformance.audio", AUDIO_GATE_MODULE, ["audio"], {
+    filters: [{ id: "gate", name: "Audio Gate", entry: "gate" }],
+  });
+}
+
+/** The same audio filter, but the manifest grants only `params` — reaching `ctx.audio` must fail. */
+export function audioUngrantedAzp(): Uint8Array {
+  return buildContribAzp("com.azphalt.conformance.audio-ungranted", AUDIO_GATE_MODULE, ["params"], {
+    filters: [{ id: "gate", name: "Audio Gate", entry: "gate" }],
+  });
+}
+
 /* ─────────────── asset-host fixtures ─────────────── */
 
 interface AssetBuildOpts {
