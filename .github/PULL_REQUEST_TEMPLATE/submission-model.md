@@ -23,7 +23,7 @@ Delivering an on-device model as a signed `.azp`. A model is an **asset** (`kind
 
 - [ ] `kind` is `"asset"`; each model `assets[]` entry has a model `type` (`onnx` / `tflite` / `litert` / `sherpa-bundle`).
 - [ ] The folder is named **exactly** `<manifest.id>` (reverse-DNS).
-- [ ] Required fields present: `azphalt`, `name`, `version` (semver), `kind`, `license`, `compat`. **No** `files` field.
+- [ ] Required fields present: `azphalt`, `id`, `name`, `version` (semver), `kind`, `license`, `compat`. **No** `files` field.
 - [ ] A `LICENSE` file is present and reflects the model's **actual** license and any upstream weights' terms.
 - [ ] **Heavy weights are not bundled:** `"path": ""`, plus `remoteUrl`, `checksum` (`sha256-…`), and `byteSize`. (Bundling multi-hundred-MB files is hostile to mobile hosts.)
 - [ ] `role` is set so the host can route the model without bespoke per-model code.
