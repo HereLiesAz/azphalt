@@ -67,7 +67,12 @@ export interface AssetContribution {
   tags?: string[];
   /** The URL where this asset can be directly downloaded by the host (VSCode header pattern). */
   remoteUrl?: string;
-  /** Checksum of the remote file (usually SHA-256) for verification. */
+  /**
+   * Integrity checksum for a remotely-delivered asset (`remoteUrl`, or a `files[]` member), as
+   * **`sha256-<hex>`** — the same lowercase-hex form as `manifest.files` digests. A host MUST verify
+   * the downloaded bytes against it before use and reject on mismatch. See
+   * `spec/extension-manifest.md` § assets (Remote assets) and `spec/package-format.md` § Signing.
+   */
   checksum?: string;
   /** Pre-declared byte size for download progress / headroom checks. */
   byteSize?: number;
@@ -77,6 +82,83 @@ export interface AssetContribution {
    * interpret its outputs with no per-model code. See {@link ModelIO}.
    */
   io?: ModelIO;
+  /**
+   * Multi-part model members (encoder / decoder / tokens / config), each independently bundled-or-remote
+   * and checksummed — the additive form of the single `path` / `remoteUrl` for a model that is more
+   * than one file (a sherpa-onnx bundle, a Vosk tree). A host materializes them into one directory and
+   * routes it by `role`. See {@link ModelFileMember} and `spec/extension-manifest.md` § Multi-file model bundles.
+   */
+  files?: ModelFileMember[];
+  /**
+   * Pre-download compatibility requirements for a model asset, so a host can decide whether it can run
+   * the model **before** fetching hundreds of MB. All fields optional. See {@link ModelRequirements}.
+   */
+  requirements?: ModelRequirements;
+  /**
+   * The delivered model's own license / attribution / usage terms — distinct from the package-level
+   * SPDX `license` (which governs the *packaging*). A host surfaces it before install; a registry can
+   * filter on it. See {@link ModelLicense}.
+   */
+  modelLicense?: ModelLicense;
+}
+
+/**
+ * One member file of a multi-part model asset. Each member is either bundled (`path`) or remote
+ * (`remoteUrl`), carries its own `checksum` so a host verifies (and re-fetches) per file, and the
+ * host materializes all members into one directory routed by the asset's `role`.
+ */
+export interface ModelFileMember {
+  /** Logical name within the bundle, also its on-disk filename (e.g. `"encoder.onnx"`, `"tokens.txt"`). */
+  name: string;
+  /** In-package path under `/assets` when bundled. Provide exactly one of `path` or `remoteUrl`. */
+  path?: string;
+  /** URL to fetch this member from when delivered remotely. Provide exactly one of `path` or `remoteUrl`. */
+  remoteUrl?: string;
+  /** `sha256-<hex>` of this member's bytes — a host verifies the member against it before use. */
+  checksum?: string;
+  /** Advisory byte size, for per-member download progress / headroom. */
+  byteSize?: number;
+  /** Hint that `remoteUrl` honors HTTP `Range`, so a host's resumable (partial) download will work. */
+  supportsRange?: boolean;
+}
+
+/**
+ * Pre-download compatibility / requirements for a model asset — the numbers a host needs to say
+ * "yes/no" before committing to the transfer (distinct from {@link ModelIO}, which it needs to *run*
+ * the model afterward). A host filters/skips on these at plan time; a registry can filter on them too.
+ */
+export interface ModelRequirements {
+  /** Target runtime, e.g. `"onnxruntime"` | `"tflite"` | `"litert"` | `"sherpa-onnx"`. */
+  runtime?: string;
+  /** Minimum runtime format version — an ONNX opset / TFLite schema floor, e.g. `">=17"`. */
+  formatVersion?: string;
+  /** Delivered weights' quantization: `"float32"` | `"float16"` | `"int8"` | `"dynamic"`. */
+  quantization?: string;
+  /** Required accelerator: `"cpu"` (runs anywhere) | `"gpu"` | `"nnapi"` | `"coreml"` | `"qnn"`. */
+  accelerator?: string;
+  /** Minimum device RAM in MB, so a host can warn before install rather than OOM after. */
+  minRamMB?: number;
+}
+
+/**
+ * A delivered model's own license, attribution, and usage terms — the license that actually governs
+ * the user, since a model `.azp` usually bundles third-party weights (CC-BY-NC, gated, RAIL, …) whose
+ * terms differ from the package's SPDX `license`. A host MUST surface this before install; a registry
+ * can filter on the machine-checkable summary fields.
+ */
+export interface ModelLicense {
+  /** SPDX id, or `"LicenseRef-…"` for a non-SPDX license (e.g. `"CC-BY-NC-4.0"`). */
+  spdx?: string;
+  /** Machine-checkable summary for filtering / badging: may output be used commercially? */
+  commercialUse?: boolean;
+  /** Whether the license requires attribution. */
+  attributionRequired?: boolean;
+  /** The exact credit string a host MUST display (e.g. `"MobileNet-V3 © Google, CC-BY-NC-4.0"`). */
+  attribution?: string;
+  /** URL to the full license text. */
+  url?: string;
+  /** Provenance of the weights (e.g. the Hugging Face model page). */
+  sourceUrl?: string;
 }
 
 /**
