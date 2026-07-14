@@ -12,3 +12,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test
+
+  # Keep the language-neutral conformance fixtures honest: regenerate them from
+  # @azphalt/conformance and fail if the committed bytes / expectations drift (issue #32).
+  # They are emitted artifacts, never hand-edited — see conformance/fixtures/README.md.
+  conformance-fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm fixtures
+      - name: Fail if the fixtures are out of date
+        run: |
+          git add -N conformance/fixtures
+          if ! git diff --exit-code -- conformance/fixtures; then
+            echo "::error::conformance/fixtures is out of date — run 'pnpm fixtures' and commit the result." >&2
+            exit 1
+          fi
