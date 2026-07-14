@@ -15,7 +15,14 @@
  *
  * @type {import('next').NextConfig}
  */
-const basePath = process.env.NEXT_BASE_PATH || undefined;
+// Next requires basePath to start with "/" and not end with one; normalize so a value like
+// "azphalt" or "/azphalt/" doesn't fail the build.
+let basePath = process.env.NEXT_BASE_PATH || undefined;
+if (basePath) {
+  if (!basePath.startsWith("/")) basePath = `/${basePath}`;
+  if (basePath.endsWith("/")) basePath = basePath.slice(0, -1);
+  if (basePath === "") basePath = undefined;
+}
 
 const nextConfig = {
   reactStrictMode: true,
