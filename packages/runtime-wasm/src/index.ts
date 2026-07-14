@@ -570,11 +570,69 @@ export function runCommand(azp: Uint8Array, world: SandboxWorld, opts: RunOption
 /* ───────────────────────── raw wasm path ───────────────────────── */
 
 /**
+ * Build the capability-gated `env` imports for a raw wasm filter. Strings and buffers cross the
+ * boundary by convention: an **input** the module provides is a `(ptr, len)` pair it wrote into its
+ * own memory; an **output** the host provides is written into a module-supplied `(outPtr, outCap)`
+ * scratch buffer, and the call returns the byte length (or the needed length if it exceeded `cap`,
+ * `-1` on not-found). `mem` is read lazily so the closures see the instance's memory once it exists.
+ */
+function wasmEnv(internal: World, granted: Set<Capability>, getMem: () => WebAssembly.Memory): WebAssembly.ModuleImports {
+  const view = () => new Uint8Array(getMem().buffer);
+  const readStr = (ptr: number, len: number) => new TextDecoder().decode(view().subarray(ptr, ptr + len));
+  const writeOut = (outPtr: number, outCap: number, bytes: Uint8Array): number => {
+    if (bytes.length <= outCap) view().set(bytes, outPtr);
+    return bytes.length; // caller compares to its cap to detect truncation
+  };
+  const enc = (s: string) => new TextEncoder().encode(s);
+  const env: WebAssembly.ModuleImports = {};
+
+  if (granted.has("canvas")) {
+    env.requestRedraw = () => void internal.redraws++;
+    env.canvasWidth = () => internal.canvas.width;
+    env.canvasHeight = () => internal.canvas.height;
+    env.canvasDpi = () => internal.canvas.dpi;
+  }
+  if (granted.has("params")) {
+    env.paramNumber = (kp: number, kl: number) => Number(internal.params[readStr(kp, kl)]);
+    env.paramBool = (kp: number, kl: number) => (internal.params[readStr(kp, kl)] ? 1 : 0);
+    env.paramString = (kp: number, kl: number, op: number, oc: number) =>
+      writeOut(op, oc, enc(String(internal.params[readStr(kp, kl)] ?? "")));
+  }
+  if (granted.has("color")) {
+    env.colorActive = (outPtr: number) => {
+      const c = internal.color.active;
+      view().set([c.r & 0xff, c.g & 0xff, c.b & 0xff, c.a & 0xff], outPtr);
+    };
+    env.colorSetActive = (inPtr: number) => {
+      const b = view().subarray(inPtr, inPtr + 4);
+      internal.color.active = { r: b[0], g: b[1], b: b[2], a: b[3] };
+    };
+  }
+  if (granted.has("assets")) {
+    env.assetRead = (pp: number, pl: number, op: number, oc: number) => {
+      const bytes = internal.assets[readStr(pp, pl)];
+      return bytes ? writeOut(op, oc, bytes) : -1;
+    };
+  }
+  if (granted.has("selection")) {
+    env.selectionSize = () => (internal.selection ? internal.selection.bytes.length : 0);
+    env.selectionRead = (outPtr: number) => {
+      if (internal.selection) view().set(internal.selection.bytes, outPtr);
+    };
+  }
+  if (granted.has("layers")) {
+    env.layerCount = () => internal.layers.length;
+  }
+  return env;
+}
+
+/**
  * Run a raw `runtime: "wasm"` filter against the shared-memory image ABI
  * (`spec/capability-model.md`). The module exports `memory` and the entry function
  * `entry(ptr, width, height, stride)`; the host writes the target layer's RGBA8 bytes into the
  * module's memory, calls the entry, and reads them back. Capability-gated host functions are passed
- * as `env` imports (first cut: `requestRedraw` for `canvas`). The bitmap crosses at `ptr = 0`.
+ * as `env` imports (see {@link wasmEnv} for the string/buffer marshaling convention). The bitmap
+ * crosses at `ptr = 0`; the `bitmap` capability is required.
  */
 async function runWasmFilter(
   wasmBytes: Uint8Array,
@@ -587,8 +645,11 @@ async function runWasmFilter(
   const targetId = world.targetLayerId ?? internal.activeLayerId;
   const target = internal.layers.find((l) => l.id === targetId) ?? internal.layers[0];
 
-  const env: WebAssembly.ModuleImports = {};
-  if (granted.has("canvas")) env.requestRedraw = () => void internal.redraws++;
+  let mem: WebAssembly.Memory | undefined;
+  const env = wasmEnv(internal, granted, () => {
+    if (!mem) throw new AzpError("wasm: memory accessed before instantiation");
+    return mem;
+  });
 
   let instance: WebAssembly.Instance;
   try {
@@ -599,6 +660,7 @@ async function runWasmFilter(
     throw new AzpError(`wasm: instantiation failed: ${e instanceof Error ? e.message : String(e)}`);
   }
   const memory = instance.exports.memory as WebAssembly.Memory | undefined;
+  mem = memory instanceof WebAssembly.Memory ? memory : undefined;
   const entry = instance.exports[entryName] as ((ptr: number, w: number, h: number, stride: number) => void) | undefined;
   if (!(memory instanceof WebAssembly.Memory)) throw new AzpError("wasm: module must export a `memory`");
   if (typeof entry !== "function") throw new AzpError(`wasm: module must export the entry '${entryName}'`);
