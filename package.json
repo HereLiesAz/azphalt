@@ -10,6 +10,7 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean",
+    "fixtures": "pnpm --filter \"@azphalt/conformance...\" build && pnpm --filter @azphalt/conformance emit",
     "changeset": "changeset",
     "version": "changeset version && pnpm install --lockfile-only",
     "release": "pnpm build && pnpm test && changeset publish"

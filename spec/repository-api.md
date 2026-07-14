@@ -18,9 +18,14 @@ Provides global metadata about the repository, its supported API versions, and i
   "auth": {
     "type": "oauth2",
     "url": "https://sfx.example.com/oauth/authorize"
-  }
+  },
+  "signingKeys": [
+    { "publicKey": "MCowBQYDK2VwAyEA…", "keyId": "reg-2026", "label": "Official SFX Library" }
+  ]
 }
 ```
+
+**Trust bootstrap.** `signingKeys` publishes the registry's Ed25519 signing public key(s) (base64 SPKI DER). A host adds them to its trust store on first contact — trusting the registry **once** — and thereby (a) transitively trusts every author the registry counter-signs (see package-format.md § Signing) and (b) can verify the registry's buy-once **entitlement tokens** offline (see § Download). Reference: `@azphalt/azp`'s `trustStoreFromKeys(index.signingKeys)` → `verifyTrust`. Key distribution over TLS from the well-known URL is the bootstrap; a host MAY additionally pin keys out-of-band.
 
 ### 2. Search Packages
 `GET /packages`
@@ -85,6 +90,18 @@ Downloads the binary `.azp` payload.
 **Authentication Requirement:**
 If a package is marked `priceStatus: "paid"`, the host application must provide a Bearer token in the `Authorization` header. 
 If the token is missing or invalid, or the user does not have a license, the server MUST return standard HTTP `401 Unauthorized` or `402 Payment Required`.
+
+**Buy-once entitlements (offline-verifiable).** For a **perpetual, buy-once** purchase, the Bearer token MAY be a **registry-signed entitlement token** rather than a session token — so a host verifies the license **locally**, with no per-open phone-home (footage never leaves the device). The token is `{ claims, signature, publicKey }`:
+
+```json
+{
+  "claims": { "packageId": "com.sfx.explosions-pack", "subject": "user_42", "kind": "perpetual", "issuedAt": "2026-06-01T00:00:00Z", "keyId": "reg-2026" },
+  "signature": "base64-ed25519-over-canonical-claims",
+  "publicKey": "base64-spki-of-the-registry-key"
+}
+```
+
+The registry issues it (Ed25519 over the canonical claims) at purchase; the host verifies it against a registry key from § Trust bootstrap. It is **valid** when the signature verifies, the issuer key is trusted, the token isn't expired (a `perpetual` token never is; a `subscription` carries `expiresAt`), and `claims.packageId` matches the requested package. The server-side gate maps the same verdict to the `401`/`402`/`200` above: a validly-signed token from a trusted registry is an authenticated identity (`402` if it doesn't cover this package or has expired), anything else is `401`. Reference: `@azphalt/registry`'s `issueEntitlement` / `verifyEntitlement`, wired into the reference server's `EntitlementAuthorizer`. This reuses the same Ed25519 trust plumbing as package signing — no new cryptography.
 
 **Response (200 OK):**
 Headers: `Content-Type: application/x-azphalt`
