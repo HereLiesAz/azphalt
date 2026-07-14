@@ -122,6 +122,50 @@ describe("runtime-wasm full Host surface", () => {
     expect(r.bitmap.data[1]).toBe(7);
   });
 
+  it("round-trips a 16-bit bitmap through the QuickJS bridge (depth, >255 values, alloc)", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        const bmp = ctx.bitmap.read(ctx.target);
+        if (bmp.depth !== 16) throw new Error("expected 16-bit, got " + bmp.depth);
+        bmp.data[0] = 40000;             // > 255 — only representable at 16-bit
+        bmp.data[1] = bmp.data[1] + 1;
+        ctx.bitmap.write(ctx.target, bmp);
+        const a = ctx.bitmap.alloc(1, 1, 16);
+        if (a.depth !== 16) throw new Error("alloc must honor depth");
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [1000, 2, 3, 4], width: 1, height: 1, depth: 16 } });
+    expect(r.bitmap.depth).toBe(16);
+    expect(r.bitmap.data[0]).toBe(40000);
+    expect(r.bitmap.data[1]).toBe(3);
+  });
+
+  it("clamps 8-bit channel values instead of wrapping them (input out of 0–255)", async () => {
+    const azp = buildAzp({
+      source: `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter(() => {});`,
+      capabilities: ["bitmap"],
+      contributes: filterContributes,
+    });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [300, -5, 256, 128], width: 1, height: 1 } });
+    expect(r.bitmap.data).toEqual([255, 0, 255, 128]); // clamp, not 300%256=44 / -5→251 / 256→0
+  });
+
+  it("writes a partial-view bitmap correctly (data is a subarray of a larger buffer)", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        const big = new Uint8ClampedArray(12);
+        big.set([9, 8, 7, 6], 4);
+        ctx.bitmap.write(ctx.target, { data: big.subarray(4, 8), width: 1, height: 1 }); // byteOffset 4
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 } });
+    expect(r.bitmap.data).toEqual([9, 8, 7, 6]);
+  });
+
   it("gates a new capability: ctx.layers is absent when not granted", async () => {
     const mod = `
       import { defineFilter } from "@azphalt/sdk";
@@ -232,9 +276,89 @@ function buildInvertWasm(): Uint8Array {
   return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...imports, ...funcs, ...mem, ...exports, ...code]);
 }
 
+/**
+ * Hand-assemble a wasm module exercising the extended env ABI: it writes the key `"on"` into its
+ * own memory, calls `env.paramBool(keyPtr, keyLen)` and stores the result at `mem[ptr]`, calls
+ * `env.canvasWidth()` and stores it at `mem[ptr+1]`, then calls `env.requestRedraw()`. This proves
+ * the string-key marshaling convention (the host reads the key from module memory) end-to-end.
+ */
+function buildParamsWasm(): Uint8Array {
+  const uleb = (n: number): number[] => {
+    const out: number[] = [];
+    do {
+      let b = n & 0x7f;
+      n >>>= 7;
+      if (n) b |= 0x80;
+      out.push(b);
+    } while (n);
+    return out;
+  };
+  // `i32.const` operands are *signed* LEB128: a value ≥ 64 needs a continuation byte, or its bit-6
+  // reads as a sign bit and decodes negative (e.g. a bare `0x6f` is -17, not 111).
+  const sleb = (n: number): number[] => {
+    const out: number[] = [];
+    for (;;) {
+      const b = n & 0x7f;
+      n >>= 7;
+      const done = (n === 0 && (b & 0x40) === 0) || (n === -1 && (b & 0x40) !== 0);
+      out.push(done ? b : b | 0x80);
+      if (done) return out;
+    }
+  };
+  const i32c = (n: number): number[] => [0x41, ...sleb(n)];
+  const section = (id: number, content: number[]): number[] => [id, ...uleb(content.length), ...content];
+  const str = (s: string): number[] => [...uleb(s.length), ...[...s].map((c) => c.charCodeAt(0))];
+
+  // Types: t0 (i32,i32)->i32, t1 ()->i32, t2 ()->(), t3 (i32,i32,i32,i32)->()
+  const types = section(1, [
+    0x04,
+    0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f,
+    0x60, 0x00, 0x01, 0x7f,
+    0x60, 0x00, 0x00,
+    0x60, 0x04, 0x7f, 0x7f, 0x7f, 0x7f, 0x00,
+  ]);
+  // Imports (funcidx 0..2): env.paramBool t0, env.canvasWidth t1, env.requestRedraw t2
+  const imports = section(2, [
+    0x03,
+    ...str("env"), ...str("paramBool"), 0x00, 0x00,
+    ...str("env"), ...str("canvasWidth"), 0x00, 0x01,
+    ...str("env"), ...str("requestRedraw"), 0x00, 0x02,
+  ]);
+  const funcs = section(3, [0x01, 0x03]); // filter uses t3 (funcidx 3)
+  const mem = section(5, [0x01, 0x00, 0x01]);
+  const exports = section(7, [0x02, ...str("memory"), 0x02, 0x00, ...str("filter"), 0x00, 0x03]);
+  const body = [
+    ...i32c(200), ...i32c(111), 0x3a, 0x00, 0x00, // mem[200] = 'o'
+    ...i32c(201), ...i32c(110), 0x3a, 0x00, 0x00, // mem[201] = 'n'
+    0x20, 0x00, ...i32c(200), ...i32c(2), 0x10, 0x00, 0x3a, 0x00, 0x00, // mem[ptr] = paramBool("on")
+    0x20, 0x00, ...i32c(1), 0x6a, 0x10, 0x01, 0x3a, 0x00, 0x00, // mem[ptr+1] = canvasWidth()
+    0x10, 0x02, // requestRedraw()
+    0x0b,
+  ];
+  const funcBody = [0x00, ...body]; // no locals
+  const code = section(10, [0x01, ...uleb(funcBody.length), ...funcBody]);
+  return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...imports, ...funcs, ...mem, ...exports, ...code]);
+}
+
 describe("runtime-wasm raw wasm entry", () => {
   it("assembles a valid wasm module", () => {
     expect(WebAssembly.validate(buildInvertWasm().slice().buffer as ArrayBuffer)).toBe(true);
+    expect(WebAssembly.validate(buildParamsWasm().slice().buffer as ArrayBuffer)).toBe(true);
+  });
+
+  it("bridges params + canvas to a wasm filter via the string-marshaling env ABI", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/filter.wasm",
+      bytesEntry: buildParamsWasm(),
+      capabilities: ["bitmap", "params", "canvas"],
+      contributes: { filters: [{ id: "f", name: "F", entry: "filter" }] },
+    });
+    const r = await runFilter(azp, { params: { on: true }, bitmap: { data: [10, 20, 30, 255, 200, 100, 50, 128], width: 2, height: 1 } });
+    expect(r.bitmap.data[0]).toBe(1); // paramBool("on") === true → 1
+    expect(r.bitmap.data[1]).toBe(2); // canvasWidth() === 2
+    expect(r.redraws).toBe(1);
   });
 
   it("runs a runtime:\"wasm\" filter over the shared-memory ABI (invert + redraw)", async () => {
@@ -248,6 +372,23 @@ describe("runtime-wasm raw wasm entry", () => {
     });
     const r = await runFilter(azp, { params: {}, bitmap: { data: [10, 20, 30, 255, 200, 100, 50, 128], width: 2, height: 1 } });
     expect(r.bitmap.data).toEqual([245, 235, 225, 0, 55, 155, 205, 127]);
+    expect(r.redraws).toBe(1);
+  });
+
+  it("runs a 16-bit wasm filter: doubled byte stride, values round-trip as Uint16", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/filter.wasm",
+      bytesEntry: buildInvertWasm(),
+      capabilities: ["bitmap", "canvas"],
+      contributes: { filters: [{ id: "f", name: "F", entry: "filter" }] },
+    });
+    // 1×1 RGBA @ 16-bit = 4 channels = 8 bytes; stride = 1*4*2 = 8, so the byte-wise invert covers
+    // every byte of both channels. Each channel's little-endian bytes are inverted, then re-read as u16.
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [256, 1, 65535, 0], width: 1, height: 1, depth: 16 } });
+    expect(r.bitmap.depth).toBe(16);
+    expect(r.bitmap.data).toEqual([65279, 65534, 0, 65535]);
     expect(r.redraws).toBe(1);
   });
 });

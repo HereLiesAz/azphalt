@@ -203,18 +203,46 @@ export interface Panel {
 
 /* ───────────────────────────── Pixels ───────────────────────────── */
 
+/** Bits per channel of a {@link Bitmap}. `8` (the default) or `16`. */
+export type BitDepth = 8 | 16;
+
 /**
- * An image buffer crossing the host boundary. Straight (non-premultiplied) alpha,
- * 8-bit RGBA, row-major, tightly packed (`stride = width * 4`). Mutated in place on
- * the hot path — see the image-buffer ABI in `spec/capability-model.md`.
+ * An image buffer crossing the host boundary. Straight (non-premultiplied) alpha, RGBA, row-major,
+ * tightly packed. Mutated in place on the hot path — see the image-buffer ABI in
+ * `spec/capability-model.md`.
+ *
+ * **Depth is opt-in and defaults to 8.** Regardless of depth the buffer holds 4 channels per pixel,
+ * so the element count is always `width * height * 4`; what changes is the element type:
+ * - `depth` absent or `8` ⇒ `data` is a `Uint8ClampedArray`, channels `0–255`.
+ * - `depth === 16` ⇒ `data` is a `Uint16Array`, channels `0–65535`.
+ *
+ * The *byte* stride therefore depends on depth (`width * 4 * bytesPerChannel(depth)`), but the
+ * element-length invariant is depth-independent. Use {@link maxChannelValue} to scale between depths.
  */
 export interface Bitmap {
-  data: Uint8ClampedArray;
+  data: Uint8ClampedArray | Uint16Array;
   width: number;
   height: number;
+  /** Bits per channel; absent ⇒ 8. */
+  depth?: BitDepth;
 }
 
-/** Channels 0–255. */
+/** The effective bit depth of a bitmap (absent ⇒ 8). */
+export function bitDepth(bitmap: Pick<Bitmap, "depth">): BitDepth {
+  return bitmap.depth ?? 8;
+}
+
+/** Bytes per channel for a depth: 1 at 8-bit, 2 at 16-bit. */
+export function bytesPerChannel(depth: BitDepth): number {
+  return depth === 16 ? 2 : 1;
+}
+
+/** The maximum channel value for a depth: 255 at 8-bit, 65535 at 16-bit. */
+export function maxChannelValue(depth: BitDepth): number {
+  return depth === 16 ? 65535 : 255;
+}
+
+/** Channels 0–255 (8-bit reference range). */
 export interface RGBA {
   r: number;
   g: number;
@@ -248,7 +276,8 @@ export interface LayersApi {
 export interface BitmapApi {
   read(layer: LayerRef): Bitmap;
   write(layer: LayerRef, bitmap: Bitmap): void;
-  alloc(width: number, height: number): Bitmap;
+  /** Allocate a zeroed RGBA bitmap. `depth` defaults to 8 (a `Uint8ClampedArray`). */
+  alloc(width: number, height: number, depth?: BitDepth): Bitmap;
 }
 
 export interface SelectionApi {

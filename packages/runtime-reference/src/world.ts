@@ -3,7 +3,7 @@
  * real host's document while proving the capability contract and the image-buffer ABI. A
  * conforming host backs the same `Host` API with its own layers/canvas instead.
  */
-import type { Bitmap, RGBA } from "@azphalt/sdk";
+import type { BitDepth, Bitmap, RGBA } from "@azphalt/sdk";
 
 /** One editable layer in the {@link World}. */
 export interface WorldLayer {
@@ -30,9 +30,13 @@ export interface World {
   redraws: number;
 }
 
-/** Allocate a `width × height` RGBA8 bitmap, optionally filled with a solid `fill` color. */
-export function blankBitmap(width: number, height: number, fill?: RGBA): Bitmap {
-  const data = new Uint8ClampedArray(width * height * 4);
+/**
+ * Allocate a zeroed `width × height` RGBA bitmap, optionally filled with a solid `fill` color.
+ * `depth` defaults to 8 (a `Uint8ClampedArray`); pass 16 for a `Uint16Array`. `fill` channels are
+ * written verbatim, so a 16-bit fill takes 16-bit channel values.
+ */
+export function blankBitmap(width: number, height: number, fill?: RGBA, depth: BitDepth = 8): Bitmap {
+  const data = depth === 16 ? new Uint16Array(width * height * 4) : new Uint8ClampedArray(width * height * 4);
   if (fill) {
     for (let i = 0; i < data.length; i += 4) {
       data[i] = fill.r;
@@ -41,7 +45,7 @@ export function blankBitmap(width: number, height: number, fill?: RGBA): Bitmap 
       data[i + 3] = fill.a;
     }
   }
-  return { data, width, height };
+  return depth === 16 ? { data, width, height, depth } : { data, width, height };
 }
 
 export interface CreateWorldOptions {

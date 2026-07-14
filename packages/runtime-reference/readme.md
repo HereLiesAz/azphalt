@@ -12,7 +12,7 @@ This first cut proves the **contract**, not the sandbox:
 - **Capability gating** — `createHost` builds only the sub-APIs a manifest declared; an ungranted
   capability is **absent** (`undefined`), matching `spec/capability-model.md`'s "absent, not
   merely gated."
-- **Image-buffer ABI** — bitmaps are RGBA8, straight alpha, `stride = width * 4`, mutated in place.
+- **Image-buffer ABI** — bitmaps are RGBA, straight alpha, mutated in place; 8-bit by default (`Uint8ClampedArray`), 16-bit opt-in via `depth: 16` (`Uint16Array`, channels 0–65535).
 - **Contribution dispatch** — `runFilter`/`runTool`/`runCommand` resolve the manifest `entry`
   export and run it with a capability-scoped context.
 
