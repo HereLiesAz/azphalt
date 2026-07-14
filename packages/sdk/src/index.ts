@@ -32,10 +32,13 @@ export type Capability =
   | "audio"
   | "storage";
 
-export type AssetType = 
+export type AssetType =
   | "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition"
   | "mesh" | "material" | "hdri" | "motion" | "palette"
   | "image" | "video" | "font" | "audio" | "vector"
+  // Reusable video/graphic-catalog assets: a title/lower-third `template` and a compositing `overlay`
+  // (PNG or animated). They join `transition`, `motion`, `video`, `audio`, `font` as the temporal catalog.
+  | "template" | "overlay"
   | "tflite" | "litert" | "onnx" | "sherpa-bundle";
 
 export interface AssetContribution {
@@ -48,7 +51,15 @@ export interface AssetContribution {
    * {@link ModelRole} where one fits, so routing is consistent across hosts.
    */
   role?: ModelRole;
-  /** Normalized, host-neutral parameters (e.g. spacing, angle, roundness). */
+  /**
+   * Normalized, host-neutral parameters, by asset type. Keys are conventions so a value round-trips
+   * across hosts; a host ignores keys it doesn't understand. Examples:
+   * - `brush`: `spacing`, `angle`, `roundness`
+   * - `lut`: `strength` (0..1 dry/wet blend, default 1)
+   * - `overlay`: `opacity` (0..1, default 1), `anchor` (`top-left`…`center`…`bottom-right`), `scale`
+   * - `template` (title / lower-third): `fields` (named text slots the host fills), `safeArea`
+   * - `transition`: host-provided `from`/`to`/`progress`; authored `params.format` (e.g. `gl-transition`)
+   */
   params?: Record<string, unknown>;
   /** Optional UI panel path (e.g. assets/ui.json) generated for configurable assets. */
   ui?: string;
