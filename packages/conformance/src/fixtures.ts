@@ -247,11 +247,24 @@ interface AssetBuildOpts {
   type?: string;
   /** Panel JSON to store at `ui/grade.json` and reference from the asset (default a valid panel). */
   panel?: unknown;
+  /** Extra asset contributions appended after the primary asset (e.g. an unknown-`type` asset). */
+  extraAssets?: Array<{ type: string; path: string }>;
+  /** Extra payload files (path → bytes) backing the {@link extraAssets}. */
+  extraPayload?: Record<string, Uint8Array>;
 }
 
 /** Build an `asset`-kind `.azp` with one asset (a `.cube` LUT by default) + a ui panel. */
 function buildAssetAzp(opts: AssetBuildOpts = {}): Uint8Array {
   const panel = opts.panel ?? everyControlPanel();
+  const assets: AssetContribution[] = [
+    {
+      type: (opts.type ?? "lut") as AssetContribution["type"],
+      path: "assets/grade.cube",
+      ui: "ui/grade.json",
+      params: { format: "cube" },
+    },
+    ...(opts.extraAssets ?? []).map((a) => ({ type: a.type as AssetContribution["type"], path: a.path })),
+  ];
   const manifest: Omit<Manifest, "files"> = {
     azphalt: "0.1",
     id: "com.azphalt.conformance.asset",
@@ -260,20 +273,14 @@ function buildAssetAzp(opts: AssetBuildOpts = {}): Uint8Array {
     kind: "asset",
     license: "MIT",
     compat: opts.compat ?? ">=0.1",
-    assets: [
-      {
-        type: (opts.type ?? "lut") as AssetContribution["type"],
-        path: "assets/grade.cube",
-        ui: "ui/grade.json",
-        params: { format: "cube" },
-      },
-    ],
+    assets,
   };
   return writeAzp({
     manifest,
     payload: {
       "assets/grade.cube": enc('TITLE "Teal"\nLUT_3D_SIZE 2\n'),
       "ui/grade.json": enc(JSON.stringify(panel)),
+      ...(opts.extraPayload ?? {}),
     },
     license: "MIT License",
   }).azp;
@@ -282,6 +289,19 @@ function buildAssetAzp(opts: AssetBuildOpts = {}): Uint8Array {
 /** A conforming asset package: a `lut` asset with a valid ui panel — an asset host must accept it. */
 export function assetAzp(): Uint8Array {
   return buildAssetAzp();
+}
+
+/**
+ * A valid asset package mixing a known `lut` with an asset of an **unknown** `type` — an asset host
+ * MUST accept it, apply the `lut`, and *parse-and-skip* the unrecognized asset rather than rejecting
+ * the whole package (`docs/ADOPTION_ASSET_HOST.md`; the `type` vocabulary is open, so hosts meet new
+ * types constantly). The unknown asset carries a real payload so the package still verifies.
+ */
+export function unknownTypeAzp(): Uint8Array {
+  return buildAssetAzp({
+    extraAssets: [{ type: "holo-widget", path: "assets/mystery.bin" }],
+    extraPayload: { "assets/mystery.bin": enc("mystery-payload-bytes") },
+  });
 }
 
 /** A `code`-kind package — an asset host MUST refuse it (it runs no code). */

@@ -19,6 +19,7 @@ const assetHost: AssetHost = {
     if (manifest.kind === "code") return { accepted: false, reason: "kind:code — this host runs no code" };
     if (!satisfiesCompat(HOST_VERSION, manifest.compat)) return { accepted: false, reason: "incompatible compat" };
     const assets = manifest.assets ?? [];
+    const applied: string[] = [];
     for (const a of assets) {
       if (a.ui) {
         const raw = payload[a.ui];
@@ -27,9 +28,11 @@ const assetHost: AssetHost = {
           return { accepted: false, reason: `invalid ui panel: ${a.ui}` };
         }
       }
-      if (!SUPPORTED.has(a.type)) return { accepted: false, reason: `unsupported asset type: ${a.type}` };
+      // Parse-and-skip: a type this host's engine doesn't handle is ignored, not a package
+      // rejection (docs/ADOPTION_ASSET_HOST.md). Only report the types actually applied.
+      if (SUPPORTED.has(a.type)) applied.push(a.type);
     }
-    return { accepted: true, appliedTypes: assets.map((a) => a.type) };
+    return { accepted: true, appliedTypes: applied };
   },
 };
 
@@ -39,7 +42,7 @@ describe("@azphalt/conformance — asset host", () => {
     const failed = report.checks.filter((c) => !c.ok);
     expect(failed, failed.map((c) => `${c.id}: ${c.detail}`).join("\n")).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.checks).toHaveLength(7);
+    expect(report.checks).toHaveLength(8);
   });
 
   it("has teeth — a host that accepts everything fails", async () => {
@@ -51,6 +54,26 @@ describe("@azphalt/conformance — asset host", () => {
     expect(report.checks.find((c) => c.id === "reject-tampered")?.ok).toBe(false);
     expect(report.checks.find((c) => c.id === "compat-version")?.ok).toBe(false);
     expect(report.checks.find((c) => c.id === "reject-bad-panel")?.ok).toBe(false);
+  });
+
+  it("fails a host that rejects a package for containing an unknown asset type", async () => {
+    // A host that refuses the whole package on an unrecognized type (instead of skipping it).
+    const rejectsUnknown: AssetHost = {
+      apiVersion: "0.1",
+      load(azp) {
+        const base = assetHost.load(azp);
+        // Re-derive: if any asset type is unsupported, refuse — the anti-pattern #39 warns against.
+        if (!verifyAzp(azp).ok) return base;
+        const { manifest } = readAzp(azp);
+        if (manifest.kind === "code" || !satisfiesCompat("0.1", manifest.compat)) return base;
+        for (const a of manifest.assets ?? []) {
+          if (!SUPPORTED.has(a.type)) return { accepted: false, reason: `unsupported asset type: ${a.type}` };
+        }
+        return base;
+      },
+    };
+    const report = await runAssetConformance(rejectsUnknown);
+    expect(report.checks.find((c) => c.id === "unknown-type-skip")?.ok).toBe(false);
   });
 
   it("fails a host that does not report an apiVersion", async () => {
