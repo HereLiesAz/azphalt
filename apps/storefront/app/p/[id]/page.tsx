@@ -72,7 +72,7 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
         </div>
       </div>
 
-      {summary.targetApps.length ? (
+      {summary.targetApps?.length ? (
         <p className="detail-sub" style={{ marginTop: 8 }}>
           Available in: {summary.targetApps.map((a) => <span className="chip" key={a}>{a}</span>)}
         </p>

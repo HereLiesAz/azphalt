@@ -6,7 +6,7 @@
  * version floors, and each function the app offers (action, input → output, transports).
  */
 import type { AppManifest, Handoff } from "@azphalt/sdk";
-import { formatHandoffIO } from "../lib/format";
+import { formatHandoffIO, safeHttpUrl } from "../lib/format";
 
 /** One handoff row: the function's name/action, its input → output, transports, and any version floor. */
 function HandoffRow({ handoff }: { handoff: Handoff }) {
@@ -64,8 +64,8 @@ export function CompanionPanel({ app }: { app: AppManifest }) {
             {android.minVersionCode != null ? (
               <div className="muted">requires versionCode ≥ {android.minVersionCode}</div>
             ) : null}
-            {android.install ? (
-              <a className="btn primary" href={android.install} rel="noreferrer noopener">
+            {safeHttpUrl(android.install) ? (
+              <a className="btn primary" href={safeHttpUrl(android.install)} rel="noreferrer noopener">
                 Get it on Google Play
               </a>
             ) : null}
@@ -80,13 +80,13 @@ export function CompanionPanel({ app }: { app: AppManifest }) {
             </div>
             {pwa.startUrl ? <div className="id">{pwa.startUrl}</div> : null}
             <div className="companion-links">
-              {pwa.startUrl ? (
-                <a className="btn primary" href={pwa.startUrl} rel="noreferrer noopener">
+              {safeHttpUrl(pwa.startUrl) ? (
+                <a className="btn primary" href={safeHttpUrl(pwa.startUrl)} rel="noreferrer noopener">
                   Open web app
                 </a>
               ) : null}
-              {pwa.manifestUrl ? (
-                <a className="btn" href={pwa.manifestUrl} rel="noreferrer noopener">
+              {safeHttpUrl(pwa.manifestUrl) ? (
+                <a className="btn" href={safeHttpUrl(pwa.manifestUrl)} rel="noreferrer noopener">
                   Install
                 </a>
               ) : null}

@@ -27,6 +27,21 @@ export function formatDate(iso: string): string {
   return iso.slice(0, 10);
 }
 
+/**
+ * Return `url` only when it is a safe `http:`/`https:` link, else `undefined`. Companion install /
+ * start / manifest URLs come from an untrusted `.azp` manifest, so guard every one before it reaches
+ * an `href` — a `javascript:` (or `data:`) URI there would execute on click.
+ */
+export function safeHttpUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:" ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Human label for a package `kind`. */
 export function kindLabel(kind: string): string {
   if (kind === "code") return "Code extension";

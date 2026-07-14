@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getCatalog } from "../lib/catalog";
-import { formatHandoffIO, kindLabel } from "../lib/format";
+import { formatHandoffIO, kindLabel, safeHttpUrl } from "../lib/format";
 
 describe("format helpers", () => {
   it("labels every package kind, companion apps included", () => {
@@ -19,6 +19,17 @@ describe("format helpers", () => {
     );
     expect(formatHandoffIO(undefined)).toBe("—");
     expect(formatHandoffIO({})).toBe("—");
+  });
+
+  it("only lets http(s) URLs through to hrefs (guards against javascript: XSS)", () => {
+    expect(safeHttpUrl("https://play.google.com/store/apps/details?id=com.x")).toBe(
+      "https://play.google.com/store/apps/details?id=com.x",
+    );
+    expect(safeHttpUrl("http://example.com")).toBe("http://example.com");
+    expect(safeHttpUrl("javascript:alert(1)")).toBeUndefined();
+    expect(safeHttpUrl("data:text/html,<script>")).toBeUndefined();
+    expect(safeHttpUrl("/relative")).toBeUndefined();
+    expect(safeHttpUrl(undefined)).toBeUndefined();
   });
 });
 
