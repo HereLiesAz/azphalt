@@ -102,15 +102,22 @@ export type ColorOrder = "RGB" | "BGR";
 
 /**
  * Per-channel input normalization, expressed as **either** mean/std (`(x/255 - mean) / std`) **or**
- * scale/bias (`x * scale + bias`). Each value is a scalar (applied to every channel) or a per-channel
- * array; a host applies whichever pair is present.
+ * scale/bias (`x * scale + bias`) — never both. Each value is a scalar (applied to every channel) or a
+ * per-channel array. Modeled as a mutually-exclusive union so mixing the two pairs is a compile error.
  */
-export interface Normalization {
-  mean?: number | number[];
-  std?: number | number[];
-  scale?: number | number[];
-  bias?: number | number[];
-}
+export type Normalization =
+  | {
+      mean?: number | number[];
+      std?: number | number[];
+      scale?: never;
+      bias?: never;
+    }
+  | {
+      scale?: number | number[];
+      bias?: number | number[];
+      mean?: never;
+      std?: never;
+    };
 
 /** Audio framing for a model with an audio input. */
 export interface AudioInputSpec {
@@ -120,8 +127,8 @@ export interface AudioInputSpec {
   window?: number;
   /** Hop / stride between successive windows, in samples. */
   hop?: number;
-  /** Channel layout the model expects. */
-  channels?: "mono" | "stereo";
+  /** Channel layout the model expects — a named layout or an explicit channel count (cf. {@link AudioBuffer}). */
+  channels?: "mono" | "stereo" | number;
 }
 
 /** One model input tensor and how to prepare data for it. */
@@ -160,9 +167,9 @@ export interface ModelOutput {
 export interface Quantization {
   /** e.g. `"none"` | `"int8"` | `"float16"` | `"dynamic"`. */
   type?: string;
-  /** Optional per-tensor scale / zero-point, when a host needs them to dequantize outputs. */
-  scale?: number;
-  zeroPoint?: number;
+  /** Optional scale / zero-point — a scalar (per-tensor) or a per-channel array (e.g. int8 ONNX/TFLite). */
+  scale?: number | number[];
+  zeroPoint?: number | number[];
 }
 
 /**
@@ -178,8 +185,8 @@ export interface ModelIO {
   inputs?: ModelInput[];
   /** Output tensors and their semantics/decoding. */
   outputs?: ModelOutput[];
-  /** Path to a labels file bundled in the package (or a `remoteUrl`). */
-  labels?: string;
+  /** Labels: a path to a bundled file (or a `remoteUrl`), or an inline array of label strings. */
+  labels?: string | string[];
   /** Quantization of the delivered weights. */
   quantization?: Quantization;
 }
