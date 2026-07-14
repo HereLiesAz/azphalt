@@ -468,6 +468,16 @@ export function defineTransition(fn: TransitionFn): Contribution<TransitionFn> {
 
 /* ───────────────────── Repository API ───────────────────── */
 
+/** A registry signing key advertised in the `.well-known` index for trust-store bootstrap. */
+export interface RegistrySigningKey {
+  /** Base64 SPKI (DER) Ed25519 public key — the cryptographic identity. */
+  publicKey: string;
+  /** Optional key id, echoed by counter-signatures / entitlement tokens the key issues. */
+  keyId?: string;
+  /** Optional human label. */
+  label?: string;
+}
+
 export interface RepositoryIndex {
   name: string;
   version: string;
@@ -476,6 +486,13 @@ export interface RepositoryIndex {
     type: string;
     url: string;
   };
+  /**
+   * The registry's Ed25519 signing public key(s). A host adds these to its trust store on first
+   * contact, so it trusts the registry **once** and transitively trusts every author the registry
+   * counter-signs — and can verify the registry's buy-once entitlement tokens offline. See
+   * `spec/repository-api.md` § Trust bootstrap.
+   */
+  signingKeys?: RegistrySigningKey[];
 }
 
 /**
