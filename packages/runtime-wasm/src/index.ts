@@ -52,6 +52,13 @@ export interface SandboxLayer {
   blendMode?: string;
 }
 
+/** A PCM audio block crossing the sandbox boundary — float32 in `[-1,1]`, interleaved by channel. */
+export interface SandboxAudio {
+  samples: number[];
+  sampleRate: number;
+  channels: number;
+}
+
 export interface SandboxWorld {
   params: Record<string, unknown>;
   /** Single-layer convenience — becomes layer `"layer-0"`. Provide this **or** {@link layers}. */
@@ -65,8 +72,22 @@ export interface SandboxWorld {
   color?: { active?: SandboxRGBA; palette?: SandboxRGBA[] };
   /** Files readable via the `assets` capability; defaults to the loaded `.azp` payload. */
   assets?: Record<string, Uint8Array>;
+  /** Playback clock, for the `time` capability. */
+  time?: { currentMs?: number; durationMs?: number; fps?: number };
+  /** Current audio block, for the `audio` capability. */
+  audio?: SandboxAudio | null;
   /** Which layer is `ctx.target` for a filter; defaults to {@link activeLayerId}. */
   targetLayerId?: string;
+}
+
+/** A {@link SandboxWorld} plus the two-input transition state (see {@link runTransition}). */
+export interface SandboxTransitionWorld extends SandboxWorld {
+  /** Outgoing frame (progress 0). */
+  from: SandboxBitmap;
+  /** Incoming frame (progress 1). */
+  to: SandboxBitmap;
+  /** Blend position, 0→1. */
+  progress: number;
 }
 
 export interface RunOptions {
@@ -83,6 +104,8 @@ export interface SandboxResult {
   selection: SandboxBitmap | null;
   /** The final active color + palette. */
   color: { active: SandboxRGBA; palette: SandboxRGBA[] };
+  /** The final audio block, or `null`. */
+  audio: SandboxAudio | null;
   /** How many times the extension called `ctx.canvas.requestRedraw()`. */
   redraws: number;
 }
@@ -116,6 +139,7 @@ const SDK_SHIM = `
   export function defineFilter(fn) { fn[KIND] = "filter"; return fn; }
   export function defineTool(fn) { fn[KIND] = "tool"; return fn; }
   export function defineCommand(fn) { fn[KIND] = "command"; return fn; }
+  export function defineTransition(fn) { fn[KIND] = "transition"; return fn; }
   export const FORMAT_VERSION = "0.1";
 `;
 
@@ -157,6 +181,8 @@ interface World {
   color: { active: SandboxRGBA; palette: SandboxRGBA[] };
   params: Record<string, unknown>;
   assets: Record<string, Uint8Array>;
+  time: { currentMs: number; durationMs: number; fps: number };
+  audio: { samples: Float32Array; sampleRate: number; channels: number } | null;
   redraws: number;
 }
 
@@ -212,9 +238,16 @@ function normalizeWorld(world: SandboxWorld, defaultAssets: Record<string, Uint8
     },
     params: world.params ?? {},
     assets: world.assets ?? defaultAssets,
+    time: { currentMs: world.time?.currentMs ?? 0, durationMs: world.time?.durationMs ?? 0, fps: world.time?.fps ?? 30 },
+    audio: world.audio
+      ? { samples: Float32Array.from(world.audio.samples), sampleRate: world.audio.sampleRate, channels: world.audio.channels }
+      : null,
     redraws: 0,
   };
 }
+
+const audioBack = (a: World["audio"]): SandboxAudio | null =>
+  a ? { samples: Array.from(a.samples), sampleRate: a.sampleRate, channels: a.channels } : null;
 
 const layerBitmap = (l: Layer): SandboxBitmap =>
   l.depth === 16
@@ -229,6 +262,7 @@ function readback(world: World, targetId: string): SandboxResult {
     layers: world.layers.map((l) => ({ id: l.id, name: l.name, bitmap: layerBitmap(l), opacity: l.opacity, blendMode: l.blendMode })),
     selection: world.selection ? { data: Array.from(world.selection.bytes), width: world.selection.width, height: world.selection.height } : null,
     color: { active: { ...world.color.active }, palette: world.color.palette.map((c) => ({ ...c })) },
+    audio: audioBack(world.audio),
     redraws: world.redraws,
   };
 }
@@ -406,6 +440,27 @@ function installHostFunctions(vm: QuickJSContext, world: World, granted: Set<Cap
       return vm.newArrayBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
     });
   }
+
+  if (granted.has("time")) {
+    inject(vm, "__timeCurrentMs", () => vm.newNumber(world.time.currentMs));
+    inject(vm, "__timeDurationMs", () => vm.newNumber(world.time.durationMs));
+    inject(vm, "__timeFps", () => vm.newNumber(world.time.fps));
+    inject(vm, "__timeFrameIndex", () => vm.newNumber(Math.round((world.time.currentMs / 1000) * world.time.fps)));
+  }
+
+  if (granted.has("audio")) {
+    inject(vm, "__audioSampleRate", () => vm.newNumber(world.audio?.sampleRate ?? 0));
+    inject(vm, "__audioChannels", () => vm.newNumber(world.audio?.channels ?? 0));
+    inject(vm, "__audioRead", () => (world.audio ? vm.newArrayBuffer(world.audio.samples.buffer) : vm.null));
+    inject(vm, "__audioWrite", (bufH, srH, chH) => {
+      const bytes = readGuestBuffer(vm, bufH); // raw bytes of the guest Float32Array
+      const samples = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 2);
+      const channels = num(chH);
+      if (channels <= 0 || samples.length % channels !== 0) throw new Error("audio: samples.length must be a positive multiple of channels");
+      world.audio = { samples: Float32Array.from(samples), sampleRate: num(srH), channels };
+      return vm.undefined;
+    });
+  }
 }
 
 /**
@@ -495,6 +550,24 @@ function ctxBootstrap(targetLayerId: string): string {
     if (typeof __assetRead === 'function') {
       __ctx.assets = { read: function (p) { return new Uint8Array(__assetRead(p)); } };
     }
+    if (typeof __timeCurrentMs === 'function') {
+      __ctx.time = { currentMs: __timeCurrentMs, durationMs: __timeDurationMs, fps: __timeFps, frameIndex: __timeFrameIndex };
+    }
+    if (typeof __audioRead === 'function') {
+      __ctx.audio = {
+        read: function () { var b = __audioRead(); return { samples: b ? new Float32Array(b) : new Float32Array(0), sampleRate: __audioSampleRate(), channels: __audioChannels() }; },
+        write: function (buf) {
+          var b = buf.samples.buffer;
+          if (buf.samples.byteOffset !== 0 || buf.samples.byteLength !== b.byteLength) b = b.slice(buf.samples.byteOffset, buf.samples.byteOffset + buf.samples.byteLength);
+          __audioWrite(b, buf.sampleRate, buf.channels);
+        },
+      };
+    }
+    if (typeof __txProgress === 'function') {
+      __ctx.from = { data: new Uint8ClampedArray(__txFromBuf()), width: __txFromW(), height: __txFromH() };
+      __ctx.to = { data: new Uint8ClampedArray(__txToBuf()), width: __txToW(), height: __txToH() };
+      __ctx.progress = __txProgress();
+    }
     __ctx.target = { id: ${JSON.stringify(targetLayerId)} };
   `;
 }
@@ -515,11 +588,18 @@ export interface RunOptionsById {
   capabilities?: Capability[];
 }
 
-type ContributionKind = "filter" | "tool" | "command";
+type ContributionKind = "filter" | "tool" | "command" | "transition";
 
 function contributionsFor(manifest: Manifest, kind: ContributionKind) {
   const c = manifest.contributes;
-  return (kind === "filter" ? c?.filters : kind === "tool" ? c?.tools : c?.commands) ?? [];
+  return (kind === "filter" ? c?.filters : kind === "tool" ? c?.tools : kind === "command" ? c?.commands : c?.transitions) ?? [];
+}
+
+/** The two input frames + blend position a transition runs against. */
+interface TransitionInput {
+  from: SandboxBitmap;
+  to: SandboxBitmap;
+  progress: number;
 }
 
 /** Dispatch a contribution of `kind` from a `.azp` against `world` in the sandbox. */
@@ -528,6 +608,7 @@ async function runContribution(
   world: SandboxWorld,
   kind: ContributionKind,
   opts: RunOptionsById,
+  tx?: TransitionInput,
 ): Promise<SandboxResult> {
   const { manifest, payload } = loadExtension(azp);
   const granted = new Set<Capability>(opts.capabilities ?? manifest.capabilities ?? []);
@@ -541,7 +622,7 @@ async function runContribution(
 
   // Raw WASM entry: run against the shared-memory ABI instead of QuickJS.
   if (manifest.runtime === "wasm") {
-    if (kind !== "filter") throw new AzpError(`runtime: "wasm" supports filter entries in this runtime`);
+    if (kind !== "filter") throw new AzpError(`runtime: "wasm" supports filter entries in this runtime (${kind} runs on the js runtime)`);
     return runWasmFilter(payload[entry], c.entry, world, granted, payload);
   }
   if (manifest.runtime && manifest.runtime !== "js") {
@@ -570,6 +651,20 @@ async function runContribution(
 
   try {
     installHostFunctions(vm, internal, granted);
+    if (kind === "transition") {
+      if (!tx) throw new AzpError("internal: a transition needs from/to/progress");
+      assertShape(tx.from, "transition.from");
+      assertShape(tx.to, "transition.to");
+      const fromBytes = new Uint8Array(tx.from.data);
+      const toBytes = new Uint8Array(tx.to.data);
+      inject(vm, "__txFromBuf", () => vm.newArrayBuffer(fromBytes.buffer));
+      inject(vm, "__txFromW", () => vm.newNumber(tx.from.width));
+      inject(vm, "__txFromH", () => vm.newNumber(tx.from.height));
+      inject(vm, "__txToBuf", () => vm.newArrayBuffer(toBytes.buffer));
+      inject(vm, "__txToW", () => vm.newNumber(tx.to.width));
+      inject(vm, "__txToH", () => vm.newNumber(tx.to.height));
+      inject(vm, "__txProgress", () => vm.newNumber(tx.progress));
+    }
     unwrap(vm, vm.evalCode(ctxBootstrap(targetLayerId), "azphalt:ctx"));
 
     const driver = `
@@ -614,6 +709,15 @@ export function runTool(azp: Uint8Array, world: SandboxWorld, opts: RunOptionsBy
 /** Run a **command** contribution (`contributes.commands[]`). */
 export function runCommand(azp: Uint8Array, world: SandboxWorld, opts: RunOptionsById = {}): Promise<SandboxResult> {
   return runContribution(azp, world, "command", opts);
+}
+
+/**
+ * Run a **transition** contribution (`contributes.transitions[]`). The world carries the two input
+ * frames (`from`, `to`) and `progress` (0→1); the transition reads `ctx.from`/`ctx.to`/`ctx.progress`
+ * and writes the blend to `ctx.target` via `ctx.bitmap.write`. Runs on the `js` runtime.
+ */
+export function runTransition(azp: Uint8Array, world: SandboxTransitionWorld, opts: RunOptionsById = {}): Promise<SandboxResult> {
+  return runContribution(azp, world, "transition", opts, { from: world.from, to: world.to, progress: world.progress });
 }
 
 /* ───────────────────────── raw wasm path ───────────────────────── */
@@ -671,6 +775,31 @@ function wasmEnv(internal: World, granted: Set<Capability>, getMem: () => WebAss
   }
   if (granted.has("layers")) {
     env.layerCount = () => internal.layers.length;
+  }
+  if (granted.has("time")) {
+    env.timeCurrentMs = () => internal.time.currentMs;
+    env.timeDurationMs = () => internal.time.durationMs;
+    env.timeFps = () => internal.time.fps;
+    env.timeFrameIndex = () => Math.round((internal.time.currentMs / 1000) * internal.time.fps);
+  }
+  if (granted.has("audio")) {
+    // Audio samples cross as float32 through the module's memory. `audioRead` copies the block to a
+    // module-supplied scratch buffer (float count returned); `audioWrite` reads `frames*channels`
+    // floats back. Offsets are float32 element indices into memory, i.e. byte offset = idx*4.
+    env.audioFrames = () => (internal.audio ? internal.audio.samples.length / internal.audio.channels : 0);
+    env.audioChannels = () => internal.audio?.channels ?? 0;
+    env.audioSampleRate = () => internal.audio?.sampleRate ?? 0;
+    env.audioRead = (outFloatIdx: number, outCapFloats: number) => {
+      if (!internal.audio) return 0;
+      const n = internal.audio.samples.length;
+      if (n <= outCapFloats) new Float32Array(getMem().buffer).set(internal.audio.samples, outFloatIdx);
+      return n;
+    };
+    env.audioWrite = (inFloatIdx: number, frames: number, channels: number, sampleRate: number) => {
+      const n = frames * channels;
+      const src = new Float32Array(getMem().buffer, inFloatIdx * 4, n);
+      internal.audio = { samples: Float32Array.from(src), sampleRate, channels };
+    };
   }
   return env;
 }
