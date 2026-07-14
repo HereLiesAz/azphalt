@@ -1,6 +1,7 @@
 {
   "name": "@azphalt/importer-cube",
   "version": "0.1.0",
+  "publishConfig": { "access": "public" },
   "description": "Import .cube LUTs into .azp asset packages.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",

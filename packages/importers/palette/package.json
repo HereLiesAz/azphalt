@@ -1,6 +1,7 @@
 {
   "name": "@azphalt/importer-palette",
   "version": "0.1.0",
+  "publishConfig": { "access": "public" },
   "description": "Import palette into .azp asset packages.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",

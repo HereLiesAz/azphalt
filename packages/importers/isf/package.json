@@ -1,6 +1,7 @@
 {
   "name": "@azphalt/importer-isf",
   "version": "0.1.0",
+  "publishConfig": { "access": "public" },
   "description": "Import ISF / GLSL shaders into .azp asset packages.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",

@@ -1,6 +1,7 @@
 {
   "name": "create-azphalt",
   "version": "0.1.0",
+  "publishConfig": { "access": "public" },
   "description": "Scaffolding tool for azphalt projects.",
   "license": "MIT",
   "author": "Az",
