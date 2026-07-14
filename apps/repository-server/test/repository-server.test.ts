@@ -134,6 +134,26 @@ describe("repository handler — spec/repository-api.md", () => {
     expect(res.status).toBe(400);
     expect(JSON.parse(res.body as string).error).toMatch(/invalid URI encoding/);
   });
+
+  it("scopes browse/search by the ?app= parameter and reports targetApps", async () => {
+    const store = new InMemoryStore();
+    const registry = new Registry(store);
+    await registry.publish(azp("com.demo.global", { name: "Global" }));
+    await registry.publish(azp("com.demo.forx", { name: "For X", targetApps: ["com.app.x"] }));
+    const handle = createRepositoryHandler({ registry, index: INDEX });
+    const list = (path: string) =>
+      handle({ method: "GET", path: "/packages", query: new URL("http://x/packages" + path).searchParams, headers: {} }).then((r) => JSON.parse(r.body as string));
+
+    const all = await list("");
+    expect(all.total).toBe(2); // no app filter → everything
+    const scoped = await list("?app=com.app.x");
+    expect(scoped.packages.map((p: { id: string }) => p.id).sort()).toEqual(["com.demo.forx", "com.demo.global"]);
+    const other = await list("?app=com.app.z");
+    expect(other.packages.map((p: { id: string }) => p.id)).toEqual(["com.demo.global"]); // only global
+    // targetApps is surfaced on each summary.
+    const forx = scoped.packages.find((p: { id: string }) => p.id === "com.demo.forx");
+    expect(forx.targetApps).toEqual(["com.app.x"]);
+  });
 });
 
 describe("repository server — end-to-end over @azphalt/repository-client", () => {

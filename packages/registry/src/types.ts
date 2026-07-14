@@ -42,6 +42,8 @@ export interface PackageSummary {
   assetTypes: AssetType[];
   /** Declared least-privilege capabilities. */
   capabilities: Capability[];
+  /** Host apps this package is scoped to (reverse-DNS ids). Empty = global (shown to every app). */
+  targetApps: string[];
   /** Counts of executable contributions, for at-a-glance "what does it do". */
   contributes: { filters: number; tools: number; commands: number };
   /** First-publish and latest-publish instants (ISO-8601). */
@@ -76,6 +78,12 @@ export interface ListQuery {
   assetType?: AssetType;
   capability?: Capability;
   author?: string;
+  /**
+   * The requesting host app's reverse-DNS id. When set, results are the packages **visible to that
+   * app**: global packages (no `targetApps`) plus those whose `targetApps` includes this id. When
+   * unset, no app filter is applied (every package, including app-scoped ones, is returned).
+   */
+  app?: string;
   /** Default `"downloads"`. */
   sort?: "downloads" | "updated" | "name";
   limit?: number;

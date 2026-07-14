@@ -109,6 +109,14 @@ export interface Manifest {
   capabilities?: Capability[];
   contributes?: Contributes;
 
+  /**
+   * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffitixr"]`).
+   * A repository shows an app-scoped package only to a matching app; **absent or empty means the
+   * package is global** (available to every app). Scoping is a discovery filter, not access control.
+   * See `spec/repository-api.md` § App scoping.
+   */
+  targetApps?: string[];
+
   /** Payload path → SHA-256 digest (integrity; see `spec/package-format.md`). */
   files: Record<string, string>;
 }
@@ -391,6 +399,12 @@ export interface PackageSummary {
   version: string;
   types: string[];
   priceStatus?: "free" | "paid";
+  /**
+   * Host apps this package is scoped to (reverse-DNS ids). Empty/absent = global (shown to every
+   * app). A repository filters browse/search by the requesting app's id — see `spec/repository-api.md`
+   * § App scoping.
+   */
+  targetApps?: string[];
 }
 
 export interface PackageSearchResponse {

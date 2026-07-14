@@ -108,3 +108,38 @@ describe("Registry serve + browse", () => {
     expect(await r.search("brush")).not.toHaveLength(0); // matches the brush asset type
   });
 });
+
+describe("Registry app scoping", () => {
+  async function seeded() {
+    const r = new Registry();
+    await r.publish(makeAzp("com.hereliesaz.global", "1.0.0", { name: "Global Tool" })); // no targetApps
+    await r.publish(makeAzp("com.hereliesaz.forx", "1.0.0", { name: "For X", targetApps: ["com.app.x"] }));
+    await r.publish(makeAzp("com.hereliesaz.forxy", "1.0.0", { name: "For X and Y", targetApps: ["com.app.x", "com.app.y"] }));
+    return r;
+  }
+
+  it("exposes targetApps on the summary (empty for a global package)", async () => {
+    const r = await seeded();
+    expect((await r.getSummary("com.hereliesaz.global"))?.targetApps).toEqual([]);
+    expect((await r.getSummary("com.hereliesaz.forxy"))?.targetApps).toEqual(["com.app.x", "com.app.y"]);
+  });
+
+  it("list without an app returns every package, including app-scoped ones", async () => {
+    const r = await seeded();
+    expect((await r.list({})).map((s) => s.id).sort()).toEqual(["com.hereliesaz.forx", "com.hereliesaz.forxy", "com.hereliesaz.global"]);
+  });
+
+  it("list scoped to an app returns global + that app's packages only", async () => {
+    const r = await seeded();
+    expect((await r.list({ app: "com.app.x" })).map((s) => s.id).sort()).toEqual(["com.hereliesaz.forx", "com.hereliesaz.forxy", "com.hereliesaz.global"]);
+    expect((await r.list({ app: "com.app.y" })).map((s) => s.id).sort()).toEqual(["com.hereliesaz.forxy", "com.hereliesaz.global"]);
+    // An app nobody targets sees only the global package.
+    expect((await r.list({ app: "com.app.z" })).map((s) => s.id)).toEqual(["com.hereliesaz.global"]);
+  });
+
+  it("search honors the app scope too", async () => {
+    const r = await seeded();
+    const forY = await r.search("for", { app: "com.app.y" });
+    expect(forY.map((h) => h.package.id).sort()).toEqual(["com.hereliesaz.forxy"]); // "For X and Y" matches, "For X" is out of scope
+  });
+});

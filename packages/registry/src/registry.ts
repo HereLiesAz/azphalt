@@ -159,6 +159,7 @@ export class Registry {
       homepage: m.homepage,
       assetTypes,
       capabilities,
+      targetApps: [...new Set(m.targetApps ?? [])],
       contributes,
       publishedAt: times[0],
       updatedAt: times[times.length - 1],
@@ -211,6 +212,9 @@ export class Registry {
     if (query.assetType) out = out.filter((s) => s.assetTypes.includes(query.assetType!));
     if (query.capability) out = out.filter((s) => s.capabilities.includes(query.capability!));
     if (query.author) out = out.filter((s) => s.author === query.author);
+    // App scoping: a global package (no targetApps) shows everywhere; an app-scoped one shows only to
+    // an app it targets. With no `app` set, everything is returned (no filter).
+    if (query.app) out = out.filter((s) => s.targetApps.length === 0 || s.targetApps.includes(query.app!));
 
     const sort = query.sort ?? "downloads";
     out.sort((a, b) => {
@@ -227,10 +231,10 @@ export class Registry {
    * Full-text-ish search across id, name, description, author, and asset types. Ranks by weighted
    * field matches; ties break on downloads. Returns non-matching packages omitted, best first.
    */
-  async search(query: string, opts: { limit?: number } = {}): Promise<SearchResult[]> {
+  async search(query: string, opts: { limit?: number; app?: string } = {}): Promise<SearchResult[]> {
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
-    const summaries = await this.list({ limit: undefined });
+    const summaries = await this.list({ limit: undefined, app: opts.app });
 
     const results: SearchResult[] = [];
     for (const pkg of summaries) {

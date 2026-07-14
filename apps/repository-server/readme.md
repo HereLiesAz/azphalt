@@ -9,9 +9,13 @@ It is the server counterpart to [`@azphalt/repository-client`](../../packages/re
 | Method & path | Returns |
 | --- | --- |
 | `GET /.well-known/azphalt-repository.json` | The repository index (name, version, auth). |
-| `GET /packages?q=&types=&tags=&page=` | Paginated search/browse. `types` is a comma list of `AssetType`s; `tags` AND-filters over searchable text (the 0.1 model has no first-class tags). |
+| `GET /packages?q=&types=&tags=&app=&page=` | Paginated search/browse. `types` is a comma list of `AssetType`s; `tags` AND-filters over searchable text; `app` scopes results to a host app (see below). |
 | `GET /packages/{id}` | Full metadata, version history, and the latest `Manifest`. |
 | `GET /packages/{id}/versions/{version}/download` | The binary `.azp` (`Content-Type: application/x-azphalt`). Gated for paid packages. |
+
+## App scoping
+
+A package can declare `targetApps` (reverse-DNS host-app ids) in its manifest. A package with no `targetApps` is **global**; one with `targetApps` is shown in browse/search **only** when the request's `?app=<id>` matches. So a host app can name itself and publish store entries that surface only to its own users, while the same registry serves every other app. It's a discovery filter, not access control — a caller with the `id` can still fetch details/bytes. Pass the app from the client via `new RepositoryClient({ url, app: "com.you.app" })`.
 
 ## Free vs. paid
 

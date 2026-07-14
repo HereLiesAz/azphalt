@@ -13,6 +13,7 @@
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
+| `targetApps` | — | Reverse-DNS host-app ids this package is scoped to (e.g. `["com.hereliesaz.graffitixr"]`). Empty/absent = **global** (every app). A repository shows an app-scoped package only to a matching app — see repository-api.md § App scoping. Discovery filter, not access control. |
 | `assets` | asset/mixed | Contributed assets (below). |
 | `entry`, `runtime` | code/mixed | Code entry module and `js` \| `wasm`. |
 | `capabilities` | code/mixed | Declared capabilities (see capability-model.md). |

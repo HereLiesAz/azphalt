@@ -31,6 +31,7 @@ Queries the repository for available packages. Host applications should use quer
 - `q` (string): Text search query.
 - `types` (string): Comma-separated list of `AssetType`s to filter by (e.g., `types=brush,vector`).
 - `tags` (string): Comma-separated list of tags to filter by.
+- `app` (string): The requesting host app's reverse-DNS id, for **app scoping** (see below).
 - `page` (integer): For pagination.
 
 **Response (200 OK):**
@@ -43,7 +44,8 @@ Queries the repository for available packages. Host applications should use quer
       "author": "SFX Studio",
       "version": "1.2.0",
       "types": ["audio"],
-      "priceStatus": "paid"
+      "priceStatus": "paid",
+      "targetApps": []
     }
   ],
   "total": 1,
@@ -51,6 +53,8 @@ Queries the repository for available packages. Host applications should use quer
   "pages": 1
 }
 ```
+
+**App scoping.** A package MAY declare `targetApps` in its manifest (a list of reverse-DNS host-app ids). A package with an empty/absent `targetApps` is **global** — visible to every app. A package with a non-empty `targetApps` is **app-scoped** — a repository MUST show it in browse/search **only** when the request's `app` matches one of its `targetApps`. When `app` is omitted, no scoping filter is applied (every package is returned). This lets a host app publish store entries meant only for its own users while the same registry serves other apps. Scoping is a **discovery** filter, not access control: a caller that already knows a package's `id` MAY still fetch its details and bytes.
 
 ### 3. Get Package Details
 `GET /packages/{id}`
