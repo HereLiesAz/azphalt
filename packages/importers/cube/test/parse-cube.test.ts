@@ -49,12 +49,19 @@ describe("importCube", () => {
     expect(manifest.assets?.[0].params?.size).toBe(2);
     expect(lut.dimensions).toBe(3);
 
+    // #40: a normative dry/wet `strength` (default 1) + a canonical single-slider panel ship by default.
+    expect(manifest.assets?.[0].params?.strength).toBe(1);
+    expect(manifest.assets?.[0].ui).toBe("ui/lut.json");
+
     expect(verifyAzp(azp).ok).toBe(true);
 
     const back = readAzp(azp);
     expect(Object.keys(back.payload)).toContain("assets/identity-2.cube");
     expect(back.payload["LICENSE"]).toBeTruthy();
     expect(new TextDecoder().decode(back.payload["assets/identity-2.cube"])).toBe(CUBE);
+    // The canonical panel is bundled and binds a slider to the `strength` key.
+    const panel = JSON.parse(new TextDecoder().decode(back.payload["ui/lut.json"]));
+    expect(panel.controls[0]).toMatchObject({ type: "slider", key: "strength", min: 0, max: 1, default: 1 });
   });
 
   it("honors an explicit asset name", () => {

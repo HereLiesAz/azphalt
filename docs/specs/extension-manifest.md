@@ -58,16 +58,30 @@ These are **data** assets — they render in the host's own compositor, exactly 
 
 ### Per-type `params` conventions
 
-`params` is host-neutral and free-form, but these keys are **conventions** so a value means the same thing across hosts (a host ignores keys it doesn't understand):
+`params` is host-neutral and free-form — a host ignores keys it doesn't understand — but the keys below are **normative conventions**, so a value means the same thing across every host. Each row names the key, its type/range, and its **provider**: `author` (fixed metadata describing the asset — a host MUST NOT edit it), `user` (safe to bind to a `ui` control; the host applies the default when absent), or `host` (supplied by the host at apply time, never authored).
 
-| type | conventional `params` |
-| --- | --- |
-| `brush` | `spacing`, `angle`, `roundness` |
-| `lut` | `strength` (number `0..1`, dry/wet blend, default `1`) |
-| `overlay` | `opacity` (`0..1`, default `1`), `anchor` (`top-left`…`center`…`bottom-right`), `scale` |
-| `template` | `fields` (named text slots the host fills), `safeArea` |
-| `transition` | host-provided `from`/`to`/`progress`; author sets `format` (e.g. `gl-transition`) |
-| `shader` | author sets `format` (`isf` \| `glsl`); declared uniforms as keys |
+| type | key | type / range (default) | provider |
+| --- | --- | --- | --- |
+| `lut` | `strength` | number `0..1` (`1`) — dry/wet blend | user |
+| `lut` | `inputTransfer` | `srgb` (default) \| `linear` \| `log-c` | author |
+| `lut` | `format` | `cube` | author |
+| `shader` | `format` | `isf` \| `glsl` | author |
+| `shader` | *(declared uniforms)* | per the shader's uniform types | user |
+| `transition` | `from` / `to` / `progress` | source frames + normalized `0..1` progress | host |
+| `transition` | `format` | e.g. `gl-transition` | author |
+| `brush` | `spacing` / `angle` / `roundness` | numbers (engine-defined ranges) | user |
+| `overlay` | `opacity` / `anchor` / `scale` | `0..1` (`1`) / `top-left`…`center`…`bottom-right` / number | user |
+| `template` | `fields` / `safeArea` | named text slots / inset rect | user / author |
+
+The LUT application semantics behind `strength` / `inputTransfer` (interpolation floor, input-transfer conversion, clamp, alpha) are pinned in [package-format.md § LUT application](./package-format.md#lut-application).
+
+**Canonical `lut` panel.** The conventional control for `strength` is a single `slider` bound to the `strength` key, so every host renders the same dry/wet control:
+
+~~~json
+{ "controls": [ { "type": "slider", "key": "strength", "label": "Strength", "min": 0, "max": 1, "step": 0.01, "default": 1 } ] }
+~~~
+
+`@azphalt/importer-cube` emits `params.strength` (default `1`) **and** this panel by default, so every imported LUT ships a working blend control.
 
 ### Model roles (`role`)
 For a **model asset**, `role` routes a generic model graph to the correct host engine. It is an **open** vocabulary — any string is valid — but the following **canonical roles** are blessed, so a model tagged e.g. `role: "depth"` lands in the same engine on every host. Prefer a blessed role where one fits; invent a new string only when none does:
