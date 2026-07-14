@@ -37,7 +37,7 @@ Available: `canvas`, `layers`, `bitmap`, `selection`, `color`, `params`, `assets
 - [ ] Required fields present: `azphalt`, `id`, `name`, `version` (semver), `kind`, `license`, `compat`. **No** `files` field.
 - [ ] A `LICENSE` file matching the SPDX id is present.
 - [ ] `entry` names the code module and it exists in the folder (`code/main.js`); `runtime` is `js` or `wasm`.
-- [ ] Each contribution in `contributes` names an export that the entry module actually exports, branded with the matching `define*` (`defineFilter` / `defineTool` / `defineCommand` / `defineTransition`).
+- [ ] The `entry` field of each contribution in `contributes` names an export that the entry module actually exports, branded with the matching `define*` (`defineFilter` / `defineTool` / `defineCommand` / `defineTransition`).
 - [ ] `capabilities` is the least-privilege set — every one is used, none is speculative.
 - [ ] The code reaches **nothing on the never-list** — no host engine (SLAM / pose / tracking), camera, sensors, filesystem outside its package, or network. (These have no API; there is nothing to import.)
 - [ ] Any `ui` panel referenced points at a valid schema (see spec/ui-schema.md).
