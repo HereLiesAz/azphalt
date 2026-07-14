@@ -19,6 +19,8 @@ Provides global metadata about the repository, its supported API versions, and i
     "type": "oauth2",
     "url": "https://sfx.example.com/oauth/authorize"
   },
+  "supportedTypes": ["audio", "lut", "transition"],
+  "profiles": ["video-audio"],
   "signingKeys": [
     { "publicKey": "MCowBQYDK2VwAyEA…", "keyId": "reg-2026", "label": "Official SFX Library" }
   ]
@@ -26,6 +28,12 @@ Provides global metadata about the repository, its supported API versions, and i
 ```
 
 **Trust bootstrap.** `signingKeys` publishes the registry's Ed25519 signing public key(s) (base64 SPKI DER). A host adds them to its trust store on first contact — trusting the registry **once** — and thereby (a) transitively trusts every author the registry counter-signs (see package-format.md § Signing) and (b) can verify the registry's buy-once **entitlement tokens** offline (see § Download). Reference: `@azphalt/azp`'s `trustStoreFromKeys(index.signingKeys)` → `verifyTrust`. Key distribution over TLS from the well-known URL is the bootstrap; a host MAY additionally pin keys out-of-band.
+
+**Supported types and profiles.** Two optional fields let a host decide whether a repository is worth talking to **before** it browses:
+- `supportedTypes` — the `assets[].type`s this repository serves (a subset of the SDK `AssetType` union). The discovery-time analog of the `GET /packages?types=` filter: a paint host seeing only `["audio","transition"]` knows there's nothing for it here.
+- `profiles` — the conformance **host profiles** the catalog targets (the same vocabulary a host declares via `@azphalt/conformance` — e.g. `"image"`, `"video-audio"`). A host reads it to confirm the registry's packages match a profile it implements (azphalt #27 items 5 & 7 — the registry side of package↔host compatibility).
+
+Both are advisory hints; absent means "unspecified — query to learn". They never replace verifying an individual `.azp` before use.
 
 ### 2. Search Packages
 `GET /packages`

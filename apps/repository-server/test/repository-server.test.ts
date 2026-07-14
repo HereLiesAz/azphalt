@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { verifyAzp, writeAzp, generateSigningKey } from "@azphalt/azp";
 import { InMemoryStore, Marketplace, Registry, issueEntitlement, type EntitlementClaims } from "@azphalt/registry";
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest, RepositoryIndex } from "@azphalt/sdk";
 import { RepositoryClient } from "@azphalt/repository-client";
 import { createRepositoryHandler, createRepositoryServer, EntitlementAuthorizer, InMemoryAuthorizer, type RepoRequest } from "../src/index";
 
@@ -58,6 +58,16 @@ describe("repository handler — spec/repository-api.md", () => {
     const res = await handle(mk("/.well-known/azphalt-repository.json"));
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body as string)).toEqual(INDEX);
+  });
+
+  it("advertises supportedTypes + profiles in the discovery index when set (#27 item 5)", async () => {
+    const registry = new Registry();
+    const index: RepositoryIndex = { name: "Video Repo", version: "0.1", supportedTypes: ["audio", "lut", "transition"], profiles: ["video-audio"] };
+    const handle = createRepositoryHandler({ registry, index });
+    const res = await handle({ method: "GET", path: "/.well-known/azphalt-repository.json", query: new URLSearchParams(), headers: {} });
+    const body = JSON.parse(res.body as string);
+    expect(body.supportedTypes).toEqual(["audio", "lut", "transition"]);
+    expect(body.profiles).toEqual(["video-audio"]);
   });
 
   it("lists packages with the correct free/paid status", async () => {
