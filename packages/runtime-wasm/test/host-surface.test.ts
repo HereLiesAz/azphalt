@@ -340,10 +340,156 @@ function buildParamsWasm(): Uint8Array {
   return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...imports, ...funcs, ...mem, ...exports, ...code]);
 }
 
+/**
+ * Hand-assemble a raw-wasm **transition** module: exports `memory` + `transition(fromPtr, toPtr,
+ * outPtr, w, h, stride)` which copies the `from` OR `to` frame into `out` depending on the imported
+ * `env.txProgress()` (a nullary f64) — `to` at `progress ≥ 0.5`, else `from`. A progress-picked cut
+ * is trivial to assemble yet exercises the whole ABI: the progress import, both input buffers at
+ * their fixed offsets, and the output buffer.
+ */
+function buildTransitionWasm(): Uint8Array {
+  const uleb = (n: number): number[] => {
+    const out: number[] = [];
+    do { let b = n & 0x7f; n >>>= 7; if (n) b |= 0x80; out.push(b); } while (n);
+    return out;
+  };
+  const section = (id: number, content: number[]): number[] => [id, ...uleb(content.length), ...content];
+  const str = (s: string): number[] => [...uleb(s.length), ...[...s].map((c) => c.charCodeAt(0))];
+
+  // Types: t0 = () -> f64 (txProgress); t1 = (i32×6) -> () (transition).
+  const types = section(1, [0x02, 0x60, 0x00, 0x01, 0x7c, 0x60, 0x06, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x00]);
+  const imports = section(2, [0x01, ...str("env"), ...str("txProgress"), 0x00, 0x00]); // funcidx 0
+  const funcs = section(3, [0x01, 0x01]); // transition uses t1 (funcidx 1)
+  const mem = section(5, [0x01, 0x00, 0x01]); // min 1 page (host grows to fit 3× the frame)
+  const exports = section(7, [0x02, ...str("memory"), 0x02, 0x00, ...str("transition"), 0x00, 0x01]);
+  // Locals (after the 6 params, idx 0..5): 6 = src, 7 = i, 8 = n.
+  const body = [
+    0x20, 0x00, 0x21, 0x06, // src = fromPtr
+    0x10, 0x00, // txProgress()
+    0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xe0, 0x3f, // f64.const 0.5
+    0x66, // f64.ge
+    0x04, 0x40, 0x20, 0x01, 0x21, 0x06, 0x0b, // if (>=0.5) { src = toPtr }
+    0x20, 0x04, 0x20, 0x05, 0x6c, 0x21, 0x08, // n = h * stride
+    0x41, 0x00, 0x21, 0x07, // i = 0
+    0x02, 0x40, 0x03, 0x40, // block { loop {
+    0x20, 0x07, 0x20, 0x08, 0x4f, 0x0d, 0x01, // if i >= n br 1
+    0x20, 0x02, 0x20, 0x07, 0x6a, // addr = outPtr + i
+    0x20, 0x06, 0x20, 0x07, 0x6a, 0x2d, 0x00, 0x00, // val = mem[src + i]
+    0x3a, 0x00, 0x00, // mem[addr] = val
+    0x20, 0x07, 0x41, 0x01, 0x6a, 0x21, 0x07, // i = i + 1
+    0x0c, 0x00, // br 0
+    0x0b, 0x0b, // } }
+    0x0b, // end func
+  ];
+  const funcBody = [0x01, 0x03, 0x7f, ...body]; // 1 group of 3 i32 locals
+  const code = section(10, [0x01, ...uleb(funcBody.length), ...funcBody]);
+  return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...imports, ...funcs, ...mem, ...exports, ...code]);
+}
+
+/**
+ * Hand-assemble a module that exports its own bump `alloc(size) -> ptr` (a mutable global heap
+ * pointer starting at 256) plus `filter(ptr, w, h, stride)` that inverts in place. Proves the host
+ * negotiates the scratch offset: the bitmap is written at the pointer `alloc` returns (≠ 0), so a
+ * correct inversion means the host honored `alloc` rather than the fixed `ptr = 0`.
+ */
+function buildAllocInvertWasm(): Uint8Array {
+  const uleb = (n: number): number[] => {
+    const out: number[] = [];
+    do { let b = n & 0x7f; n >>>= 7; if (n) b |= 0x80; out.push(b); } while (n);
+    return out;
+  };
+  const section = (id: number, content: number[]): number[] => [id, ...uleb(content.length), ...content];
+  const str = (s: string): number[] => [...uleb(s.length), ...[...s].map((c) => c.charCodeAt(0))];
+
+  // Types: t0 = (i32) -> i32 (alloc); t1 = (i32,i32,i32,i32) -> () (filter).
+  const types = section(1, [0x02, 0x60, 0x01, 0x7f, 0x01, 0x7f, 0x60, 0x04, 0x7f, 0x7f, 0x7f, 0x7f, 0x00]);
+  const funcs = section(3, [0x02, 0x00, 0x01]); // alloc→t0 (func 0), filter→t1 (func 1)
+  const mem = section(5, [0x01, 0x00, 0x01]);
+  const global = section(6, [0x01, 0x7f, 0x01, 0x41, 0x80, 0x02, 0x0b]); // 1 mutable i32 = 256
+  const exports = section(7, [
+    0x03,
+    ...str("memory"), 0x02, 0x00,
+    ...str("alloc"), 0x00, 0x00,
+    ...str("filter"), 0x00, 0x01,
+  ]);
+  // alloc(size): old = heap; heap = old + size; return old.
+  const allocBody = [0x23, 0x00, 0x21, 0x01, 0x20, 0x01, 0x20, 0x00, 0x6a, 0x24, 0x00, 0x20, 0x01, 0x0b];
+  const fbAlloc = [0x01, 0x01, 0x7f, ...allocBody]; // 1 local i32 (old)
+  // filter(ptr,w,h,stride): invert [ptr, ptr+h*stride) in place (no host imports).
+  const filterBody = [
+    0x20, 0x02, 0x20, 0x03, 0x6c, 0x20, 0x00, 0x6a, 0x21, 0x04, // end = ptr + h*stride
+    0x20, 0x00, 0x21, 0x05, // i = ptr
+    0x02, 0x40, 0x03, 0x40,
+    0x20, 0x05, 0x20, 0x04, 0x4f, 0x0d, 0x01, // if i>=end br1
+    0x20, 0x05, 0x41, 0xff, 0x01, 0x20, 0x05, 0x2d, 0x00, 0x00, 0x6b, 0x3a, 0x00, 0x00, // mem[i]=255-mem[i]
+    0x20, 0x05, 0x41, 0x01, 0x6a, 0x21, 0x05, // i++
+    0x0c, 0x00,
+    0x0b, 0x0b,
+    0x0b,
+  ];
+  const fbFilter = [0x01, 0x02, 0x7f, ...filterBody]; // 2 local i32 (end, i)
+  const code = section(10, [0x02, ...uleb(fbAlloc.length), ...fbAlloc, ...uleb(fbFilter.length), ...fbFilter]);
+  return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...funcs, ...mem, ...global, ...exports, ...code]);
+}
+
 describe("runtime-wasm raw wasm entry", () => {
   it("assembles a valid wasm module", () => {
     expect(WebAssembly.validate(buildInvertWasm().slice().buffer as ArrayBuffer)).toBe(true);
     expect(WebAssembly.validate(buildParamsWasm().slice().buffer as ArrayBuffer)).toBe(true);
+    expect(WebAssembly.validate(buildTransitionWasm().slice().buffer as ArrayBuffer)).toBe(true);
+    expect(WebAssembly.validate(buildAllocInvertWasm().slice().buffer as ArrayBuffer)).toBe(true);
+  });
+
+  it("negotiates the scratch offset via an exported `alloc` (module manages its own memory)", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/filter.wasm",
+      bytesEntry: buildAllocInvertWasm(),
+      capabilities: ["bitmap"],
+      contributes: { filters: [{ id: "f", name: "F", entry: "filter" }] },
+    });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [10, 20, 30, 255, 200, 100, 50, 128], width: 2, height: 1 } });
+    // Correct inversion ⇒ the host wrote/read at the alloc'd pointer (256), not the fixed 0.
+    expect(r.bitmap.data).toEqual([245, 235, 225, 0, 55, 155, 205, 127]);
+  });
+
+  it("runs a runtime:\"wasm\" transition over the shared-memory ABI (from/to frames + txProgress import)", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/transition.wasm",
+      bytesEntry: buildTransitionWasm(),
+      capabilities: ["bitmap"],
+      contributes: { transitions: [{ id: "x", name: "X", entry: "transition" }] },
+    });
+    const from = { data: [10, 20, 30, 255], width: 1, height: 1 };
+    const to = { data: [100, 200, 40, 128], width: 1, height: 1 };
+    const bitmap = { data: [0, 0, 0, 0], width: 1, height: 1 };
+    const late = await runTransition(azp, { params: {}, bitmap, from, to, progress: 0.75 });
+    expect(late.bitmap.data).toEqual([100, 200, 40, 128]); // progress ≥ 0.5 → `to`
+    const early = await runTransition(azp, { params: {}, bitmap, from, to, progress: 0.25 });
+    expect(early.bitmap.data).toEqual([10, 20, 30, 255]); // progress < 0.5 → `from`
+  });
+
+  it("rejects a raw-wasm transition whose from/to/target geometry disagree", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/transition.wasm",
+      bytesEntry: buildTransitionWasm(),
+      capabilities: ["bitmap"],
+      contributes: { transitions: [{ id: "x", name: "X", entry: "transition" }] },
+    });
+    await expect(
+      runTransition(azp, {
+        params: {},
+        bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 },
+        from: { data: [0, 0, 0, 0, 0, 0, 0, 0], width: 2, height: 1 }, // 2×1 vs a 1×1 target
+        to: { data: [0, 0, 0, 0], width: 1, height: 1 },
+        progress: 0.5,
+      }),
+    ).rejects.toThrow(/share width, height, and depth/);
   });
 
   it("bridges params + canvas to a wasm filter via the string-marshaling env ABI", async () => {
