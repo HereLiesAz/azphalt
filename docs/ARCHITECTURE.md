@@ -15,7 +15,7 @@ Keeping these separable is the core constraint: anyone can implement azphalt and
 
 - **Credible neutrality.** A standard trapped in an app's repo reads as that app's private thing, and no competitor adopts it. Separation is the first structural signal that it's shared infrastructure.
 - **A physical moat boundary.** A separate MIT repo literally cannot see a host's proprietary engine source. "The extension surface never exposes GraffitiXR's relocalization engine" stops being a discipline you maintain and becomes a line you *can't cross by accident*.
-- **Clean dependency direction.** A conforming host (GraffitiXR is the first) depends on azphalt as a published library and calls across the boundary. azphalt never depends on any host.
+- **Clean dependency direction.** A conforming host (GraffitiXR the first, Guillotine — a video/audio editor — the second) depends on azphalt as a published library and calls across the boundary. azphalt never depends on any host.
 
 ## The stack, and why
 
@@ -118,7 +118,7 @@ So: keep the standard open and self-hostable, require nobody to touch the store 
 1. **Spec skeleton** — package format, extension manifest, capability model, UI schema. The seed. *(built)*
 2. **SDK + first importers** — `.abr` and `.cube` first; now a wide importer family targeting `.azp`. *(built)*
 3. **Reference runtime + real sandbox** — `runtime-reference` proves the contract; `runtime-wasm` runs it under QuickJS-in-WASM and raw WebAssembly. *(built)*
-4. **GraffitiXR native host** — embed the engine, render the UI schema in Compose. The first real consumer, and the one piece that lives outside this repo.
+4. **Native hosts** — embed the engine, render the UI schema natively. GraffitiXR (paint/AR) is the first real consumer; Guillotine (video/audio) is the second, adopting the same `.azp` loader + Ed25519 trust on-device. These live outside this repo, behind their own engine boundaries.
 5. **Registry + marketplace** — `registry` (open lane) and its consignment overlay + `repository-server` are built; the hosted marketplace grows once there's an audience.
 
 ## Execution engine — decided

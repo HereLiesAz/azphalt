@@ -4,7 +4,7 @@
 
 ## The commitment
 
-- **No host is privileged.** The API is identical for every adopter. There is no back channel that gives GraffitiXR — or anyone — engine access the spec denies to others. The never-list protects every host equally; that symmetry *is* the neutrality.
+- **No host is privileged.** The API is identical for every adopter. There is no back channel that gives GraffitiXR, Guillotine — or anyone — engine access the spec denies to others. The never-list protects every host equally; that symmetry *is* the neutrality.
 - **The standard and registry stay open and self-hostable, permanently.** Anyone can implement azphalt, run their own registry, and never touch a hosted service. This is a guarantee, not a phase — adoption is a control decision, and no serious app builds on infrastructure a rival can meter or revoke.
 - **The fee lives only in the optional storefront.** The registry is free and rail-free. Money exists in the consignment marketplace and nowhere else, and adopting the standard never requires going through it. If that line ever blurs, the standard has stopped being neutral.
 

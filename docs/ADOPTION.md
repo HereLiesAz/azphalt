@@ -1,6 +1,6 @@
 # Adopting the standard
 
-*How an app becomes a conforming azphalt host. A conforming host can load any `.azp`, run its extensions safely, and render their UI natively — so an extension written once runs in your app unchanged. GraffitiXR is the first; this is what any other app implements.*
+*How an app becomes a conforming azphalt host. A conforming host can load any `.azp`, run its extensions safely, and render their UI natively — so an extension written once runs in your app unchanged. [GraffitiXR](https://github.com/HereLiesAz/GraffitiXR) (paint / AR) and [Guillotine](https://github.com/HereLiesAz/Guillotine) (video / audio) are the first hosts; this is what any other app implements.*
 
 > **Only consuming assets?** If your app just wants portable **assets** — LUTs, shaders, transitions, brushes — and runs no extension code (e.g. a video editor like Guillotine), you need a much lighter profile: verify, read, and apply. See [`ADOPTION_ASSET_HOST.md`](ADOPTION_ASSET_HOST.md).
 

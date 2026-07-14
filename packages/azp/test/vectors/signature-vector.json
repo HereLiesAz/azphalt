@@ -1,0 +1,8 @@
+{
+  "description": "Ed25519 over the exact manifest.json bytes (verbatim, no re-canonicalization). alg=ed25519.",
+  "privateKeyPkcs8Pem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIJcqWlgH2/RwVcBo318p0ed/D46OSq9oIW3DPpaR62S4\n-----END PRIVATE KEY-----\n",
+  "publicKeySpkiBase64": "MCowBQYDK2VwAyEAWlUm8cHGqCDVs3Uzn9x7UeErLOyDdCTr0n+HvKjDZ4M=",
+  "manifestJsonUtf8": "{\n  \"azphalt\": \"0.1\",\n  \"id\": \"com.azphalt.example.vector\",\n  \"name\": \"Signature Vector\",\n  \"version\": \"1.0.0\",\n  \"kind\": \"asset\",\n  \"license\": \"MIT\",\n  \"compat\": \">=0.1\",\n  \"files\": {\n    \"assets/x.txt\": \"sha256-2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\"\n  }\n}\n",
+  "manifestSha256Hex": "699b003ee9f44e8e6ed41ffc8fcb941010cc788d30df7f5d8cb7c36731e3d037",
+  "signatureBase64": "VzdxDliOyWWAJA8KZjoFHfdizyb36IdZnRVhtJbFS0ZLccQIJOLAHfTNODbh1CNKTDerZZhCCZrPh+BsZ95WAQ=="
+}

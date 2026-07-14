@@ -20,6 +20,14 @@
 | `contributes` | code/mixed | Extension points the code registers (below). |
 | `files` | ✔ | Map of payload path → SHA-256 digest (integrity; see package-format.md). |
 
+## `compat`
+`compat` declares the host azphalt-API version the package needs, as a **single semver comparator** the host evaluates against its own API version. The `0.1` grammar is a deliberately small, interoperable subset so every host validates it identically:
+
+- one comparator — `>=` `>` `<=` `<` `=` — **optional, defaulting to `>=`** ("minimum host version");
+- followed by `MAJOR[.MINOR[.PATCH]]`; omitted parts are `0`, so `0.1` ≡ `0.1.0`.
+
+**Not** in `0.1`: ranges, unions (`||`), hyphen ranges, `^`/`~`, or prerelease tags. A host at API version `H` satisfies `compat` iff `H` (by semver precedence) satisfies the comparator; `>=0.1` is the conventional value. Reference implementation: `@azphalt/azp`'s `compatSatisfies(hostVersion, compat)` and `parseCompat(compat)`.
+
 ## `assets`
 Each entry requires a `type`, which determines the format of the asset. The supported primitives are:
 - **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector`
