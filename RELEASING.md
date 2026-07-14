@@ -21,13 +21,16 @@ Pick the affected packages, choose the bump (`patch` / `minor` / `major`), and w
 
 Nothing publishes off a normal feature-branch merge — only the Version Packages PR triggers a publish.
 
-## The one human step: the npm token
+## First-time setup (the human steps)
 
-Publishing needs credentials this repo does not (and must not) contain. A maintainer sets one repository secret once:
+Publishing needs an npm account and a scope this repo can't (and must not) create for you. Do these once:
 
-- **`NPM_AUTH_TOKEN`** — an npm *automation* access token for an account with publish rights to the `@azphalt` scope. (The release workflow maps it to `NODE_AUTH_TOKEN` at publish time.)
+1. **Create the `@azphalt` org on npmjs.com** so the scoped names are yours. On npmjs.com: your avatar → **Add Organization** → name it `azphalt` → the **Free** plan (unlimited *public* packages). This reserves `@azphalt/*`. Without the org, the first `@azphalt/x` publish fails with "scope not found". *(A package itself is not created on the website — it is created the first time it's published.)* `create-azphalt` is unscoped and published under your user, no org needed.
+2. **Add the `NPM_AUTH_TOKEN` repo secret** — an npm **automation** access token for an account that's a member of the `azphalt` org. Simplest: npmjs.com → **Access Tokens** → Generate New Token → **Classic → Automation** — an account-wide token that covers **both** the scoped `@azphalt/*` packages **and** the unscoped `create-azphalt`. If you'd rather use a **Granular** token, it must grant read+write to **both** the `@azphalt` scope **and** the `create-azphalt` package (a scope-only grant won't publish the unscoped `create-azphalt`), plus permission to create new packages. Automation tokens bypass 2FA, which CI needs; the workflow maps it to `NODE_AUTH_TOKEN` at publish time.
 
-Until it is set, the versioning half still works (the Version Packages PR opens normally); only the final `changeset publish` cannot authenticate. All scoped packages carry `publishConfig.access: "public"` (and `.changeset/config.json` sets `access: "public"`), so they publish public without an extra flag.
+Until both exist, the versioning half still works (the Version Packages PR opens normally); only the final `changeset publish` can't authenticate. All scoped packages carry `publishConfig.access: "public"` (and `.changeset/config.json` sets `access: "public"`), so they publish public without an extra flag.
+
+Once both are in place, publish by merging the Version Packages PR, or run the **Release** workflow manually (Actions → Release → **Run workflow**) — it's `workflow_dispatch`-enabled so the first publish and any retry are one click, no dummy commit needed.
 
 ## Manual release (fallback)
 

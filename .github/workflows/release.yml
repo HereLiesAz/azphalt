@@ -6,6 +6,9 @@ name: Release
 on:
   push:
     branches: [main]
+  # Manual trigger, so the first publish (and any retry after fixing the npm token /
+  # org) is a single "Run workflow" click instead of a dummy commit to main.
+  workflow_dispatch: {}
 
 # Never let two releases publish concurrently.
 concurrency: ${{ github.workflow }}-${{ github.ref }}
