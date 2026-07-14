@@ -19,9 +19,13 @@ Declared in the manifest, granted by the host, enforced at the host-function bou
 | `assets` | Read files bundled in the extension's own package. |
 | `time` | Read the host's playback clock — `currentMs`, `durationMs`, `fps`, `frameIndex`. Temporal hosts only (video / motion). Read-only. |
 | `audio` | Read and write the current PCM audio block (see the audio-buffer ABI below). |
-| `storage` | *(candidate)* small scoped key/value for the extension's own settings. |
+| `storage` | *(deferred to a future version — not in `0.1`)* small scoped key/value for the extension's own settings. |
 
-Baseline, no prompt: `params`, `assets`, read-only `canvas`, and read-only `time`. Anything that writes pixels, audio, or reads user content SHOULD require a grant. **Open:** the consent UX, and whether `storage` ships in `0.1`.
+Baseline, no prompt: `params`, `assets`, read-only `canvas`, and read-only `time`. Anything that writes pixels, audio, or reads user content SHOULD require a grant.
+
+**Consent.** The model is **deny-by-default**: a host grants a capability only if the manifest declares it, and for anything beyond the baseline set above the host SHOULD obtain the user's consent before granting it (and MAY remember the choice per extension). A denied capability is simply absent — its host function is never built, so the extension cannot call it. The **exact consent UX is host-defined** — a prompt, an install-time permission list, a settings toggle — the standard fixes only the *deny-by-default* rule and the least-privilege declaration, not the presentation.
+
+**`storage` is deferred.** A persistent key/value store is a new stateful surface with its own retention, quota, and privacy questions, so it is **not part of `0.1`** — `0.1` keeps the sandbox surface small and locked. It remains a candidate for a later version; until then an extension has no persistence beyond its own package and the host's `params`.
 
 `time` and `audio` extend the surface toward **temporal** and **audio** hosts (video editors, motion tools) without touching the never-list — they are still editor-surface, not the host's engine.
 

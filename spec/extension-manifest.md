@@ -164,6 +164,9 @@ Two are for **temporal / audio hosts** (video, motion editors), both editor-surf
 }
 ~~~
 
+## Resolved
+
+- **Inter-package dependencies are out of scope for `0.1`.** A package is **self-contained**: it declares no dependency on another package, and a host resolves nothing transitively. Everything a package needs is either in its own payload or reachable through a granted capability. A dependency mechanism (and the resolution, versioning, and trust questions it brings) is deferred to a later version. *(An author who needs shared logic vendors it into the package.)*
+
 ## Open
-- Localization of `name` / `description` / UI labels.
-- Inter-package dependencies — whether an extension may ever require another.
+- Localization of `name` / `description` / UI labels (the registry surface is tracked in the repository-API discussion; the manifest/UI surface is still open).
