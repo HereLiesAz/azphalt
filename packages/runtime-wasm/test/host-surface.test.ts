@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { writeAzp } from "@azphalt/azp";
 import type { Manifest } from "@azphalt/sdk";
-import { runFilter, runTool, runCommand } from "../src/index";
+import { runFilter, runTool, runCommand, runTransition } from "../src/index";
 
 /** Build a `code` `.azp` with a chosen module source, capabilities, contributes, and extra payload. */
 function buildAzp(opts: {
@@ -390,5 +390,104 @@ describe("runtime-wasm raw wasm entry", () => {
     expect(r.bitmap.depth).toBe(16);
     expect(r.bitmap.data).toEqual([65279, 65534, 0, 65535]);
     expect(r.redraws).toBe(1);
+  });
+});
+
+describe("runtime-wasm temporal + audio + transitions", () => {
+  it("bridges the `time` capability (currentMs / fps / frameIndex)", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        const bmp = ctx.bitmap.read(ctx.target);
+        bmp.data[0] = ctx.time.frameIndex();
+        bmp.data[1] = ctx.time.fps();
+        bmp.data[2] = Math.round(ctx.time.currentMs() / 100);
+        ctx.bitmap.write(ctx.target, bmp);
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap", "time"], contributes: filterContributes });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 }, time: { currentMs: 500, fps: 30 } });
+    expect(r.bitmap.data.slice(0, 3)).toEqual([15, 30, 5]); // 0.5s @30fps → frame 15
+  });
+
+  it("bridges the `audio` capability (read a PCM block, halve it, write back)", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        const a = ctx.audio.read();
+        const out = a.samples.map((s) => s * 0.5);
+        ctx.audio.write({ samples: out, sampleRate: a.sampleRate, channels: a.channels });
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["audio"], contributes: filterContributes });
+    const r = await runFilter(azp, {
+      params: {},
+      bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 },
+      audio: { samples: [1, -1, 0.5, -0.5], sampleRate: 48000, channels: 2 },
+    });
+    expect(r.audio).toEqual({ samples: [0.5, -0.5, 0.25, -0.25], sampleRate: 48000, channels: 2 });
+  });
+
+  it("gates `time`/`audio`: absent without the capability", async () => {
+    const mod = `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter((ctx) => { ctx.time.fps(); });`;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
+    await expect(runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 } })).rejects.toThrow(/sandbox/);
+  });
+
+  it("dispatches a `transition` (two frames blended by progress)", async () => {
+    const mod = `
+      import { defineTransition } from "@azphalt/sdk";
+      export const x = defineTransition((ctx) => {
+        const a = ctx.from.data, b = ctx.to.data, p = ctx.progress;
+        const out = ctx.bitmap.alloc(ctx.from.width, ctx.from.height);
+        for (let i = 0; i < out.data.length; i++) out.data[i] = Math.round(a[i] * (1 - p) + b[i] * p);
+        ctx.bitmap.write(ctx.target, out);
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: { transitions: [{ id: "x", name: "X", entry: "x" }] } });
+    const r = await runTransition(azp, {
+      params: {},
+      bitmap: { data: [0, 0, 0, 255], width: 1, height: 1 },
+      from: { data: [0, 0, 0, 255], width: 1, height: 1 },
+      to: { data: [100, 200, 40, 255], width: 1, height: 1 },
+      progress: 0.25,
+    });
+    expect(r.bitmap.data).toEqual([25, 50, 10, 255]);
+  });
+
+  it("dispatches a 16-bit `transition`: input frames keep depth (values > 255 survive)", async () => {
+    const mod = `
+      import { defineTransition } from "@azphalt/sdk";
+      export const x = defineTransition((ctx) => {
+        if (ctx.from.depth !== 16 || ctx.to.depth !== 16) throw new Error("expected 16-bit inputs, got " + ctx.from.depth + "/" + ctx.to.depth);
+        const a = ctx.from.data, b = ctx.to.data, p = ctx.progress;
+        const out = ctx.bitmap.alloc(ctx.from.width, ctx.from.height, 16);
+        for (let i = 0; i < out.data.length; i++) out.data[i] = Math.round(a[i] * (1 - p) + b[i] * p);
+        ctx.bitmap.write(ctx.target, out);
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: { transitions: [{ id: "x", name: "X", entry: "x" }] } });
+    const r = await runTransition(azp, {
+      params: {},
+      bitmap: { data: [0, 0, 0, 0], width: 1, height: 1, depth: 16 },
+      from: { data: [0, 0, 0, 65535], width: 1, height: 1, depth: 16 },
+      to: { data: [40000, 20000, 10000, 65535], width: 1, height: 1, depth: 16 },
+      progress: 0.5,
+    });
+    expect(r.bitmap.depth).toBe(16);
+    expect(r.bitmap.data).toEqual([20000, 10000, 5000, 65535]); // > 255 — proves no 8-bit truncation
+  });
+
+  it("rejects an audio write with non-positive channels/sampleRate", async () => {
+    const mod = `
+      import { defineFilter } from "@azphalt/sdk";
+      export const f = defineFilter((ctx) => {
+        ctx.audio.write({ samples: new Float32Array([0, 0, 0, 0]), sampleRate: 48000, channels: -2 });
+      });
+    `;
+    const azp = buildAzp({ source: mod, capabilities: ["audio"], contributes: filterContributes });
+    await expect(
+      runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 }, audio: { samples: [1, 1, 1, 1], sampleRate: 48000, channels: 2 } }),
+    ).rejects.toThrow(/audio/);
   });
 });
