@@ -23,12 +23,12 @@ importers:
 
   apps/marketplace:
     dependencies:
-      '@azphalt/repository-client':
-        specifier: workspace:*
-        version: link:../../packages/repository-client
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@azphalt/repository-client':
+        specifier: workspace:*
+        version: link:../../packages/repository-client
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -72,15 +72,15 @@ importers:
 
   apps/repository-server:
     dependencies:
+      '@azphalt/azdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../packages/azp
       '@azphalt/registry':
         specifier: workspace:*
         version: link:../../packages/registry
-      '@azphalt/azdk':
-        specifier: workspace:*
-        version: link:../../packages/sdk
     devDependencies:
       '@azphalt/repository-client':
         specifier: workspace:*
@@ -97,15 +97,15 @@ importers:
 
   apps/storefront:
     dependencies:
+      '@azphalt/azdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../../packages/azp
       '@azphalt/registry':
         specifier: workspace:*
         version: link:../../packages/registry
-      '@azphalt/azdk':
-        specifier: workspace:*
-        version: link:../../packages/sdk
       next:
         specifier: ^15.5.18
         version: 15.5.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -143,12 +143,12 @@ importers:
 
   examples/gallery:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../packages/azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../packages/azp
     devDependencies:
       '@azphalt/runtime-wasm':
         specifier: workspace:*
@@ -203,12 +203,12 @@ importers:
 
   packages/conformance:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../azp
     devDependencies:
       '@azphalt/runtime-wasm':
         specifier: workspace:*
@@ -244,12 +244,12 @@ importers:
 
   packages/importers/abr:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
       fflate:
         specifier: ^0.8.2
         version: 0.8.3
@@ -266,21 +266,21 @@ importers:
 
   packages/importers/audio:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/cube:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -294,84 +294,84 @@ importers:
 
   packages/importers/font:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/gltf:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/hdri:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/image:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/importer-litert:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/importer-onnx:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/importer-sherpa:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/importer-tflite:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/isf:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -385,39 +385,39 @@ importers:
 
   packages/importers/material:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/motion:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/palette:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/transition:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -431,30 +431,30 @@ importers:
 
   packages/importers/vector:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/importers/video:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../azp
 
   packages/mcp:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../azp
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.0
         version: 1.29.0(zod@3.25.76)
@@ -474,12 +474,12 @@ importers:
 
   packages/registry:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../azp
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -502,12 +502,12 @@ importers:
 
   packages/runtime-reference:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../azp
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -521,12 +521,12 @@ importers:
 
   packages/runtime-wasm:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../azp
       quickjs-emscripten:
         specifier: ^0.31.0
         version: 0.31.0
@@ -547,14 +547,20 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
-  packages/submit-check:
+  packages/sdk-compat:
     dependencies:
-      '@azphalt/azp':
-        specifier: workspace:*
-        version: link:../azp
       '@azphalt/azdk':
         specifier: workspace:*
         version: link:../sdk
+
+  packages/submit-check:
+    dependencies:
+      '@azphalt/azdk':
+        specifier: workspace:*
+        version: link:../sdk
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../azp
     devDependencies:
       '@types/node':
         specifier: ^22.0.0

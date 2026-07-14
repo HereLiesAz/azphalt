@@ -1,0 +1,26 @@
+{
+  "name": "@azphalt/sdk",
+  "version": "0.1.1",
+  "publishConfig": { "access": "public" },
+  "description": "Convenience alias for @azphalt/azdk.",
+  "license": "MIT",
+  "author": "Az (https://hereliesaz.com)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@azphalt/azdk": "workspace:*"
+  },
+  "sideEffects": false
+}
