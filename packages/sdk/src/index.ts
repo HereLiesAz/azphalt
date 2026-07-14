@@ -103,19 +103,36 @@ export interface AssetContribution {
 }
 
 /**
- * One member file of a multi-part model asset. Each member is either bundled (`path`) or remote
- * (`remoteUrl`), carries its own `checksum` so a host verifies (and re-fetches) per file, and the
- * host materializes all members into one directory routed by the asset's `role`.
+ * One member file of a multi-part model asset. A member is **either** bundled (`path`) **or** remote
+ * (`remoteUrl`) — a discriminated union enforces the mutual exclusivity, and requires a `checksum` on a
+ * remote member (its only integrity gate). The host materializes all members into one directory routed
+ * by the asset's `role`.
  */
-export interface ModelFileMember {
+export type ModelFileMember = BundledModelFileMember | RemoteModelFileMember;
+
+/** A member whose bytes are bundled in the `.azp` under `path` (integrity-covered by `manifest.files`). */
+export interface BundledModelFileMember {
   /** Logical name within the bundle, also its on-disk filename (e.g. `"encoder.onnx"`, `"tokens.txt"`). */
   name: string;
-  /** In-package path under `/assets` when bundled. Provide exactly one of `path` or `remoteUrl`. */
-  path?: string;
-  /** URL to fetch this member from when delivered remotely. Provide exactly one of `path` or `remoteUrl`. */
-  remoteUrl?: string;
-  /** `sha256-<hex>` of this member's bytes — a host verifies the member against it before use. */
+  /** In-package path under `/assets`. */
+  path: string;
+  remoteUrl?: never;
+  /** Optional `sha256-<hex>`; a bundled member is already covered by the `manifest.files` digest. */
   checksum?: string;
+  /** Advisory byte size, for per-member progress / headroom. */
+  byteSize?: number;
+  supportsRange?: never;
+}
+
+/** A member fetched from `remoteUrl`; its `checksum` is the integrity gate a host verifies after download. */
+export interface RemoteModelFileMember {
+  /** Logical name within the bundle, also its on-disk filename (e.g. `"encoder.onnx"`, `"tokens.txt"`). */
+  name: string;
+  path?: never;
+  /** URL to fetch this member from. */
+  remoteUrl: string;
+  /** `sha256-<hex>` of this member's bytes — a host MUST verify the member against it before use. */
+  checksum: string;
   /** Advisory byte size, for per-member download progress / headroom. */
   byteSize?: number;
   /** Hint that `remoteUrl` honors HTTP `Range`, so a host's resumable (partial) download will work. */
@@ -128,14 +145,14 @@ export interface ModelFileMember {
  * the model afterward). A host filters/skips on these at plan time; a registry can filter on them too.
  */
 export interface ModelRequirements {
-  /** Target runtime, e.g. `"onnxruntime"` | `"tflite"` | `"litert"` | `"sherpa-onnx"`. */
-  runtime?: string;
+  /** Target runtime. Open union — the blessed values autocomplete, any string is valid. */
+  runtime?: "onnxruntime" | "tflite" | "litert" | "sherpa-onnx" | (string & {});
   /** Minimum runtime format version — an ONNX opset / TFLite schema floor, e.g. `">=17"`. */
   formatVersion?: string;
-  /** Delivered weights' quantization: `"float32"` | `"float16"` | `"int8"` | `"dynamic"`. */
-  quantization?: string;
+  /** Delivered weights' quantization. */
+  quantization?: "float32" | "float16" | "int8" | "dynamic" | (string & {});
   /** Required accelerator: `"cpu"` (runs anywhere) | `"gpu"` | `"nnapi"` | `"coreml"` | `"qnn"`. */
-  accelerator?: string;
+  accelerator?: "cpu" | "gpu" | "nnapi" | "coreml" | "qnn" | (string & {});
   /** Minimum device RAM in MB, so a host can warn before install rather than OOM after. */
   minRamMB?: number;
 }
