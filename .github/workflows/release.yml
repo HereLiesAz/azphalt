@@ -29,20 +29,25 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
       - run: corepack enable
+      # Update npm to the latest release (changesets/pnpm shell out to npm for
+      # provenance/auth; keep it current).
+      - run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
-      # Preflight: turn npm's opaque "E404 on publish" into a clear verdict. `npm whoami`
-      # succeeding means the token authenticates — so a later publish 404 is a *write*
-      # problem (read-only token, not an org member, or an unverified account email), not a
-      # bad token. Failing means the token is missing/invalid. Non-fatal either way.
+      # Preflight: identify who the token authenticates as, and turn npm's opaque "E404
+      # on publish" into a clear verdict. `pnpm whoami` succeeding prints the npm username
+      # the token maps to (the token, not a separate secret, IS your identity) — so a later
+      # publish 404 is a *write* problem (read-only token, not an org member, or an
+      # unverified account email), not a bad token. Failing means the token is
+      # missing/invalid. Non-fatal either way.
       - name: Diagnose npm auth (non-fatal)
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
         run: |
-          if npm whoami --registry=https://registry.npmjs.org; then
-            echo "::notice::npm token AUTHENTICATES as the user above. If publish still 404s, it's a WRITE issue — the token is read-only, the account isn't a member of the @azphalt org with publish rights, or the account email is unverified."
+          if who=$(pnpm whoami --registry=https://registry.npmjs.org); then
+            echo "::notice::NPM_AUTH_TOKEN authenticates as npm user '$who'. If publish still 404s, it's a WRITE issue — the token is read-only, '$who' isn't a member of the @azphalt org with publish rights, or the account email is unverified."
           else
-            echo "::warning::npm whoami FAILED — NPM_AUTH_TOKEN is missing, malformed, or invalid. It must be a classic *Automation* (write) token, saved verbatim as the NPM_AUTH_TOKEN repo secret."
+            echo "::warning::pnpm whoami FAILED — NPM_AUTH_TOKEN is missing, malformed, or invalid. It must be a classic *Automation* (write) token, saved verbatim as the NPM_AUTH_TOKEN repo secret."
           fi
       - name: Create the Version PR, or publish to npm
         uses: changesets/action@v1
