@@ -12,10 +12,14 @@ set -uo pipefail
 
 PKG="${1:?usage: publish-one-retry.sh <package-name>}"
 
-live() { npm view "$PKG" version >/dev/null 2>&1; }
+# `live` caches the published version in CURRENT_VERSION so callers can print it
+# without a second `npm view` (fewer registry calls, which matters when we're
+# being rate-limited).
+CURRENT_VERSION=""
+live() { CURRENT_VERSION=$(npm view "$PKG" version 2>/dev/null); [ -n "$CURRENT_VERSION" ]; }
 
 if live; then
-  echo "✓ $PKG is already published ($(npm view "$PKG" version)); nothing to do."
+  echo "✓ $PKG is already published ($CURRENT_VERSION); nothing to do."
   exit 0
 fi
 
@@ -28,7 +32,7 @@ for d in "${delays[@]}"; do
     sleep "$d"
     echo "::endgroup::"
     # A parallel/previous run may have landed it while we waited.
-    if live; then echo "✓ $PKG became live during the wait ($(npm view "$PKG" version))."; exit 0; fi
+    if live; then echo "✓ $PKG became live during the wait ($CURRENT_VERSION)."; exit 0; fi
   fi
   attempt=$((attempt + 1))
   echo "=== attempt ${attempt}: pnpm publish ${PKG} ==="
