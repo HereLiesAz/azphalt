@@ -77,6 +77,26 @@ export async function checkAcceptsAsset(host: AssetHost): Promise<CheckResult> {
     : fail(id, title, `host did not report applying the 'lut' asset (appliedTypes=${JSON.stringify(r.appliedTypes)})`);
 }
 
+/**
+ * Checklist: a `type` the host doesn't recognize is *parsed and skipped*, not a whole-package
+ * rejection. The fixture pairs a known `lut` with an unknown-`type` asset; a conforming host accepts
+ * the package and still applies the `lut` (and must not report applying the unknown type).
+ */
+export async function checkAcceptsUnknownType(host: AssetHost): Promise<CheckResult> {
+  const id = "unknown-type-skip";
+  const title = "Parses-and-skips an unrecognized asset `type` instead of rejecting the package";
+  const r = await load(host, fx.unknownTypeAzp());
+  if (!r.accepted) {
+    return fail(id, title, `host rejected a package containing an unknown asset type: ${r.reason ?? ""}`);
+  }
+  if (!r.appliedTypes?.includes("lut")) {
+    return fail(id, title, `host did not apply the known 'lut' alongside the unknown type (appliedTypes=${JSON.stringify(r.appliedTypes)})`);
+  }
+  return r.appliedTypes.includes("holo-widget")
+    ? fail(id, title, "host claims to have applied the unknown 'holo-widget' type it should have skipped")
+    : pass(id, title);
+}
+
 /** Checklist: renders an asset's ui panel from the schema — the checkable part is schema validity. */
 export function checkAssetUiSchema(): CheckResult {
   const id = "ui-schema";
