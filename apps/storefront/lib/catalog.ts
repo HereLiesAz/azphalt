@@ -13,7 +13,7 @@
  * rest live only in the free registry. The fee — and money in general — exists only on the listings,
  * never in the registry itself.
  */
-import { writeAzp } from "@azphalt/azp";
+import { readAzp, writeAzp } from "@azphalt/azp";
 import { InMemoryStore, Marketplace, Registry } from "@azphalt/registry";
 import type { Manifest } from "@azphalt/sdk";
 
@@ -24,6 +24,22 @@ const MIT_LICENSE =
   "without restriction. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND.\n";
 
 const utf8 = (s: string) => new TextEncoder().encode(s);
+
+/**
+ * A tiny self-contained SVG store-card swatch, so a package can ship a real in-package `preview.image`
+ * (served by `/api/preview/[id]`). SVG-in-`<img>` can't run script, and the labels are static, so it's
+ * safe to render. Kept small and deterministic.
+ */
+function svgSwatch(from: string, to: string, label: string): Uint8Array {
+  return utf8(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180" role="img" aria-label="${label}">` +
+      `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+      `<stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs>` +
+      `<rect width="320" height="180" fill="url(#g)"/>` +
+      `<text x="16" y="166" font-family="sans-serif" font-size="14" fill="#ffffff" opacity="0.9">${label}</text>` +
+      `</svg>`,
+  );
+}
 
 /** A tiny but plausible `.cube` LUT payload, so LUT packs ship real (if trivial) asset bytes. */
 function cubeLut(title: string): Uint8Array {
@@ -136,6 +152,7 @@ const SEEDS: Seed[] = [
       author: "Studio Az",
       homepage: "https://hereliesaz.com",
       capabilities: ["assets", "bitmap"],
+      preview: { image: "preview/card.svg" },
       assets: [
         { type: "lut", path: "assets/teal-orange.cube" },
         { type: "lut", path: "assets/bleach-bypass.cube" },
@@ -146,6 +163,7 @@ const SEEDS: Seed[] = [
       "assets/teal-orange.cube": cubeLut("Teal & Orange"),
       "assets/bleach-bypass.cube": cubeLut("Bleach Bypass"),
       "assets/night-moody.cube": cubeLut("Night / Moody"),
+      "preview/card.svg": svgSwatch("#0e7c86", "#f08a24", "CineGrade LUT Pack"),
     },
     simulatedDownloads: 1310,
     ratings: [5, 4, 5, 5, 4, 4],
@@ -249,6 +267,7 @@ const SEEDS: Seed[] = [
         "handoff, so the moat holds.",
       author: "Acme AR",
       homepage: "https://arstencil.acme.com",
+      preview: { image: "preview/card.svg" },
       targetApps: ["com.hereliesaz.graffitixr"],
       app: {
         platforms: {
@@ -295,7 +314,7 @@ const SEEDS: Seed[] = [
         ],
       },
     },
-    payload: {},
+    payload: { "preview/card.svg": svgSwatch("#5b21b6", "#7db7ff", "AR Stencil Capture") },
     simulatedDownloads: 760,
     ratings: [5, 4, 5, 4],
   },
@@ -423,4 +442,34 @@ export async function getCatalog(): Promise<{ registry: Registry; market: Market
   if (!seeded) seeded = seed();
   await seeded;
   return { registry, market };
+}
+
+/** MIME type for a preview image, inferred from its in-package extension. */
+function previewMime(path: string): string {
+  if (path.endsWith(".svg")) return "image/svg+xml";
+  if (path.endsWith(".png")) return "image/png";
+  if (path.endsWith(".webp")) return "image/webp";
+  if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
+  return "application/octet-stream";
+}
+
+/**
+ * The static store-card preview for [id]: the bytes of the package's declared `manifest.preview.image`
+ * plus its MIME type, or `null` when the package declares no in-package preview. The path is taken from
+ * the **manifest** (never the request), so there is no user-controlled path — no traversal. Reads the
+ * `.azp` via `store.getBytes`, which does **not** count a download (unlike `registry.serve`). An
+ * `https:` preview URL is left to the client, not proxied here.
+ */
+export async function getPreviewImage(id: string): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+  await getCatalog();
+  const latest = await registry.latest(id);
+  if (!latest) return null;
+  const image = latest.manifest.preview?.image;
+  if (!image || /^https?:/i.test(image)) return null;
+  const azpBytes = await store.getBytes(id, latest.version);
+  if (!azpBytes) return null;
+  const { payload } = readAzp(azpBytes);
+  const bytes = payload[image];
+  if (!bytes) return null;
+  return { bytes, contentType: previewMime(image) };
 }

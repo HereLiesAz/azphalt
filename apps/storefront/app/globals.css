@@ -580,6 +580,42 @@ footer.site-footer .container {
   font-weight: 600;
 }
 
+/* Monospace id / URL utility (used outside cards too — package ids, start URLs) */
+.id {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  word-break: break-all;
+}
+
+/* Static previews */
+.card-preview {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+.card-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.detail-preview {
+  margin-top: 16px;
+  max-width: 480px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.detail-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* Browse filter / sort bar */
 .filterbar {
   display: flex;

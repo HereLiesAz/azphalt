@@ -5,7 +5,7 @@
  */
 import Link from "next/link";
 import type { Money, PackageSummary } from "@azphalt/registry";
-import { formatCount, formatMoney, formatRating, kindLabel } from "../lib/format";
+import { formatCount, formatMoney, formatRating, kindLabel, previewSrc } from "../lib/format";
 
 export interface PackageCardProps {
   pkg: PackageSummary;
@@ -17,9 +17,16 @@ export function PackageCard({ pkg, price }: PackageCardProps) {
   const contributionTotal =
     pkg.contributes.filters + pkg.contributes.tools + pkg.contributes.commands;
   const isApp = pkg.kind === "app";
+  const preview = previewSrc(pkg.id, pkg.preview?.image);
 
   return (
     <article className="card">
+      {preview ? (
+        <Link href={`/p/${pkg.id}`} className="card-preview" aria-label={`${pkg.name} preview`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- in-package proxy or validated external URL */}
+          <img src={preview} alt="" loading="lazy" />
+        </Link>
+      ) : null}
       <div className="card-title">
         <Link href={`/p/${pkg.id}`}>{pkg.name}</Link>
         {isApp ? (

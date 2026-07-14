@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getCatalog } from "../lib/catalog";
-import { formatHandoffIO, formatRating, kindLabel, safeHttpUrl } from "../lib/format";
+import { getCatalog, getPreviewImage } from "../lib/catalog";
+import { formatHandoffIO, formatRating, kindLabel, previewSrc, safeHttpUrl } from "../lib/format";
 
 describe("format helpers", () => {
   it("labels every package kind, companion apps included", () => {
@@ -30,6 +30,15 @@ describe("format helpers", () => {
     expect(safeHttpUrl("data:text/html,<script>")).toBeUndefined();
     expect(safeHttpUrl("/relative")).toBeUndefined();
     expect(safeHttpUrl(undefined)).toBeUndefined();
+  });
+
+  it("routes previews: in-package via proxy, external via a validated direct URL", () => {
+    expect(previewSrc("com.x", "preview/card.svg")).toBe("/api/preview/com.x");
+    expect(previewSrc("com.x", "https://cdn.example.com/a.png")).toBe("https://cdn.example.com/a.png");
+    // A javascript: value is never treated as an external URL — it falls to the same-origin proxy,
+    // which serves nothing for that bogus manifest path (404). The raw string never reaches an <img src>.
+    expect(previewSrc("com.x", "javascript:alert(1)")).toBe("/api/preview/com.x");
+    expect(previewSrc("com.x", undefined)).toBeUndefined();
   });
 
   it("formats a rating as stars + count, or null when untracked", () => {
@@ -80,5 +89,25 @@ describe("catalog", () => {
     const byRating = await registry.list({ sort: "rating" });
     const rated = byRating.filter((p) => p.ratingCount > 0).map((p) => p.rating ?? 0);
     for (let i = 1; i < rated.length; i++) expect(rated[i - 1]).toBeGreaterThanOrEqual(rated[i]);
+  });
+
+  it("serves the in-package preview image, and nothing for packages without one", async () => {
+    const preview = await getPreviewImage("com.studioaz.cinelut");
+    expect(preview?.contentType).toBe("image/svg+xml");
+    expect(new TextDecoder().decode(preview!.bytes)).toContain("<svg");
+    // A code package with no declared preview → null (route answers 404).
+    expect(await getPreviewImage("com.hereliesaz.halftone")).toBeNull();
+    expect(await getPreviewImage("com.does.not.exist")).toBeNull();
+  });
+
+  it("scopes the per-app catalog: a host sees its own companions plus globals", async () => {
+    const { registry } = await getCatalog();
+    const visible = await registry.list({ app: "com.hereliesaz.graffitixr" });
+    const ids = visible.map((p) => p.id);
+    expect(ids).toContain("com.acme.ar-stencil-capture"); // app-scoped companion
+    expect(ids).toContain("com.foldlab.filmluts"); // a global package, also visible
+    // A different app does NOT see the graffitixr-scoped companion.
+    const other = await registry.list({ app: "com.someone.else" });
+    expect(other.map((p) => p.id)).not.toContain("com.acme.ar-stencil-capture");
   });
 });

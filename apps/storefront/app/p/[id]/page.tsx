@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { getCatalog } from "../../../lib/catalog";
 import { BuyButton } from "../../../components/BuyButton";
 import { CompanionPanel } from "../../../components/CompanionPanel";
-import { formatCount, formatDate, formatMoney, formatRating, kindLabel } from "../../../lib/format";
+import { formatCount, formatDate, formatMoney, formatRating, kindLabel, previewSrc } from "../../../lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -73,12 +73,24 @@ export default async function PackageDetailPage({ params }: DetailPageProps) {
       </div>
 
       {summary.targetApps?.length ? (
-        <p className="detail-sub" style={{ marginTop: 8 }}>
-          Available in: {summary.targetApps.map((a) => <span className="chip" key={a}>{a}</span>)}
+        <p className="detail-sub" style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          Available in:{" "}
+          {summary.targetApps.map((a) => (
+            <Link className="chip" key={a} href={`/app/${encodeURIComponent(a)}`}>
+              {a}
+            </Link>
+          ))}
         </p>
       ) : null}
 
       {summary.description ? <p className="lede" style={{ marginTop: 16 }}>{summary.description}</p> : null}
+
+      {previewSrc(summary.id, summary.preview?.image) ? (
+        <div className="detail-preview">
+          {/* eslint-disable-next-line @next/next/no-img-element -- in-package proxy or validated external URL */}
+          <img src={previewSrc(summary.id, summary.preview?.image)} alt={`${summary.name} preview`} />
+        </div>
+      ) : null}
 
       <div className="btn-row">
         {/* The .azp itself: an app package is header-only, so downloading it fetches the manifest a
