@@ -55,8 +55,9 @@ invoke an external app. Its manifest adds one block, `app`:
         "install": "https://play.google.com/store/apps/details?id=com.acme.arstencil"
       },
       "pwa": {
-        "manifestUrl": "https://arstencil.acme.com/manifest.webmanifest",
-        "startUrl": "https://arstencil.acme.com/"
+        "manifestUrl": "https://arstencil.acme.com/manifest.webmanifest",  // for install only
+        "startUrl": "https://arstencil.acme.com/",
+        "shareTargetUrl": "https://arstencil.acme.com/handoff"             // host POSTs input here — no CORS manifest fetch
       }
     },
     "handoffs": [ /* … see below … */ ]
@@ -84,7 +85,7 @@ what comes back, and the transport per platform:
   "output": { "assets": ["vector", "image"], "params": { "scaleMm": "number?" } },
   "transport": {
     "android": { "intentAction": "com.acme.arstencil.CAPTURE", "resultMimeTypes": ["image/svg+xml", "image/png"] },
-    "pwa": { "shareTarget": true, "return": { "kind": "redirect", "param": "azphalt_result" } }
+    "pwa": { "shareTargetUrl": "https://arstencil.acme.com/handoff/capture", "return": { "kind": "postMessage" } }
   }
 }
 ~~~
@@ -127,10 +128,13 @@ Android gives a true synchronous result, so it is the reference transport:
 
 1. The host builds an `Intent` with `transport.android.intentAction`, attaches the input assets as
    content URIs (`EXTRA_STREAM` / clip data, `image/*` etc.) and the input `params` as typed extras,
-   and launches it **for result** (`startActivityForResult` / the Activity Result API).
+   and launches it **for result** (`startActivityForResult` / the Activity Result API). The host MUST
+   set **`Intent.FLAG_GRANT_READ_URI_PERMISSION`** on the outgoing intent — without it the companion
+   hits a `SecurityException` opening the input content URIs across the app boundary.
 2. The companion (a normal Android app holding whatever runtime permissions the user granted it) does
    its work and returns via `setResult(RESULT_OK, resultIntent)` — output assets as content URIs whose
-   MIME types are in `resultMimeTypes`, output params as result extras.
+   MIME types are in `resultMimeTypes`, output params as result extras. The companion likewise MUST set
+   **`FLAG_GRANT_READ_URI_PERMISSION`** on the result intent so the host can read the returned URIs.
 3. The host reads the result, **verifies** each returned asset against the declared `output` wire format
    and a size cap, and ingests it. `RESULT_CANCELED` (or a timeout) is a clean no-op.
 
@@ -139,26 +143,34 @@ The host must show the OS-app consent before step 1 and treat a missing target a
 
 ### PWA (the return-path is the hard part)
 The web has clean ways to send input *in* but no synchronous "return to caller", so the return path is
-designed explicitly:
+designed explicitly, around two browser realities: a companion PWA runs on **its own origin**, and
+cross-origin fetch/`blob:` access is blocked.
 
-- **Input** — the host invokes the PWA via a **Web Share Target** (a `POST` of the input assets as
-  `multipart/form-data`, params as form fields) or a registered **protocol / file handler**. This is
-  the installable-PWA analog of an Android intent.
-- **Return** — the PWA hands the result back by **redirecting to a host-provided return URL** carrying
-  the result (`transport.pwa.return`):
-  - `redirect` — the PWA navigates to a host callback URL (a deep link / custom scheme the host
-    registered) with the result as a `param` (small `params` inline; assets as a short-lived
-    `blob:`/object-URL handle or an uploaded reference the host fetches over the *host's* own trusted
-    channel — never a third-party URL the host would blindly fetch).
+- **Input** — the host opens the companion as a **popup** (a window it holds a handle to) at the
+  handoff's declared share endpoint, and delivers the input via a **Web Share Target**-style `POST`
+  (input assets as `multipart/form-data`, params as form fields). The share endpoint is declared
+  **directly in the manifest** — `platforms.pwa.shareTargetUrl` (and/or per-handoff
+  `transport.pwa.shareTargetUrl`) — so the host never has to fetch and parse the PWA's
+  `manifest.webmanifest` cross-origin (which CORS would block). `manifestUrl`/`startUrl` remain only
+  for *install*.
+- **Return** — the companion posts the result back to the host with **`window.opener.postMessage`**,
+  using structured clone (which transfers `Blob`/`File`/`ArrayBuffer` **by value**, sidestepping the
+  Same-Origin Policy that makes a companion-origin `blob:` URL unreadable to the host):
+  - `postMessage` — the companion calls `window.opener.postMessage({ nonce, params, assets }, hostOrigin, transfer)`.
+    Assets travel as transferable `ArrayBuffer`s / `Blob`s — **not** as `blob:` URLs (those are bound to
+    the companion's origin and would fail cross-origin).
   - `fire-and-forget` — no return (the `fire-and-forget` shape).
 
-  A host MUST treat the return strictly: only accept a result on the exact callback it initiated
-  (a nonce in the return URL ties the result to the request), validate it against `output`, and apply
-  the same size/format checks as Android. The **self-containment moat still applies**: the host fetches
-  result bytes only from a channel *it* controls, never from an arbitrary URL the companion supplies.
+  A host MUST treat the return strictly: accept a message **only** from the popup it opened, **only**
+  with the `nonce` it issued, and **only** from the companion's expected origin (`event.origin` check).
+  It then validates the payload against `output` and applies the same size/format checks as Android.
+  The **self-containment moat still applies**: bytes arrive in-process via `postMessage`, never fetched
+  from an arbitrary URL the companion supplies. *(A service-worker/Cache-Storage handoff on the host's
+  own origin is an allowed alternative where a popup isn't viable.)*
 
-*(PWA return is the least mature surface; a host MAY support Android-only and advertise so. Hardening
-the PWA return handshake — nonce, origin binding, blob lifetime — is the main open work.)*
+*(PWA return is the least mature surface; a host MAY support Android-only and advertise so. The
+remaining work is hardening the `postMessage` handshake — nonce issuance, `event.origin` binding,
+transferable lifetime, and the popup-blocked fallback.)*
 
 ## Security & trust
 
@@ -194,8 +206,9 @@ A host ignores an `action` it doesn't place, or files it under a generic "Open i
 
 ## Open questions
 
-- **PWA return handshake** — the nonce / origin-binding / blob-lifetime details of the redirect return
-  (the one genuinely under-specified surface). Android is settled; the web needs a hardened dance.
+- **PWA `postMessage` handshake** — nonce issuance, `event.origin` binding, transferable lifetime, and
+  the popup-blocked fallback (a service-worker/Cache-Storage handoff on the host's own origin). Android
+  is settled; the web `postMessage` dance is the one genuinely under-specified surface.
 - **Conformance** — a `companion` host-conformance profile (drive a fixture handoff, assert the host
   shows consent, sends only declared input, and validates the return) — analogous to the code / asset /
   video-audio profiles in `@azphalt/conformance`.
