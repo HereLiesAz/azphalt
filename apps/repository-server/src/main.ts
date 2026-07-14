@@ -17,7 +17,7 @@
  */
 import { writeAzp } from "@azphalt/azp";
 import { InMemoryStore, Marketplace, Registry } from "@azphalt/registry";
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/azdk";
 import { InMemoryAuthorizer } from "./authorize.js";
 import { createRepositoryServer } from "./server.js";
 

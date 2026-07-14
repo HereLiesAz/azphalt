@@ -33,4 +33,4 @@ client.setToken("…"); // e.g. after an OAuth exchange
 - `getPackage(id)` → the package's manifest / detail.
 - `download(id, version)` → the binary `.azp` as a `Uint8Array`.
 
-Types (`RepositoryIndex`, `PackageSummary`, `PackageSearchResponse`) come from [`@azphalt/sdk`](../sdk). Verify downloaded bytes with [`@azphalt/azp`](../azp)'s `verifyAzp` before use.
+Types (`RepositoryIndex`, `PackageSummary`, `PackageSearchResponse`) come from [`@azphalt/azdk`](../sdk). Verify downloaded bytes with [`@azphalt/azp`](../azp)'s `verifyAzp` before use.

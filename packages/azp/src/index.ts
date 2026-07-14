@@ -6,7 +6,7 @@
  */
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { createHash, createPublicKey, verify as cryptoVerify } from "node:crypto";
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/azdk";
 
 /**
  * Fixed archive timestamp for reproducible output. Built from LOCAL fields on purpose: fflate

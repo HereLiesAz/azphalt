@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams } from 'react-router-dom';
 import { RepositoryClient } from '@azphalt/repository-client';
-import type { PackageSummary } from '@azphalt/sdk';
+import type { PackageSummary } from '@azphalt/azdk';
 import './index.css';
 
 // Initialize the client pointing to our local mock backend

@@ -21,7 +21,7 @@
   "dependencies": {
     "@azphalt/azp": "workspace:*",
     "@azphalt/registry": "workspace:*",
-    "@azphalt/sdk": "workspace:*"
+    "@azphalt/azdk": "workspace:*"
   },
   "devDependencies": {
     "@azphalt/repository-client": "workspace:*",

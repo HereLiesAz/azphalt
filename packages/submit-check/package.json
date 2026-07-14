@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@azphalt/azp": "workspace:*",
-    "@azphalt/sdk": "workspace:*"
+    "@azphalt/azdk": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

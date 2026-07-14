@@ -1,12 +1,12 @@
 /**
  * Sample azphalt extension — an **invert** filter.
  *
- * Written against `@azphalt/sdk` like any extension: it declares a `strength` param, reads the
+ * Written against `@azphalt/azdk` like any extension: it declares a `strength` param, reads the
  * target layer's pixels, blends toward their inverse, and asks for a redraw. It touches only the
  * `bitmap`, `params`, and `canvas` capabilities its manifest declares. Doubles as the
  * host-contract fixture exercised by `@azphalt/runtime-reference`.
  */
-import { defineFilter } from "@azphalt/sdk";
+import { defineFilter } from "@azphalt/azdk";
 
 /** `invert` filter. Export name matches `contributes.filters[].entry` in `manifest.json`. */
 export const invert = defineFilter((ctx) => {

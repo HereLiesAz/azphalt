@@ -6,7 +6,7 @@
  * unrecognized bytes are rejected. See RATIONALE § 1.3.
  */
 import { writeAzp } from "@azphalt/azp";
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/azdk";
 
 export interface ImportOptions {
   id: string;

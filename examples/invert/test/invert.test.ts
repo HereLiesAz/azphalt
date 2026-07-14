@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import type { Manifest, Panel } from "@azphalt/sdk";
+import type { Manifest, Panel } from "@azphalt/azdk";
 import { createHost, createWorld, runFilter } from "@azphalt/runtime-reference";
 import * as ext from "../src/main";
 

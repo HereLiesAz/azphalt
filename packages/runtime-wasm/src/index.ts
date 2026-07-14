@@ -20,7 +20,7 @@
  */
 import { getQuickJS, type QuickJSContext, type QuickJSHandle } from "quickjs-emscripten";
 import { readAzp, verifyAzp } from "@azphalt/azp";
-import { bytesPerChannel, type BitDepth, type Capability, type Manifest } from "@azphalt/sdk";
+import { bytesPerChannel, type BitDepth, type Capability, type Manifest } from "@azphalt/azdk";
 
 /**
  * A bitmap marshaled across the sandbox boundary. 4 channels per pixel, so `data.length ===
@@ -130,7 +130,7 @@ const MEMORY_LIMIT = 64 * 1024 * 1024;
 const TIMEOUT_MS = 2000;
 
 /**
- * The in-sandbox `@azphalt/sdk` module. An extension is built against `@azphalt/sdk`, but at runtime
+ * The in-sandbox `@azphalt/azdk` module. An extension is built against `@azphalt/azdk`, but at runtime
  * it needs only the author helpers (types are erased) — and they must brand a contribution with the
  * *same* `Symbol.for("azphalt.contribution")` the host checks, so the host resolves it by brand.
  */
@@ -650,7 +650,7 @@ async function runContribution(
 
   vm.runtime.setModuleLoader(
     (name) => {
-      if (name === "@azphalt/sdk") return SDK_SHIM;
+      if (name === "@azphalt/azdk") return SDK_SHIM;
       const src = payload[name];
       if (src) return decoder.decode(src);
       return { error: new Error(`module not found in package: ${name}`) };
@@ -709,7 +709,7 @@ async function runContribution(
 
 /**
  * Load a real `.azp` `code` entry and run one of its **filter** contributions against `world`.
- * Resolves `@azphalt/sdk` to an in-sandbox shim, resolves the export named by
+ * Resolves `@azphalt/azdk` to an in-sandbox shim, resolves the export named by
  * `contributes.filters[].entry`, checks its brand, and invokes it with a capability-gated `ctx`.
  */
 export function runFilter(azp: Uint8Array, world: SandboxWorld, opts: RunOptionsById = {}): Promise<SandboxResult> {

@@ -1,5 +1,5 @@
 /**
- * `@azphalt/sdk` — the typed surface an azphalt extension is written against.
+ * `@azphalt/azdk` — the typed surface an azphalt extension is written against.
  *
  * Turns the strings in the spec — capabilities, contributions, params, the UI
  * schema — into a typed API. This package is **types plus thin author helpers
@@ -861,7 +861,7 @@ export type Contribution<F> = F & {
  * `contributes.filters[].entry` points at:
  *
  * ```ts
- * import { defineFilter } from "@azphalt/sdk";
+ * import { defineFilter } from "@azphalt/azdk";
  * export const applyHalftone = defineFilter((ctx) => {
  * const cell = ctx.params.number("cellSize");
  * const bmp = ctx.bitmap.read(ctx.target);

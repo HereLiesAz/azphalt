@@ -6,7 +6,7 @@
  * its own engine. See `spec/package-format.md` § Assets.
  */
 import { writeAzp, type WriteResult } from "@azphalt/azp";
-import type { Manifest, Panel } from "@azphalt/sdk";
+import type { Manifest, Panel } from "@azphalt/azdk";
 import { parseGlTransition, type ParsedGlTransition } from "./parse-gl-transition.js";
 import { isHostBound, uniformsToPanel } from "./ui.js";
 

@@ -7,7 +7,7 @@ capability contract.
 
 ## Shape
 
-- [`src/main.ts`](src/main.ts) — the filter, written against `@azphalt/sdk`. Its export name
+- [`src/main.ts`](src/main.ts) — the filter, written against `@azphalt/azdk`. Its export name
   (`invert`) matches `contributes.filters[].entry`.
 - [`manifest.json`](manifest.json) — identity + the three capabilities it uses
   (`bitmap`, `params`, `canvas`) + the contribution. `files` is populated at package time by

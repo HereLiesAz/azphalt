@@ -5,7 +5,7 @@
  * the float32-interleaved audio-buffer ABI and the two-input transition dispatch, and gates `audio`
  * like any other capability. Mirrors the shape of `asset-checks.ts` / `checks.ts`.
  */
-import type { Capability } from "@azphalt/sdk";
+import type { Capability } from "@azphalt/azdk";
 import {
   pass,
   fail,

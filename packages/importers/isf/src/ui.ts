@@ -3,7 +3,7 @@
  * a shader's controls render natively in any adopting host — a paint app in Compose, Guillotine in
  * its timeline. Inputs the host binds itself (the clip image, audio) are excluded from the panel.
  */
-import type { Control, NumberControl, Panel, SelectOption } from "@azphalt/sdk";
+import type { Control, NumberControl, Panel, SelectOption } from "@azphalt/azdk";
 import type { IsfInput } from "./parse-isf.js";
 
 const HOST_BOUND: ReadonlySet<string> = new Set(["image", "audio", "audioFFT"]);

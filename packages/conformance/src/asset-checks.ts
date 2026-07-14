@@ -6,7 +6,7 @@
  * and applies the supported asset types with the host's own engine.
  */
 import { readAzp } from "@azphalt/azp";
-import type { Panel } from "@azphalt/sdk";
+import type { Panel } from "@azphalt/azdk";
 import { validatePanel } from "./validate-panel.js";
 import { pass, fail, type CheckResult } from "./checks.js";
 import * as fx from "./fixtures.js";

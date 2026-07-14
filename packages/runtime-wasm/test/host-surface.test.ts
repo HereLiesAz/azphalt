@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { writeAzp } from "@azphalt/azp";
-import type { Manifest } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/azdk";
 import { runFilter, runTool, runCommand, runTransition } from "../src/index";
 
 /** Build a `code` `.azp` with a chosen module source, capabilities, contributes, and extra payload. */
@@ -39,7 +39,7 @@ const filterContributes: Manifest["contributes"] = { filters: [{ id: "f", name: 
 describe("runtime-wasm full Host surface", () => {
   it("bridges the `layers` capability (list / create / opacity)", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         const before = ctx.layers.list().length;
         const created = ctx.layers.create({ name: "extra" });
@@ -63,7 +63,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("bridges the `selection` capability (set / mask / clear)", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         if (ctx.selection.mask() !== null) throw new Error("expected no initial selection");
         ctx.selection.set({ data: new Uint8ClampedArray([9, 9, 9, 9]), width: 1, height: 1 });
@@ -81,7 +81,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("bridges the `color` capability (active / setActive / palette)", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         const a = ctx.color.active();
         const bmp = ctx.bitmap.read(ctx.target);
@@ -103,7 +103,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("bridges the `assets` capability (read a bundled file)", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         const bytes = ctx.assets.read("assets/data.bin");
         const bmp = ctx.bitmap.read(ctx.target);
@@ -124,7 +124,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("round-trips a 16-bit bitmap through the QuickJS bridge (depth, >255 values, alloc)", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         const bmp = ctx.bitmap.read(ctx.target);
         if (bmp.depth !== 16) throw new Error("expected 16-bit, got " + bmp.depth);
@@ -144,7 +144,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("clamps 8-bit channel values instead of wrapping them (input out of 0–255)", async () => {
     const azp = buildAzp({
-      source: `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter(() => {});`,
+      source: `import { defineFilter } from "@azphalt/azdk"; export const f = defineFilter(() => {});`,
       capabilities: ["bitmap"],
       contributes: filterContributes,
     });
@@ -154,7 +154,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("writes a partial-view bitmap correctly (data is a subarray of a larger buffer)", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         const big = new Uint8ClampedArray(12);
         big.set([9, 8, 7, 6], 4);
@@ -168,7 +168,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("gates a new capability: ctx.layers is absent when not granted", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => { ctx.layers.list(); });
     `;
     const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
@@ -179,7 +179,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("dispatches a tool contribution via runTool", async () => {
     const mod = `
-      import { defineTool } from "@azphalt/sdk";
+      import { defineTool } from "@azphalt/azdk";
       export const t = defineTool((ctx) => { ctx.canvas.requestRedraw(); });
     `;
     const azp = buildAzp({ source: mod, capabilities: ["canvas", "bitmap"], contributes: { tools: [{ id: "t", name: "T", entry: "t" }] } });
@@ -189,7 +189,7 @@ describe("runtime-wasm full Host surface", () => {
 
   it("dispatches a command contribution via runCommand", async () => {
     const mod = `
-      import { defineCommand } from "@azphalt/sdk";
+      import { defineCommand } from "@azphalt/azdk";
       export const c = defineCommand((ctx) => {
         const bmp = ctx.bitmap.read(ctx.target);
         bmp.data[0] = 5;
@@ -202,7 +202,7 @@ describe("runtime-wasm full Host surface", () => {
   });
 
   it("rejects a host-supplied bitmap whose length doesn't match its dimensions", async () => {
-    const azp = buildAzp({ source: `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter(() => {});`, capabilities: ["bitmap"], contributes: filterContributes });
+    const azp = buildAzp({ source: `import { defineFilter } from "@azphalt/azdk"; export const f = defineFilter(() => {});`, capabilities: ["bitmap"], contributes: filterContributes });
     // width*height*4 = 4, but data has 3 bytes.
     await expect(runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0], width: 1, height: 1 } })).rejects.toThrow(
       /width \* height \* 4/,
@@ -210,13 +210,13 @@ describe("runtime-wasm full Host surface", () => {
   });
 
   it("rejects a world with an empty layers array", async () => {
-    const azp = buildAzp({ source: `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter(() => {});`, capabilities: ["bitmap"], contributes: filterContributes });
+    const azp = buildAzp({ source: `import { defineFilter } from "@azphalt/azdk"; export const f = defineFilter(() => {});`, capabilities: ["bitmap"], contributes: filterContributes });
     await expect(runFilter(azp, { params: {}, layers: [] })).rejects.toThrow(/non-empty `layers`|`bitmap`/);
   });
 
   it("rejects a tool export dispatched as a filter (brand mismatch)", async () => {
     const mod = `
-      import { defineTool } from "@azphalt/sdk";
+      import { defineTool } from "@azphalt/azdk";
       export const f = defineTool((ctx) => {});
     `;
     const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
@@ -542,7 +542,7 @@ describe("runtime-wasm raw wasm entry", () => {
 describe("runtime-wasm temporal + audio + transitions", () => {
   it("bridges the `time` capability (currentMs / fps / frameIndex)", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         const bmp = ctx.bitmap.read(ctx.target);
         bmp.data[0] = ctx.time.frameIndex();
@@ -558,7 +558,7 @@ describe("runtime-wasm temporal + audio + transitions", () => {
 
   it("bridges the `audio` capability (read a PCM block, halve it, write back)", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         const a = ctx.audio.read();
         const out = a.samples.map((s) => s * 0.5);
@@ -575,14 +575,14 @@ describe("runtime-wasm temporal + audio + transitions", () => {
   });
 
   it("gates `time`/`audio`: absent without the capability", async () => {
-    const mod = `import { defineFilter } from "@azphalt/sdk"; export const f = defineFilter((ctx) => { ctx.time.fps(); });`;
+    const mod = `import { defineFilter } from "@azphalt/azdk"; export const f = defineFilter((ctx) => { ctx.time.fps(); });`;
     const azp = buildAzp({ source: mod, capabilities: ["bitmap"], contributes: filterContributes });
     await expect(runFilter(azp, { params: {}, bitmap: { data: [0, 0, 0, 0], width: 1, height: 1 } })).rejects.toThrow(/sandbox/);
   });
 
   it("dispatches a `transition` (two frames blended by progress)", async () => {
     const mod = `
-      import { defineTransition } from "@azphalt/sdk";
+      import { defineTransition } from "@azphalt/azdk";
       export const x = defineTransition((ctx) => {
         const a = ctx.from.data, b = ctx.to.data, p = ctx.progress;
         const out = ctx.bitmap.alloc(ctx.from.width, ctx.from.height);
@@ -603,7 +603,7 @@ describe("runtime-wasm temporal + audio + transitions", () => {
 
   it("dispatches a 16-bit `transition`: input frames keep depth (values > 255 survive)", async () => {
     const mod = `
-      import { defineTransition } from "@azphalt/sdk";
+      import { defineTransition } from "@azphalt/azdk";
       export const x = defineTransition((ctx) => {
         if (ctx.from.depth !== 16 || ctx.to.depth !== 16) throw new Error("expected 16-bit inputs, got " + ctx.from.depth + "/" + ctx.to.depth);
         const a = ctx.from.data, b = ctx.to.data, p = ctx.progress;
@@ -626,7 +626,7 @@ describe("runtime-wasm temporal + audio + transitions", () => {
 
   it("rejects an audio write with non-positive channels/sampleRate", async () => {
     const mod = `
-      import { defineFilter } from "@azphalt/sdk";
+      import { defineFilter } from "@azphalt/azdk";
       export const f = defineFilter((ctx) => {
         ctx.audio.write({ samples: new Float32Array([0, 0, 0, 0]), sampleRate: 48000, channels: -2 });
       });

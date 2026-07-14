@@ -72,7 +72,7 @@ export function kindLabel(kind: string): string {
 }
 
 /**
- * Summarize a handoff's {@link import("@azphalt/sdk").HandoffIO} — asset types and/or param names —
+ * Summarize a handoff's {@link import("@azphalt/azdk").HandoffIO} — asset types and/or param names —
  * for a one-line "image, wallWidthMm?" display. Returns `"—"` for an empty/absent side.
  */
 export function formatHandoffIO(io?: { assets?: string[]; params?: Record<string, string> }): string {

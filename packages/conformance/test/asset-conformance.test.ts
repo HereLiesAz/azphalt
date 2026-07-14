@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readAzp, verifyAzp } from "@azphalt/azp";
 import { runAssetConformance, validatePanel, satisfiesCompat, type AssetHost } from "../src/index";
-import type { Panel } from "@azphalt/sdk";
+import type { Panel } from "@azphalt/azdk";
 
 /**
  * A reference conforming asset host — the worked example a real video host (e.g. Guillotine) mirrors.

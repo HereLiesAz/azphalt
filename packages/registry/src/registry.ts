@@ -5,7 +5,7 @@
  * stays neutral (see `docs/ARCHITECTURE.md § The marketplace — consignment model`).
  */
 import { digest, readAzp, verifyAzp } from "@azphalt/azp";
-import type { AssetType, Capability, Manifest, MediaDomain } from "@azphalt/sdk";
+import type { AssetType, Capability, Manifest, MediaDomain } from "@azphalt/azdk";
 import { InMemoryStore, type RegistryStore } from "./store.js";
 import type {
   ListQuery,

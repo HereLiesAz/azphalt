@@ -12,7 +12,7 @@ import type {
   LayerRef,
   Manifest,
   RGBA,
-} from "@azphalt/sdk";
+} from "@azphalt/azdk";
 import { blankBitmap, type World, type WorldLayer } from "./world.js";
 
 /** A host table containing only the sub-APIs whose capability was granted. */
