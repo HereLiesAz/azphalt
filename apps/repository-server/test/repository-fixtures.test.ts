@@ -73,7 +73,9 @@ async function buildFixtures(): Promise<Record<string, unknown>> {
   const handle = createRepositoryHandler({ registry, marketplace, authorizer, index: INDEX });
   const mk = (path: string, opts: { method?: string; headers?: Record<string, string>; body?: string } = {}): RepoRequest => {
     const url = new URL(path, "http://sample");
-    return { method: opts.method ?? "GET", path: url.pathname, query: url.searchParams, headers: opts.headers ?? {}, body: opts.body };
+    // RepoRequest.headers uses lower-cased names (the Node adapter normalizes them); mirror that here.
+    const headers = Object.fromEntries(Object.entries(opts.headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]));
+    return { method: opts.method ?? "GET", path: url.pathname, query: url.searchParams, headers, body: opts.body };
   };
   const capture = async (name: string, req: RepoRequest) => {
     const res = await handle(req);
@@ -98,16 +100,18 @@ async function buildFixtures(): Promise<Record<string, unknown>> {
 describe("Repository API — canonical sample responses (#43)", () => {
   it("the reference server emits fixtures that match the committed samples", async () => {
     const fixtures = await buildFixtures();
-    if (!existsSync(FIX_DIR)) mkdirSync(FIX_DIR, { recursive: true });
     const update = process.env.UPDATE_FIXTURES === "1";
+    if (update && !existsSync(FIX_DIR)) mkdirSync(FIX_DIR, { recursive: true });
 
     for (const [name, value] of Object.entries(fixtures)) {
       const file = join(FIX_DIR, `${name}.json`);
       const json = JSON.stringify(value, null, 2) + "\n";
-      if (update || !existsSync(file)) {
+      if (update) {
         writeFileSync(file, json);
         continue;
       }
+      // Without the flag (CI): a missing committed fixture is a failure, not a silent regeneration.
+      expect(existsSync(file), `fixture ${name}.json is missing from the repository — run with UPDATE_FIXTURES=1 to create it`).toBe(true);
       expect(readFileSync(file, "utf8"), `fixture ${name}.json drifted — re-run with UPDATE_FIXTURES=1 if intentional`).toBe(json);
     }
   });
