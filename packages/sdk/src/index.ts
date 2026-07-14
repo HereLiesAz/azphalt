@@ -28,6 +28,8 @@ export type Capability =
   | "color"
   | "params"
   | "assets"
+  | "time"
+  | "audio"
   | "storage";
 
 export type AssetType = 
@@ -78,10 +80,19 @@ export interface CommandContribution {
   entry: string;
 }
 
+/** A transition: a code contribution that blends **two** input frames by a `progress` (0→1). */
+export interface TransitionContribution {
+  id: string;
+  name: string;
+  entry: string;
+  ui?: string;
+}
+
 export interface Contributes {
   filters?: FilterContribution[];
   tools?: ToolContribution[];
   commands?: CommandContribution[];
+  transitions?: TransitionContribution[];
 }
 
 /** The root `manifest.json` of a `.azp`. See `spec/extension-manifest.md`. */
@@ -316,6 +327,41 @@ export interface AssetsApi {
 }
 
 /**
+ * The host's playback clock — read-only. Granted by the `time` capability, present on a **temporal**
+ * host (video / motion). It lets an extension animate: the same filter yields different output at
+ * different points on the timeline. See `spec/capability-model.md` § Temporal.
+ */
+export interface TimeApi {
+  /** The current playhead position, in milliseconds from the clip/composition start. */
+  currentMs(): number;
+  /** Total duration of the clip/composition, in milliseconds. */
+  durationMs(): number;
+  /** Frames per second of the host timeline. */
+  fps(): number;
+  /** The current frame index (`round(currentMs / 1000 * fps)`), for frame-exact effects. */
+  frameIndex(): number;
+}
+
+/**
+ * A block of PCM audio crossing the boundary. Samples are **32-bit float in `[-1, 1]`**, **interleaved**
+ * by channel (`L R L R …` for stereo), so `samples.length === frames * channels`. See the
+ * audio-buffer ABI in `spec/capability-model.md`.
+ */
+export interface AudioBuffer {
+  samples: Float32Array;
+  /** Samples per second per channel, e.g. 48000. */
+  sampleRate: number;
+  /** Channel count (1 = mono, 2 = stereo, …). */
+  channels: number;
+}
+
+/** Read and write the current audio block. Granted by the `audio` capability. */
+export interface AudioApi {
+  read(): AudioBuffer;
+  write(buffer: AudioBuffer): void;
+}
+
+/**
  * The host functions available to a running extension. **Only the sub-APIs whose
  * capability was declared and granted exist at runtime** — the runtime builds this
  * table from the grant set, so touching an ungranted capability is unreachable, not
@@ -329,6 +375,10 @@ export interface Host {
   color: ColorApi;
   params: ParamsApi;
   assets: AssetsApi;
+  /** The playback clock — present only with the `time` capability (temporal hosts). */
+  time: TimeApi;
+  /** The audio block — present only with the `audio` capability. */
+  audio: AudioApi;
 }
 
 /* ───────────────────── Contribution entry points ───────────────────── */
@@ -344,14 +394,31 @@ export interface ToolContext extends Host {
 export interface CommandContext extends Host {
 }
 
+/**
+ * A transition runs over **two** input frames and writes a blended result. `from` and `to` are the
+ * outgoing/incoming frames; `progress` sweeps `0 → 1`; the result is written to `target` (via
+ * `bitmap.write`). A temporal host also grants `time` so a transition can read the clock.
+ */
+export interface TransitionContext extends Host {
+  /** The outgoing frame (progress 0). */
+  from: Bitmap;
+  /** The incoming frame (progress 1). */
+  to: Bitmap;
+  /** Blend position, `0 → 1`. */
+  progress: number;
+  /** The layer the blended result is written to. */
+  target: LayerRef;
+}
+
 export type FilterFn = (ctx: FilterContext) => void | Promise<void>;
 export type ToolFn = (ctx: ToolContext) => void | Promise<void>;
 export type CommandFn = (ctx: CommandContext) => void | Promise<void>;
+export type TransitionFn = (ctx: TransitionContext) => void | Promise<void>;
 
 const KIND: unique symbol = Symbol.for("azphalt.contribution");
 
 export type Contribution<F> = F & {
-  readonly [KIND]: "filter" | "tool" | "command";
+  readonly [KIND]: "filter" | "tool" | "command" | "transition";
 };
 
 /**
@@ -378,6 +445,11 @@ export function defineTool(fn: ToolFn): Contribution<ToolFn> {
 
 export function defineCommand(fn: CommandFn): Contribution<CommandFn> {
   return Object.assign(fn, { [KIND]: "command" as const });
+}
+
+/** Declare a transition (two input frames → one blended output). Branded `"transition"`. */
+export function defineTransition(fn: TransitionFn): Contribution<TransitionFn> {
+  return Object.assign(fn, { [KIND]: "transition" as const });
 }
 
 /* ───────────────────── Repository API ───────────────────── */

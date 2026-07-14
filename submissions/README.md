@@ -4,6 +4,19 @@ Publish a plugin, extension, or asset by opening a **pull request** that adds on
 
 Submitting **source** (a manifest + your files) rather than a built `.azp` keeps the PR reviewable — the diff shows exactly what ships.
 
+## Choosing a PR template
+
+Every submission uses a PR template whose checklist maps one-to-one to the CI compliance gate — tick the boxes and your submission is already conformant. Pick the one that matches what you're shipping by adding `?template=…&expand=1` to the compare URL (or swap the template with the picker GitHub shows once you open the PR):
+
+| Submitting | Template |
+|---|---|
+| A pack of data assets (brush, LUT, pattern, shader, transition, font, audio, …) | [`submission-asset.md`](../.github/PULL_REQUEST_TEMPLATE/submission-asset.md) |
+| A code extension (filter / tool / command / transition) | [`submission-code.md`](../.github/PULL_REQUEST_TEMPLATE/submission-code.md) |
+| An AI model (`onnx` / `tflite` / `litert` / `sherpa-bundle`) | [`submission-model.md`](../.github/PULL_REQUEST_TEMPLATE/submission-model.md) |
+| Anything else, or a `mixed` package | [`submission.md`](../.github/PULL_REQUEST_TEMPLATE/submission.md) (default) |
+
+Example: `…/compare/main...your-branch?template=submission-code.md&expand=1`. Each template also carries a copy-paste starter `manifest.json` for that type.
+
 ## Layout
 
 One folder per package, named for your reverse-DNS `id`:
