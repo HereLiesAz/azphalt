@@ -18,9 +18,11 @@ The catalog lives entirely in an in-memory registry ([`lib/catalog.ts`](lib/cata
 | Route | What it does |
 | --- | --- |
 | `/` | Two-lane explainer + popular packages (registry sorted by downloads). |
-| `/search?q=…` | `registry.search` results. |
-| `/p/[id]` | Package detail: facts, capabilities, version history, download, and — if consigned — the price, breakdown, and Buy button. |
+| `/search?q=…&sort=…&kind=…` | Browse + search: `registry.search` when a query is present, else `registry.list` with a sort (downloads / rating / updated / name) and a `kind` filter. |
+| `/p/[id]` | Package detail: facts, capabilities, ratings, version history, preview, download — and for a `kind:"app"` companion, the install panel + handoff contract; if consigned, the price, breakdown, and Buy button. |
+| `/app/[appId]` | Per-app catalog: what a host app sees — its own app-scoped companions plus globals (`registry.list({ app })`). |
 | `GET /api/download/[id]` | Serves the `.azp` bytes (`application/zip`), counting a download. |
+| `GET /api/preview/[id]` | Serves a package's static store-card image (`manifest.preview.image`), no download counted. |
 | `POST /api/publish` | Publishes raw `.azp` bytes to the registry; returns the summary (or `400` with verification errors). |
 | `POST /api/checkout` | `{ packageId, buyerId }` → starts a (stubbed) consignment checkout; returns the session + price breakdown. |
 
@@ -40,6 +42,50 @@ pnpm dev              # http://localhost:3000
 # or, against the production build:
 pnpm build && pnpm start
 ```
+
+## Deploy (self-hosted)
+
+The app builds to a **self-contained Node server** (`output: "standalone"`) — no platform lock-in. Package it into an uploadable bundle and run it behind your web server.
+
+**1. Build the bundle** (from the repo root, so the workspace packages build first):
+
+```sh
+pnpm install --frozen-lockfile
+pnpm --filter "@azphalt/storefront..." build      # build the workspace deps
+pnpm --filter @azphalt/storefront bundle          # → apps/storefront/dist-server/
+```
+
+To serve under a **sub-path** (e.g. `example.com/azphalt`), set the base path at build time:
+
+```sh
+NEXT_BASE_PATH=/azphalt pnpm --filter @azphalt/storefront bundle
+```
+
+`dist-server/` is the whole deployable (traced `node_modules` + `.next` + `static` + `public`). It needs **Node 18+** on the host.
+
+**2. Upload** `apps/storefront/dist-server/` to your server (SFTP/rsync).
+
+**3. Run it** (from the uploaded `dist-server/` root):
+
+```sh
+PORT=8080 HOSTNAME=127.0.0.1 node apps/storefront/server.js
+```
+
+Keep it alive with a process manager (`pm2`, `systemd`, …).
+
+**4. Reverse-proxy** your domain (or sub-path) to it. For `example.com/azphalt` — built with `NEXT_BASE_PATH=/azphalt`, so the app already serves under that prefix; pass it through unchanged:
+
+```nginx
+location /azphalt/ {
+  proxy_pass http://127.0.0.1:8080;   # no trailing slash → path preserved
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+For a domain root or sub-domain (e.g. `azphalt.store`), build **without** `NEXT_BASE_PATH` and proxy `location /`.
+
+*(Hosted alternative: this is a standard Next.js app, so it also deploys to Vercel/Netlify unchanged — set the project root to `apps/storefront` and the build to `pnpm --filter @azphalt/storefront... build`.)*
 
 ## License
 
