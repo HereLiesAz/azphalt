@@ -3,7 +3,7 @@
  * real host's document while proving the capability contract and the image-buffer ABI. A
  * conforming host backs the same `Host` API with its own layers/canvas instead.
  */
-import type { BitDepth, Bitmap, RGBA } from "@azphalt/sdk";
+import type { AudioBuffer, BitDepth, Bitmap, RGBA } from "@azphalt/sdk";
 
 /** One editable layer in the {@link World}. */
 export interface WorldLayer {
@@ -26,6 +26,10 @@ export interface World {
   params: Record<string, unknown>;
   /** The extension's own package payload, exposed via the `assets` capability. */
   assets: Record<string, Uint8Array>;
+  /** The playback clock, exposed via the `time` capability. */
+  time: { currentMs: number; durationMs: number; fps: number };
+  /** The current audio block, exposed via the `audio` capability, or `null` when there is none. */
+  audio: AudioBuffer | null;
   /** Incremented on every `canvas.requestRedraw()` so a test can assert a redraw was requested. */
   redraws: number;
 }
@@ -56,6 +60,10 @@ export interface CreateWorldOptions {
   assets?: Record<string, Uint8Array>;
   activeColor?: RGBA;
   palette?: RGBA[];
+  /** Playback clock (for the `time` capability). */
+  time?: { currentMs?: number; durationMs?: number; fps?: number };
+  /** Audio block (for the `audio` capability). */
+  audio?: AudioBuffer | null;
 }
 
 /** Build a single-layer {@link World} — the usual starting point for exercising an extension. */
@@ -77,6 +85,8 @@ export function createWorld(opts: CreateWorldOptions = {}): World {
     color: { active: opts.activeColor ?? { r: 0, g: 0, b: 0, a: 255 }, palette: opts.palette ?? [] },
     params: opts.params ?? {},
     assets: opts.assets ?? {},
+    time: { currentMs: opts.time?.currentMs ?? 0, durationMs: opts.time?.durationMs ?? 0, fps: opts.time?.fps ?? 30 },
+    audio: opts.audio ?? null,
     redraws: 0,
   };
 }

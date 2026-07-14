@@ -5,6 +5,7 @@
  * stub. There is no reflection path to widen the grant at runtime.
  */
 import type {
+  AudioBuffer,
   Bitmap,
   Capability,
   Host,
@@ -156,6 +157,33 @@ export function createHost(manifest: Manifest, world: World): RuntimeHost {
         const b = world.assets[path];
         if (!b) throw new Error(`asset not found in package: ${path}`);
         return b;
+      },
+    };
+  }
+
+  if (granted.has("time")) {
+    host.time = {
+      currentMs: () => world.time.currentMs,
+      durationMs: () => world.time.durationMs,
+      fps: () => world.time.fps,
+      frameIndex: () => Math.round((world.time.currentMs / 1000) * world.time.fps),
+    };
+  }
+
+  if (granted.has("audio")) {
+    host.audio = {
+      read: () => {
+        if (!world.audio) throw new Error("no audio block available");
+        // Hand out a copy so a mutation only lands via write().
+        return { samples: Float32Array.from(world.audio.samples), sampleRate: world.audio.sampleRate, channels: world.audio.channels };
+      },
+      write: (buffer: AudioBuffer) => {
+        // A negative `channels` can slip past `% channels === 0` (e.g. `4 % -2 === 0`), so validate
+        // positivity explicitly — no zero/negative geometry, no partial frames.
+        if (buffer.channels <= 0 || buffer.sampleRate <= 0 || buffer.samples.length % buffer.channels !== 0) {
+          throw new Error("audio: channels and sampleRate must be positive and samples.length a multiple of channels");
+        }
+        world.audio = { samples: Float32Array.from(buffer.samples), sampleRate: buffer.sampleRate, channels: buffer.channels };
       },
     };
   }

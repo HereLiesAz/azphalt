@@ -12,11 +12,14 @@
  */
 import { readAzp, verifyAzp } from "@azphalt/azp";
 import type {
+  Bitmap,
   CommandFn,
   FilterContext,
   FilterFn,
   Manifest,
   ToolFn,
+  TransitionContext,
+  TransitionFn,
 } from "@azphalt/sdk";
 import { createHost } from "./host.js";
 import type { World } from "./world.js";
@@ -53,12 +56,14 @@ export function open(azp: Uint8Array): LoadedExtension {
   return readAzp(azp);
 }
 
-function brandOf(x: unknown): "filter" | "tool" | "command" | undefined {
+type Kind = "filter" | "tool" | "command" | "transition";
+
+function brandOf(x: unknown): Kind | undefined {
   if (typeof x !== "function") return undefined;
-  return (x as unknown as Record<symbol, unknown>)[KIND] as "filter" | "tool" | "command" | undefined;
+  return (x as unknown as Record<symbol, unknown>)[KIND] as Kind | undefined;
 }
 
-function resolve(module: ExtensionModule, entry: string, kind: "filter" | "tool" | "command"): unknown {
+function resolve(module: ExtensionModule, entry: string, kind: Kind): unknown {
   const fn = module[entry];
   if (brandOf(fn) !== kind) {
     throw new AzpError(`export '${entry}' is not a ${kind} contribution (use define${kind[0].toUpperCase()}${kind.slice(1)})`);
@@ -115,4 +120,27 @@ export async function runCommand(
   if (!c) throw new AzpError(`no command${commandId ? ` '${commandId}'` : ""} in manifest.contributes`);
   const fn = resolve(module, c.entry, "command") as CommandFn;
   await fn(createHost(manifest, world) as never);
+}
+
+/**
+ * Dispatch a transition from `manifest.contributes.transitions` against `world`. The two input frames
+ * (`from`, `to`) and `progress` (0→1) are supplied by the caller; the transition writes its blended
+ * result to the active layer via `bitmap.write`.
+ */
+export async function runTransition(
+  manifest: Manifest,
+  module: ExtensionModule,
+  world: World,
+  input: { from: Bitmap; to: Bitmap; progress: number },
+  transitionId?: string,
+): Promise<void> {
+  const transitions = manifest.contributes?.transitions ?? [];
+  const t = transitionId ? transitions.find((x) => x.id === transitionId) : transitions[0];
+  if (!t) throw new AzpError(`no transition${transitionId ? ` '${transitionId}'` : ""} in manifest.contributes`);
+  const fn = resolve(module, t.entry, "transition") as TransitionFn;
+  const host = createHost(manifest, world);
+  const active = world.layers.find((l) => l.id === world.activeLayerId);
+  if (!active) throw new AzpError("world has no active layer");
+  const ctx = { ...host, from: input.from, to: input.to, progress: input.progress, target: { id: active.id } } as unknown as TransitionContext;
+  await fn(ctx);
 }

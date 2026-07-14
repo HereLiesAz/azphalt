@@ -49,11 +49,16 @@ What the code adds to the host, each with an `id`:
 - `filters` — a pixel operation runnable on a layer/selection.
 - `tools` — an interactive tool.
 - `commands` — a menu/command entry.
+- `transitions` — a two-input blend over a normalized `progress` (0→1), for temporal hosts. It receives frame **A** (`from`), frame **B** (`to`), and `progress`, and writes the blended result to the target — see capability-model.md § Transition ABI. Branded by `defineTransition`; the runtime rejects a filter dispatched as a transition and vice versa.
 
 Each names the `entry` export the host invokes and MAY reference a `ui` panel (see ui-schema.md).
 
 ## `capabilities`
-The least-privilege list the code needs (`canvas`, `layers`, `bitmap`, `selection`, `color`, `params`, `assets`, …). The host grants only what's declared, prompts for anything non-baseline, and denies the rest. A capability not listed is unreachable — there is no ambient API.
+The least-privilege list the code needs (`canvas`, `layers`, `bitmap`, `selection`, `color`, `params`, `assets`, `time`, `audio`, …). The host grants only what's declared, prompts for anything non-baseline, and denies the rest. A capability not listed is unreachable — there is no ambient API.
+
+Two are for **temporal / audio hosts** (video, motion editors), both editor-surface, neither on the never-list:
+- `time` — read-only access to the host's playback clock: `currentMs`, `durationMs`, `fps`, `frameIndex`. Lets a filter or transition animate.
+- `audio` — read and write the current PCM audio block (float32, interleaved; see capability-model.md § Audio-buffer ABI).
 
 ## Example
 ~~~
