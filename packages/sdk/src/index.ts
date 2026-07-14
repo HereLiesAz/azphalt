@@ -482,6 +482,13 @@ export interface AndroidPlatform {
   /** Minimum Android SDK level the app needs. */
   minSdk?: number;
   /**
+   * The **version floor** — the lowest Play `versionCode` (the app's monotonic integer version) a host
+   * accepts. A companion is submitted *as the lowest allowed version*, so this is the minimum: a host
+   * with an installed app whose `versionCode` is **below** this deep-links `install` to update **before**
+   * launching a handoff. Omit to accept any installed version. See `spec/companion-app.md § Versioning`.
+   */
+  minVersionCode?: number;
+  /**
    * Store URL a host deep-links to when the app isn't installed — typically the Google Play listing
    * (`https://play.google.com/store/apps/details?id=<packageId>`, or a `market://` deep link). A
    * companion app MUST be linkable and installable from a store; the host opens this to install before
@@ -496,6 +503,13 @@ export interface PwaPlatform {
   manifestUrl?: string;
   /** The PWA's start URL. */
   startUrl?: string;
+  /**
+   * The **version floor** for the PWA. A PWA has no native version and always serves latest, so azphalt
+   * versions it by its **deployment date-time** — an ISO-8601 UTC instant (e.g. `"2026-07-14T18:00:00Z"`)
+   * — which provides the floor: a host requires the live deployment's advertised version to be **at or
+   * after** this instant. Omit to accept the current deployment. See `spec/companion-app.md § Versioning`.
+   */
+  version?: string;
   /**
    * The endpoint the host POSTs handoff input to (Web Share Target-style), declared here so the host
    * never has to fetch the web manifest cross-origin (CORS). A per-handoff transport MAY override it.
@@ -515,6 +529,14 @@ export interface Handoff {
   input?: HandoffIO;
   /** What the companion returns. Omit for a `fire-and-forget` handoff (no return). */
   output?: HandoffIO;
+  /**
+   * An optional **per-handoff** version floor that *raises* the platform floor for this one function —
+   * used when a handoff was added or changed in a later app release (e.g. a new capability shipped in
+   * app `versionCode` 500). A host requires the installed/deployed app to meet the higher of the
+   * platform floor ({@link AndroidPlatform.minVersionCode} / {@link PwaPlatform.version}) and this. See
+   * `spec/companion-app.md § Versioning`.
+   */
+  minAppVersion?: { android?: number; pwa?: string };
   /** Per-platform mechanics — **at least one** transport (matching a listed platform) is required. */
   transport: AtLeastOne<{ android: AndroidTransport; pwa: PwaTransport }>;
 }

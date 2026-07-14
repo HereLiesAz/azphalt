@@ -52,11 +52,13 @@ invoke an external app. Its manifest adds one block, `app`:
       "android": {
         "packageId": "com.acme.arstencil",         // Play package id (for install + intent target)
         "minSdk": 29,
+        "minVersionCode": 120,                      // version floor: installed app must be >= this (see § Versioning)
         "install": "https://play.google.com/store/apps/details?id=com.acme.arstencil"
       },
       "pwa": {
         "manifestUrl": "https://arstencil.acme.com/manifest.webmanifest",  // for install only
         "startUrl": "https://arstencil.acme.com/",
+        "version": "2026-06-01T00:00:00Z",                                 // deployment-datetime floor (see § Versioning)
         "shareTargetUrl": "https://arstencil.acme.com/handoff"             // host POSTs input here — no CORS manifest fetch
       }
     },
@@ -161,16 +163,66 @@ cross-origin fetch/`blob:` access is blocked.
     the companion's origin and would fail cross-origin).
   - `fire-and-forget` — no return (the `fire-and-forget` shape).
 
-  A host MUST treat the return strictly: accept a message **only** from the popup it opened, **only**
-  with the `nonce` it issued, and **only** from the companion's expected origin (`event.origin` check).
-  It then validates the payload against `output` and applies the same size/format checks as Android.
-  The **self-containment moat still applies**: bytes arrive in-process via `postMessage`, never fetched
-  from an arbitrary URL the companion supplies. *(A service-worker/Cache-Storage handoff on the host's
-  own origin is an allowed alternative where a popup isn't viable.)*
+#### The `postMessage` handshake (normative)
 
-*(PWA return is the least mature surface; a host MAY support Android-only and advertise so. The
-remaining work is hardening the `postMessage` handshake — nonce issuance, `event.origin` binding,
-transferable lifetime, and the popup-blocked fallback.)*
+The return message is the one place a hostile page could try to inject bytes, so the handshake is
+pinned down. All four of these are MUSTs; a host that skips any one MUST NOT accept the return.
+
+1. **Nonce issuance.** Before opening the popup the host generates a **single-use** nonce — ≥128 bits
+   from a CSP RNG (`crypto.getRandomValues`) — and delivers it to the companion **in the input `POST`**
+   (a hidden form field / part), never in the URL (which leaks via `Referer`, history, and logs). The
+   host keeps the nonce in memory keyed to *this* popup handle and **consumes it on first use**: a
+   second message bearing the same nonce is dropped. The nonce **expires** with the handoff (below), so
+   a leaked nonce is useless after the window closes.
+2. **Origin binding.** The host computes the companion's expected origin from the *declared*
+   `shareTargetUrl` (its scheme + host + port) and accepts the message **only** when
+   `event.origin === expectedOrigin` **and** `event.source === theOpenedPopup` (the window reference it
+   holds). It never trusts an origin carried *inside* the message body. `expectedOrigin` MUST be a real
+   origin (an `https:` URL); a wildcard is not permitted.
+3. **Transferable lifetime.** Assets cross as transferable `ArrayBuffer`s / `Blob`s in the message's
+   `transfer` list — **by value**, so ownership moves to the host and the companion's copy is neutered.
+   The host **copies the bytes into its own buffers immediately** on receipt (before any `await`), then
+   validates format/bounds/size; it MUST NOT hold a live reference into companion-owned memory or a
+   companion-origin `blob:` URL (which the SOP makes unreadable and whose lifetime the companion
+   controls). Oversize transfers are rejected against the same size cap as Android.
+4. **Popup-blocked fallback.** If the popup is blocked or the platform forbids `window.opener` (e.g. a
+   `noopener` navigation), the host falls back to a **same-origin** channel it controls: it hands the
+   companion a one-time upload URL **on the host's own origin** (or a `BroadcastChannel` /
+   Cache-Storage slot it owns) carried in the same input `POST`, and reads the result from there. Bytes
+   still arrive through a channel the host owns end-to-end — **never** fetched from an arbitrary URL the
+   companion supplies. The host applies the same nonce, validation, and size checks. A host MAY instead
+   support **Android-only** and advertise so (omit the `pwa` platform).
+
+A handoff has a bounded lifetime: the host starts a timer when it opens the popup and treats a
+timeout, a closed popup, or a `fire-and-forget` shape as a clean no-op — releasing the nonce and any
+fallback slot. The **self-containment moat still applies** throughout: bytes arrive in-process via
+`postMessage` (or the host's own-origin fallback), never fetched from a companion-supplied URL.
+
+## Versioning
+
+The companion **app** updates out-of-band from the `.azp` header (a Play release, a PWA redeploy), so a
+handoff added or changed in a newer app build could reach an older installed one. The header declares a
+**version floor** and the host enforces it — a companion is submitted *as the lowest allowed version*,
+never an exact pin, so a newer installed app always satisfies it.
+
+- **Android** — the floor is `platforms.android.minVersionCode`, a Play **`versionCode`** (the app's
+  monotonic integer version). A host reads the installed app's `versionCode`
+  (`PackageInfo.longVersionCode`); if it is **below** the floor, the host deep-links
+  `platforms.android.install` to update **before** launching, exactly like a missing app.
+- **PWA** — a PWA has no native version and always serves latest, so azphalt versions it by its
+  **deployment date-time**: `platforms.pwa.version` is an **ISO-8601 UTC instant** and the floor is
+  "the live deployment is at or after this". A deploy stamps the running app with its own deployment
+  instant (e.g. surfaced from the share endpoint or the web manifest); the host compares. Because a PWA
+  auto-updates to latest, it normally satisfies any past floor — the field pins the *minimum* a host
+  will transact with, catching a stale cached install.
+- **Per-handoff floor** — a single handoff MAY **raise** the floor with `handoffs[].minAppVersion`
+  (`{ android?: versionCode, pwa?: isoInstant }`), for a capability introduced in a later release. The
+  effective floor for a handoff is the **higher** of the platform floor and its `minAppVersion`; a host
+  that can't meet it hides *that* handoff (or offers "update to use this") while still offering the
+  handoffs the installed version satisfies.
+
+Version floors are advisory-to-strict discovery/gating metadata, never a substitute for the OS's own
+package-signature check or the host's return validation.
 
 ## Security & trust
 
@@ -206,14 +258,15 @@ A host ignores an `action` it doesn't place, or files it under a generic "Open i
 
 ## Open questions
 
-- **PWA `postMessage` handshake** — nonce issuance, `event.origin` binding, transferable lifetime, and
-  the popup-blocked fallback (a service-worker/Cache-Storage handoff on the host's own origin). Android
-  is settled; the web `postMessage` dance is the one genuinely under-specified surface.
+- **PWA `postMessage` handshake** — *resolved.* The nonce issuance, `event.origin` + `event.source`
+  binding, transferable lifetime (copy-on-receipt), and the popup-blocked same-origin fallback are now
+  normative under *Transports → PWA → The `postMessage` handshake*.
 - **Conformance** — *resolved.* `@azphalt/conformance` ships a `companion` host-conformance profile,
   `runCompanionConformance(host)`: it drives a fixture handoff and asserts the host verifies the header,
   refuses a non-`kind:"app"` package (runs no code), surfaces the handoff on a supported platform, shows
   consent, sends only the declared input, and validates the return against `output` — analogous to the
   code / asset / video-audio profiles. A conforming host declares a `"companion"` profile for registry
   matching.
-- **Versioning** — pinning a minimum companion *app* version per handoff (the app updates out-of-band
-  from the `.azp` header).
+- **Versioning** — *resolved.* App-version floors are normative under *Versioning*: an Android
+  `minVersionCode`, a PWA deployment-date-time `version`, and an optional per-handoff `minAppVersion`
+  that raises the floor for one function.

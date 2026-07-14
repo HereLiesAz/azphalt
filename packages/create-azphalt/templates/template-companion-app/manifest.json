@@ -13,11 +13,13 @@
       "android": {
         "packageId": "com.example.mycompanion",
         "minSdk": 29,
+        "minVersionCode": 1,
         "install": "https://play.google.com/store/apps/details?id=com.example.mycompanion"
       },
       "pwa": {
         "manifestUrl": "https://mycompanion.example.com/manifest.webmanifest",
         "startUrl": "https://mycompanion.example.com/",
+        "version": "2026-01-01T00:00:00Z",
         "shareTargetUrl": "https://mycompanion.example.com/handoff"
       }
     },
