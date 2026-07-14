@@ -21,10 +21,32 @@ The catalog lives entirely in an in-memory registry ([`lib/catalog.ts`](lib/cata
 | `/search?q=…&sort=…&kind=…` | Browse + search: `registry.search` when a query is present, else `registry.list` with a sort (downloads / rating / updated / name) and a `kind` filter. |
 | `/p/[id]` | Package detail: facts, capabilities, ratings, version history, preview, download — and for a `kind:"app"` companion, the install panel + handoff contract; if consigned, the price, breakdown, and Buy button. |
 | `/app/[appId]` | Per-app catalog: what a host app sees — its own app-scoped companions plus globals (`registry.list({ app })`). |
-| `GET /api/download/[id]` | Serves the `.azp` bytes (`application/zip`), counting a download. |
+| `GET /api/download/[id]` | Serves the `.azp` bytes (`application/zip`), counting a download. Free packages are open; a **consigned** package is gated on a Bearer entitlement — `401` without a recognized token, `402` for a token that licenses something else. |
 | `GET /api/preview/[id]` | Serves a package's static store-card image (`manifest.preview.image`), no download counted. |
 | `POST /api/publish` | Publishes raw `.azp` bytes to the registry; returns the summary (or `400` with verification errors). |
 | `POST /api/checkout` | `{ packageId, buyerId }` → starts a (stubbed) consignment checkout; returns the session + price breakdown. |
+| `POST /api/checkout/complete` | **Dev only** (`404` unless opted in) — `{ sessionId }` → completes the stub session and returns a signed buy-once entitlement to use as `Authorization: Bearer <token>`. |
+
+## The paid lane's gate
+
+A consigned package's bytes are gated the way `spec/repository-api.md` § Download Package describes,
+using the same authorizers as the reference server (`@azphalt/registry`'s `DownloadAuthorizer`), so
+the two can't drift apart. Two env vars control it:
+
+| Variable | Effect |
+| --- | --- |
+| `AZPHALT_SIGNING_KEY` | PEM Ed25519 private key the storefront signs entitlements with, and trusts on the way back in. **Unset (the default) ⇒ every paid download is `401`** and issuance is off — so `next dev` and the tests need no secrets. Generate with `openssl genpkey -algorithm ed25519`. |
+| `AZPHALT_ALLOW_STUB_FULFILMENT` | `1` exposes `POST /api/checkout/complete`. Anything else ⇒ `404`. |
+
+To exercise the paid lane locally: set both, `POST /api/checkout` to open a session, `POST
+/api/checkout/complete` with its `sessionId` to get a token, then send that token to
+`GET /api/download/[id]`.
+
+> **Stub fulfilment mints licenses for payments that never happened.** With
+> `AZPHALT_ALLOW_STUB_FULFILMENT=1`, anyone who can reach that route can license anything — the
+> tokens are real, signed, and offline-verifiable, which is precisely what makes it unsafe to leave
+> on. It demonstrates the *mechanism*, not commercial enforcement. A deployment that enables it is a
+> demo, not a store.
 
 ## Run it
 

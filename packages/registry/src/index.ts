@@ -38,6 +38,14 @@ export {
   type EntitlementToken,
   type EntitlementResult,
 } from "./entitlement.js";
+export {
+  InMemoryAuthorizer,
+  EntitlementAuthorizer,
+  denyAllAuthorizer,
+  type DownloadAuthorizer,
+  type AuthDecision,
+  type AuthInput,
+} from "./authorize.js";
 export type {
   Money,
   Listing,
