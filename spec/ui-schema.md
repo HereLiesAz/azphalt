@@ -3,7 +3,7 @@
 *Normative. A declarative description of an extension's control panel. The host renders it as native widgets — Compose, SwiftUI, whatever it is. No HTML, no DOM, no React: that is precisely what keeps the standard cross-app.*
 
 ## Model
-A panel is a JSON object with a `controls` array. Each control has a `type`, a unique `key`, a `label`, and type-specific fields. The extension reads values through the `params` capability; the host owns rendering and layout.
+A panel is a JSON object with a `controls` array. Each control has a `type`, a unique `key`, a `label`, and type-specific fields. The extension reads values through the `params` capability; the host owns rendering and layout. UI schemas can be attached to code contributions (`filters`, `tools`) or to configurable assets (like `shader`).
 
 ## Core controls (`0.1`)
 | `type` | Fields | Value |

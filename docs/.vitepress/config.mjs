@@ -7,15 +7,17 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Specs', link: '/specs/extension-manifest' },
+      { text: 'Specs', link: '/specs/capability-model' },
       { text: 'Creators', link: '/creators/getting-started' },
-      { text: 'Hosts', link: '/hosts/getting-started' }
+      { text: 'Hosts', link: '/hosts/getting-started' },
+      { text: 'Design', link: '/ARCHITECTURE' }
     ],
     sidebar: {
       '/specs/': [
         {
           text: 'Specifications',
           items: [
+            { text: 'Capability Model', link: '/specs/capability-model' },
             { text: 'Manifest Schema', link: '/specs/extension-manifest' },
             { text: 'Package Format', link: '/specs/package-format' },
             { text: 'UI Schema', link: '/specs/ui-schema' },
@@ -35,7 +37,27 @@ export default defineConfig({
         {
           text: 'For Host Apps',
           items: [
-            { text: 'Integration Guide', link: '/hosts/getting-started' }
+            { text: 'Integration Guide', link: '/hosts/getting-started' },
+            { text: 'Adopting the Standard (code host)', link: '/ADOPTION' },
+            { text: 'Adopting as an Asset Host', link: '/ADOPTION_ASSET_HOST' }
+          ]
+        }
+      ],
+      // Root-level design & governance pages (longest-prefix match falls through to here).
+      '/': [
+        {
+          text: 'Design & Governance',
+          items: [
+            { text: 'Architecture', link: '/ARCHITECTURE' },
+            { text: 'Rationale', link: '/RATIONALE' },
+            { text: 'Governance', link: '/GOVERNANCE' }
+          ]
+        },
+        {
+          text: 'Adoption',
+          items: [
+            { text: 'Code Host', link: '/ADOPTION' },
+            { text: 'Asset Host', link: '/ADOPTION_ASSET_HOST' }
           ]
         }
       ]

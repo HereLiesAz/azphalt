@@ -56,4 +56,4 @@ Without those the provider throws on construction; the storefront (`apps/storefr
 
 ## Status
 
-Early. In-memory storage by default; the Stripe Connect payment provider is implemented (pending live keys) and the persistence backend and the Next.js storefront (`apps/storefront`) that consumes this package continue to fill in.
+Both lanes work end to end: publish/verify/version/serve/search, and the consignment overlay with money-split quoting. Storage defaults to in-memory (`InMemoryStore`); a deployment implements `RegistryStore` over its own database + object store. The Stripe Connect provider is implemented (pending live keys — see above). This package is consumed by the Next.js storefront (`apps/storefront`) and fronted over HTTP by the reference [`@azphalt/repository-server`](../../apps/repository-server).

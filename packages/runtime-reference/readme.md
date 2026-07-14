@@ -7,7 +7,7 @@ executable form of the contract in [`spec/`](../../spec) — read it alongside
 
 ## Honest scope
 
-This first cut proves the **contract**, not the sandbox:
+This runtime proves the **contract**, not the sandbox:
 
 - **Capability gating** — `createHost` builds only the sub-APIs a manifest declared; an ungranted
   capability is **absent** (`undefined`), matching `spec/capability-model.md`'s "absent, not
@@ -16,10 +16,10 @@ This first cut proves the **contract**, not the sandbox:
 - **Contribution dispatch** — `runFilter`/`runTool`/`runCommand` resolve the manifest `entry`
   export and run it with a capability-scoped context.
 
-It runs a **trusted** extension module in-process. The WASM isolation substrate
-(QuickJS-in-WASM for `runtime: js`) that sandboxes *untrusted* code is the conformance target a
-production host adds on top, and is out of scope here — so callers pass the already-imported
-extension module.
+It runs a **trusted** extension module in-process — callers pass the already-imported extension
+module. The WASM isolation substrate that sandboxes *untrusted* code is a separate concern, shipped
+as [`@azphalt/runtime-wasm`](../runtime-wasm) (QuickJS-in-WASM for `runtime: js`, raw WebAssembly for
+`runtime: wasm`); use that where you need real isolation, and this to read the contract plainly.
 
 ~~~ts
 import { open, createWorld, runFilter } from "@azphalt/runtime-reference";

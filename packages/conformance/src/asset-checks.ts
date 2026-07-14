@@ -1,6 +1,6 @@
 /**
  * Conformance checks for an **asset host** — an app that consumes `asset`-kind `.azp` (LUTs,
- * shaders, transitions, brushes) but runs no code (see `docs-old/ADOPTION_ASSET_HOST.md`). It needs
+ * shaders, transitions, brushes) but runs no code (see `docs/ADOPTION_ASSET_HOST.md`). It needs
  * none of the code-host machinery, so this profile drives a much smaller {@link AssetHost} contract:
  * one `load` method that verifies, refuses `kind:"code"`, gates on `compat`, validates any ui panel,
  * and applies the supported asset types with the host's own engine.
