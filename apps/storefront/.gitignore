@@ -2,3 +2,6 @@
 .next/
 next-env.d.ts
 out/
+
+# Standalone deploy bundle (scripts/bundle.mjs output)
+dist-server

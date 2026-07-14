@@ -12,7 +12,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "clean": "rm -rf .next"
+    "bundle": "next build && node scripts/bundle.mjs",
+    "clean": "rm -rf .next dist-server"
   },
   "dependencies": {
     "@azphalt/azp": "workspace:*",
