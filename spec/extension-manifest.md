@@ -10,7 +10,7 @@
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
 | `kind` | ✔ | `asset` \| `code` \| `mixed`. |
-| `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. |
+| `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
 | `targetApps` | — | Reverse-DNS host-app ids this package is scoped to (e.g. `["com.hereliesaz.graffitixr"]`). Empty/absent = **global** (every app). A repository shows an app-scoped package only to a matching app — see repository-api.md § App scoping. Discovery filter, not access control. |
@@ -48,6 +48,9 @@ For extremely large files like AI models (e.g. multi-gigabyte `.task` files), bu
 - `params`: Normalized, host-neutral settings. A brush's params might be `spacing`, `angle`, `roundness`. See **Per-type `params` conventions** below.
 - `ui`: Optional UI panel path to a control panel schema (see ui-schema.md).
 - `tags`: Optional tags (e.g., `["sfx", "impact"]`) for marketplace filtering.
+- `physical`: Optional real-world scale / print metadata for a **visual** asset — see **Physical metadata** below.
+- `contentRights`: Optional usage terms for the asset **content** (attribution, commercial use) — see **Content rights** below.
+- `standalone`: In a `mixed` package, whether the asset is usable without the package's code — see **Mixed-package asset independence** below.
 
 ### Reusable video / graphic catalog
 
@@ -57,6 +60,41 @@ Beyond paint-shaped assets, the standard covers the reusable **video-catalog** a
 - **`overlay`** — a **PNG or animated overlay** composited onto the frame (watermarks, badges, animated stickers). An `image`+`video`-domain asset. Author its default placement under `params` (e.g. `opacity`, `anchor`, `scale`).
 
 These are **data** assets — they render in the host's own compositor, exactly like `lut`/`shader`, and carry no code. An asset-only host (`kind: "asset"`, or the asset half of a `kind: "mixed"` package) can install and use them without any runtime.
+
+### Physical metadata
+A visual asset (`image` | `vector` | `stamp` | `pattern`) is pure pixels/paths with no inherent size, so a **spatial (AR)** or **print** host has to guess scale. An optional **`physical`** block lets an author pin the real-world size, so the same asset places or tiles at its intended dimensions on every host:
+
+~~~
+{ "type": "vector", "path": "assets/stencil.svg",
+  "physical": { "width": 1200, "height": 800, "unit": "mm", "dpi": 300, "tileWidth": 210, "tileHeight": 297 } }
+~~~
+
+- `width` / `height` — intended real-world size, in `unit`.
+- `unit` — `mm` | `cm` | `in` (applies to `width`/`height` and the tile dimensions).
+- `dpi` — dots per inch, for print / raster reproduction.
+- `tileWidth` / `tileHeight` — the tile size for an asset meant to tile across sheets (e.g. an A4-tiled stencil); omit both for single-sheet. A host that can't honor physical scale ignores the block.
+
+### Content rights
+For an **`asset`-kind** package (and the asset half of a `mixed` one), the SPDX **`license`** governs the **asset content**, not just code — and the Creative Commons SPDX identifiers (`CC-BY-4.0`, `CC-BY-SA-4.0`, `CC-BY-NC-4.0`, `CC0-1.0`, …) are **blessed first-class** for creative assets. Beyond that, an optional **`contentRights`** block carries machine-checkable usage terms a host surfaces on the marketplace card and a registry can filter on:
+
+~~~
+{ "type": "image", "path": "assets/mural.png",
+  "contentRights": { "attribution": "Mural © Artist, CC-BY-4.0", "attributionRequired": true, "commercialUse": false } }
+~~~
+
+- `attribution` — the exact credit string a host displays when the asset is used.
+- `attributionRequired` — whether the license requires the credit be shown.
+- `commercialUse` — a summary flag for filtering / badging ("commercial-OK"); the SPDX `license` remains authoritative. (This is the general-content analog of a model's `modelLicense`.)
+
+### Mixed-package asset independence
+Assets in a `mixed` package are **standalone data by default** — an asset-only host processing only `manifest.assets` gets usable assets. **But** an asset MAY be generated or completed by the package's code at runtime (a LUT the extension computes, a shader whose uniforms the code feeds); grabbing such an asset without the code yields a broken or empty result. An author marks a code-dependent asset with **`standalone: false`** (default `true`):
+
+~~~
+{ "type": "lut", "path": "assets/base.cube" }                       // standalone (default) — usable alone
+{ "type": "shader", "path": "assets/fx.glsl", "standalone": false } // needs the code — an asset-only host skips it
+~~~
+
+An asset-only host MUST select assets where `standalone !== false` and skip the rest, instead of guessing or refusing every `mixed` package. `standalone` is ignored for `asset`-kind packages (always standalone).
 
 ### Per-type `params` conventions
 

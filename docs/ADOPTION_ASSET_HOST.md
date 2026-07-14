@@ -33,7 +33,10 @@ standard: it never touches azphalt's editor surface, only its packages.
    see `spec/package-format.md § Signing`.)
 2. **Read the manifest.** Reject packages where `kind` is `code`. For `kind: "mixed"`, ignore the
    root-level code fields (`entry`, `runtime`) and process only `manifest.assets` — this profile
-   runs no code. A pure `asset` package has only assets.
+   runs no code. A pure `asset` package has only assets. In a `mixed` package, **skip any asset marked
+   `standalone: false`** — that asset is generated or completed by the code you're not running, so
+   installing it would give a broken/empty result; apply only assets where `standalone !== false`
+   (`spec/extension-manifest.md` § Mixed-package asset independence).
 3. **Apply each asset with your own engine**, dispatched by `type`. **`spec/extension-manifest.md`
    § `assets` is the single source of truth for the `type` vocabulary** (and the SDK `AssetType`
    union is its machine-readable form) — apply the ones your engine understands and *skip the rest*
