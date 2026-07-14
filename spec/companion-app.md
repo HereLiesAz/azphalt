@@ -156,11 +156,16 @@ cross-origin fetch/`blob:` access is blocked.
   `manifest.webmanifest` cross-origin (which CORS would block). `manifestUrl`/`startUrl` remain only
   for *install*.
 - **Return** — the companion posts the result back to the host with **`window.opener.postMessage`**,
-  using structured clone (which transfers `Blob`/`File`/`ArrayBuffer` **by value**, sidestepping the
-  Same-Origin Policy that makes a companion-origin `blob:` URL unreadable to the host):
+  using structured clone. Asset bytes cross **by value** — `ArrayBuffer`s listed in the `transfer` array
+  are *moved* (the sender's copy is neutered); `Blob`/`File` are **not** transferable, so they are
+  *copied* by the structured-clone algorithm (the sender keeps its copy, harmless here). Either way the
+  bytes become the host's, sidestepping the Same-Origin Policy that makes a companion-origin `blob:` URL
+  unreadable:
   - `postMessage` — the companion calls `window.opener.postMessage({ nonce, params, assets }, hostOrigin, transfer)`.
-    Assets travel as transferable `ArrayBuffer`s / `Blob`s — **not** as `blob:` URLs (those are bound to
-    the companion's origin and would fail cross-origin).
+    Assets travel as transferable `ArrayBuffer`s (or structured-clone-copied `Blob`s) — **not** as `blob:`
+    URLs (those are bound to the companion's origin and would fail cross-origin). The `transfer` array
+    lists **only** the `ArrayBuffer`s; placing a `Blob` there throws `DataCloneError` (it is copied, not
+    transferred).
   - `fire-and-forget` — no return (the `fire-and-forget` shape).
 
 #### The `postMessage` handshake (normative)
@@ -179,19 +184,24 @@ pinned down. All four of these are MUSTs; a host that skips any one MUST NOT acc
    `event.origin === expectedOrigin` **and** `event.source === theOpenedPopup` (the window reference it
    holds). It never trusts an origin carried *inside* the message body. `expectedOrigin` MUST be a real
    origin (an `https:` URL); a wildcard is not permitted.
-3. **Transferable lifetime.** Assets cross as transferable `ArrayBuffer`s / `Blob`s in the message's
-   `transfer` list — **by value**, so ownership moves to the host and the companion's copy is neutered.
-   The host **copies the bytes into its own buffers immediately** on receipt (before any `await`), then
-   validates format/bounds/size; it MUST NOT hold a live reference into companion-owned memory or a
-   companion-origin `blob:` URL (which the SOP makes unreadable and whose lifetime the companion
-   controls). Oversize transfers are rejected against the same size cap as Android.
+3. **Transferable lifetime.** Assets cross **by value**: an `ArrayBuffer` in the message's `transfer`
+   array is *moved* — ownership passes to the host and the companion's copy is neutered — while a `Blob`
+   (not a transferable type) is *copied* by structured clone. Neither is a `blob:` URL (which the SOP
+   makes unreadable cross-origin and whose lifetime the companion controls). For an `ArrayBuffer` the
+   host **copies the bytes into its own buffer synchronously** on receipt (before any `await`), so a
+   shared/non-transferred buffer can't be mutated out from under it; a `Blob` is immutable and read
+   asynchronously (`blob.arrayBuffer()`), so the host simply **initiates the read immediately**. It then
+   validates format/bounds/size and MUST NOT retain a live reference into companion-owned memory.
+   Oversize payloads are rejected against the same size cap as Android.
 4. **Popup-blocked fallback.** If the popup is blocked or the platform forbids `window.opener` (e.g. a
-   `noopener` navigation), the host falls back to a **same-origin** channel it controls: it hands the
-   companion a one-time upload URL **on the host's own origin** (or a `BroadcastChannel` /
-   Cache-Storage slot it owns) carried in the same input `POST`, and reads the result from there. Bytes
-   still arrive through a channel the host owns end-to-end — **never** fetched from an arbitrary URL the
-   companion supplies. The host applies the same nonce, validation, and size checks. A host MAY instead
-   support **Android-only** and advertise so (omit the `pwa` platform).
+   `noopener` navigation), the host falls back to a **one-time upload URL on the host's own origin**,
+   carried in the same input `POST`; the companion `POST`s the result there and the host reads it back.
+   (A cross-origin `BroadcastChannel` or Cache-Storage slot is **not** an option — both are partitioned
+   by origin, so a companion-origin script cannot reach the host's.) The host's upload endpoint enables
+   **CORS for the companion's declared origin only**, binds the same nonce, and applies the same
+   validation and size cap. Bytes still arrive through a channel the host owns end-to-end — **never**
+   fetched from an arbitrary URL the companion supplies. A host MAY instead support **Android-only** and
+   advertise so (omit the `pwa` platform).
 
 A handoff has a bounded lifetime: the host starts a timer when it opens the popup and treats a
 timeout, a closed popup, or a `fire-and-forget` shape as a clean no-op — releasing the nonce and any
