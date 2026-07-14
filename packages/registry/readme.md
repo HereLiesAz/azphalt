@@ -29,8 +29,31 @@ const { session, breakdown } = await market.checkout("com.you.thing", "buyer_1")
 
 ## Payments
 
-`PaymentProvider` is an interface; a real deployment plugs in a marketplace-capable, split-payout merchant-of-record (Stripe Connect and the like — see [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) on why marketplace payout ≠ single-vendor MoR). The bundled **`StubPaymentProvider`** moves no money and exists only for local dev and tests — never deploy it.
+`PaymentProvider` is an interface; a real deployment plugs in a marketplace-capable, split-payout merchant-of-record (see [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) on why marketplace payout ≠ single-vendor MoR). Two implementations ship:
+
+- **`StubPaymentProvider`** (default) — moves no money; records sessions in memory for local dev and tests. Never deploy it.
+- **`StripePaymentProvider`** — a real **Stripe Connect** backend using *destination charges*: the buyer pays the gross, the platform retains its consignment cut as an `application_fee_amount`, and the remainder transfers to the seller's connected account. It calls Stripe's REST API with `fetch` (no `stripe` SDK dependency; the `fetch` is injectable for tests).
+
+~~~ts
+import { Marketplace, StripePaymentProvider, stripeConfigFromEnv } from "@azphalt/registry";
+
+const payments = new StripePaymentProvider(
+  stripeConfigFromEnv(process.env, {
+    // The marketplace owns the sellerId → Stripe connected-account mapping (recorded at onboarding).
+    connectedAccountFor: (sellerId) => lookupStripeAccount(sellerId), // → "acct_…"
+  }),
+);
+const market = new Marketplace(registry, store, { payments }); // opt in; stub stays the default
+~~~
+
+**The one human step** — going live needs credentials the operator holds, which this repo never contains:
+
+- `AZPHALT_STRIPE_SECRET_KEY` — a live Stripe secret key (`sk_live_…`).
+- `AZPHALT_STRIPE_SUCCESS_URL` / `AZPHALT_STRIPE_CANCEL_URL` — post-checkout return URLs (optional `AZPHALT_STRIPE_API_BASE` override).
+- A `connectedAccountFor(sellerId) → "acct_…"` mapping of each seller's onboarded Stripe Connect account.
+
+Without those the provider throws on construction; the storefront (`apps/storefront`) stays on `StubPaymentProvider` and moves no real money.
 
 ## Status
 
-Early. In-memory storage and a stub payment provider; the persistence and MoR backends, and the Next.js storefront (`apps/storefront`) that consumes this package, follow.
+Early. In-memory storage by default; the Stripe Connect payment provider is implemented (pending live keys) and the persistence backend and the Next.js storefront (`apps/storefront`) that consumes this package continue to fill in.
