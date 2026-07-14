@@ -50,24 +50,23 @@ on Windows, and vice versa.
 
 ## Design
 
-### 1. Single source of truth for the workspace root
+### 1. Workspace root
 
-`bundle.mjs` imports the tracing root from the Next config rather than recomputing it:
+`bundle.mjs` computes the workspace root inline, keeping the script self-contained:
 
 ```js
-import nextConfig from "../next.config.mjs";
-const workspaceRoot = nextConfig.outputFileTracingRoot;
+const workspaceRoot = join(appRoot, "..", "..");
 ```
 
-`next.config.mjs` pins `outputFileTracingRoot` to the workspace root (added in #93). That value
-*is* the root Next traced from, and therefore the root the standalone tree mirrors. Reading it
-directly means the bundle's mapping cannot drift from the build's layout — recomputing the same
-path independently in two files would reintroduce exactly the class of silent mismatch that
-caused this bug.
+This must agree with `outputFileTracingRoot` in `next.config.mjs` (pinned in #93), which computes
+the same path the same way. That value *is* the root Next traced from, and therefore the root the
+standalone tree mirrors.
 
-Importing the config executes it; it only reads `process.env.NEXT_BASE_PATH` and has no side
-effects. If `outputFileTracingRoot` is absent, fail immediately with a clear message rather than
-falling back to a guess.
+Deriving it independently in two files is a duplication, and the alternative — importing
+`nextConfig.outputFileTracingRoot` — would make it a single source of truth. It is not worth the
+coupling here, because §4 makes the duplication non-silent: if the two ever disagree, targets map
+to paths that do not exist in the bundle, the rewritten links come out dangling, and validation
+fails the build. The failure mode is a loud error, not a bad bundle.
 
 ### 2. Rewrite pass
 
