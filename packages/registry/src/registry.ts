@@ -187,6 +187,8 @@ export class Registry {
       kind: m.kind,
       license: m.license,
       description: m.description,
+      nameLocalized: m.nameLocalized,
+      descriptionLocalized: m.descriptionLocalized,
       author: m.author,
       homepage: m.homepage,
       assetTypes,
@@ -202,6 +204,21 @@ export class Registry {
       rating,
       ratingCount,
     };
+  }
+
+  /**
+   * Batch update check: for each installed `{ id, version }`, resolve the newest installable
+   * (non-yanked) version and return only the ids that have something **strictly newer**. Lets a host
+   * refresh a whole installed library in one round-trip instead of one `GET /packages/{id}` each.
+   * Unknown ids (and ids already current or ahead) are simply omitted.
+   */
+  async updates(installed: Array<{ id: string; version: string }>): Promise<Array<{ id: string; latest: string }>> {
+    const out: Array<{ id: string; latest: string }> = [];
+    for (const { id, version } of installed) {
+      const newest = await this.latest(id);
+      if (newest && compareSemver(newest.version, version) > 0) out.push({ id, latest: newest.version });
+    }
+    return out;
   }
 
   /** The full package (summary + newest-first versions), or `undefined`. */

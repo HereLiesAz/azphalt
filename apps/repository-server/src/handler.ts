@@ -11,6 +11,9 @@
  * - `GET /packages/{id}` — full metadata + version history + the latest manifest.
  * - `GET /packages/{id}/versions/{version}/download` — the binary `.azp`, gated `401`/`402` when paid.
  * - `GET /revocations?since=` — the host-pollable feed of versions pulled post-publish.
+ * - `POST /updates` — a batch update check over a POSTed installed-library `{ id, version }[]`.
+ *
+ * Every non-2xx response is the normative `{ error: { code, message } }` envelope (spec § Error responses).
  *
  * The free/paid split comes from the {@link Marketplace} overlay: a package with an *active* listing
  * is `paid` and its download runs through the {@link DownloadAuthorizer}; everything else is `free`
@@ -18,7 +21,7 @@
  * lives only on listings, never in the open registry.
  */
 import { RegistryError, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
-import type { PackageSearchResponse, PackageSummary, RepositoryIndex } from "@azphalt/sdk";
+import type { PackageSearchResponse, PackageSummary, RepositoryErrorCode, RepositoryIndex } from "@azphalt/sdk";
 import { denyAllAuthorizer, type DownloadAuthorizer } from "./authorize.js";
 
 /** Map the HTTP `sort` vocabulary (`popular`/`recent`/`rating`/`name`) onto registry summaries. */
@@ -41,6 +44,8 @@ export interface RepoRequest {
   query: URLSearchParams;
   /** Header map with lower-cased names. */
   headers: Record<string, string | undefined>;
+  /** Raw request body (e.g. the JSON for `POST /updates`), if any. */
+  body?: string;
 }
 
 /** A transport-neutral response. `body` is a JSON string or raw `.azp` bytes. */
@@ -67,7 +72,22 @@ export type RepositoryHandler = (req: RepoRequest) => Promise<RepoResponse>;
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const json = (status: number, obj: unknown): RepoResponse => ({ status, headers: { ...JSON_HEADERS }, body: JSON.stringify(obj) });
-const fail = (status: number, message: string): RepoResponse => json(status, { error: message });
+
+/** Default error `code` per status, so `fail(status, message)` yields the normative envelope. */
+const ERR_CODE: Record<number, RepositoryErrorCode> = {
+  400: "bad_request",
+  401: "unauthorized",
+  402: "payment_required",
+  404: "not_found",
+  405: "method_not_allowed",
+  413: "bad_request",
+  429: "rate_limited",
+  500: "server_error",
+};
+
+/** A non-2xx response as the normative `{ error: { code, message } }` envelope (spec § Error responses). */
+const fail = (status: number, message: string, code?: RepositoryErrorCode): RepoResponse =>
+  json(status, { error: { code: code ?? ERR_CODE[status] ?? "server_error", message } });
 
 function bearer(header: string | undefined): string | undefined {
   const m = /^Bearer\s+(.+)$/i.exec(header ?? "");
@@ -100,6 +120,11 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     byteSize: s.byteSize,
     mediaDomains: s.mediaDomains,
     preview: s.preview,
+    nameLocalized: s.nameLocalized,
+    descriptionLocalized: s.descriptionLocalized,
+    // In a summary the newest installable version is exactly `version`; expose it as `latest` too so a
+    // host doesn't have to re-derive precedence when the field is absent on other endpoints.
+    latest: s.version,
   });
 
   async function search(req: RepoRequest): Promise<RepoResponse> {
@@ -157,7 +182,11 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
       name: pkg.summary.name,
       author: pkg.summary.author,
       description: pkg.summary.description,
+      nameLocalized: pkg.summary.nameLocalized,
+      descriptionLocalized: pkg.summary.descriptionLocalized,
       version: pkg.summary.version,
+      // The newest installable version — an explicit "update to this" pointer alongside `versions[]`.
+      latest: latest?.version,
       types: pkg.summary.assetTypes,
       targetApps: pkg.summary.targetApps,
       priceStatus: await priceStatus(id),
@@ -180,6 +209,25 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     return json(200, { revocations: list });
   }
 
+  async function updates(req: RepoRequest): Promise<RepoResponse> {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(req.body ?? "");
+    } catch {
+      return fail(400, "invalid JSON body: expected an array of { id, version }");
+    }
+    if (!Array.isArray(parsed)) return fail(400, "body must be a JSON array of { id, version }");
+    const refs: Array<{ id: string; version: string }> = [];
+    for (const item of parsed) {
+      const rec = item as Record<string, unknown> | null;
+      if (!rec || typeof rec !== "object" || typeof rec.id !== "string" || typeof rec.version !== "string") {
+        return fail(400, "each entry must be an object with string `id` and `version`");
+      }
+      refs.push({ id: rec.id, version: rec.version });
+    }
+    return json(200, { updates: await registry.updates(refs) });
+  }
+
   async function download(id: string, version: string, req: RepoRequest): Promise<RepoResponse> {
     const resolved = await registry.getVersion(id, version);
     if (!resolved) return fail(404, `not found: ${id}@${version}`);
@@ -200,6 +248,10 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
   }
 
   return async function handle(req: RepoRequest): Promise<RepoResponse> {
+    // The one write-shaped endpoint: a batch update check over a POSTed installed-library body.
+    if (req.path === "/updates") {
+      return req.method === "POST" ? await updates(req) : fail(405, `method not allowed: ${req.method}`);
+    }
     if (req.method !== "GET") return fail(405, `method not allowed: ${req.method}`);
     if (req.path === "/.well-known/azphalt-repository.json") return json(200, index);
     if (req.path === "/revocations") return await revocations(req);

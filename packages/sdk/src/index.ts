@@ -269,6 +269,14 @@ export interface Manifest {
   author?: string;
   homepage?: string;
 
+  /**
+   * Optional localized `name` / `description` — a BCP-47 language-tag → string map a host picks from
+   * by the user's locale, with the flat `name` / `description` as the required fallback. See
+   * `spec/repository-api.md` § Localized strings.
+   */
+  nameLocalized?: Record<string, string>;
+  descriptionLocalized?: Record<string, string>;
+
   assets?: AssetContribution[];
   entry?: string;
   runtime?: Runtime;
@@ -675,6 +683,18 @@ export interface PackageSummary {
   mediaDomains?: MediaDomain[];
   /** A static preview for the store card (no download / execute needed). */
   preview?: PreviewRef;
+  /**
+   * Localized `name` / `description` (BCP-47 tag → string); a host picks by locale and falls back to
+   * the flat `name` / `description`. See `spec/repository-api.md` § Localized strings.
+   */
+  nameLocalized?: Record<string, string>;
+  descriptionLocalized?: Record<string, string>;
+  /**
+   * The newest installable version's semver — an explicit "update to this" pointer so a host doesn't
+   * re-derive version precedence from history. In a summary it equals `version`; a repository MAY also
+   * surface it on the package-detail object alongside the full `versions[]`.
+   */
+  latest?: string;
 }
 
 export interface PackageSearchResponse {
@@ -682,4 +702,36 @@ export interface PackageSearchResponse {
   total: number;
   page: number;
   pages: number;
+}
+
+/**
+ * The normative error body for any non-2xx Repository API response — a machine-checkable `code` plus
+ * a human-readable `message`. See `spec/repository-api.md` § Error responses.
+ */
+export type RepositoryErrorCode =
+  | "bad_request"
+  | "unauthorized"
+  | "payment_required"
+  | "not_found"
+  | "method_not_allowed"
+  | "rate_limited"
+  | "server_error";
+
+export interface RepositoryErrorResponse {
+  error: { code: RepositoryErrorCode; message: string };
+}
+
+/** One installed package a host asks the registry to check for updates (`POST /updates`). */
+export interface InstalledPackageRef {
+  id: string;
+  /** The semver the host currently has installed. */
+  version: string;
+}
+
+/** `POST /updates` request body — the host's installed library. */
+export type UpdateCheckRequest = InstalledPackageRef[];
+
+/** `POST /updates` response — only the ids with a strictly newer installable version. */
+export interface UpdateCheckResponse {
+  updates: Array<{ id: string; latest: string }>;
 }

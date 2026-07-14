@@ -45,9 +45,9 @@ const INDEX = { name: "Test Repo", version: "0.1", description: "reference" };
 async function handlerFixture() {
   const { registry, marketplace, authorizer } = await seededRepo();
   const handle = createRepositoryHandler({ registry, marketplace, authorizer, index: INDEX });
-  const mk = (path: string, opts: { method?: string; headers?: Record<string, string> } = {}): RepoRequest => {
+  const mk = (path: string, opts: { method?: string; headers?: Record<string, string>; body?: string } = {}): RepoRequest => {
     const url = new URL(path, "http://x");
-    return { method: opts.method ?? "GET", path: url.pathname, query: url.searchParams, headers: opts.headers ?? {} };
+    return { method: opts.method ?? "GET", path: url.pathname, query: url.searchParams, headers: opts.headers ?? {}, body: opts.body };
   };
   return { handle, mk };
 }
@@ -98,9 +98,70 @@ describe("repository handler — spec/repository-api.md", () => {
     expect(body.versions).toEqual([expect.objectContaining({ version: "1.0.0", yanked: false })]);
   });
 
-  it("404s an unknown package", async () => {
+  it("404s an unknown package with the normative error envelope", async () => {
     const { handle, mk } = await handlerFixture();
-    expect((await handle(mk("/packages/com.nope.missing"))).status).toBe(404);
+    const res = await handle(mk("/packages/com.nope.missing"));
+    expect(res.status).toBe(404);
+    const err = JSON.parse(res.body as string).error;
+    expect(err.code).toBe("not_found");
+    expect(typeof err.message).toBe("string");
+  });
+
+  it("surfaces `latest` and localized name/description on detail + summary", async () => {
+    const registry = new Registry();
+    await registry.publish(azp("com.demo.i18n", { version: "1.0.0", name: "Explosions" }));
+    // The summary reflects the LATEST version's manifest, so the localized fields live on 1.2.0.
+    await registry.publish(
+      azp("com.demo.i18n", {
+        version: "1.2.0",
+        name: "Explosions",
+        description: "boom",
+        nameLocalized: { en: "Explosions", es: "Explosiones" },
+        descriptionLocalized: { en: "boom", es: "auge" },
+      }),
+    );
+    const handle = createRepositoryHandler({ registry, index: INDEX });
+    const req = (path: string) =>
+      handle({ method: "GET", path, query: new URLSearchParams(), headers: {} }).then((r) => JSON.parse(r.body as string));
+
+    const detail = await req("/packages/com.demo.i18n");
+    expect(detail.latest).toBe("1.2.0"); // newest installable, not re-derived by the host
+    const summary = (await req("/packages")).packages[0];
+    expect(summary.latest).toBe("1.2.0");
+    expect(summary.nameLocalized).toEqual({ en: "Explosions", es: "Explosiones" });
+    expect(summary.descriptionLocalized.es).toBe("auge");
+  });
+
+  describe("POST /updates — batch update check (#42)", () => {
+    it("returns only ids with a strictly newer installable version", async () => {
+      const registry = new Registry();
+      await registry.publish(azp("com.demo.a", { version: "1.0.0" }));
+      await registry.publish(azp("com.demo.a", { version: "1.2.0" }));
+      await registry.publish(azp("com.demo.b", { version: "2.0.0" }));
+      const handle = createRepositoryHandler({ registry, index: INDEX });
+      const post = (body: string) =>
+        handle({ method: "POST", path: "/updates", query: new URLSearchParams(), headers: {}, body });
+
+      const res = await post(
+        JSON.stringify([
+          { id: "com.demo.a", version: "1.0.0" }, // 1.2.0 available
+          { id: "com.demo.b", version: "2.0.0" }, // current — omitted
+          { id: "com.demo.unknown", version: "1.0.0" }, // unknown — omitted
+        ]),
+      );
+      expect(res.status).toBe(200);
+      expect(JSON.parse(res.body as string)).toEqual({ updates: [{ id: "com.demo.a", latest: "1.2.0" }] });
+    });
+
+    it("405s a GET and 400s a malformed body", async () => {
+      const { handle, mk } = await handlerFixture();
+      expect((await handle(mk("/updates"))).status).toBe(405); // GET not allowed
+      expect((await handle(mk("/updates", { method: "POST", body: "not json" }))).status).toBe(400);
+      expect((await handle(mk("/updates", { method: "POST", body: JSON.stringify({}) }))).status).toBe(400);
+      const bad = await handle(mk("/updates", { method: "POST", body: JSON.stringify([{ id: "x" }]) }));
+      expect(bad.status).toBe(400);
+      expect(JSON.parse(bad.body as string).error.code).toBe("bad_request");
+    });
   });
 
   it("serves a free package's bytes unconditionally as application/x-azphalt", async () => {
@@ -132,7 +193,9 @@ describe("repository handler — spec/repository-api.md", () => {
     // A lone `%` is an invalid URI escape — decodeURIComponent would throw a URIError.
     const res = await handle({ method: "GET", path: "/packages/%E0%A4%A", query: new URLSearchParams(), headers: {} });
     expect(res.status).toBe(400);
-    expect(JSON.parse(res.body as string).error).toMatch(/invalid URI encoding/);
+    const err = JSON.parse(res.body as string).error;
+    expect(err.code).toBe("bad_request");
+    expect(err.message).toMatch(/invalid URI encoding/);
   });
 
   it("scopes browse/search by the ?app= parameter and reports targetApps", async () => {
