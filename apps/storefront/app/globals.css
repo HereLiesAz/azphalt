@@ -447,6 +447,121 @@ dl.facts dd {
   padding: 40px 0;
 }
 
+.muted {
+  color: var(--text-muted);
+}
+
+/* Kind badge (e.g. a companion "App") */
+.kind-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.kind-badge.app {
+  background: rgba(125, 183, 255, 0.16);
+  color: var(--link);
+  border: 1px solid rgba(125, 183, 255, 0.35);
+}
+
+/* Companion app panel (kind:"app") */
+.panel.companion .companion-subhead {
+  margin: 22px 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+}
+.companion-platforms {
+  display: grid;
+  gap: 12px;
+}
+.companion-platform {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.companion-platform-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.companion-platform .btn {
+  align-self: flex-start;
+  padding: 8px 14px;
+}
+.companion-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.platform-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.platform-tag.android {
+  background: rgba(78, 201, 138, 0.16);
+  color: var(--success);
+}
+.platform-tag.pwa {
+  background: rgba(125, 183, 255, 0.16);
+  color: var(--link);
+}
+
+/* Handoffs */
+.handoffs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.handoff {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+}
+.handoff-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.handoff-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+dl.handoff-io {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 13px;
+}
+dl.handoff-io dt {
+  color: var(--text-faint);
+}
+dl.handoff-io dd {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
 footer.site-footer {
   border-top: 1px solid var(--border);
   color: var(--text-faint);

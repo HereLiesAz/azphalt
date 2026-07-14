@@ -27,10 +27,39 @@ export function formatDate(iso: string): string {
   return iso.slice(0, 10);
 }
 
+/**
+ * Return `url` only when it is a safe `http:`/`https:` link, else `undefined`. Companion install /
+ * start / manifest URLs come from an untrusted `.azp` manifest, so guard every one before it reaches
+ * an `href` — a `javascript:` (or `data:`) URI there would execute on click.
+ */
+export function safeHttpUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:" ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Human label for a package `kind`. */
 export function kindLabel(kind: string): string {
   if (kind === "code") return "Code extension";
   if (kind === "asset") return "Asset pack";
   if (kind === "mixed") return "Code + assets";
+  if (kind === "app") return "Companion app";
   return kind;
+}
+
+/**
+ * Summarize a handoff's {@link import("@azphalt/sdk").HandoffIO} — asset types and/or param names —
+ * for a one-line "image, wallWidthMm?" display. Returns `"—"` for an empty/absent side.
+ */
+export function formatHandoffIO(io?: { assets?: string[]; params?: Record<string, string> }): string {
+  if (!io) return "—";
+  const assets = io.assets ?? [];
+  // A param value ending in "?" marks the field optional; surface that on the name.
+  const params = Object.entries(io.params ?? {}).map(([k, v]) => (String(v).endsWith("?") ? `${k}?` : k));
+  const parts = [...assets, ...params];
+  return parts.length ? parts.join(", ") : "—";
 }

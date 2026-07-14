@@ -16,12 +16,15 @@ export interface PackageCardProps {
 export function PackageCard({ pkg, price }: PackageCardProps) {
   const contributionTotal =
     pkg.contributes.filters + pkg.contributes.tools + pkg.contributes.commands;
+  const isApp = pkg.kind === "app";
 
   return (
     <article className="card">
       <div className="card-title">
         <Link href={`/p/${pkg.id}`}>{pkg.name}</Link>
-        {price ? (
+        {isApp ? (
+          <span className="kind-badge app">App</span>
+        ) : price ? (
           <span className="price-badge">{formatMoney(price)}</span>
         ) : (
           <span className="free-badge">Free</span>
