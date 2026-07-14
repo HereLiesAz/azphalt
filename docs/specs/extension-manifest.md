@@ -34,7 +34,7 @@ Each entry requires a `type`, which determines the format of the asset. The supp
 - **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector` | `template` | `overlay`
 - **AI Models**: `tflite` | `litert` | `onnx` | `sherpa-bundle`
 
-The SDK `AssetType` union (`packages/sdk/src/index.ts`) is the single source of truth for this list; the registry's media-domain map is kept total over it. The **wire format** each `type` delivers (SVG for `vector`, glTF for `mesh`, the `palette` JSON schema, …) is pinned in package-format.md § Assets.
+The SDK `AssetType` union (`packages/sdk/src/index.ts`) is the single source of truth for this list; the registry's media-domain map is kept total over it. The **wire format** each `type` delivers (SVG for `vector`, glTF for `mesh`, the `palette` JSON schema, …) is pinned in `package-format.md § Assets`.
 
 Each entry also requires a `path` (relative path into `/assets` inside the `.azp` archive) OR a `remoteUrl` (see below).
 

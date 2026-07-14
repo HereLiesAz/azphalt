@@ -51,7 +51,7 @@ Each asset `type` (defined in extension-manifest.md § assets) pins the byte for
 | `template` | **JSON** layout referencing bundled `image`/`vector` assets, with fillable slots under `params` |
 | `tflite`, `litert`, `onnx`, `sherpa-bundle` | the model's **native** file(s) (`.tflite` / `.onnx` / …); large or multi-part models use the remote-asset / multi-file patterns in extension-manifest.md § assets |
 
-**Static SVG profile (`vector`).** A `vector` asset is a self-contained SVG document: **no** `<script>`, **no** event-handler attributes (`onload`, `on*`), **no** external or remote references (`<image href="http…">`, external `<use>`, CSS `@import`, web-font URLs) — any raster it embeds MUST be a `data:` URI. A host MUST render it as inert graphics and MUST NOT execute script or fetch anything it references.
+**Static SVG profile (`vector`).** A `vector` asset is a self-contained SVG document: **no** `<script>`, **no** active/interactive elements (`<foreignObject>`, `<iframe>`, `<embed>`, `<object>` — `<foreignObject>` in particular can embed arbitrary HTML/XHTML that slips past a naive `<script>` filter), **no** event-handler attributes (`onload`, `on*`), **no** external or remote references (`<image href="http…">`, external `<use>`, CSS `@import`, web-font URLs) — any raster it embeds MUST be a `data:` URI. A host MUST render it as inert graphics and MUST NOT execute script or fetch anything it references.
 
 **Self-containment (the moat).** No asset's bytes may make a host fetch from the network or read outside the package. The **only** sanctioned remote path is the manifest's explicit `remoteUrl` large-file pattern, which is checksum-gated (extension-manifest.md § assets). A host MUST ignore — never fetch — any external reference embedded inside asset bytes.
 
@@ -69,7 +69,7 @@ A `palette` asset (`type: "palette"`) is a UTF-8 **JSON** file under `/assets`. 
 
 - `colors` — REQUIRED, an ordered array. Each entry:
   - `name` — REQUIRED, human-readable swatch name.
-  - `color` — REQUIRED, sRGB as `#RRGGBB` (lowercase or uppercase hex; no alpha — a palette entry is an opaque swatch).
+  - `color` — REQUIRED, sRGB as `#RRGGBB` (strictly 7 characters, e.g. `#F2F2F0`; shorthand `#RGB` is **not** permitted; lowercase or uppercase hex; no alpha — a palette entry is an opaque swatch).
   - `brand`, `sku`, `finish` — OPTIONAL **colorant metadata** mapping the swatch to a physical product (e.g. a spray-paint can). `finish` is an open vocabulary; blessed values: `matte` · `satin` · `gloss` · `metallic` · `fluorescent`. A host ignores keys it doesn't understand.
 
 This lets the ecosystem distribute brand-accurate color sets (Montana, MTN, …) as portable `.azp` packages a host can match against real colorants.
