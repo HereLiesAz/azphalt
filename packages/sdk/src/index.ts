@@ -459,6 +459,9 @@ export interface Manifest {
 
 /* ───────────────────────────── Companion app (`kind: "app"`) ───────────────────────────── */
 
+/** A record where **at least one** of `T`'s keys must be present (the rest optional) — no empty object. */
+export type AtLeastOne<T> = Partial<T> & { [K in keyof T]: Required<Pick<T, K>> }[keyof T];
+
 /**
  * The `app` block of a `kind: "app"` package — a **companion app** (Android app or PWA) a host launches
  * to perform a function and hand a result back. It is a manifest *header* describing how to install and
@@ -466,8 +469,8 @@ export interface Manifest {
  * `spec/companion-app.md`.
  */
 export interface AppManifest {
-  /** How to install/invoke the app on each platform. At least one entry is required. */
-  platforms: { android?: AndroidPlatform; pwa?: PwaPlatform };
+  /** How to install/invoke the app on each platform — **at least one** of `android` / `pwa` is required. */
+  platforms: AtLeastOne<{ android: AndroidPlatform; pwa: PwaPlatform }>;
   /** The functions the companion offers the host, each a declared input → transport → validated output. */
   handoffs: Handoff[];
 }
@@ -507,8 +510,8 @@ export interface Handoff {
   input?: HandoffIO;
   /** What the companion returns. Omit for a `fire-and-forget` handoff (no return). */
   output?: HandoffIO;
-  /** Per-platform mechanics; declare one per platform the package lists. */
-  transport: { android?: AndroidTransport; pwa?: PwaTransport };
+  /** Per-platform mechanics — **at least one** transport (matching a listed platform) is required. */
+  transport: AtLeastOne<{ android: AndroidTransport; pwa: PwaTransport }>;
 }
 
 /**
