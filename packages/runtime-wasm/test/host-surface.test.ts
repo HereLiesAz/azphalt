@@ -386,11 +386,72 @@ function buildTransitionWasm(): Uint8Array {
   return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...imports, ...funcs, ...mem, ...exports, ...code]);
 }
 
+/**
+ * Hand-assemble a module that exports its own bump `alloc(size) -> ptr` (a mutable global heap
+ * pointer starting at 256) plus `filter(ptr, w, h, stride)` that inverts in place. Proves the host
+ * negotiates the scratch offset: the bitmap is written at the pointer `alloc` returns (≠ 0), so a
+ * correct inversion means the host honored `alloc` rather than the fixed `ptr = 0`.
+ */
+function buildAllocInvertWasm(): Uint8Array {
+  const uleb = (n: number): number[] => {
+    const out: number[] = [];
+    do { let b = n & 0x7f; n >>>= 7; if (n) b |= 0x80; out.push(b); } while (n);
+    return out;
+  };
+  const section = (id: number, content: number[]): number[] => [id, ...uleb(content.length), ...content];
+  const str = (s: string): number[] => [...uleb(s.length), ...[...s].map((c) => c.charCodeAt(0))];
+
+  // Types: t0 = (i32) -> i32 (alloc); t1 = (i32,i32,i32,i32) -> () (filter).
+  const types = section(1, [0x02, 0x60, 0x01, 0x7f, 0x01, 0x7f, 0x60, 0x04, 0x7f, 0x7f, 0x7f, 0x7f, 0x00]);
+  const funcs = section(3, [0x02, 0x00, 0x01]); // alloc→t0 (func 0), filter→t1 (func 1)
+  const mem = section(5, [0x01, 0x00, 0x01]);
+  const global = section(6, [0x01, 0x7f, 0x01, 0x41, 0x80, 0x02, 0x0b]); // 1 mutable i32 = 256
+  const exports = section(7, [
+    0x03,
+    ...str("memory"), 0x02, 0x00,
+    ...str("alloc"), 0x00, 0x00,
+    ...str("filter"), 0x00, 0x01,
+  ]);
+  // alloc(size): old = heap; heap = old + size; return old.
+  const allocBody = [0x23, 0x00, 0x21, 0x01, 0x20, 0x01, 0x20, 0x00, 0x6a, 0x24, 0x00, 0x20, 0x01, 0x0b];
+  const fbAlloc = [0x01, 0x01, 0x7f, ...allocBody]; // 1 local i32 (old)
+  // filter(ptr,w,h,stride): invert [ptr, ptr+h*stride) in place (no host imports).
+  const filterBody = [
+    0x20, 0x02, 0x20, 0x03, 0x6c, 0x20, 0x00, 0x6a, 0x21, 0x04, // end = ptr + h*stride
+    0x20, 0x00, 0x21, 0x05, // i = ptr
+    0x02, 0x40, 0x03, 0x40,
+    0x20, 0x05, 0x20, 0x04, 0x4f, 0x0d, 0x01, // if i>=end br1
+    0x20, 0x05, 0x41, 0xff, 0x01, 0x20, 0x05, 0x2d, 0x00, 0x00, 0x6b, 0x3a, 0x00, 0x00, // mem[i]=255-mem[i]
+    0x20, 0x05, 0x41, 0x01, 0x6a, 0x21, 0x05, // i++
+    0x0c, 0x00,
+    0x0b, 0x0b,
+    0x0b,
+  ];
+  const fbFilter = [0x01, 0x02, 0x7f, ...filterBody]; // 2 local i32 (end, i)
+  const code = section(10, [0x02, ...uleb(fbAlloc.length), ...fbAlloc, ...uleb(fbFilter.length), ...fbFilter]);
+  return new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, ...types, ...funcs, ...mem, ...global, ...exports, ...code]);
+}
+
 describe("runtime-wasm raw wasm entry", () => {
   it("assembles a valid wasm module", () => {
     expect(WebAssembly.validate(buildInvertWasm().slice().buffer as ArrayBuffer)).toBe(true);
     expect(WebAssembly.validate(buildParamsWasm().slice().buffer as ArrayBuffer)).toBe(true);
     expect(WebAssembly.validate(buildTransitionWasm().slice().buffer as ArrayBuffer)).toBe(true);
+    expect(WebAssembly.validate(buildAllocInvertWasm().slice().buffer as ArrayBuffer)).toBe(true);
+  });
+
+  it("negotiates the scratch offset via an exported `alloc` (module manages its own memory)", async () => {
+    const azp = buildAzp({
+      source: "",
+      runtime: "wasm",
+      entryPath: "code/filter.wasm",
+      bytesEntry: buildAllocInvertWasm(),
+      capabilities: ["bitmap"],
+      contributes: { filters: [{ id: "f", name: "F", entry: "filter" }] },
+    });
+    const r = await runFilter(azp, { params: {}, bitmap: { data: [10, 20, 30, 255, 200, 100, 50, 128], width: 2, height: 1 } });
+    // Correct inversion ⇒ the host wrote/read at the alloc'd pointer (256), not the fixed 0.
+    expect(r.bitmap.data).toEqual([245, 235, 225, 0, 55, 155, 205, 127]);
   });
 
   it("runs a runtime:\"wasm\" transition over the shared-memory ABI (from/to frames + txProgress import)", async () => {

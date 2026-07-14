@@ -830,8 +830,23 @@ function wasmEnv(internal: World, granted: Set<Capability>, getMem: () => WebAss
  * `entry(ptr, width, height, stride)`; the host writes the target layer's RGBA8 bytes into the
  * module's memory, calls the entry, and reads them back. Capability-gated host functions are passed
  * as `env` imports (see {@link wasmEnv} for the string/buffer marshaling convention). The bitmap
- * crosses at `ptr = 0`; the `bitmap` capability is required.
+ * crosses at an offset from an exported `alloc(size)` when present, else the fixed `ptr = 0`; the
+ * `bitmap` capability is required.
  */
+/**
+ * Negotiate a scratch offset. A real compiler-emitted module (Rust/C) manages its own heap + stack
+ * in linear memory, so writing the bitmap at a fixed `ptr = 0` would clobber module data. If the
+ * module exports `alloc(size) -> ptr`, ask it for a buffer; absent `alloc`, fall back to `0` (the
+ * minimal-module convention the hand-assembled fixtures use).
+ */
+function allocOrZero(instance: WebAssembly.Instance, size: number): number {
+  const alloc = instance.exports.alloc;
+  if (typeof alloc !== "function") return 0;
+  const p = Number((alloc as (n: number) => number)(size));
+  if (!Number.isInteger(p) || p < 0) throw new AzpError(`wasm: alloc(${size}) returned an invalid pointer: ${p}`);
+  return p;
+}
+
 async function runWasmFilter(
   wasmBytes: Uint8Array,
   entryName: string,
@@ -866,7 +881,7 @@ async function runWasmFilter(
 
   // Byte stride accounts for depth: 16-bit channels are two bytes each.
   const stride = target.width * 4 * bytesPerChannel(target.depth);
-  const ptr = 0;
+  const ptr = allocOrZero(instance, target.bytes.length);
   const need = ptr + target.bytes.length;
   if (memory.buffer.byteLength < need) {
     try {
@@ -947,11 +962,13 @@ async function runWasmTransition(
   const toBytes = packBytes(tx.to.data, toDepth);
   const len = fromBytes.length; // == toBytes.length == output length (shared geometry)
   const stride = target.width * 4 * bytesPerChannel(target.depth);
-  // Three non-overlapping buffers laid end to end: from | to | out.
-  const fromPtr = 0;
-  const toPtr = len;
-  const outPtr = 2 * len;
-  const need = 3 * len;
+  // Three non-overlapping buffers. If the module exports `alloc`, ask it for each (so it never
+  // collides with the module's own heap); otherwise lay them end to end: from | to | out.
+  const useAlloc = typeof instance.exports.alloc === "function";
+  const fromPtr = useAlloc ? allocOrZero(instance, len) : 0;
+  const toPtr = useAlloc ? allocOrZero(instance, len) : len;
+  const outPtr = useAlloc ? allocOrZero(instance, len) : 2 * len;
+  const need = Math.max(fromPtr, toPtr, outPtr) + len;
   if (memory.buffer.byteLength < need) {
     try {
       memory.grow(Math.ceil((need - memory.buffer.byteLength) / 65536));
