@@ -100,6 +100,58 @@ export interface AssetContribution {
    * filter on it. See {@link ModelLicense}.
    */
   modelLicense?: ModelLicense;
+  /**
+   * Real-world scale / print metadata for a **visual** asset (`image` | `vector` | `stamp` | `pattern`),
+   * so an AR or print host reproduces it at its intended physical size instead of guessing. All optional.
+   * See {@link PhysicalMetadata} and `spec/extension-manifest.md` § Physical metadata.
+   */
+  physical?: PhysicalMetadata;
+  /**
+   * Usage terms for the asset **content** — attribution and commercial-use — beyond the package's SPDX
+   * `license` (which is authoritative). A host surfaces these on the marketplace card; a registry can
+   * filter `commercialUse`. The general-content analog of {@link ModelLicense}. See {@link ContentRights}.
+   */
+  contentRights?: ContentRights;
+  /**
+   * In a `mixed` package, whether this asset is usable **without** the package's code. Default `true`
+   * (standalone data an asset-only host can consume). Set `false` for an asset the code generates or
+   * completes at runtime, so an asset-only host skips it instead of installing a broken/empty asset.
+   * Ignored for `asset`-kind packages (always standalone). See `spec/extension-manifest.md` § Mixed-package asset independence.
+   */
+  standalone?: boolean;
+}
+
+/**
+ * Real-world scale / print metadata for a visual asset, so a spatial (AR) or print host places or tiles
+ * it at true size. Every field optional — a host uses what it understands.
+ */
+export interface PhysicalMetadata {
+  /** Intended real-world width, in `unit`. */
+  width?: number;
+  /** Intended real-world height, in `unit`. */
+  height?: number;
+  /** Unit for every dimension. **Required whenever any dimension is present** — a bare number is unscalable without it. */
+  unit?: "mm" | "cm" | "in";
+  /** Dots per inch, for print / raster reproduction. */
+  dpi?: number;
+  /** Intended tile width (in `unit`) for an asset that tiles across sheets; omit both for single-sheet. */
+  tileWidth?: number;
+  /** Intended tile height (in `unit`). */
+  tileHeight?: number;
+}
+
+/**
+ * Usage terms for asset **content** (as opposed to the package's SPDX `license`, which stays
+ * authoritative). Machine-checkable summary fields a host displays on a marketplace card and a registry
+ * can filter on.
+ */
+export interface ContentRights {
+  /** The exact credit string a host displays when the asset is used (e.g. `"Mural © Artist, CC-BY-4.0"`). */
+  attribution?: string;
+  /** Whether the license requires that attribution be shown. */
+  attributionRequired?: boolean;
+  /** Machine-checkable summary: may the asset be used commercially? (The SPDX `license` is authoritative.) */
+  commercialUse?: boolean;
 }
 
 /**

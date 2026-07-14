@@ -70,6 +70,34 @@ describe("azp", () => {
     expect(verifyAzp(azp).ok).toBe(true);
   });
 
+  it("round-trips asset metadata fields (physical, contentRights, standalone)", () => {
+    const enc = (s: string) => new TextEncoder().encode(s);
+    const assets = [
+      {
+        type: "vector" as const,
+        path: "assets/stencil.svg",
+        physical: { width: 1200, height: 800, unit: "mm" as const, dpi: 300, tileWidth: 210, tileHeight: 297 },
+        contentRights: { attribution: "Mural © Artist, CC-BY-4.0", attributionRequired: true, commercialUse: false },
+      },
+      { type: "shader" as const, path: "assets/fx.glsl", standalone: false },
+    ];
+    const { azp } = writeAzp({
+      manifest: { ...base, id: "com.hereliesaz.mural", kind: "mixed", entry: "code/main.js", runtime: "js", assets },
+      payload: {
+        "assets/stencil.svg": enc("<svg xmlns='http://www.w3.org/2000/svg'/>"),
+        "assets/fx.glsl": enc("void main(){}"),
+        "code/main.js": enc("export const x = 1;"),
+      },
+      license,
+    });
+
+    const back = readAzp(azp).manifest.assets!;
+    expect(back[0].physical).toMatchObject({ width: 1200, height: 800, unit: "mm", dpi: 300, tileWidth: 210, tileHeight: 297 });
+    expect(back[0].contentRights).toMatchObject({ attribution: "Mural © Artist, CC-BY-4.0", attributionRequired: true, commercialUse: false });
+    expect(back[1].standalone).toBe(false);
+    expect(verifyAzp(azp).ok).toBe(true);
+  });
+
   it("flags a digest mismatch when the payload is tampered", () => {
     const { azp } = writeAzp({
       manifest: { ...base, id: "com.hereliesaz.x" },
