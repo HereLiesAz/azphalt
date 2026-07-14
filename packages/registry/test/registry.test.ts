@@ -216,5 +216,8 @@ describe("Registry discovery metadata (byteSize / preview / mediaDomains / ratin
     // Since a moment before the yank, it's included; since a moment after, it's not.
     expect(await r.revocations(cut)).toHaveLength(1);
     expect(await r.revocations(new Date(Date.now() + 1000).toISOString())).toHaveLength(0);
+    // Re-yanking an already-yanked version doesn't append a duplicate.
+    await r.yank("com.hereliesaz.bad", "1.0.0", true, "security");
+    expect(await r.revocations()).toHaveLength(1);
   });
 });

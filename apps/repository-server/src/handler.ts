@@ -174,6 +174,8 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
 
   async function revocations(req: RepoRequest): Promise<RepoResponse> {
     const since = req.query.get("since")?.trim() || undefined;
+    // `since` compares lexically, which is only meaningful for a real ISO-8601 instant — reject junk.
+    if (since && Number.isNaN(Date.parse(since))) return fail(400, "invalid 'since' parameter: must be a valid ISO-8601 date string");
     const list = await registry.revocations(since);
     return json(200, { revocations: list });
   }

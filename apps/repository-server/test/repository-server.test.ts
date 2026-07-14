@@ -194,6 +194,10 @@ describe("repository handler — spec/repository-api.md", () => {
     const body = JSON.parse(res.body as string);
     expect(body.revocations).toHaveLength(1);
     expect(body.revocations[0]).toMatchObject({ id: "com.demo.bad", version: "1.0.0", reason: "malware" });
+
+    // A malformed `since` is a 400, not a broken lexical comparison.
+    const bad = await handle({ method: "GET", path: "/revocations", query: new URL("http://x/revocations?since=not-a-date").searchParams, headers: {} });
+    expect(bad.status).toBe(400);
   });
 });
 

@@ -227,8 +227,9 @@ export class Registry {
 
   /**
    * Hide a version from `latest`/search while keeping it resolvable by exact version. Yanking (the
-   * default) appends a {@link RevocationEntry} to the host-pollable feed with an optional [reason];
-   * un-yanking (`yanked = false`) clears the flag without touching the feed.
+   * default) appends a {@link RevocationEntry} to the host-pollable feed with an optional [reason]
+   * **only on the `false → true` transition**, so re-yanking an already-yanked version doesn't bloat
+   * the feed; un-yanking (`yanked = false`) clears the flag without touching the feed.
    */
   async yank(id: string, version: string, yanked = true, reason?: string): Promise<void> {
     const v = await this.store.getVersion(id, version);
@@ -237,8 +238,11 @@ export class Registry {
     // Never re-put with empty bytes: on a storage inconsistency that would silently overwrite (and
     // corrupt) the stored payload. Fail loudly instead.
     if (!bytes) throw new RegistryError(`bytes missing: ${id}@${version}`);
+    const wasYanked = Boolean(v.yanked);
     await this.store.putVersion({ ...v, yanked }, bytes);
-    if (yanked) await this.store.putRevocation({ id, version, reason, revokedAt: new Date().toISOString() });
+    if (yanked && !wasYanked) {
+      await this.store.putRevocation({ id, version, reason, revokedAt: new Date().toISOString() });
+    }
   }
 
   /**
