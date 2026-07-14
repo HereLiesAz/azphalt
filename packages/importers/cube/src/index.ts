@@ -11,6 +11,18 @@ import { parseCube, type CubeLut } from "./parse-cube.js";
 /** Manifest/format version this importer targets. */
 const FORMAT = "0.1";
 
+/** In-package path for the canonical dry/wet control panel. */
+const PANEL_PATH = "ui/lut.json";
+
+/**
+ * The canonical `lut` control: one `strength` slider bound to the well-known `strength` key
+ * (spec/extension-manifest.md § Canonical `lut` panel), so the dry/wet blend renders identically
+ * on every host.
+ */
+const STRENGTH_PANEL = {
+  controls: [{ type: "slider", key: "strength", label: "Strength", min: 0, max: 1, step: 0.01, default: 1 }],
+};
+
 export interface ImportOptions {
   /** Reverse-DNS id, e.g. `"com.hereliesaz.teal-fade"`. Required. */
   id: string;
@@ -49,8 +61,13 @@ export function importCube(cubeText: string, licenseText: string, opts: ImportOp
       {
         type: "lut",
         path: assetPath,
+        // A single `strength` slider bound to the well-known key, so every imported LUT ships a
+        // portable dry/wet control (spec/extension-manifest.md § Canonical `lut` panel).
+        ui: PANEL_PATH,
         params: {
           format: "cube",
+          // Normative dry/wet blend: `1` = full grade. See package-format.md § LUT application.
+          strength: 1,
           dimensions: lut.dimensions,
           size: lut.size,
           domainMin: lut.domainMin,
@@ -63,7 +80,10 @@ export function importCube(cubeText: string, licenseText: string, opts: ImportOp
 
   const result = writeAzp({
     manifest,
-    payload: { [assetPath]: new TextEncoder().encode(cubeText) },
+    payload: {
+      [assetPath]: new TextEncoder().encode(cubeText),
+      [PANEL_PATH]: new TextEncoder().encode(JSON.stringify(STRENGTH_PANEL)),
+    },
     license: licenseText,
   });
   return { ...result, lut };
