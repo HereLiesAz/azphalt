@@ -45,6 +45,58 @@ For extremely large files like AI models (e.g. multi-gigabyte `.task` files), bu
 - `ui`: Optional UI panel path to a control panel schema (see ui-schema.md).
 - `tags`: Optional tags (e.g., `["sfx", "impact"]`) for marketplace filtering.
 
+### Model roles (`role`)
+For a **model asset**, `role` routes a generic model graph to the correct host engine. It is an **open** vocabulary — any string is valid — but the following **canonical roles** are blessed, so a model tagged e.g. `role: "depth"` lands in the same engine on every host. Prefer a blessed role where one fits; invent a new string only when none does:
+
+`image-labeling` · `object-detection` · `face-detection` · `subject-segmentation` · `matting` · `image-embedding` · `depth` · `super-resolution` · `speech-to-text` · `audio-event` (a.k.a. `highlight-detection`)
+
+### Model IO descriptor (`io`)
+An **optional**, self-describing preprocessing/IO block on a model asset (`onnx` | `tflite` | `litert` | `sherpa-bundle`). With it, a host can preprocess → run the model in its own on-device runtime → interpret the outputs for a whole class of models **with no per-model code**. Every field is optional: a host uses what it understands and ignores the rest. Paired with `role`, `checksum`, and `byteSize`, a host can decide whether it can run a model *before* downloading `byteSize` bytes.
+
+- `inputs[]` — per input tensor:
+  - `name` — the tensor name in the model graph.
+  - `shape` — dimensions, using `-1` (or `null`) for a dynamic/batch dimension, e.g. `[-1, 3, 256, 256]`.
+  - `dtype` — `float32` | `float16` | `int8` | `uint8` | `int32` | `int64` | `bool`.
+  - `layout` — `NCHW` | `NHWC` (image tensors).
+  - `color` — `RGB` | `BGR` (image tensors).
+  - `normalization` — per-channel, as **either** `mean`/`std` (`(x/255 − mean) / std`) **or** `scale`/`bias` (`x·scale + bias`); each is a scalar or a per-channel array.
+  - `audio` — for audio models: `sampleRate` (Hz), `window` and `hop` (samples), `channels` (`mono` | `stereo`).
+- `outputs[]` — per output tensor:
+  - `name` — the tensor name.
+  - `semantics` — how to read it: `logits` | `boxes` | `scores` | `mask` | `embedding`.
+  - `shape`, `dtype` — as above.
+  - `decode` — any decode parameters the semantics needs (e.g. a detector's anchors/variances, or `{ "decoded": true }` for already-decoded boxes).
+- `labels` — optional path to a labels file bundled in the package (or a `remoteUrl`).
+- `quantization` — the delivered weights' quantization (`type`, plus optional `scale`/`zeroPoint`), so a host picks a compatible runtime path.
+
+Example — a `tflite` depth model delivered remotely, fully self-describing:
+~~~
+{
+  "type": "tflite",
+  "role": "depth",
+  "path": "",
+  "remoteUrl": "https://cdn.example.com/models/midas-small.tflite",
+  "checksum": "sha256-…",
+  "byteSize": 16777216,
+  "io": {
+    "inputs": [
+      {
+        "name": "image",
+        "shape": [1, 3, 256, 256],
+        "dtype": "float32",
+        "layout": "NCHW",
+        "color": "RGB",
+        "normalization": { "mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225] }
+      }
+    ],
+    "outputs": [
+      { "name": "depth", "semantics": "mask", "shape": [1, 1, 256, 256], "dtype": "float32" }
+    ],
+    "quantization": { "type": "none" }
+  }
+}
+~~~
+
 ## `contributes`
 What the code adds to the host, each with an `id`:
 - `filters` — a pixel operation runnable on a layer/selection.

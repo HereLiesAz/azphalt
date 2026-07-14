@@ -42,8 +42,12 @@ export interface AssetContribution {
   type: AssetType;
   /** Path into `/assets` inside the `.azp`, or empty if remoteUrl is provided. */
   path: string;
-  /** A specific role for generic types (e.g. `type: "tflite", role: "depth"`). */
-  role?: string;
+  /**
+   * A specific role for generic types (e.g. `type: "tflite", role: "depth"`), routing a model graph
+   * to the correct host engine. Open vocabulary — any string is valid — but prefer a blessed
+   * {@link ModelRole} where one fits, so routing is consistent across hosts.
+   */
+  role?: ModelRole;
   /** Normalized, host-neutral parameters (e.g. spacing, angle, roundness). */
   params?: Record<string, unknown>;
   /** Optional UI panel path (e.g. assets/ui.json) generated for configurable assets. */
@@ -56,6 +60,128 @@ export interface AssetContribution {
   checksum?: string;
   /** Pre-declared byte size for download progress / headroom checks. */
   byteSize?: number;
+  /**
+   * Optional self-describing IO / preprocessing descriptor for a model asset (`onnx` | `tflite` |
+   * `litert` | `sherpa-bundle`), letting a host preprocess, run the model in its own runtime, and
+   * interpret its outputs with no per-model code. See {@link ModelIO}.
+   */
+  io?: ModelIO;
+}
+
+/**
+ * Canonical task roles for model assets. `role` stays an **open** vocabulary — any string is
+ * assignable — but these are the blessed core, so a model tagged e.g. `role: "depth"` routes to the
+ * same engine on every conforming host. The trailing `string & {}` keeps arbitrary roles valid while
+ * surfacing the blessed set in editor autocomplete.
+ */
+export type ModelRole =
+  | "image-labeling"
+  | "object-detection"
+  | "face-detection"
+  | "subject-segmentation"
+  | "matting"
+  | "image-embedding"
+  | "depth"
+  | "super-resolution"
+  | "speech-to-text"
+  | "audio-event"
+  | "highlight-detection"
+  // Open-union idiom: `string & {}` keeps `role` assignable from ANY string while the literals above
+  // still surface as autocomplete for the blessed core.
+  | (string & {});
+
+/** Numeric element type of a model tensor. */
+export type TensorDType =
+  | "float32" | "float16" | "int8" | "uint8" | "int32" | "int64" | "bool";
+
+/** Memory layout of an image tensor. */
+export type TensorLayout = "NCHW" | "NHWC";
+
+/** Channel order for image inputs. */
+export type ColorOrder = "RGB" | "BGR";
+
+/**
+ * Per-channel input normalization, expressed as **either** mean/std (`(x/255 - mean) / std`) **or**
+ * scale/bias (`x * scale + bias`). Each value is a scalar (applied to every channel) or a per-channel
+ * array; a host applies whichever pair is present.
+ */
+export interface Normalization {
+  mean?: number | number[];
+  std?: number | number[];
+  scale?: number | number[];
+  bias?: number | number[];
+}
+
+/** Audio framing for a model with an audio input. */
+export interface AudioInputSpec {
+  /** Required input sample rate in Hz (e.g. 16000). */
+  sampleRate: number;
+  /** Analysis window length, in samples. */
+  window?: number;
+  /** Hop / stride between successive windows, in samples. */
+  hop?: number;
+  /** Channel layout the model expects. */
+  channels?: "mono" | "stereo";
+}
+
+/** One model input tensor and how to prepare data for it. */
+export interface ModelInput {
+  /** Tensor name as the runtime graph exposes it. */
+  name?: string;
+  /** Shape; use `-1` or `null` for a dynamic/batch dimension (e.g. `[-1, 3, 256, 256]`). */
+  shape?: (number | null)[];
+  dtype?: TensorDType;
+  /** Image layout, when the input is an image tensor. */
+  layout?: TensorLayout;
+  /** Channel order, when the input is an image tensor. */
+  color?: ColorOrder;
+  /** Pixel-value normalization to apply before inference. */
+  normalization?: Normalization;
+  /** Audio framing, when the input is an audio tensor. */
+  audio?: AudioInputSpec;
+}
+
+/** How an output tensor should be interpreted, so a host reads it without model-specific code. */
+export type OutputSemantics = "logits" | "boxes" | "scores" | "mask" | "embedding";
+
+/** One model output tensor and how to decode it. */
+export interface ModelOutput {
+  /** Tensor name as the runtime graph exposes it. */
+  name?: string;
+  /** A small semantics tag telling the host how to read this tensor. */
+  semantics?: OutputSemantics;
+  shape?: (number | null)[];
+  dtype?: TensorDType;
+  /** Decode parameters the semantics needs (e.g. detector anchors/variances, or `{ decoded: true }`). */
+  decode?: Record<string, unknown>;
+}
+
+/** Quantization of the delivered weights, so a host can pick a compatible runtime path. */
+export interface Quantization {
+  /** e.g. `"none"` | `"int8"` | `"float16"` | `"dynamic"`. */
+  type?: string;
+  /** Optional per-tensor scale / zero-point, when a host needs them to dequantize outputs. */
+  scale?: number;
+  zeroPoint?: number;
+}
+
+/**
+ * An **optional**, self-describing IO / preprocessing descriptor for a model asset (`onnx` | `tflite`
+ * | `litert` | `sherpa-bundle`). With it, a host can preprocess, run the model in its own on-device
+ * runtime, and interpret the outputs for a whole class of models with **no per-model code**.
+ * Everything here is optional: a host uses what it understands and MAY ignore the rest. Paired with
+ * `role`, `checksum`, and `byteSize`, a host can decide whether it can run a model *before* downloading
+ * it.
+ */
+export interface ModelIO {
+  /** Input tensors and their preprocessing. */
+  inputs?: ModelInput[];
+  /** Output tensors and their semantics/decoding. */
+  outputs?: ModelOutput[];
+  /** Path to a labels file bundled in the package (or a `remoteUrl`). */
+  labels?: string;
+  /** Quantization of the delivered weights. */
+  quantization?: Quantization;
 }
 
 export interface FilterContribution {
