@@ -70,7 +70,7 @@ A visual asset (`image` | `vector` | `stamp` | `pattern`) is pure pixels/paths w
 ~~~
 
 - `width` / `height` — intended real-world size, in `unit`.
-- `unit` — `mm` | `cm` | `in` (applies to `width`/`height` and the tile dimensions).
+- `unit` — `mm` | `cm` | `in`. **REQUIRED whenever any dimension (`width` / `height` / `tileWidth` / `tileHeight`) is present** — a bare number is unscalable without it. Applies to all dimensions.
 - `dpi` — dots per inch, for print / raster reproduction.
 - `tileWidth` / `tileHeight` — the tile size for an asset meant to tile across sheets (e.g. an A4-tiled stencil); omit both for single-sheet. A host that can't honor physical scale ignores the block.
 

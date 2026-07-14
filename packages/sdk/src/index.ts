@@ -130,7 +130,7 @@ export interface PhysicalMetadata {
   width?: number;
   /** Intended real-world height, in `unit`. */
   height?: number;
-  /** Unit for `width` / `height` / tile dimensions. */
+  /** Unit for every dimension. **Required whenever any dimension is present** — a bare number is unscalable without it. */
   unit?: "mm" | "cm" | "in";
   /** Dots per inch, for print / raster reproduction. */
   dpi?: number;

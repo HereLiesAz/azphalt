@@ -92,9 +92,8 @@ describe("azp", () => {
     });
 
     const back = readAzp(azp).manifest.assets!;
-    expect(back[0].physical).toMatchObject({ width: 1200, unit: "mm", dpi: 300, tileWidth: 210, tileHeight: 297 });
-    expect(back[0].contentRights?.commercialUse).toBe(false);
-    expect(back[0].contentRights?.attribution).toContain("CC-BY-4.0");
+    expect(back[0].physical).toMatchObject({ width: 1200, height: 800, unit: "mm", dpi: 300, tileWidth: 210, tileHeight: 297 });
+    expect(back[0].contentRights).toMatchObject({ attribution: "Mural © Artist, CC-BY-4.0", attributionRequired: true, commercialUse: false });
     expect(back[1].standalone).toBe(false);
     expect(verifyAzp(azp).ok).toBe(true);
   });
