@@ -41,8 +41,8 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
       - run: corepack enable
-      # Update npm to the latest release (pnpm publish / dist-tag shell out to npm).
-      - run: npm install -g npm@latest
+      # Pin npm@10 — npm v11 dropped --git-checks which pnpm still passes.
+      - run: npm install -g npm@10
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Staged publish (under the staging tag)
