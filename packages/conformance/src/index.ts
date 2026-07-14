@@ -45,6 +45,18 @@ import {
   type VideoAudioHost,
   type HostProfile,
 } from "./video-audio-checks.js";
+import {
+  checkCompanionRejectTampered,
+  checkCompanionRejectUnsafePath,
+  checkCompanionRejectNonApp,
+  checkCompanionOffersHandoff,
+  checkCompanionConsent,
+  checkCompanionLeastInput,
+  checkCompanionValidatesReturn,
+  checkCompanionCompat,
+  checkCompanionProfileDeclaration,
+  type CompanionHost,
+} from "./companion-checks.js";
 
 export interface ConformanceReport {
   /** True iff every check passed. */
@@ -112,6 +124,29 @@ export async function runVideoAudioConformance(host: VideoAudioHost): Promise<Vi
   return { ok: checks.every((c) => c.ok), checks, profiles: host.profiles ?? [] };
 }
 
+/**
+ * Run the **companion-app host** conformance battery against `host` — the profile a store-providing app
+ * (GraffitiXR, Guillotine) implements to consume `kind:"app"` companion packages (`spec/companion-app.md`,
+ * `docs/ADOPTION_COMPANION_HOST.md`). It certifies that the host verifies the header, runs none of the
+ * companion's code (refusing non-`app` packages), surfaces a handoff on a supported platform, shows
+ * consent, hands off **only** the declared input, and validates the untrusted return against the
+ * declared `output` before ingesting it.
+ */
+export async function runCompanionConformance(host: CompanionHost): Promise<ConformanceReport> {
+  const checks: CheckResult[] = [
+    await checkCompanionRejectTampered(host),
+    await checkCompanionRejectUnsafePath(host),
+    await checkCompanionRejectNonApp(host),
+    await checkCompanionOffersHandoff(host),
+    await checkCompanionConsent(host),
+    await checkCompanionLeastInput(host),
+    await checkCompanionValidatesReturn(host),
+    await checkCompanionCompat(host),
+    checkCompanionProfileDeclaration(host),
+  ];
+  return { ok: checks.every((c) => c.ok), checks };
+}
+
 export { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 export { satisfiesCompat } from "./checks.js";
 export * as fixtures from "./fixtures.js";
@@ -123,6 +158,13 @@ export type {
   ConformanceResult,
 } from "./checks.js";
 export type { AssetHost, AssetHostReport } from "./asset-checks.js";
+export type {
+  CompanionHost,
+  CompanionPlatform,
+  CompanionLoadReport,
+  CompanionReturn,
+  CompanionInvocation,
+} from "./companion-checks.js";
 export type {
   VideoAudioHost,
   HostProfile,
