@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
-import { verifyAzp, writeAzp } from "@azphalt/azp";
-import { InMemoryStore, Marketplace, Registry } from "@azphalt/registry";
+import { verifyAzp, writeAzp, generateSigningKey } from "@azphalt/azp";
+import { InMemoryStore, Marketplace, Registry, issueEntitlement, type EntitlementClaims } from "@azphalt/registry";
 import type { Manifest } from "@azphalt/sdk";
 import { RepositoryClient } from "@azphalt/repository-client";
-import { createRepositoryHandler, createRepositoryServer, InMemoryAuthorizer, type RepoRequest } from "../src/index";
+import { createRepositoryHandler, createRepositoryServer, EntitlementAuthorizer, InMemoryAuthorizer, type RepoRequest } from "../src/index";
 
 const LICENSE = "MIT License\n";
 const utf8 = (s: string) => new TextEncoder().encode(s);
@@ -198,6 +198,28 @@ describe("repository handler — spec/repository-api.md", () => {
     // A malformed `since` is a 400, not a broken lexical comparison.
     const bad = await handle({ method: "GET", path: "/revocations", query: new URL("http://x/revocations?since=not-a-date").searchParams, headers: {} });
     expect(bad.status).toBe(400);
+  });
+
+  it("gates a buy-once download with an offline-verified entitlement token", async () => {
+    const reg = generateSigningKey();
+    const store = new InMemoryStore();
+    const registry = new Registry(store);
+    const marketplace = new Marketplace(registry, store);
+    await registry.publish(azp("com.demo.buyonce", { name: "Buy Once" }));
+    await marketplace.listForSale("com.demo.buyonce", "seller", { amountCents: 500, currency: "USD" });
+    const handle = createRepositoryHandler({ registry, marketplace, authorizer: new EntitlementAuthorizer([reg.publicKey]), index: INDEX });
+
+    const path = "/packages/com.demo.buyonce/versions/1.0.0/download";
+    const claims = (packageId: string): EntitlementClaims => ({ packageId, subject: "u1", kind: "perpetual", issuedAt: "2026-01-01T00:00:00Z" });
+    const bearer = (packageId: string) => "Bearer " + Buffer.from(JSON.stringify(issueEntitlement(reg.privateKey, claims(packageId)))).toString("base64");
+    const dl = (authorization?: string) => handle({ method: "GET", path, query: new URLSearchParams(), headers: authorization ? { authorization } : {} });
+
+    expect((await dl()).status).toBe(401); // no token
+    expect((await dl("Bearer " + "A".repeat(5000))).status).toBe(401); // oversized token rejected (DoS cap)
+    expect((await dl(bearer("com.demo.other"))).status).toBe(402); // valid registry token, wrong package
+    const ok = await dl(bearer("com.demo.buyonce")); // valid buy-once token for this package
+    expect(ok.status).toBe(200);
+    expect(verifyAzp(ok.body as Uint8Array).ok).toBe(true);
   });
 });
 

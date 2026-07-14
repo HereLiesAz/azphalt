@@ -7,8 +7,10 @@
  *
  * The reference server keeps this pluggable so a real deployment can back it with its own accounts /
  * entitlements service; {@link InMemoryAuthorizer} is a working, dependency-free default for the demo
- * and tests. Free packages never reach the authorizer — the handler serves them unconditionally.
+ * and tests, and {@link EntitlementAuthorizer} accepts a registry-signed buy-once token verified
+ * offline. Free packages never reach the authorizer — the handler serves them unconditionally.
  */
+import { verifyEntitlement, type EntitlementToken } from "@azphalt/registry";
 
 /** The two-part verdict the download handler turns into `200` / `401` / `402`. */
 export interface AuthDecision {
@@ -58,6 +60,32 @@ export class InMemoryAuthorizer implements DownloadAuthorizer {
   authorize({ token, packageId }: AuthInput): AuthDecision {
     if (!token || !this.tokens.has(token)) return { authenticated: false, licensed: false };
     return { authenticated: true, licensed: this.licenses.get(token)?.has(packageId) ?? false };
+  }
+}
+
+/**
+ * A {@link DownloadAuthorizer} for **buy-once** packages: the Bearer credential is a registry-signed
+ * entitlement token (base64 of the {@link EntitlementToken} JSON), verified **offline** against the
+ * registry's public key(s) — the same keys advertised in the `.well-known` index. No accounts
+ * database and no per-download phone-home: the token itself is the proof. A validly-signed token from
+ * a trusted registry is an authenticated identity (a token that doesn't match this package or has
+ * expired yields `402`); anything else is `401`.
+ */
+export class EntitlementAuthorizer implements DownloadAuthorizer {
+  constructor(private readonly trustedKeys: string[]) {}
+
+  authorize({ token, packageId }: AuthInput): AuthDecision {
+    // Cap the untrusted token before base64-decoding + JSON.parse — a real entitlement is a few
+    // hundred bytes, so a large one is abuse. Bounds CPU/memory (DoS guard).
+    if (!token || token.length > 4096) return { authenticated: false, licensed: false };
+    let parsed: EntitlementToken;
+    try {
+      parsed = JSON.parse(Buffer.from(token, "base64").toString("utf8"));
+    } catch {
+      return { authenticated: false, licensed: false };
+    }
+    const r = verifyEntitlement(parsed, { trustedKeys: this.trustedKeys, packageId });
+    return { authenticated: r.signatureValid && r.trustedIssuer, licensed: r.valid };
   }
 }
 

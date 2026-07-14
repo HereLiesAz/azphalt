@@ -201,6 +201,23 @@ export function countersign(azp: Uint8Array, opts: CountersignOptions): Uint8Arr
   return zipSync(sorted, { mtime: EPOCH });
 }
 
+/**
+ * Build a {@link TrustStore} from a list of advertised keys (e.g. a repository's `.well-known`
+ * `signingKeys`). This is the trust-bootstrap entry point: a host trusts a registry once, then every
+ * author that registry counter-signs is transitively trusted by {@link verifyTrust}. Malformed
+ * entries (no string `publicKey`) are dropped rather than throwing.
+ */
+export function trustStoreFromKeys(keys: Array<{ publicKey: string; keyId?: string; label?: string }> | undefined | null): TrustStore {
+  const clean = (Array.isArray(keys) ? keys : []).filter((k) => k && typeof k.publicKey === "string");
+  return {
+    keys: clean.map((k) => ({
+      publicKey: k.publicKey,
+      keyId: typeof k.keyId === "string" ? k.keyId : undefined,
+      label: typeof k.label === "string" ? k.label : undefined,
+    })),
+  };
+}
+
 /** Convenience: a registry key is just an Ed25519 key. Re-exported for symmetry with signing. */
 export { generateSigningKey } from "./sign.js";
 export type { SigningKey } from "./sign.js";

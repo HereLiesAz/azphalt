@@ -27,5 +27,5 @@ export type {
   RepoResponse,
 } from "./handler.js";
 export { createRepositoryServer } from "./server.js";
-export { InMemoryAuthorizer, denyAllAuthorizer } from "./authorize.js";
+export { InMemoryAuthorizer, EntitlementAuthorizer, denyAllAuthorizer } from "./authorize.js";
 export type { DownloadAuthorizer, AuthDecision, AuthInput } from "./authorize.js";
