@@ -16,7 +16,7 @@ const SORTS = ["downloads", "rating", "updated", "name"] as const;
 type Sort = (typeof SORTS)[number];
 const KINDS = ["asset", "code", "app", "mixed"] as const;
 
-const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v ?? "").trim();
+const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] ?? "" : v ?? "").trim();
 
 interface SearchPageProps {
   // Next 15: searchParams is delivered as a Promise.
