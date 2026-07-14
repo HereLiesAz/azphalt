@@ -24,7 +24,7 @@ Adding an asset package under `submissions/<id>/`. Assets carry data the host co
 
 - [ ] `kind` is `"asset"`.
 - [ ] The folder is named **exactly** `<manifest.id>` (reverse-DNS).
-- [ ] Required fields present: `azphalt`, `name`, `version` (semver), `kind`, `license`, `compat`. **No** `files` field.
+- [ ] Required fields present: `azphalt`, `id`, `name`, `version` (semver), `kind`, `license`, `compat`. **No** `files` field.
 - [ ] A `LICENSE` file matching the SPDX id is present.
 - [ ] Each `assets[]` entry has a `type` from the supported list and **either** a `path` that exists in the folder **or** the remote header (`"path": ""` + `remoteUrl` + `checksum` + `byteSize`).
 - [ ] Every bundled file the manifest references sits at its stated in-package path (`assets/…`, `ui/…`).

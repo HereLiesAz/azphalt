@@ -25,7 +25,7 @@ Adding one package under `submissions/<id>/`. CI packages the folder into a `.az
 Every box maps to a check `@azphalt/submit-check` runs — an unchecked box is a failing CI check.
 
 - [ ] The folder is named **exactly** `<manifest.id>`, and `id` is reverse-DNS (`com.you.thing`).
-- [ ] `manifest.json` has `azphalt`, `name`, `version` (semver), `kind`, `license` (SPDX), `compat`.
+- [ ] `manifest.json` has `azphalt`, `id`, `name`, `version` (semver), `kind`, `license` (SPDX), `compat`.
 - [ ] `manifest.json` has **no** `files` field — CI computes the digests.
 - [ ] A `LICENSE` file is present, matching the SPDX id above.
 - [ ] Every payload path the manifest references (`assets[].path`, `entry`, `ui`) is in the folder — or a heavy asset uses the remote header (`"path": ""` + `remoteUrl` + `checksum` + `byteSize`).
