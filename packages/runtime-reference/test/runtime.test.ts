@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { defineFilter, defineTransition } from "@azphalt/azdk";
-import type { Manifest } from "@azphalt/azdk";
+import { defineFilter, defineTransition } from "@azphalt/sdk";
+import type { Manifest } from "@azphalt/sdk";
 import { writeAzp } from "@azphalt/azp";
 import { AzpError, createHost, createWorld, open, runFilter, runTransition } from "../src/index";
 

@@ -1,5 +1,5 @@
 import { writeAzp } from "@azphalt/azp";
-import type { Manifest } from "@azphalt/azdk";
+import type { Manifest } from "@azphalt/sdk";
 import { parseGltf, type GltfInfo } from "./parse-gltf.js";
 
 export interface ImportOptions {

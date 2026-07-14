@@ -4,7 +4,7 @@
  * (downloads / rating / updated / name) and a `kind` filter compose over the results, and each hit
  * renders as a package card with its consignment price when listed.
  */
-import type { Kind } from "@azphalt/azdk";
+import type { Kind } from "@azphalt/sdk";
 import type { Money, PackageSummary } from "@azphalt/registry";
 import { getCatalog } from "../../lib/catalog";
 import { PackageCard } from "../../components/PackageCard";

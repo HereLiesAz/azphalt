@@ -5,7 +5,7 @@
  * The store surfaces that: how to get the app on each platform (Play Store link, PWA start URL), the
  * version floors, and each function the app offers (action, input → output, transports).
  */
-import type { AppManifest, Handoff } from "@azphalt/azdk";
+import type { AppManifest, Handoff } from "@azphalt/sdk";
 import { formatHandoffIO, safeHttpUrl } from "../lib/format";
 
 /** Friendly display name for a transport platform key. */

@@ -1,4 +1,4 @@
-import type { Manifest } from "@azphalt/azdk";
+import type { Manifest } from "@azphalt/sdk";
 import { example, type Example } from "../shared.js";
 
 /**

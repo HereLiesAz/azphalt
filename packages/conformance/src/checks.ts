@@ -5,7 +5,7 @@
  * `runFilter` contract (`@azphalt/runtime-wasm` is the worked example).
  */
 import { verifyAzp, readAzp } from "@azphalt/azp";
-import type { Capability, Panel } from "@azphalt/azdk";
+import type { Capability, Panel } from "@azphalt/sdk";
 import { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 import * as fx from "./fixtures.js";
 

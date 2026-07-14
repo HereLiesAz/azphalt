@@ -3,7 +3,7 @@
  * real host's document while proving the capability contract and the image-buffer ABI. A
  * conforming host backs the same `Host` API with its own layers/canvas instead.
  */
-import type { AudioBuffer, BitDepth, Bitmap, RGBA } from "@azphalt/azdk";
+import type { AudioBuffer, BitDepth, Bitmap, RGBA } from "@azphalt/sdk";
 
 /** One editable layer in the {@link World}. */
 export interface WorldLayer {

@@ -3,7 +3,7 @@
  * transition's parameters render natively in any adopting host. `sampler2D` uniforms are textures
  * the host binds, not user controls, so they are excluded from the panel.
  */
-import type { Control, Panel } from "@azphalt/azdk";
+import type { Control, Panel } from "@azphalt/sdk";
 import type { GlUniform } from "./parse-gl-transition.js";
 
 const VEC_SIZE: Record<string, number> = { vec2: 2, vec3: 3, vec4: 4, ivec2: 2, ivec3: 3, ivec4: 4 };

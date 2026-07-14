@@ -1,11 +1,11 @@
 /**
  * Canonical `.azp` fixtures the conformance suite runs a host through. Each is a real package built
  * with `@azphalt/azp` `writeAzp`, so it verifies like any shipped extension. The filter modules are
- * plain ES modules written against `@azphalt/azdk` — exactly what a `runtime: "js"` host loads.
+ * plain ES modules written against `@azphalt/sdk` — exactly what a `runtime: "js"` host loads.
  */
 import { writeAzp, signAzp, countersign, digest, verifyAzp, verifyTrust } from "@azphalt/azp";
 import { createPrivateKey, createPublicKey, sign as cryptoSign } from "node:crypto";
-import type { AssetContribution, Manifest, Panel } from "@azphalt/azdk";
+import type { AssetContribution, Manifest, Panel } from "@azphalt/sdk";
 
 const enc = (s: string) => new TextEncoder().encode(s);
 
@@ -37,9 +37,9 @@ function buildCodeAzp(moduleSource: string, opts: BuildOpts = {}): Uint8Array {
   }).azp;
 }
 
-/** The invert filter, written against `@azphalt/azdk` exactly as a real extension is. */
+/** The invert filter, written against `@azphalt/sdk` exactly as a real extension is. */
 const INVERT_MODULE = `
-  import { defineFilter } from "@azphalt/azdk";
+  import { defineFilter } from "@azphalt/sdk";
   export const invert = defineFilter((ctx) => {
     const s = Math.max(0, Math.min(1, ctx.params.number("strength")));
     const bmp = ctx.bitmap.read(ctx.target);
@@ -101,7 +101,7 @@ export function ungrantedCapabilityAzp(): Uint8Array {
  */
 export function neverListAzp(): Uint8Array {
   const mod = `
-    import { defineFilter } from "@azphalt/azdk";
+    import { defineFilter } from "@azphalt/sdk";
     export const invert = defineFilter((ctx) => {
       const forbidden = ["process", "require", "fetch", "XMLHttpRequest", "WebSocket"];
       for (const name of forbidden) {
@@ -118,7 +118,7 @@ export function neverListAzp(): Uint8Array {
 /** A filter that writes `ctx.params.number("v")` into pixel 0 — proves params round-trip to the guest. */
 export function paramsRoundTripAzp(): Uint8Array {
   const mod = `
-    import { defineFilter } from "@azphalt/azdk";
+    import { defineFilter } from "@azphalt/sdk";
     export const invert = defineFilter((ctx) => {
       const v = ctx.params.number("v");
       const bmp = ctx.bitmap.read(ctx.target);
@@ -195,7 +195,7 @@ function buildContribAzp(
 
 /** An audio effect that zeroes channel 1 of every frame — proves the interleaved float32 ABI round-trips. */
 const AUDIO_GATE_MODULE = `
-  import { defineFilter } from "@azphalt/azdk";
+  import { defineFilter } from "@azphalt/sdk";
   export const gate = defineFilter((ctx) => {
     const buf = ctx.audio.read();
     const s = buf.samples, ch = buf.channels;
@@ -211,7 +211,7 @@ const AUDIO_GATE_MODULE = `
  */
 export function transitionAzp(): Uint8Array {
   const mod = `
-    import { defineTransition } from "@azphalt/azdk";
+    import { defineTransition } from "@azphalt/sdk";
     export const cross = defineTransition((ctx) => {
       const a = ctx.from, b = ctx.to, p = ctx.progress;
       const out = ctx.bitmap.read(ctx.target);

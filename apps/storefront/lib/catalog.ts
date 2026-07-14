@@ -15,7 +15,7 @@
  */
 import { readAzp, writeAzp } from "@azphalt/azp";
 import { InMemoryStore, Marketplace, Registry } from "@azphalt/registry";
-import type { Manifest } from "@azphalt/azdk";
+import type { Manifest } from "@azphalt/sdk";
 
 /** SPDX MIT text stamped into every example package's required `LICENSE` entry. */
 const MIT_LICENSE =

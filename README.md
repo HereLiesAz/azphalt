@@ -34,7 +34,7 @@ LICENSE         MIT
 
 | Package | What it is |
 |---|---|
-| [`@azphalt/azdk`](packages/sdk) | The typed surface an extension is written against. |
+| [`@azphalt/sdk`](packages/sdk) | The typed surface an extension is written against. |
 | [`@azphalt/azp`](packages/azp) | Read / write / verify / **sign** `.azp` containers (Ed25519 + trust store). |
 | [`@azphalt/importer-*`](packages/importers) | Normalize `.abr`, `.cube`, ISF, gl-transitions, glTF, ML models … **into** `.azp`. |
 | [`@azphalt/runtime-reference`](packages/runtime-reference) | In-process host that proves the capability contract. |

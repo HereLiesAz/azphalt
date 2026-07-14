@@ -1,6 +1,6 @@
 import { example, utf8, type Example } from "../shared.js";
 
-const FILL_JS = `import { defineTool } from "@azphalt/azdk";
+const FILL_JS = `import { defineTool } from "@azphalt/sdk";
 export const fill = defineTool((ctx) => {
   const c = ctx.color.active();
   const bmp = ctx.bitmap.read(ctx.target);
@@ -15,7 +15,7 @@ export const fill = defineTool((ctx) => {
 });
 `;
 
-const MEASURE_JS = `import { defineTool } from "@azphalt/azdk";
+const MEASURE_JS = `import { defineTool } from "@azphalt/sdk";
 export const measure = defineTool((ctx) => {
   const { width, height } = ctx.canvas.size();
   const bmp = ctx.bitmap.read(ctx.target);

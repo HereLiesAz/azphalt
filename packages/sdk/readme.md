@@ -1,4 +1,4 @@
-# @azphalt/azdk
+# @azphalt/sdk
 
 The typed surface an azphalt **extension** is written against. It turns the strings in the spec — capabilities, contributions, params, the UI schema — into a typed TypeScript API, so authors get types and autocomplete for the whole contract.
 
@@ -9,7 +9,7 @@ This package is **types plus thin author helpers only**. It has no runtime and r
 Author a contribution with one of the `define*` helpers and export it under the name your manifest's `contributes` entry points at. The helper brands the function so a runtime can resolve it by kind.
 
 ~~~ts
-import { defineFilter } from "@azphalt/azdk";
+import { defineFilter } from "@azphalt/sdk";
 
 // manifest: contributes.filters = [{ id: "invert", name: "Invert", entry: "invert" }]
 export const invert = defineFilter((ctx) => {

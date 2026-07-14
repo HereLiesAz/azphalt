@@ -8,7 +8,7 @@ Where [`@azphalt/runtime-reference`](../runtime-reference) proves the *contract*
 trusted module in-process, this proves it under **real sandboxing**:
 
 - **No ambient authority** — the guest JS has no `process`, `require`, `fetch`, filesystem, or
-  network, and can only `import` the in-package modules and `@azphalt/azdk`. The only way out is a
+  network, and can only `import` the in-package modules and `@azphalt/sdk`. The only way out is a
   host function.
 - **Capability-gated host functions** — the runtime injects host functions only for the granted
   capabilities, and builds the `ctx` from them, so an ungranted capability is **absent**, not an
@@ -20,7 +20,7 @@ trusted module in-process, this proves it under **real sandboxing**:
 ## Run a real `.azp`
 
 `runFilter` / `runTool` / `runCommand` load a real `code`-kind package: verify the `.azp`, load the
-`entry` module as an **ES module** (resolving its `import "@azphalt/azdk"` to an in-sandbox shim),
+`entry` module as an **ES module** (resolving its `import "@azphalt/sdk"` to an in-sandbox shim),
 resolve the export named by `contributes.{filters,tools,commands}[].entry`, check its brand, and run
 it against a capability-gated `ctx` — the same contract `runtime-reference` runs, but sandboxed.
 

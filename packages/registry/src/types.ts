@@ -7,7 +7,7 @@
  * package can live in the registry forever with no listing, and the money model never leaks into the
  * open lane.
  */
-import type { AssetType, Capability, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/azdk";
+import type { AssetType, Capability, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/sdk";
 
 /** One published, immutable version of a package. */
 export interface PackageVersion {

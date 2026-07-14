@@ -12,7 +12,7 @@ pnpm --filter @azphalt/example-gallery test    # verifies each .azp; runs the co
 ~~~
 
 - **Assets** carry `type` + `path` + normalized `params`. Bundled assets store real (or, for raster, a placeholder 1×1 PNG) bytes; **heavy** types (ML models, video, audio, HDRI, fonts) use the **remote-header** pattern from `spec/extension-manifest.md`: `path: ""` plus `remoteUrl` + `checksum` + `byteSize`, so the `.azp` is a lightweight header.
-- **Code extensions** (`filter` / `tool` / `command`) ship a `js` module resolved against `@azphalt/azdk`; a couple run as raw `runtime: "wasm"` over the shared-memory image ABI. Each is executed by `@azphalt/runtime-wasm` in the test with an assertion over the result.
+- **Code extensions** (`filter` / `tool` / `command`) ship a `js` module resolved against `@azphalt/sdk`; a couple run as raw `runtime: "wasm"` over the shared-memory image ABI. Each is executed by `@azphalt/runtime-wasm` in the test with an assertion over the result.
 
 ## Catalog
 

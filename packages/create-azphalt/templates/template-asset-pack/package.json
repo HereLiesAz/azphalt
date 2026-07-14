@@ -8,6 +8,6 @@
   },
   "dependencies": {
     "@azphalt/azp": "^0.1.0",
-    "@azphalt/azdk": "^0.1.0"
+    "@azphalt/sdk": "^0.1.0"
   }
 }

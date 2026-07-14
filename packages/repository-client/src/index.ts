@@ -3,7 +3,7 @@ import type {
   PackageSearchResponse, 
   Manifest, 
   AssetType 
-} from "@azphalt/azdk";
+} from "@azphalt/sdk";
 
 export interface ClientOptions {
   url: string;

@@ -1,5 +1,5 @@
 import { writeAzp } from "@azphalt/azp";
-import type { Manifest, AssetContribution } from "@azphalt/azdk";
+import type { Manifest, AssetContribution } from "@azphalt/sdk";
 
 export interface ImportOptions {
   id: string;

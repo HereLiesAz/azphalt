@@ -20,7 +20,7 @@ import type {
   ToolFn,
   TransitionContext,
   TransitionFn,
-} from "@azphalt/azdk";
+} from "@azphalt/sdk";
 import { createHost } from "./host.js";
 import type { World } from "./world.js";
 

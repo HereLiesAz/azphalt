@@ -25,7 +25,7 @@ npm test                       # runs your contributions against the reference r
 npm run build                  # → my-extension-1.0.0.azp
 ~~~
 
-- **`code/main.js`** holds your code — one export per contribution, each branded with `defineFilter` / `defineTransition` / `defineTool` / `defineCommand` from `@azphalt/azdk`.
+- **`code/main.js`** holds your code — one export per contribution, each branded with `defineFilter` / `defineTransition` / `defineTool` / `defineCommand` from `@azphalt/sdk`.
 - **`manifest.json`** declares your `capabilities` — the *only* surface your code can reach (the host grants exactly what you list and denies the rest). Ask for the least you need; you can never reach the camera, sensors, the filesystem, the network, or the host's engine. See the [Capability model](/specs/capability-model).
 - **`npm test`** dispatches your extension against `@azphalt/runtime-reference` in memory, so you iterate without a host app.
 - To scope an extension to **one app** (e.g. your own), add `"targetApps": ["com.the.app"]` to the manifest.

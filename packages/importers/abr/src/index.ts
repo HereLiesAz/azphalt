@@ -7,7 +7,7 @@
  * RATIONALE § 1.3.
  */
 import { writeAzp, type WriteResult } from "@azphalt/azp";
-import type { Manifest } from "@azphalt/azdk";
+import type { Manifest } from "@azphalt/sdk";
 import { parseAbr, UnsupportedAbrError, type AbrBrush } from "./parse-abr.js";
 import { encodeGrayPng } from "./png.js";
 

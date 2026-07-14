@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { verifyAzp, writeAzp, generateSigningKey } from "@azphalt/azp";
 import { InMemoryStore, Marketplace, Registry, issueEntitlement, type EntitlementClaims } from "@azphalt/registry";
-import type { Manifest, RepositoryIndex } from "@azphalt/azdk";
+import type { Manifest, RepositoryIndex } from "@azphalt/sdk";
 import { RepositoryClient } from "@azphalt/repository-client";
 import { createRepositoryHandler, createRepositoryServer, EntitlementAuthorizer, InMemoryAuthorizer, type RepoRequest } from "../src/index";
 

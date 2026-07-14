@@ -7,7 +7,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { writeAzp, verifyAzp } from "@azphalt/azp";
-import type { Manifest } from "@azphalt/azdk";
+import type { Manifest } from "@azphalt/sdk";
 
 export interface SubmissionResult {
   /** The manifest id (or the folder name if the manifest couldn't be read). */
