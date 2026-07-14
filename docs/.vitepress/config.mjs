@@ -40,7 +40,8 @@ export default defineConfig({
           items: [
             { text: 'Integration Guide', link: '/hosts/getting-started' },
             { text: 'Adopting the Standard (code host)', link: '/ADOPTION' },
-            { text: 'Adopting as an Asset Host', link: '/ADOPTION_ASSET_HOST' }
+            { text: 'Adopting as an Asset Host', link: '/ADOPTION_ASSET_HOST' },
+            { text: 'Adopting as a Companion Host', link: '/ADOPTION_COMPANION_HOST' }
           ]
         }
       ],
@@ -58,7 +59,8 @@ export default defineConfig({
           text: 'Adoption',
           items: [
             { text: 'Code Host', link: '/ADOPTION' },
-            { text: 'Asset Host', link: '/ADOPTION_ASSET_HOST' }
+            { text: 'Asset Host', link: '/ADOPTION_ASSET_HOST' },
+            { text: 'Companion Host', link: '/ADOPTION_COMPANION_HOST' }
           ]
         }
       ]
