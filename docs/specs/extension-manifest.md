@@ -31,8 +31,10 @@
 
 ## `assets`
 Each entry requires a `type`, which determines the format of the asset. The supported primitives are:
-- **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector`
+- **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector` | `template` | `overlay`
 - **AI Models**: `tflite` | `litert` | `onnx` | `sherpa-bundle`
+
+The SDK `AssetType` union (`packages/sdk/src/index.ts`) is the single source of truth for this list; the registry's media-domain map is kept total over it.
 
 Each entry also requires a `path` (relative path into `/assets` inside the `.azp` archive) OR a `remoteUrl` (see below).
 
@@ -41,9 +43,31 @@ For extremely large files like AI models (e.g. multi-gigabyte `.task` files), bu
 
 **Metadata Fields:**
 - `role`: Optional semantic role (e.g., `type: "tflite", role: "depth"`). Crucial for routing generic model graphs to the correct host engine.
-- `params`: Normalized, host-neutral settings. A brush's params might be `spacing`, `angle`, `roundness`. 
+- `params`: Normalized, host-neutral settings. A brush's params might be `spacing`, `angle`, `roundness`. See **Per-type `params` conventions** below.
 - `ui`: Optional UI panel path to a control panel schema (see ui-schema.md).
 - `tags`: Optional tags (e.g., `["sfx", "impact"]`) for marketplace filtering.
+
+### Reusable video / graphic catalog
+
+Beyond paint-shaped assets, the standard covers the reusable **video-catalog** assets an editor shares: `transition`, `motion` (keyframe/animation preset), `video`, `audio`, and `font`, plus two graphic-overlay types:
+
+- **`template`** — a **title / lower-third** template: pre-designed text-over-video graphics with named text slots the host fills in. Typically a `video`-domain asset. Author its fillable slots and layout under `params` (e.g. `fields`, `safeArea`).
+- **`overlay`** — a **PNG or animated overlay** composited onto the frame (watermarks, badges, animated stickers). An `image`+`video`-domain asset. Author its default placement under `params` (e.g. `opacity`, `anchor`, `scale`).
+
+These are **data** assets — they render in the host's own compositor, exactly like `lut`/`shader`, and carry no code. An asset-only host (`kind: "asset"`, or the asset half of a `kind: "mixed"` package) can install and use them without any runtime.
+
+### Per-type `params` conventions
+
+`params` is host-neutral and free-form, but these keys are **conventions** so a value means the same thing across hosts (a host ignores keys it doesn't understand):
+
+| type | conventional `params` |
+| --- | --- |
+| `brush` | `spacing`, `angle`, `roundness` |
+| `lut` | `strength` (number `0..1`, dry/wet blend, default `1`) |
+| `overlay` | `opacity` (`0..1`, default `1`), `anchor` (`top-left`…`center`…`bottom-right`), `scale` |
+| `template` | `fields` (named text slots the host fills), `safeArea` |
+| `transition` | host-provided `from`/`to`/`progress`; author sets `format` (e.g. `gl-transition`) |
+| `shader` | author sets `format` (`isf` \| `glsl`); declared uniforms as keys |
 
 ### Model roles (`role`)
 For a **model asset**, `role` routes a generic model graph to the correct host engine. It is an **open** vocabulary — any string is valid — but the following **canonical roles** are blessed, so a model tagged e.g. `role: "depth"` lands in the same engine on every host. Prefer a blessed role where one fits; invent a new string only when none does:
