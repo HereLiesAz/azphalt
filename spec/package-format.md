@@ -74,6 +74,17 @@ A `palette` asset (`type: "palette"`) is a UTF-8 **JSON** file under `/assets`. 
 
 This lets the ecosystem distribute brand-accurate color sets (Montana, MTN, …) as portable `.azp` packages a host can match against real colorants.
 
+### LUT application
+A `.cube` file carries only a table plus `DOMAIN_MIN`/`DOMAIN_MAX`; it says nothing about *how* to sample it, so two hosts can produce a visibly different grade from identical bytes. To make a LUT a portable **look**, a host applying a `lut` asset MUST:
+
+- **Interpolate at least trilinearly.** Trilinear is the **floor** every host matches. A host MAY offer tetrahedral (or another higher-quality) interpolation as an upgrade **only** if its result stays within a small, stated tolerance of trilinear — never a different look by default.
+- **Assume sRGB input** for a bare `.cube` (the pragmatic default). An author MAY declare the LUT's expected input transfer with **`params.inputTransfer`** — `srgb` (default) · `linear` · `log-c` — and a host MUST convert the pixel into that transfer domain **before** sampling, then back afterward. (A LUT authored against log input but applied to sRGB-gamma pixels is simply wrong.)
+- **Clamp out-of-domain.** Coordinates outside `[DOMAIN_MIN, DOMAIN_MAX]` clamp to the domain edge (no extrapolation).
+- **Leave alpha untouched.** A LUT transforms RGB only; the alpha channel passes through unchanged.
+- Sample at **≥ 8-bit** precision (higher is fine); coarse LUTs (`LUT_3D_SIZE ≤ 17`) especially depend on the interpolation floor to agree across hosts.
+
+**`strength` blend.** After sampling, a host applies the `lut` asset's `params.strength` (number `0..1`, default `1`) as a per-channel dry/wet blend with the original RGB — `out = lerp(original, graded, strength)` — **blended in the same encoded domain the LUT is sampled in** (sRGB-gamma by default, or the declared `inputTransfer` domain), **not** the host's own working/compositor space. Pinning the blend domain is what makes a fractional `strength` reproduce the same partial-grade on every host (a `lerp` in linear space gives a visibly different result). See [extension-manifest.md § Per-type `params`](extension-manifest.md#per-type-params-conventions). A host renders the control from the asset's canonical `ui` panel (a single `strength` slider) when present.
+
 ## Code
 - Entry module(s) declared in the manifest (`entry`, `runtime`). `runtime: js` → an ES module on QuickJS-in-WASM; `runtime: wasm` → a WASM module against the host ABI.
 - Code has NO ambient authority (see capability-model.md). It reaches the editor only through host functions, for capabilities it declared and was granted.
