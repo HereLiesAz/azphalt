@@ -25,13 +25,13 @@ Nothing publishes off a normal feature-branch merge — only the Version Package
 
 Publishing needs credentials this repo does not (and must not) contain. A maintainer sets one repository secret once:
 
-- **`NPM_TOKEN`** — an npm *automation* access token for an account with publish rights to the `@azphalt` scope.
+- **`NPM_AUTH_TOKEN`** — an npm *automation* access token for an account with publish rights to the `@azphalt` scope. (The release workflow maps it to `NODE_AUTH_TOKEN` at publish time.)
 
 Until it is set, the versioning half still works (the Version Packages PR opens normally); only the final `changeset publish` cannot authenticate. All scoped packages carry `publishConfig.access: "public"` (and `.changeset/config.json` sets `access: "public"`), so they publish public without an extra flag.
 
 ## Manual release (fallback)
 
-With a valid `NPM_TOKEN`/npm login in the environment:
+With npm authenticated in the environment (`npm login`, or `NODE_AUTH_TOKEN` set):
 
 ~~~sh
 pnpm run version   # apply pending changesets → bump versions + changelogs + refresh the lockfile
