@@ -20,3 +20,4 @@
   "dependencies": { "@azphalt/azp": "workspace:*", "@azphalt/azdk": "workspace:*" },
   "sideEffects": false
 }
+

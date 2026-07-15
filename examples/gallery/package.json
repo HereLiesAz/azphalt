@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/example-gallery",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "A gallery of example azphalt packages — several per asset type and per extension kind. Doubles as a fixture set.",
   "license": "MIT",
@@ -23,3 +23,4 @@
     "@types/node": "^22.0.0"
   }
 }
+

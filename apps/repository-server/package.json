@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/repository-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "A reference implementation of the azphalt Repository API (spec/repository-api.md), served over @azphalt/registry.",
   "license": "MIT",
@@ -31,3 +31,4 @@
   },
   "sideEffects": false
 }
+

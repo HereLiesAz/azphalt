@@ -1,6 +1,6 @@
 {
   "name": "my-azphalt-pack",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "A custom asset pack for azphalt.",
   "type": "module",
   "scripts": {
@@ -11,3 +11,4 @@
     "@azphalt/azdk": "^0.1.0"
   }
 }
+

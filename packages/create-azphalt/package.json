@@ -15,3 +15,4 @@
   "dependencies": { "prompts": "^2.4.2", "kolorist": "^1.8.0" },
   "devDependencies": { "@types/node": "^20.0.0", "@types/prompts": "^2.4.9", "typescript": "^5.0.0" }
 }
+

@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/example-invert",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Sample azphalt extension: an invert filter. Doubles as a host-contract fixture.",
   "license": "MIT",
@@ -20,3 +20,4 @@
     "@types/node": "^22.0.0"
   }
 }
+
