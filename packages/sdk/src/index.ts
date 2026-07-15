@@ -155,6 +155,35 @@ export interface ContentRights {
 }
 
 /**
+ * A `motion` asset (`type: "motion"`) wire format (`az-motion`).
+ * Describes temporal tracks for properties like kinetic typography and complex layer effects (camera, extrusion, spotlights).
+ */
+export interface MotionPreset {
+  /** Map of animatable properties to their keyframes or data bindings. */
+  tracks: Record<string, MotionKeyframe[] | MotionBinding>;
+}
+
+/** A single keyframe in an `az-motion` track. */
+export interface MotionKeyframe {
+  /** Normalized `0.0` to `1.0` progression of the clip/preset. */
+  time: number;
+  /** Property value at this time. */
+  value: any;
+  /** Curve to the **next** keyframe (`linear`, `ease-in`, `ease-out`, `ease-in-out`, `spring`; defaults to `linear`). */
+  easing?: "linear" | "ease-in" | "ease-out" | "ease-in-out" | "spring" | (string & {});
+}
+
+/** An AI data binding in an `az-motion` track, providing dynamic runtime evaluation. */
+export interface MotionBinding {
+  /** The AI feature to bind to (e.g. `audio.rms`, `speech.wps`, `speaker.color`, `face.bottom`, `scene.lightVector`, `inpaint.backgroundTexture`). */
+  bind: string;
+  /** Optional normalization array `[min, max]` of the expected input range. */
+  mapIn?: [number, number];
+  /** Optional array `[min, max]` or colors to map the input to. */
+  mapOut?: any[];
+}
+
+/**
  * One member file of a multi-part model asset. A member is **either** bundled (`path`) **or** remote
  * (`remoteUrl`) — a discriminated union enforces the mutual exclusivity, and requires a `checksum` on a
  * remote member (its only integrity gate). The host materializes all members into one directory routed

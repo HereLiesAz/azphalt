@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": { "access": "public" },
   "description": "An MCP server exposing azphalt .azp verify/inspect/extract tools to any MCP host.",
   "license": "MIT",

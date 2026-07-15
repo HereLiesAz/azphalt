@@ -113,6 +113,9 @@ An asset-only host MUST select assets where `standalone !== false` and skip the 
 | `brush` | `spacing` / `angle` / `roundness` | numbers (engine-defined ranges) | user |
 | `overlay` | `opacity` / `anchor` / `scale` | `0..1` (`1`) / `top-left`…`center`…`bottom-right` / number | user |
 | `template` | `fields` / `safeArea` | named text slots / inset rect | user / author |
+| `motion` | `format` | `az-motion` (default) | author |
+| `motion` | `stagger` | number `0..1` (`0`) — text-stagger overlap | user |
+| `motion` | `staggerMode` | `character` (default) \| `word` \| `line` | user |
 
 The LUT application semantics behind `strength` / `inputTransfer` (interpolation floor, input-transfer conversion, clamp, alpha) are pinned in [package-format.md § LUT application](./package-format.md#lut-application).
 

@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/runtime-wasm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": { "access": "public" },
   "description": "Run azphalt code extensions inside a QuickJS-in-WASM sandbox with capability-gated host functions.",
   "license": "MIT",

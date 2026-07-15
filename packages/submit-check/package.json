@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/submit-check",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Validate registry submissions (submissions/<id>/) by packaging each into a verifiable .azp.",
   "license": "MIT",

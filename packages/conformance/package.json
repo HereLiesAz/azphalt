@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/conformance",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": { "access": "public" },
   "description": "A runnable conformance suite that certifies an azphalt host against the standard.",
   "license": "MIT",
