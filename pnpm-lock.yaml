@@ -112,6 +112,12 @@ importers:
       '@azphalt/registry':
         specifier: workspace:*
         version: link:../../packages/registry
+      framer-motion:
+        specifier: ^12.42.2
+        version: 12.42.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      lucide-react:
+        specifier: ^1.24.0
+        version: 1.24.0(react@18.3.1)
       next:
         specifier: ^15.5.18
         version: 15.5.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
