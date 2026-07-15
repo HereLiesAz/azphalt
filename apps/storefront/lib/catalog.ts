@@ -89,6 +89,140 @@ interface Seed {
  * and patterns (`kind: "asset"`).
  */
 const SEEDS: Seed[] = [
+
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.mobilenetv3",
+      name: "MobileNet V3 (Image Labeling)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Efficient image labeling and ID embedding model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/mobilenetv3.tflite", type: "tflite", role: "labeling" },
+        { path: "assets/mobilenetv3.onnx", type: "onnx", role: "labeling" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/mobilenetv3.tflite": new Uint8Array(100),
+      "assets/mobilenetv3.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.yamnet",
+      name: "YAMNet (Audio Events)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Audio event detection model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/yamnet.tflite", type: "tflite", role: "audio-event" },
+        { path: "assets/yamnet.onnx", type: "onnx", role: "audio-event" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/yamnet.tflite": new Uint8Array(100),
+      "assets/yamnet.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.rfb-320",
+      name: "RFB-320 (Face Detection)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Lightweight face detection model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/version-RFB-320.onnx", type: "onnx", role: "face-detect" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/version-RFB-320.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.selfie-segmentation",
+      name: "Selfie Segmentation",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Subject segmentation model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/selfie_segmentation.tflite", type: "tflite", role: "segmentation" },
+        { path: "assets/selfie_segmentation.onnx", type: "onnx", role: "segmentation" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/selfie_segmentation.tflite": new Uint8Array(100),
+      "assets/selfie_segmentation.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.face-embed",
+      name: "Face Embedding",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Face embedding model for ID matching.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/face-embed.tflite", type: "tflite", role: "face-embedding" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/face-embed.tflite": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.face-detect",
+      name: "Face Detect (TFLite)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "TFLite face detection for mobile.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/face-detect.tflite", type: "tflite", role: "face-detect" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/face-detect.tflite": new Uint8Array(100),
+    }
+  },
+
   {
     // A code extension: an on-device halftone filter with a small parameter panel. Consigned.
     manifest: {
