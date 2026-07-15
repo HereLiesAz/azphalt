@@ -4,11 +4,11 @@
   "main": "storefront-cmp.js",
   "types": "storefront-cmp.d.ts",
   "devDependencies": {
-    "webpack": "5.82.0",
+    "webpack": "5.104.1",
     "webpack-cli": "5.1.0",
     "source-map-loader": "4.0.1",
     "typescript": "5.0.4",
-    "webpack-dev-server": "4.15.0"
+    "webpack-dev-server": "5.2.5"
   },
   "dependencies": {
     "@js-joda/core": "3.2.0",
