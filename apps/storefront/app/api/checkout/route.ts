@@ -12,7 +12,7 @@
  */
 import { NextResponse } from "next/server";
 import { RegistryError } from "@azphalt/registry";
-import { getCatalog } from "../../../lib/catalog";
+import { startCheckout } from "../../../lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +22,6 @@ interface CheckoutBody {
 }
 
 export async function POST(req: Request) {
-  const { market } = await getCatalog();
-
   let body: CheckoutBody;
   try {
     body = (await req.json()) as CheckoutBody;
@@ -38,7 +36,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { session, breakdown, listing } = await market.checkout(packageId, buyerId);
+    // Via startCheckout (not market.checkout) so the session is remembered against its package and
+    // buyer — POST /api/checkout/complete mints the entitlement from that, never from its caller.
+    const { session, breakdown, listing } = await startCheckout(packageId, buyerId);
     return NextResponse.json(
       {
         stub: true,

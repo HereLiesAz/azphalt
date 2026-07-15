@@ -5,12 +5,16 @@
  * - **Authenticated?** Did the caller present a token this repository recognizes? No → `401`.
  * - **Licensed?** Does that identity actually hold a license for *this* package? No → `402`.
  *
- * The reference server keeps this pluggable so a real deployment can back it with its own accounts /
- * entitlements service; {@link InMemoryAuthorizer} is a working, dependency-free default for the demo
- * and tests, and {@link EntitlementAuthorizer} accepts a registry-signed buy-once token verified
- * offline. Free packages never reach the authorizer — the handler serves them unconditionally.
+ * Kept pluggable so a real deployment can back it with its own accounts / entitlements service;
+ * {@link InMemoryAuthorizer} is a working, dependency-free default for demos and tests, and
+ * {@link EntitlementAuthorizer} accepts a registry-signed buy-once token verified offline. Free
+ * packages never reach an authorizer — a caller serves them unconditionally.
+ *
+ * The verdict ({@link AuthDecision}) is transport-agnostic: mapping it to `401`/`402` is each HTTP
+ * layer's job. Both surfaces that gate paid bytes — the reference server's handler and the
+ * storefront's download route — share this one implementation, so the two can't drift apart.
  */
-import { verifyEntitlement, type EntitlementToken } from "@azphalt/registry";
+import { verifyEntitlement, type EntitlementToken } from "./entitlement.js";
 
 /** The two-part verdict the download handler turns into `200` / `401` / `402`. */
 export interface AuthDecision {

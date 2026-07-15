@@ -13,8 +13,23 @@
  * rest live only in the free registry. The fee — and money in general — exists only on the listings,
  * never in the registry itself.
  */
+import { createPrivateKey, createPublicKey } from "node:crypto";
 import { readAzp, writeAzp } from "@azphalt/azp";
-import { InMemoryStore, Marketplace, Registry } from "@azphalt/registry";
+import {
+  EntitlementAuthorizer,
+  InMemoryStore,
+  Marketplace,
+  Registry,
+  RegistryError,
+  StubPaymentProvider,
+  denyAllAuthorizer,
+  issueEntitlement,
+  type CheckoutSession,
+  type DownloadAuthorizer,
+  type EntitlementToken,
+  type PriceBreakdown,
+  type Listing,
+} from "@azphalt/registry";
 import type { Manifest } from "@azphalt/azdk";
 
 /** SPDX MIT text stamped into every example package's required `LICENSE` entry. */
@@ -393,7 +408,106 @@ const DITHER_OLD: Omit<Manifest, "files"> = {
 /** The live registry + marketplace, wired to a single shared store as the marketplace requires. */
 const store = new InMemoryStore();
 const registry = new Registry(store);
-const market = new Marketplace(registry, store);
+// The stub provider is constructed here rather than left to Marketplace's default so that
+// `fulfilStubCheckout` can reach `simulate()` — the dev-only stand-in for a provider's webhook.
+const payments = new StubPaymentProvider();
+const market = new Marketplace(registry, store, { payments });
+
+/* ─────────────────────────── The paid lane's gate ─────────────────────────── */
+
+/**
+ * The registry's Ed25519 signing key (PEM PKCS#8), from `AZPHALT_SIGNING_KEY`.
+ *
+ * Unset is the safe default, not a broken one: with no key the storefront can neither issue nor
+ * verify entitlements, so {@link authorizer} denies every paid download (`401`) and issuance is off.
+ * That keeps `next dev` and the tests running with no secrets and no services, and makes gating a
+ * deliberate deployment choice rather than something that silently half-works.
+ *
+ * Generate one with: `openssl genpkey -algorithm ed25519`.
+ */
+const signingKey = process.env.AZPHALT_SIGNING_KEY?.trim() || undefined;
+
+/** The base64 SPKI DER public key for [pem] — the form `verifyEntitlement` matches `trustedKeys` on. */
+function publicKeyOf(pem: string): string {
+  const key = createPrivateKey(pem);
+  if (key.asymmetricKeyType !== "ed25519") {
+    throw new Error("AZPHALT_SIGNING_KEY must be an ed25519 private key (openssl genpkey -algorithm ed25519)");
+  }
+  return Buffer.from(createPublicKey(key).export({ type: "spki", format: "der" })).toString("base64");
+}
+
+/**
+ * Gates paid downloads. A key present ⇒ trust entitlements this storefront signed; absent ⇒ deny all.
+ *
+ * A malformed key throws at module load rather than degrading to `denyAll`: a deployment that meant
+ * to enable the paid lane should fail loudly, not serve `401`s that look like a working gate.
+ */
+export const authorizer: DownloadAuthorizer = signingKey
+  ? new EntitlementAuthorizer([publicKeyOf(signingKey)])
+  : denyAllAuthorizer;
+
+/**
+ * Whether the dev-only stub fulfilment route is reachable (`AZPHALT_ALLOW_STUB_FULFILMENT=1`).
+ *
+ * It mints real, signed, offline-verifiable licenses for payments that never happened, so it is off
+ * unless explicitly opted into. A deployment with this enabled is a demo, not a store.
+ */
+export const stubFulfilmentEnabled = process.env.AZPHALT_ALLOW_STUB_FULFILMENT === "1";
+
+/**
+ * What a package costs the caller: `paid` exactly when it carries an **active** consignment listing.
+ * The same rule the reference server gates on (`apps/repository-server/src/handler.ts`).
+ */
+export async function priceStatus(id: string): Promise<"free" | "paid"> {
+  await getCatalog();
+  const listing = await market.getListing(id);
+  return listing && listing.status === "active" ? "paid" : "free";
+}
+
+/**
+ * What each pending checkout session was for. {@link CheckoutSession} carries only `{id, url, status,
+ * amount}` — not the package or buyer — so fulfilment would otherwise have to trust the caller's word
+ * about what it just bought. Remembering it here means a token can only ever be minted for a session
+ * this process actually opened.
+ *
+ * In-memory, and deliberately so: this only backs {@link fulfilStubCheckout}, which is dev-only, and
+ * dev is a single process. `StubPaymentProvider` holds its sessions in memory too, so the whole stub
+ * checkout flow is process-bound either way.
+ */
+const sessionSubjects = new Map<string, { packageId: string; buyerId: string }>();
+
+/** Open a checkout session and remember what it was for, so {@link fulfilStubCheckout} can fulfil it. */
+export async function startCheckout(
+  packageId: string,
+  buyerId: string,
+): Promise<{ session: CheckoutSession; breakdown: PriceBreakdown; listing: Listing }> {
+  const { market: m } = await getCatalog();
+  const result = await m.checkout(packageId, buyerId);
+  sessionSubjects.set(result.session.id, { packageId, buyerId });
+  return result;
+}
+
+/**
+ * Complete a stub session and issue its buy-once entitlement — the dev stand-in for a real provider's
+ * webhook confirming payment. The claims come from the remembered session, never from the request.
+ *
+ * NO MONEY MOVES. The caller must have checked {@link stubFulfilmentEnabled} first.
+ */
+export async function fulfilStubCheckout(sessionId: string): Promise<EntitlementToken> {
+  if (!signingKey) throw new RegistryError("cannot issue entitlements: AZPHALT_SIGNING_KEY is not set");
+  const subject = sessionSubjects.get(sessionId);
+  if (!subject) throw new RegistryError(`unknown checkout session: ${sessionId}`);
+
+  const session = await payments.simulate(sessionId, "completed");
+  if (session.status !== "completed") throw new RegistryError(`session did not complete: ${sessionId}`);
+
+  return issueEntitlement(signingKey, {
+    packageId: subject.packageId,
+    subject: subject.buyerId,
+    kind: "perpetual",
+    issuedAt: new Date().toISOString(),
+  });
+}
 
 /**
  * Seed the catalog exactly once. Memoized as a promise so concurrent requests (and Next's parallel
