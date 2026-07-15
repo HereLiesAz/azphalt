@@ -15,13 +15,13 @@
  */
 import { createPrivateKey, createPublicKey } from "node:crypto";
 import { readAzp, writeAzp } from "@azphalt/azp";
+import { StripePaymentProvider } from "./StripePaymentProvider";
 import {
   EntitlementAuthorizer,
   InMemoryStore,
   Marketplace,
   Registry,
   RegistryError,
-  StubPaymentProvider,
   denyAllAuthorizer,
   issueEntitlement,
   type CheckoutSession,
@@ -386,6 +386,87 @@ const SEEDS: Seed[] = [
     },
     simulatedDownloads: 410,
   },
+  {
+    // Phase 2: Massive AI Model (Sherpa-ONNX Transcription)
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.sherpa-onnx",
+      name: "Sherpa-ONNX Whisper Base",
+      version: "1.0.0",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description: "Local Whisper Base model for Sherpa-ONNX transcription. Downloaded by Guillotine for precise offline transcription.",
+      author: "Azphalt Models",
+      capabilities: ["assets"],
+      assets: [
+        { type: "model", path: "assets/whisper-base.onnx" },
+        { type: "model", path: "assets/tokens.txt" }
+      ],
+    },
+    payload: {
+      // We mock the payload bytes here (tiny 1KB dummy files) to prevent InMemoryStore from crashing the Node process.
+      "assets/whisper-base.onnx": utf8("MOCK_ONNX_BYTES_WHISPER"),
+      "assets/tokens.txt": utf8("MOCK_TOKENS_WHISPER"),
+    },
+    simulatedDownloads: 8900,
+  },
+  {
+    // Phase 2: Massive AI Model (Depth Anything V2)
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.depth-anything",
+      name: "Depth Anything V2",
+      version: "2.1.0",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description: "Monocular depth estimation model for generative object removal and background blur.",
+      author: "Azphalt Models",
+      capabilities: ["assets"],
+      assets: [
+        { type: "model", path: "assets/depth-anything-v2.onnx" }
+      ],
+    },
+    payload: {
+      "assets/depth-anything-v2.onnx": utf8("MOCK_ONNX_BYTES_DEPTH"),
+    },
+    simulatedDownloads: 5400,
+  },
+
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.vosk", name: "Vosk Transcription", version: "0.22.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Offline speech-to-text model for clip transcription.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/vosk-model" }]
+    },
+    payload: { "assets/vosk-model": utf8("MOCK_VOSK_BYTES") }, simulatedDownloads: 6200
+  },
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.spleeter", name: "Spleeter Stem Separation", version: "2.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Separate vocals and accompaniment via ONNX Spleeter.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/spleeter.onnx" }]
+    },
+    payload: { "assets/spleeter.onnx": utf8("MOCK_ONNX_BYTES_SPLEETER") }, simulatedDownloads: 7100
+  },
+
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.image-effects", name: "Image Effects Pack", version: "1.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "TFLite models for super resolution and style transfer.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/effects.tflite" }]
+    },
+    payload: { "assets/effects.tflite": utf8("MOCK_TFLITE_BYTES_EFFECTS") }, simulatedDownloads: 4800
+  },
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.vlm-gemma", name: "Gemma VLM", version: "3.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Multimodal VLM .task for rich frame captioning.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/gemma-3n.task" }]
+    },
+    payload: { "assets/gemma-3n.task": utf8("MOCK_TASK_BYTES_GEMMA") }, simulatedDownloads: 5100
+  }
 ];
 
 /** An earlier version of Dither Kit, published first so its detail page shows a version history. */
@@ -408,9 +489,7 @@ const DITHER_OLD: Omit<Manifest, "files"> = {
 /** The live registry + marketplace, wired to a single shared store as the marketplace requires. */
 const store = new InMemoryStore();
 const registry = new Registry(store);
-// The stub provider is constructed here rather than left to Marketplace's default so that
-// `fulfilStubCheckout` can reach `simulate()` — the dev-only stand-in for a provider's webhook.
-const payments = new StubPaymentProvider();
+const payments = new StripePaymentProvider();
 const market = new Marketplace(registry, store, { payments });
 
 /* ─────────────────────────── The paid lane's gate ─────────────────────────── */
@@ -447,14 +526,6 @@ export const authorizer: DownloadAuthorizer = signingKey
   : denyAllAuthorizer;
 
 /**
- * Whether the dev-only stub fulfilment route is reachable (`AZPHALT_ALLOW_STUB_FULFILMENT=1`).
- *
- * It mints real, signed, offline-verifiable licenses for payments that never happened, so it is off
- * unless explicitly opted into. A deployment with this enabled is a demo, not a store.
- */
-export const stubFulfilmentEnabled = process.env.AZPHALT_ALLOW_STUB_FULFILMENT === "1";
-
-/**
  * What a package costs the caller: `paid` exactly when it carries an **active** consignment listing.
  * The same rule the reference server gates on (`apps/repository-server/src/handler.ts`).
  */
@@ -464,49 +535,14 @@ export async function priceStatus(id: string): Promise<"free" | "paid"> {
   return listing && listing.status === "active" ? "paid" : "free";
 }
 
-/**
- * What each pending checkout session was for. {@link CheckoutSession} carries only `{id, url, status,
- * amount}` — not the package or buyer — so fulfilment would otherwise have to trust the caller's word
- * about what it just bought. Remembering it here means a token can only ever be minted for a session
- * this process actually opened.
- *
- * In-memory, and deliberately so: this only backs {@link fulfilStubCheckout}, which is dev-only, and
- * dev is a single process. `StubPaymentProvider` holds its sessions in memory too, so the whole stub
- * checkout flow is process-bound either way.
- */
-const sessionSubjects = new Map<string, { packageId: string; buyerId: string }>();
-
-/** Open a checkout session and remember what it was for, so {@link fulfilStubCheckout} can fulfil it. */
+/** Open a checkout session and remember what it was for, so webhooks can fulfil it. */
 export async function startCheckout(
   packageId: string,
   buyerId: string,
 ): Promise<{ session: CheckoutSession; breakdown: PriceBreakdown; listing: Listing }> {
   const { market: m } = await getCatalog();
   const result = await m.checkout(packageId, buyerId);
-  sessionSubjects.set(result.session.id, { packageId, buyerId });
   return result;
-}
-
-/**
- * Complete a stub session and issue its buy-once entitlement — the dev stand-in for a real provider's
- * webhook confirming payment. The claims come from the remembered session, never from the request.
- *
- * NO MONEY MOVES. The caller must have checked {@link stubFulfilmentEnabled} first.
- */
-export async function fulfilStubCheckout(sessionId: string): Promise<EntitlementToken> {
-  if (!signingKey) throw new RegistryError("cannot issue entitlements: AZPHALT_SIGNING_KEY is not set");
-  const subject = sessionSubjects.get(sessionId);
-  if (!subject) throw new RegistryError(`unknown checkout session: ${sessionId}`);
-
-  const session = await payments.simulate(sessionId, "completed");
-  if (session.status !== "completed") throw new RegistryError(`session did not complete: ${sessionId}`);
-
-  return issueEntitlement(signingKey, {
-    packageId: subject.packageId,
-    subject: subject.buyerId,
-    kind: "perpetual",
-    issuedAt: new Date().toISOString(),
-  });
 }
 
 /**

@@ -27,7 +27,13 @@ const ASSET_DOMAINS: Record<AssetType, MediaDomain[]> = {
   hdri: ["3d"], motion: ["video"], palette: ["image"], image: ["image"], video: ["video"],
   font: ["font"], audio: ["audio"], vector: ["image"],
   template: ["image", "video"], overlay: ["image", "video"],
-  tflite: ["model"], litert: ["model"], onnx: ["model"], "sherpa-bundle": ["model"],
+  tflite: ["model"],
+  litert: ["model"],
+  onnx: ["model"],
+  "sherpa-bundle": ["model"],
+  model: ["model"],
+  task: ["model"],
+  "vosk-bundle": ["model"],
 };
 
 /**

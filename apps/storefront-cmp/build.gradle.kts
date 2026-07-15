@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform") version "1.9.24"
+    kotlin("plugin.serialization") version "1.9.24"
     id("org.jetbrains.compose") version "1.6.11"
 }
 
@@ -30,9 +31,10 @@ kotlin {
                 implementation(compose.material3)
                 implementation(compose.runtime)
                 
-                // NPM dependencies from local workspace
-                implementation(npm("@azphalt/azdk", "file:../../packages/sdk"))
-                implementation(npm("@azphalt/registry", "file:../../packages/registry"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+                
+                // (No NPM dependencies needed; models are pure Kotlin serialization)
             }
         }
     }

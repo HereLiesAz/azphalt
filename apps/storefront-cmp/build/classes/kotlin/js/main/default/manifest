@@ -1,0 +1,10 @@
+abi_version=1.8.0
+builtins_platform=JS
+compiler_version=1.9.24
+depends=org.jetbrains.compose.material3\:material3 org.jetbrains.compose.material\:material-ripple org.jetbrains.compose.foundation\:foundation org.jetbrains.compose.material\:material-icons-core org.jetbrains.compose.animation\:animation org.jetbrains.compose.foundation\:foundation-layout org.jetbrains.compose.ui\:ui org.jetbrains.compose.runtime\:runtime-saveable org.jetbrains.compose.runtime\:runtime org.jetbrains.compose.animation\:animation-core org.jetbrains.kotlinx\:kotlinx-coroutines-core org.jetbrains.kotlinx\:kotlinx-serialization-json org.jetbrains.kotlinx\:atomicfu org.jetbrains.compose.ui\:ui-text org.jetbrains.compose.ui\:ui-graphics org.jetbrains.compose.ui\:ui-unit org.jetbrains.compose.ui\:ui-geometry org.jetbrains.compose.ui\:ui-util org.jetbrains.skiko\:skiko org.jetbrains.kotlinx\:kotlinx-serialization-core org.jetbrains.kotlin\:kotlin-dom-api-compat kotlin
+ir_signature_versions=1,2
+jsOutputName=storefront-cmp
+metadata_version=1.4.1
+serializedIrFileFingerprints=3jx9aiel68wyr.6inncl19t47b 2m509aw5049w7.367ot4ekklcki 24sho1taqupdm.3hffoe6hmj4wt 1d24fr5pxlym6.3qmldvymkfifw 4k8gfrb7l28d.8wbkvsclsmjx
+serializedKlibFingerprint=2ozo2onv75szi.3tmwvwt5ldhex
+unique_name=com.azphalt.storefront\:storefront-cmp

@@ -39,7 +39,7 @@ export type AssetType =
   // Reusable video/graphic-catalog assets: a title/lower-third `template` and a compositing `overlay`
   // (PNG or animated). They join `transition`, `motion`, `video`, `audio`, `font` as the temporal catalog.
   | "template" | "overlay"
-  | "tflite" | "litert" | "onnx" | "sherpa-bundle";
+  | "tflite" | "litert" | "onnx" | "sherpa-bundle" | "model" | "task" | "vosk-bundle";
 
 export interface AssetContribution {
   type: AssetType;

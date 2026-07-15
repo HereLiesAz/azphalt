@@ -1,0 +1,101 @@
+{
+  "version": "9",
+  "items": {
+    "87ffdb4b1ef3d8283c349b6c1fc4487a": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlin\\kotlin-stdlib-js\\1.9.24\\18030bfd7fce25b06afe1318d340f77456bb39\\kotlin-stdlib-js-1.9.24.klib"
+    },
+    "b50857453dcb30a49d765d6aca822dfe": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlin\\kotlin-dom-api-compat\\1.9.24\\3c0ac04445c1aeec4366d69e1791cd6ad31ddc07\\kotlin-dom-api-compat-1.9.24.klib"
+    },
+    "196697ef2d77ef805ba4045aadde1f7d": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-js\\1.6.11\\84e838936059fe37bf28643ab81b7dd4cb890e60\\ui-js-1.6.11.klib"
+    },
+    "60180b05198c8acf96ff78d51661c621": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.androidx.lifecycle\\lifecycle-runtime-compose-js\\2.8.0\\d28c463a905d72e279d2d60124f17d0c086e15c7\\lifecycle-runtime-compose-js-2.8.0.klib"
+    },
+    "e32b1f7ea3e5d3f82a02e98a14fae2d7": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.runtime\\runtime-js\\1.6.11\\1484380a34adb77f0d6b76fc732ef9f74733c8cd\\runtime-js-1.6.11.klib"
+    },
+    "ec5f683e2e51ee8e5cdb632f5487b6e0": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-coroutines-core-js\\1.8.1\\6d0facd74a1b6ae17fa00d7034f31bde38ed4b2\\kotlinx-coroutines-core-js-1.8.1.klib"
+    },
+    "ba8177ecda3981427862b37308d71b44": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\atomicfu-js\\0.23.2\\e19f377f0dc24137414f5f3e1be730f60aeb9539\\atomicfu-js-0.23.2.klib"
+    },
+    "e9306c2451bbe8784372b11cb78554d0": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlin\\kotlinx-atomicfu-runtime\\1.9.23\\373f8846d435f6e7f77453cefbb97c548ae4781e\\kotlinx-atomicfu-runtime-1.9.23.klib"
+    },
+    "7863099849b1ae49e070fccd37807533": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.collection-internal\\collection-js\\1.6.11\\e28bbce3d18fee707bf4579719dd2d98e4a59291\\collection-js-1.6.11.klib"
+    },
+    "13e66c9c0bf4abb0871b96eeb1dec610": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.annotation-internal\\annotation-js\\1.6.11\\6929ebfef24ab0afa0bfa7509b33527d10b2782c\\annotation-js-1.6.11.klib"
+    },
+    "13082fc223180e2e6b8124cd1ddd7f57": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.androidx.lifecycle\\lifecycle-runtime-js\\2.8.0\\52959299d1082c72d8e2e766c8c06abb02bc67ce\\lifecycle-runtime-js-2.8.0.klib"
+    },
+    "c603e57b2975d30f998c44a4b86259b6": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.androidx.lifecycle\\lifecycle-common-js\\2.8.0\\b723bd2ce0e02bdb0dd4fcdc1546d59e75fdd5ca\\lifecycle-common-js-2.8.0.klib"
+    },
+    "78609b318a9940957e19170d385688f3": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-text-js\\1.6.11\\a02e521afc4290348209c2bf7ced403cc8d47651\\ui-text-js-1.6.11.klib"
+    },
+    "0b7925c8ec436a5be5c44256c623d0e2": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.runtime\\runtime-saveable-js\\1.6.11\\c44c407d676ed0fcc2f5ca33330d28ab50e69577\\runtime-saveable-js-1.6.11.klib"
+    },
+    "7d7b3e2fab90cfa868710dcdfcc29498": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-graphics-js\\1.6.11\\c5c608cf2b19975c3872210e2b3c275e068448ea\\ui-graphics-js-1.6.11.klib"
+    },
+    "b94da791477990115b8642922bcc3831": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-unit-js\\1.6.11\\6d89fea52c66d060191d38135aac473658944499\\ui-unit-js-1.6.11.klib"
+    },
+    "6e6927cf3ee4c9624dae70d52bd71793": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-geometry-js\\1.6.11\\92e835090e0939c37233c99db28aed7da36ecd33\\ui-geometry-js-1.6.11.klib"
+    },
+    "35aa1619e0a7091ef38fd66dfb1b866a": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-util-js\\1.6.11\\86d6b82ade8992b9b551df88044353a0ee9e28\\ui-util-js-1.6.11.klib"
+    },
+    "ce61f434d9749d1d9ff2c3adddad7ec3": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.skiko\\skiko-js\\0.8.4\\d72caaf84ee8087ec2842d63e09ab6ffc0b3544\\skiko-js-0.8.4.klib",
+      "target": "skiko-js\\0.8.4"
+    },
+    "dee6c21300a600211e3738f7598ed71e": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.androidx.lifecycle\\lifecycle-viewmodel-js\\2.8.0\\a0837280b1537772d379e32d03ae373929216ab3\\lifecycle-viewmodel-js-2.8.0.klib"
+    },
+    "65b91c73fc1a2284ad53c241b169692e": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.material3\\material3-js\\1.6.11\\1753562be038c35c5aeb3261de82615aaca2c634\\material3-js-1.6.11.klib"
+    },
+    "273c8d6e217f0337ab8d4c9c2a0eeab1": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.material\\material-ripple-js\\1.6.11\\481cc77de6d272618a89738d25861b5f567e4a95\\material-ripple-js-1.6.11.klib"
+    },
+    "13548e07d02fffe366cb67c7941293b3": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.foundation\\foundation-js\\1.6.11\\d07352423e1cf1dc0337b61f05efe1da70b10fff\\foundation-js-1.6.11.klib"
+    },
+    "148831df22cd25a5a773b8d191db7301": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.animation\\animation-js\\1.6.11\\fd6e130b1406e33f8530db1fa7d94c30eb6800c0\\animation-js-1.6.11.klib"
+    },
+    "d7eb2f2fa0afec0c0bfb5f9b45007d53": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.animation\\animation-core-js\\1.6.11\\ae6985f8e11ec07885a6d585e0de4fe11879b64a\\animation-core-js-1.6.11.klib"
+    },
+    "855ff19b34187e0ca5f495c7ccd3601b": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.foundation\\foundation-layout-js\\1.6.11\\e33d96469322d0bdbb55e9aef62d630eb3c88869\\foundation-layout-js-1.6.11.klib"
+    },
+    "db6523fe7d93315914220ae78eab14b9": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.material\\material-icons-core-js\\1.6.11\\bd918c8ce936d7b7f265b1f5d5c4aeb66dd6bb9c\\material-icons-core-js-1.6.11.klib"
+    },
+    "e50e9b0b75e0c45c430c945f0adfbc19": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-datetime-js\\0.6.0\\12badb635a405f5be33850fef55005681598be13\\kotlinx-datetime-js-0.6.0.klib",
+      "target": "Kotlin-DateTime-library-kotlinx-datetime\\0.6.0"
+    },
+    "a0654d7fd5c6ce2fd1744bb8b5b9e311": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-serialization-core-js\\1.6.3\\e316fab0dc6dfc0a96feeacb4bee9049cd28f566\\kotlinx-serialization-core-js-1.6.3.klib"
+    },
+    "5f5eeea1d8ac16ddd80fd503bb4e234c": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-serialization-json-js\\1.6.3\\6fdf64da8d550723ae974a7becba5d1e33fc77b3\\kotlinx-serialization-json-js-1.6.3.klib"
+    },
+    "a66860f155cb10a237acb5f7d0f6d0e3": {
+      "src": "C:\\Users\\azrie\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlin\\kotlin-test-js-runner\\1.9.24\\e9b1fc55af69eb09d63b271d17c217d9483241cc\\kotlin-test-js-runner-1.9.24.jar",
+      "target": "kotlin-test-js-runner\\0.0.1"
+    }
+  }
+}

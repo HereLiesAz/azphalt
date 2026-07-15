@@ -19,11 +19,13 @@
     "@azphalt/azdk": "workspace:*",
     "@azphalt/azp": "workspace:*",
     "@azphalt/registry": "workspace:*",
+    "@stripe/stripe-js": "^9.10.0",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.24.0",
     "next": "^15.5.18",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "stripe": "^22.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -33,4 +35,3 @@
     "vitest": "^3.2.6"
   }
 }
-
