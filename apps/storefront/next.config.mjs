@@ -42,6 +42,16 @@ const nextConfig = {
   outputFileTracingRoot: repoRoot,
   // Optional sub-path mount (baked in at build time). Next prefixes routes + assets with it.
   ...(basePath ? { basePath } : {}),
+  async rewrites() {
+    return {
+      fallback: [
+        {
+          source: "/:path*",
+          destination: "/index.html",
+        },
+      ],
+    };
+  },
 };
 
 export default nextConfig;
