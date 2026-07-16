@@ -18,29 +18,29 @@
 }(this, function (_, kotlin_kotlin, kotlin_org_jetbrains_androidx_lifecycle_lifecycle_common, kotlin_org_jetbrains_kotlinx_kotlinx_coroutines_core) {
   'use strict';
   //region block: imports
-  var protoOf = kotlin_kotlin.$_$.jb;
-  var objectCreate = kotlin_kotlin.$_$.hb;
+  var protoOf = kotlin_kotlin.$_$.ib;
+  var objectCreate = kotlin_kotlin.$_$.gb;
   var Unit_instance = kotlin_kotlin.$_$.q4;
   var State_DESTROYED_getInstance = kotlin_org_jetbrains_androidx_lifecycle_lifecycle_common.$_$.e;
   var State_INITIALIZED_getInstance = kotlin_org_jetbrains_androidx_lifecycle_lifecycle_common.$_$.f;
-  var toString = kotlin_kotlin.$_$.ob;
+  var toString = kotlin_kotlin.$_$.nb;
   var IllegalStateException_init_$Create$ = kotlin_kotlin.$_$.w1;
   var LinkedHashMap_init_$Create$ = kotlin_kotlin.$_$.x;
   var first = kotlin_kotlin.$_$.w6;
   var last = kotlin_kotlin.$_$.r7;
   var LinkedHashSet_init_$Create$ = kotlin_kotlin.$_$.z;
   var ArrayList_init_$Create$ = kotlin_kotlin.$_$.n;
-  var THROW_CCE = kotlin_kotlin.$_$.df;
+  var THROW_CCE = kotlin_kotlin.$_$.cf;
   var Map = kotlin_kotlin.$_$.g5;
-  var isInterface = kotlin_kotlin.$_$.xa;
+  var isInterface = kotlin_kotlin.$_$.wa;
   var Companion_instance = kotlin_org_jetbrains_androidx_lifecycle_lifecycle_common.$_$.g;
   var reversed = kotlin_kotlin.$_$.i8;
   var lastOrNull = kotlin_kotlin.$_$.n7;
-  var objectMeta = kotlin_kotlin.$_$.ib;
-  var setMetadataFor = kotlin_kotlin.$_$.kb;
+  var objectMeta = kotlin_kotlin.$_$.hb;
+  var setMetadataFor = kotlin_kotlin.$_$.jb;
   var Lifecycle = kotlin_org_jetbrains_androidx_lifecycle_lifecycle_common.$_$.a;
   var MutableStateFlow = kotlin_org_jetbrains_kotlinx_kotlinx_coroutines_core.$_$.w;
-  var classMeta = kotlin_kotlin.$_$.ba;
+  var classMeta = kotlin_kotlin.$_$.aa;
   //endregion
   //region block: pre-declaration
   setMetadataFor(Companion, 'Companion', objectMeta);
@@ -55,52 +55,52 @@
     return LifecycleRegistry_init_$Init$(provider, objectCreate(protoOf(LifecycleRegistry)));
   }
   function moveToState($this, next) {
-    if ($this.g4s_1.equals(next)) {
+    if ($this.d4r_1.equals(next)) {
       return Unit_instance;
     }
     // Inline function 'kotlin.check' call
     // Inline function 'kotlin.contracts.contract' call
-    if (!!($this.g4s_1.equals(State_INITIALIZED_getInstance()) ? next.equals(State_DESTROYED_getInstance()) : false)) {
+    if (!!($this.d4r_1.equals(State_INITIALIZED_getInstance()) ? next.equals(State_DESTROYED_getInstance()) : false)) {
       // Inline function 'androidx.lifecycle.LifecycleRegistry.moveToState.<anonymous>' call
-      var message = 'State must be at least CREATED to move to ' + next + ', but was ' + $this.g4s_1 + ' in component ' + ('' + $this.h4s_1.zu());
+      var message = 'State must be at least CREATED to move to ' + next + ', but was ' + $this.d4r_1 + ' in component ' + ('' + $this.e4r_1.zu());
       throw IllegalStateException_init_$Create$(toString(message));
     }
-    $this.g4s_1 = next;
-    if ($this.j4s_1 ? true : !($this.i4s_1 === 0)) {
-      $this.k4s_1 = true;
+    $this.d4r_1 = next;
+    if ($this.g4r_1 ? true : !($this.f4r_1 === 0)) {
+      $this.h4r_1 = true;
       return Unit_instance;
     }
-    $this.j4s_1 = true;
+    $this.g4r_1 = true;
     sync($this);
-    $this.j4s_1 = false;
-    if ($this.g4s_1.equals(State_DESTROYED_getInstance())) {
+    $this.g4r_1 = false;
+    if ($this.d4r_1.equals(State_DESTROYED_getInstance())) {
       var tmp = $this;
       // Inline function 'kotlin.collections.linkedMapOf' call
-      tmp.f4s_1 = LinkedHashMap_init_$Create$();
+      tmp.c4r_1 = LinkedHashMap_init_$Create$();
     }
   }
   function _get_isSynced__dwdj3t($this) {
-    if ($this.f4s_1.u()) {
+    if ($this.c4r_1.u()) {
       return true;
     }
-    var eldestObserverState = first($this.f4s_1.n2()).o4s_1;
-    var newestObserverState = last($this.f4s_1.n2()).o4s_1;
-    return eldestObserverState.equals(newestObserverState) ? $this.g4s_1.equals(newestObserverState) : false;
+    var eldestObserverState = first($this.c4r_1.n2()).l4r_1;
+    var newestObserverState = last($this.c4r_1.n2()).l4r_1;
+    return eldestObserverState.equals(newestObserverState) ? $this.d4r_1.equals(newestObserverState) : false;
   }
   function popParentState($this) {
-    $this.l4s_1.m1($this.l4s_1.m() - 1 | 0);
+    $this.i4r_1.m1($this.i4r_1.m() - 1 | 0);
   }
   function pushParentState($this, state) {
-    $this.l4s_1.a1(state);
+    $this.i4r_1.a1(state);
   }
   function forwardPass($this, lifecycleOwner) {
     // Inline function 'androidx.lifecycle.LifecycleRegistry.forEachObserverWithAdditions' call
     // Inline function 'kotlin.collections.mutableSetOf' call
     var visited = LinkedHashSet_init_$Create$();
-    $l$loop: while (!$this.k4s_1) {
+    $l$loop: while (!$this.h4r_1) {
       // Inline function 'kotlin.collections.filter' call
       // Inline function 'kotlin.collections.filterTo' call
-      var this_0 = $this.f4s_1.m2();
+      var this_0 = $this.c4r_1.m2();
       var destination = ArrayList_init_$Create$();
       var tmp0_iterator = this_0.o();
       while (tmp0_iterator.d1()) {
@@ -117,10 +117,10 @@
       var tmp0_iterator_0 = keys.o();
       $l$loop_1: while (tmp0_iterator_0.d1()) {
         var key = tmp0_iterator_0.f1();
-        if ($this.k4s_1) {
+        if ($this.h4r_1) {
           break $l$loop_1;
         }
-        var tmp1_elvis_lhs = $this.f4s_1.z2(key);
+        var tmp1_elvis_lhs = $this.c4r_1.z2(key);
         var tmp;
         if (tmp1_elvis_lhs == null) {
           continue $l$loop_1;
@@ -131,10 +131,10 @@
         // Inline function 'androidx.lifecycle.LifecycleRegistry.forwardPass.<anonymous>' call
         $l$loop_2: while (true) {
           var tmp_0;
-          if (value.o4s_1.u9($this.g4s_1) < 0 ? !$this.k4s_1 : false) {
+          if (value.l4r_1.u9($this.d4r_1) < 0 ? !$this.h4r_1 : false) {
             // Inline function 'kotlin.collections.contains' call
             // Inline function 'kotlin.collections.containsKey' call
-            var this_1 = $this.f4s_1;
+            var this_1 = $this.c4r_1;
             tmp_0 = (isInterface(this_1, Map) ? this_1 : THROW_CCE()).w2(key);
           } else {
             tmp_0 = false;
@@ -142,16 +142,16 @@
           if (!tmp_0) {
             break $l$loop_2;
           }
-          pushParentState($this, value.o4s_1);
-          var tmp0_elvis_lhs = Companion_instance.x4r(value.o4s_1);
+          pushParentState($this, value.l4r_1);
+          var tmp0_elvis_lhs = Companion_instance.u4q(value.l4r_1);
           var tmp_1;
           if (tmp0_elvis_lhs == null) {
-            throw IllegalStateException_init_$Create$('no event up from ' + value.o4s_1);
+            throw IllegalStateException_init_$Create$('no event up from ' + value.l4r_1);
           } else {
             tmp_1 = tmp0_elvis_lhs;
           }
           var event = tmp_1;
-          value.q4s(lifecycleOwner, event);
+          value.n4r(lifecycleOwner, event);
           popParentState($this);
         }
         visited.a1(key);
@@ -160,14 +160,14 @@
   }
   function backwardPass($this, lifecycleOwner) {
     // Inline function 'androidx.lifecycle.LifecycleRegistry.forEachObserverReversed' call
-    var keys = reversed($this.f4s_1.m2());
+    var keys = reversed($this.c4r_1.m2());
     var tmp0_iterator = keys.o();
     $l$loop_0: while (tmp0_iterator.d1()) {
       var key = tmp0_iterator.f1();
-      if ($this.k4s_1) {
+      if ($this.h4r_1) {
         break $l$loop_0;
       }
-      var tmp1_elvis_lhs = $this.f4s_1.z2(key);
+      var tmp1_elvis_lhs = $this.c4r_1.z2(key);
       var tmp;
       if (tmp1_elvis_lhs == null) {
         continue $l$loop_0;
@@ -178,10 +178,10 @@
       // Inline function 'androidx.lifecycle.LifecycleRegistry.backwardPass.<anonymous>' call
       $l$loop_1: while (true) {
         var tmp_0;
-        if (value.o4s_1.u9($this.g4s_1) > 0 ? !$this.k4s_1 : false) {
+        if (value.l4r_1.u9($this.d4r_1) > 0 ? !$this.h4r_1 : false) {
           // Inline function 'kotlin.collections.contains' call
           // Inline function 'kotlin.collections.containsKey' call
-          var this_0 = $this.f4s_1;
+          var this_0 = $this.c4r_1;
           tmp_0 = (isInterface(this_0, Map) ? this_0 : THROW_CCE()).w2(key);
         } else {
           tmp_0 = false;
@@ -189,22 +189,22 @@
         if (!tmp_0) {
           break $l$loop_1;
         }
-        var tmp0_elvis_lhs = Companion_instance.w4r(value.o4s_1);
+        var tmp0_elvis_lhs = Companion_instance.t4q(value.l4r_1);
         var tmp_1;
         if (tmp0_elvis_lhs == null) {
-          throw IllegalStateException_init_$Create$('no event down from ' + value.o4s_1);
+          throw IllegalStateException_init_$Create$('no event down from ' + value.l4r_1);
         } else {
           tmp_1 = tmp0_elvis_lhs;
         }
         var event = tmp_1;
-        pushParentState($this, event.a4s());
-        value.q4s(lifecycleOwner, event);
+        pushParentState($this, event.x4q());
+        value.n4r(lifecycleOwner, event);
         popParentState($this);
       }
     }
   }
   function sync($this) {
-    var tmp0_elvis_lhs = $this.h4s_1.zu();
+    var tmp0_elvis_lhs = $this.e4r_1.zu();
     var tmp;
     if (tmp0_elvis_lhs == null) {
       throw IllegalStateException_init_$Create$('LifecycleOwner of this LifecycleRegistry is already garbage collected. It is too late to change lifecycle state.');
@@ -213,20 +213,20 @@
     }
     var lifecycleOwner = tmp;
     while (!_get_isSynced__dwdj3t($this)) {
-      $this.k4s_1 = false;
-      if ($this.g4s_1.u9(first($this.f4s_1.n2()).o4s_1) < 0) {
+      $this.h4r_1 = false;
+      if ($this.d4r_1.u9(first($this.c4r_1.n2()).l4r_1) < 0) {
         backwardPass($this, lifecycleOwner);
       }
-      var newest = lastOrNull($this.f4s_1.n2());
-      if ((!$this.k4s_1 ? !(newest == null) : false) ? $this.g4s_1.u9(newest.o4s_1) > 0 : false) {
+      var newest = lastOrNull($this.c4r_1.n2());
+      if ((!$this.h4r_1 ? !(newest == null) : false) ? $this.d4r_1.u9(newest.l4r_1) > 0 : false) {
         forwardPass($this, lifecycleOwner);
       }
     }
-    $this.k4s_1 = false;
-    $this.m4s_1.g1d($this.r4s());
+    $this.h4r_1 = false;
+    $this.j4r_1.g1d($this.o4r());
   }
   function enforceMainThreadIfNeeded($this, methodName) {
-    if ($this.e4s_1) {
+    if ($this.b4r_1) {
       // Inline function 'kotlin.check' call
       // Inline function 'kotlin.contracts.contract' call
       if (!isMainThread()) {
@@ -238,7 +238,7 @@
   }
   function Companion() {
   }
-  protoOf(Companion).s4s = function (state1, state2) {
+  protoOf(Companion).p4r = function (state1, state2) {
     return (!(state2 == null) ? state2.u9(state1) < 0 : false) ? state2 : state1;
   };
   var Companion_instance_0;
@@ -247,33 +247,33 @@
   }
   function LifecycleRegistry(provider, enforceMainThread) {
     Lifecycle.call(this);
-    this.e4s_1 = enforceMainThread;
+    this.b4r_1 = enforceMainThread;
     var tmp = this;
     // Inline function 'kotlin.collections.linkedMapOf' call
-    tmp.f4s_1 = LinkedHashMap_init_$Create$();
-    this.g4s_1 = State_INITIALIZED_getInstance();
-    this.i4s_1 = 0;
-    this.j4s_1 = false;
-    this.k4s_1 = false;
-    this.l4s_1 = ArrayList_init_$Create$();
-    this.h4s_1 = new WeakReference(provider);
-    this.m4s_1 = MutableStateFlow(State_INITIALIZED_getInstance());
+    tmp.c4r_1 = LinkedHashMap_init_$Create$();
+    this.d4r_1 = State_INITIALIZED_getInstance();
+    this.f4r_1 = 0;
+    this.g4r_1 = false;
+    this.h4r_1 = false;
+    this.i4r_1 = ArrayList_init_$Create$();
+    this.e4r_1 = new WeakReference(provider);
+    this.j4r_1 = MutableStateFlow(State_INITIALIZED_getInstance());
   }
-  protoOf(LifecycleRegistry).r4s = function () {
-    return this.g4s_1;
+  protoOf(LifecycleRegistry).o4r = function () {
+    return this.d4r_1;
   };
-  protoOf(LifecycleRegistry).t4s = function (event) {
+  protoOf(LifecycleRegistry).q4r = function (event) {
     enforceMainThreadIfNeeded(this, 'handleLifecycleEvent');
-    moveToState(this, event.a4s());
+    moveToState(this, event.x4q());
   };
   function isMainThread() {
     return true;
   }
   function WeakReference(reference) {
-    this.n4s_1 = reference;
+    this.k4r_1 = reference;
   }
   protoOf(WeakReference).zu = function () {
-    return this.n4s_1;
+    return this.k4r_1;
   };
   //region block: init
   Companion_instance_0 = new Companion();

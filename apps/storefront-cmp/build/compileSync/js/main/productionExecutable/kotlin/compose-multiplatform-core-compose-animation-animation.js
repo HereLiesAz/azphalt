@@ -23,22 +23,22 @@
   //region block: imports
   var sign = Math.sign;
   var imul = Math.imul;
-  var Long = kotlin_kotlin.$_$.we;
-  var protoOf = kotlin_kotlin.$_$.jb;
-  var getNumberHashCode = kotlin_kotlin.$_$.ja;
-  var THROW_CCE = kotlin_kotlin.$_$.df;
-  var equals = kotlin_kotlin.$_$.ea;
-  var classMeta = kotlin_kotlin.$_$.ba;
-  var setMetadataFor = kotlin_kotlin.$_$.kb;
-  var numberToLong = kotlin_kotlin.$_$.gb;
-  var generateDecayAnimationSpec = kotlin_org_jetbrains_compose_animation_animation_core.$_$.q;
+  var Long = kotlin_kotlin.$_$.ve;
+  var protoOf = kotlin_kotlin.$_$.ib;
+  var getNumberHashCode = kotlin_kotlin.$_$.ia;
+  var THROW_CCE = kotlin_kotlin.$_$.cf;
+  var equals = kotlin_kotlin.$_$.da;
+  var classMeta = kotlin_kotlin.$_$.aa;
+  var setMetadataFor = kotlin_kotlin.$_$.jb;
+  var numberToLong = kotlin_kotlin.$_$.fb;
+  var generateDecayAnimationSpec = kotlin_org_jetbrains_compose_animation_animation_core.$_$.r;
   var Unit_instance = kotlin_kotlin.$_$.q4;
-  var numberToInt = kotlin_kotlin.$_$.fb;
-  var objectMeta = kotlin_kotlin.$_$.ib;
+  var numberToInt = kotlin_kotlin.$_$.eb;
+  var objectMeta = kotlin_kotlin.$_$.hb;
   var sourceInformation = kotlin_org_jetbrains_compose_runtime_runtime.$_$.r1;
   var traceEventStart = kotlin_org_jetbrains_compose_runtime_runtime.$_$.v1;
   var isTraceInProgress = kotlin_org_jetbrains_compose_runtime_runtime.$_$.e1;
-  var get_LocalDensity = kotlin_org_jetbrains_compose_ui_ui.$_$.d3;
+  var get_LocalDensity = kotlin_org_jetbrains_compose_ui_ui.$_$.e3;
   var sourceInformationMarkerStart = kotlin_org_jetbrains_compose_runtime_runtime.$_$.q1;
   var sourceInformationMarkerEnd = kotlin_org_jetbrains_compose_runtime_runtime.$_$.p1;
   var Companion_getInstance = kotlin_org_jetbrains_compose_runtime_runtime.$_$.e2;
@@ -60,50 +60,50 @@
     return computeDeceleration_0(0.84, density.x35());
   }
   function getSplineDeceleration($this, velocity) {
-    return AndroidFlingSpline_getInstance().d82(velocity, $this.x81_1 * $this.z81_1);
+    return AndroidFlingSpline_getInstance().q81(velocity, $this.k81_1 * $this.m81_1);
   }
   function FlingInfo(initialVelocity, distance, duration) {
-    this.e82_1 = initialVelocity;
-    this.f82_1 = distance;
-    this.g82_1 = duration;
+    this.r81_1 = initialVelocity;
+    this.s81_1 = distance;
+    this.t81_1 = duration;
   }
-  protoOf(FlingInfo).h82 = function (time) {
+  protoOf(FlingInfo).u81 = function (time) {
     var tmp;
-    if (this.g82_1.z6(new Long(0, 0)) > 0) {
+    if (this.t81_1.z6(new Long(0, 0)) > 0) {
       // Inline function 'kotlin.Long.div' call
-      var other = this.g82_1.sb();
+      var other = this.t81_1.sb();
       tmp = time.sb() / other;
     } else {
       tmp = 1.0;
     }
     var splinePos = tmp;
     // Inline function 'kotlin.math.sign' call
-    var x = this.e82_1;
+    var x = this.r81_1;
     var tmp$ret$1 = sign(x);
-    return this.f82_1 * tmp$ret$1 * AndroidFlingSpline_getInstance().k82(splinePos).i82_1;
+    return this.s81_1 * tmp$ret$1 * AndroidFlingSpline_getInstance().x81(splinePos).v81_1;
   };
-  protoOf(FlingInfo).l82 = function (time) {
+  protoOf(FlingInfo).y81 = function (time) {
     var tmp;
-    if (this.g82_1.z6(new Long(0, 0)) > 0) {
+    if (this.t81_1.z6(new Long(0, 0)) > 0) {
       // Inline function 'kotlin.Long.div' call
-      var other = this.g82_1.sb();
+      var other = this.t81_1.sb();
       tmp = time.sb() / other;
     } else {
       tmp = 1.0;
     }
     var splinePos = tmp;
-    var tmp_0 = AndroidFlingSpline_getInstance().k82(splinePos).j82_1;
+    var tmp_0 = AndroidFlingSpline_getInstance().x81(splinePos).w81_1;
     // Inline function 'kotlin.math.sign' call
-    var x = this.e82_1;
-    return tmp_0 * sign(x) * this.f82_1 / this.g82_1.sb() * 1000.0;
+    var x = this.r81_1;
+    return tmp_0 * sign(x) * this.s81_1 / this.t81_1.sb() * 1000.0;
   };
   protoOf(FlingInfo).toString = function () {
-    return 'FlingInfo(initialVelocity=' + this.e82_1 + ', distance=' + this.f82_1 + ', duration=' + this.g82_1.toString() + ')';
+    return 'FlingInfo(initialVelocity=' + this.r81_1 + ', distance=' + this.s81_1 + ', duration=' + this.t81_1.toString() + ')';
   };
   protoOf(FlingInfo).hashCode = function () {
-    var result = getNumberHashCode(this.e82_1);
-    result = imul(result, 31) + getNumberHashCode(this.f82_1) | 0;
-    result = imul(result, 31) + this.g82_1.hashCode() | 0;
+    var result = getNumberHashCode(this.r81_1);
+    result = imul(result, 31) + getNumberHashCode(this.s81_1) | 0;
+    result = imul(result, 31) + this.t81_1.hashCode() | 0;
     return result;
   };
   protoOf(FlingInfo).equals = function (other) {
@@ -112,20 +112,20 @@
     if (!(other instanceof FlingInfo))
       return false;
     var tmp0_other_with_cast = other instanceof FlingInfo ? other : THROW_CCE();
-    if (!equals(this.e82_1, tmp0_other_with_cast.e82_1))
+    if (!equals(this.r81_1, tmp0_other_with_cast.r81_1))
       return false;
-    if (!equals(this.f82_1, tmp0_other_with_cast.f82_1))
+    if (!equals(this.s81_1, tmp0_other_with_cast.s81_1))
       return false;
-    if (!this.g82_1.equals(tmp0_other_with_cast.g82_1))
+    if (!this.t81_1.equals(tmp0_other_with_cast.t81_1))
       return false;
     return true;
   };
   function FlingCalculator(friction, density) {
-    this.x81_1 = friction;
-    this.y81_1 = density;
-    this.z81_1 = computeDeceleration(this, this.y81_1);
+    this.k81_1 = friction;
+    this.l81_1 = density;
+    this.m81_1 = computeDeceleration(this, this.l81_1);
   }
-  protoOf(FlingCalculator).m82 = function (velocity) {
+  protoOf(FlingCalculator).z81 = function (velocity) {
     var l = getSplineDeceleration(this, velocity);
     var decelMinusOne = get_DecelerationRate() - 1.0;
     // Inline function 'kotlin.math.exp' call
@@ -133,18 +133,18 @@
     var tmp$ret$0 = Math.exp(x);
     return numberToLong(1000.0 * tmp$ret$0);
   };
-  protoOf(FlingCalculator).n82 = function (velocity) {
+  protoOf(FlingCalculator).a82 = function (velocity) {
     var l = getSplineDeceleration(this, velocity);
     var decelMinusOne = get_DecelerationRate() - 1.0;
-    var tmp = this.x81_1 * this.z81_1;
+    var tmp = this.k81_1 * this.m81_1;
     // Inline function 'kotlin.math.exp' call
     var x = get_DecelerationRate() / decelMinusOne * l;
     return tmp * Math.exp(x);
   };
-  protoOf(FlingCalculator).o82 = function (velocity) {
+  protoOf(FlingCalculator).b82 = function (velocity) {
     var l = getSplineDeceleration(this, velocity);
     var decelMinusOne = get_DecelerationRate() - 1.0;
-    var tmp = this.x81_1 * this.z81_1;
+    var tmp = this.k81_1 * this.m81_1;
     // Inline function 'kotlin.math.exp' call
     var x = get_DecelerationRate() / decelMinusOne * l;
     var tmp_0 = tmp * Math.exp(x);
@@ -171,15 +171,15 @@
     return generateDecayAnimationSpec(new SplineBasedFloatDecayAnimationSpec(density));
   }
   function FlingResult(distanceCoefficient, velocityCoefficient) {
-    this.i82_1 = distanceCoefficient;
-    this.j82_1 = velocityCoefficient;
+    this.v81_1 = distanceCoefficient;
+    this.w81_1 = velocityCoefficient;
   }
   protoOf(FlingResult).toString = function () {
-    return 'FlingResult(distanceCoefficient=' + this.i82_1 + ', velocityCoefficient=' + this.j82_1 + ')';
+    return 'FlingResult(distanceCoefficient=' + this.v81_1 + ', velocityCoefficient=' + this.w81_1 + ')';
   };
   protoOf(FlingResult).hashCode = function () {
-    var result = getNumberHashCode(this.i82_1);
-    result = imul(result, 31) + getNumberHashCode(this.j82_1) | 0;
+    var result = getNumberHashCode(this.v81_1);
+    result = imul(result, 31) + getNumberHashCode(this.w81_1) | 0;
     return result;
   };
   protoOf(FlingResult).equals = function (other) {
@@ -188,34 +188,34 @@
     if (!(other instanceof FlingResult))
       return false;
     var tmp0_other_with_cast = other instanceof FlingResult ? other : THROW_CCE();
-    if (!equals(this.i82_1, tmp0_other_with_cast.i82_1))
+    if (!equals(this.v81_1, tmp0_other_with_cast.v81_1))
       return false;
-    if (!equals(this.j82_1, tmp0_other_with_cast.j82_1))
+    if (!equals(this.w81_1, tmp0_other_with_cast.w81_1))
       return false;
     return true;
   };
   function AndroidFlingSpline() {
     AndroidFlingSpline_instance = this;
-    this.a82_1 = 100;
-    this.b82_1 = new Float32Array(101);
-    this.c82_1 = new Float32Array(101);
-    computeSplineInfo(this.b82_1, this.c82_1, 100);
+    this.n81_1 = 100;
+    this.o81_1 = new Float32Array(101);
+    this.p81_1 = new Float32Array(101);
+    computeSplineInfo(this.o81_1, this.p81_1, 100);
   }
-  protoOf(AndroidFlingSpline).k82 = function (time) {
+  protoOf(AndroidFlingSpline).x81 = function (time) {
     var index = numberToInt(100 * time);
     var distanceCoef = 1.0;
     var velocityCoef = 0.0;
     if (index < 100) {
       var tInf = index / 100;
       var tSup = (index + 1 | 0) / 100;
-      var dInf = this.b82_1[index];
-      var dSup = this.b82_1[index + 1 | 0];
+      var dInf = this.o81_1[index];
+      var dSup = this.o81_1[index + 1 | 0];
       velocityCoef = (dSup - dInf) / (tSup - tInf);
       distanceCoef = dInf + (time - tInf) * velocityCoef;
     }
     return new FlingResult(distanceCoef, velocityCoef);
   };
-  protoOf(AndroidFlingSpline).d82 = function (velocity, friction) {
+  protoOf(AndroidFlingSpline).q81 = function (velocity, friction) {
     // Inline function 'kotlin.math.ln' call
     // Inline function 'kotlin.math.abs' call
     var x = 0.35 * Math.abs(velocity) / friction;
@@ -277,29 +277,29 @@
     splinePositions[nbSamples] = splineTimes[nbSamples];
   }
   function flingDistance($this, startVelocity) {
-    var tmp = $this.p82_1.n82(startVelocity);
+    var tmp = $this.c82_1.a82(startVelocity);
     // Inline function 'kotlin.math.sign' call
     return tmp * sign(startVelocity);
   }
   function SplineBasedFloatDecayAnimationSpec(density) {
-    this.p82_1 = new FlingCalculator(get_platformFlingScrollFriction(), density);
+    this.c82_1 = new FlingCalculator(get_platformFlingScrollFriction(), density);
   }
-  protoOf(SplineBasedFloatDecayAnimationSpec).k7j = function () {
+  protoOf(SplineBasedFloatDecayAnimationSpec).m7j = function () {
     return 0.0;
   };
-  protoOf(SplineBasedFloatDecayAnimationSpec).o7l = function (initialValue, initialVelocity) {
+  protoOf(SplineBasedFloatDecayAnimationSpec).n7l = function (initialValue, initialVelocity) {
     return initialValue + flingDistance(this, initialVelocity);
   };
-  protoOf(SplineBasedFloatDecayAnimationSpec).l7l = function (playTimeNanos, initialValue, initialVelocity) {
+  protoOf(SplineBasedFloatDecayAnimationSpec).k7l = function (playTimeNanos, initialValue, initialVelocity) {
     var playTimeMillis = playTimeNanos.v9(new Long(1000000, 0));
-    return initialValue + this.p82_1.o82(initialVelocity).h82(playTimeMillis);
+    return initialValue + this.c82_1.b82(initialVelocity).u81(playTimeMillis);
   };
-  protoOf(SplineBasedFloatDecayAnimationSpec).m7l = function (initialValue, initialVelocity) {
-    return this.p82_1.m82(initialVelocity).w9(new Long(1000000, 0));
+  protoOf(SplineBasedFloatDecayAnimationSpec).l7l = function (initialValue, initialVelocity) {
+    return this.c82_1.z81(initialVelocity).w9(new Long(1000000, 0));
   };
-  protoOf(SplineBasedFloatDecayAnimationSpec).n7l = function (playTimeNanos, initialValue, initialVelocity) {
+  protoOf(SplineBasedFloatDecayAnimationSpec).m7l = function (playTimeNanos, initialValue, initialVelocity) {
     var playTimeMillis = playTimeNanos.v9(new Long(1000000, 0));
-    return this.p82_1.o82(initialVelocity).l82(playTimeMillis);
+    return this.c82_1.b82(initialVelocity).y81(playTimeMillis);
   };
   function get_platformFlingScrollFriction() {
     return platformFlingScrollFriction;

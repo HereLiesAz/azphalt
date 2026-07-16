@@ -15,7 +15,7 @@
 }(this, function (_, kotlin_kotlin, kotlin_org_jetbrains_compose_runtime_runtime) {
   'use strict';
   //region block: imports
-  var toString = kotlin_kotlin.$_$.ob;
+  var toString = kotlin_kotlin.$_$.nb;
   var IllegalStateException_init_$Create$ = kotlin_kotlin.$_$.w1;
   var staticCompositionLocalOf = kotlin_org_jetbrains_compose_runtime_runtime.$_$.s1;
   //endregion

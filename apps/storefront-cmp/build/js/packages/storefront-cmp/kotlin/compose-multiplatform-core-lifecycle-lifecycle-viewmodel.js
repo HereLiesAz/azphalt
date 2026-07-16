@@ -13,9 +13,9 @@
   'use strict';
   //region block: imports
   var LinkedHashMap_init_$Create$ = kotlin_kotlin.$_$.x;
-  var protoOf = kotlin_kotlin.$_$.jb;
-  var classMeta = kotlin_kotlin.$_$.ba;
-  var setMetadataFor = kotlin_kotlin.$_$.kb;
+  var protoOf = kotlin_kotlin.$_$.ib;
+  var classMeta = kotlin_kotlin.$_$.aa;
+  var setMetadataFor = kotlin_kotlin.$_$.jb;
   var VOID = kotlin_kotlin.$_$.g;
   //endregion
   //region block: pre-declaration
@@ -24,7 +24,7 @@
   function ViewModelStore() {
     var tmp = this;
     // Inline function 'kotlin.collections.mutableMapOf' call
-    tmp.v4r_1 = LinkedHashMap_init_$Create$();
+    tmp.s4q_1 = LinkedHashMap_init_$Create$();
   }
   //region block: exports
   _.$_$ = _.$_$ || {};

@@ -23,66 +23,64 @@
   //region block: imports
   var imul = Math.imul;
   var sign = Math.sign;
-  var protoOf = kotlin_kotlin.$_$.jb;
-  var objectMeta = kotlin_kotlin.$_$.ib;
-  var setMetadataFor = kotlin_kotlin.$_$.kb;
-  var THROW_CCE = kotlin_kotlin.$_$.df;
-  var classMeta = kotlin_kotlin.$_$.ba;
-  var Offset = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.c;
+  var protoOf = kotlin_kotlin.$_$.ib;
+  var objectMeta = kotlin_kotlin.$_$.hb;
+  var setMetadataFor = kotlin_kotlin.$_$.jb;
+  var THROW_CCE = kotlin_kotlin.$_$.cf;
+  var classMeta = kotlin_kotlin.$_$.aa;
   var VOID = kotlin_kotlin.$_$.g;
-  var FloatCompanionObject_instance = kotlin_kotlin.$_$.c4;
-  var Companion_getInstance = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.j1;
-  var Size__isEmpty_impl_o9ye97 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.b1;
-  var equals = kotlin_kotlin.$_$.ea;
   var Unit_instance = kotlin_kotlin.$_$.q4;
-  var _Offset___get_x__impl__xvi35n = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.x;
-  var _Size___get_width__impl__58y75t = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.e1;
-  var _Offset___get_y__impl__8bzhra = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.y;
-  var _Size___get_height__impl__a04p02 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.a1;
-  var hashCode = kotlin_kotlin.$_$.ma;
-  var Offset__hashCode_impl_hbql41 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.s;
-  var Offset_0 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.d;
-  var get_isFinite = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.k;
-  var interfaceMeta = kotlin_kotlin.$_$.oa;
-  var Long = kotlin_kotlin.$_$.we;
+  var interfaceMeta = kotlin_kotlin.$_$.na;
+  var Long = kotlin_kotlin.$_$.ve;
   var _ULong___init__impl__c78o9k = kotlin_kotlin.$_$.i3;
   var _ULong___get_data__impl__fggpzb = kotlin_kotlin.$_$.j3;
-  var ulongToDouble = kotlin_kotlin.$_$.sg;
+  var ulongToDouble = kotlin_kotlin.$_$.rg;
+  var equals = kotlin_kotlin.$_$.da;
   var ULong__hashCode_impl_6hv2lb = kotlin_kotlin.$_$.k3;
-  var toLong = kotlin_kotlin.$_$.mb;
-  var toString = kotlin_kotlin.$_$.ob;
+  var toLong = kotlin_kotlin.$_$.lb;
+  var toString = kotlin_kotlin.$_$.nb;
   var IllegalArgumentException_init_$Create$ = kotlin_kotlin.$_$.q1;
-  var numberToInt = kotlin_kotlin.$_$.fb;
-  var toRawBits = kotlin_kotlin.$_$.ng;
-  var toShort = kotlin_kotlin.$_$.nb;
-  var floatFromBits = kotlin_kotlin.$_$.ga;
-  var isFinite = kotlin_kotlin.$_$.yf;
-  var trimIndent = kotlin_kotlin.$_$.ge;
-  var get_PI = kotlin_kotlin.$_$.pb;
+  var numberToInt = kotlin_kotlin.$_$.eb;
+  var toRawBits = kotlin_kotlin.$_$.mg;
+  var toShort = kotlin_kotlin.$_$.mb;
+  var FloatCompanionObject_instance = kotlin_kotlin.$_$.c4;
+  var floatFromBits = kotlin_kotlin.$_$.fa;
+  var _Offset___get_x__impl__xvi35n = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.x;
+  var _Offset___get_y__impl__8bzhra = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.y;
+  var isFinite = kotlin_kotlin.$_$.xf;
+  var Offset = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.c;
+  var trimIndent = kotlin_kotlin.$_$.fe;
+  var get_PI = kotlin_kotlin.$_$.ob;
+  var hashCode = kotlin_kotlin.$_$.la;
   var _CornerRadius___get_x__impl__1594cn = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.n;
   var _CornerRadius___get_y__impl__tyvleu = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.o;
-  var noWhenBranchMatchedException = kotlin_kotlin.$_$.eg;
+  var noWhenBranchMatchedException = kotlin_kotlin.$_$.dg;
   var CornerRadius = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.a;
   var Size = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.h;
-  var Companion_getInstance_0 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.h1;
+  var Companion_getInstance = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.g1;
+  var Offset_0 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.d;
   var toRect = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.m;
-  var getNumberHashCode = kotlin_kotlin.$_$.ja;
-  var charSequenceLength = kotlin_kotlin.$_$.z9;
+  var Offset__hashCode_impl_hbql41 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.s;
+  var getNumberHashCode = kotlin_kotlin.$_$.ia;
+  var charSequenceLength = kotlin_kotlin.$_$.y9;
   var getKClassFromExpression = kotlin_kotlin.$_$.d;
-  var getStringHashCode = kotlin_kotlin.$_$.la;
-  var withSign = kotlin_kotlin.$_$.yb;
-  var compareTo = kotlin_kotlin.$_$.ca;
-  var objectCreate = kotlin_kotlin.$_$.hb;
-  var coerceIn = kotlin_kotlin.$_$.gc;
+  var getStringHashCode = kotlin_kotlin.$_$.ka;
+  var withSign = kotlin_kotlin.$_$.xb;
+  var compareTo = kotlin_kotlin.$_$.ba;
+  var objectCreate = kotlin_kotlin.$_$.gb;
+  var coerceIn = kotlin_kotlin.$_$.fc;
   var arrayCopy = kotlin_kotlin.$_$.p5;
-  var coerceIn_0 = kotlin_kotlin.$_$.fc;
+  var coerceIn_0 = kotlin_kotlin.$_$.ec;
   var contentEquals = kotlin_kotlin.$_$.z5;
   var contentHashCode = kotlin_kotlin.$_$.b6;
-  var toBits = kotlin_kotlin.$_$.lg;
-  var isNaN_0 = kotlin_kotlin.$_$.bg;
+  var toBits = kotlin_kotlin.$_$.kg;
+  var isNaN_0 = kotlin_kotlin.$_$.ag;
   var LayoutDirection_Ltr_getInstance = kotlin_org_jetbrains_compose_ui_ui_unit.$_$.k1;
+  var Companion_getInstance_0 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.i1;
   var Size_0 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.i;
   var Size__hashCode_impl_2h1qpd = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.z;
+  var _Size___get_width__impl__58y75t = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.d1;
+  var _Size___get_height__impl__a04p02 = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.a1;
   var toPx = kotlin_org_jetbrains_compose_ui_ui_unit.$_$.d;
   var toPx_0 = kotlin_org_jetbrains_compose_ui_ui_unit.$_$.e;
   var roundToPx = kotlin_org_jetbrains_compose_ui_ui_unit.$_$.c;
@@ -90,7 +88,7 @@
   var toSize = kotlin_org_jetbrains_compose_ui_ui_unit.$_$.f;
   var Density = kotlin_org_jetbrains_compose_ui_ui_unit.$_$.g;
   var get_center = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.j;
-  var _Size___get_minDimension__impl__4iso0r = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.c1;
+  var _Size___get_minDimension__impl__4iso0r = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.b1;
   var Density_0 = kotlin_org_jetbrains_compose_ui_ui_unit.$_$.h;
   var UnsupportedOperationException_init_$Create$ = kotlin_kotlin.$_$.j2;
   var BlendMode_SRC_OVER_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.z1;
@@ -122,58 +120,48 @@
   var BlendMode_DST_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.j1;
   var BlendMode_SRC_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.a2;
   var BlendMode_CLEAR_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.z;
-  var Matrix33 = kotlin_org_jetbrains_skiko_skiko.$_$.n4;
-  var Companion_instance = kotlin_org_jetbrains_skiko_skiko.$_$.z3;
-  var Companion_instance_0 = kotlin_org_jetbrains_skiko_skiko.$_$.y3;
+  var Companion_instance = kotlin_org_jetbrains_skiko_skiko.$_$.v3;
+  var Companion_instance_0 = kotlin_org_jetbrains_skiko_skiko.$_$.u3;
   var Rect = kotlin_org_jetbrains_compose_ui_ui_geometry.$_$.f;
   var ClipMode_INTERSECT_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.d2;
   var ClipMode_DIFFERENCE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.c2;
-  var Matrix44 = kotlin_org_jetbrains_skiko_skiko.$_$.o4;
-  var PaintMode_FILL_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.r2;
-  var PaintMode_STROKE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.s2;
-  var PaintStrokeCap_BUTT_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.t2;
-  var PaintStrokeCap_SQUARE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.v2;
-  var PaintStrokeCap_ROUND_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.u2;
-  var PaintStrokeJoin_MITER_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.x2;
-  var PaintStrokeJoin_BEVEL_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.w2;
-  var PaintStrokeJoin_ROUND_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.y2;
-  var Paint_init_$Create$ = kotlin_org_jetbrains_skiko_skiko.$_$.l3;
-  var PathOp_XOR_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.g3;
-  var PathOp_REVERSE_DIFFERENCE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.e3;
-  var PathOp_UNION_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.f3;
-  var PathOp_INTERSECT_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.d3;
-  var PathOp_DIFFERENCE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.c3;
-  var Path_init_$Create$ = kotlin_org_jetbrains_skiko_skiko.$_$.m3;
-  var PathFillMode_WINDING_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.b3;
-  var PathFillMode_EVEN_ODD_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.a3;
-  var PathDirection_COUNTER_CLOCKWISE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.z2;
-  var Companion_getInstance_1 = kotlin_org_jetbrains_skiko_skiko.$_$.w3;
-  var Companion_getInstance_2 = kotlin_org_jetbrains_skiko_skiko.$_$.x3;
+  var Matrix44 = kotlin_org_jetbrains_skiko_skiko.$_$.h4;
+  var PaintMode_FILL_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.n2;
+  var PaintMode_STROKE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.o2;
+  var PaintStrokeCap_BUTT_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.p2;
+  var PaintStrokeCap_SQUARE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.r2;
+  var PaintStrokeCap_ROUND_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.q2;
+  var PaintStrokeJoin_MITER_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.t2;
+  var PaintStrokeJoin_BEVEL_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.s2;
+  var PaintStrokeJoin_ROUND_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.u2;
+  var Paint_init_$Create$ = kotlin_org_jetbrains_skiko_skiko.$_$.h3;
+  var PathOp_XOR_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.c3;
+  var PathOp_REVERSE_DIFFERENCE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.a3;
+  var PathOp_UNION_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.b3;
+  var PathOp_INTERSECT_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.z2;
+  var PathOp_DIFFERENCE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.y2;
+  var Path_init_$Create$ = kotlin_org_jetbrains_skiko_skiko.$_$.i3;
+  var PathFillMode_WINDING_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.x2;
+  var PathFillMode_EVEN_ODD_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.w2;
+  var PathDirection_COUNTER_CLOCKWISE_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.v2;
+  var Companion_getInstance_1 = kotlin_org_jetbrains_skiko_skiko.$_$.s3;
+  var Companion_getInstance_2 = kotlin_org_jetbrains_skiko_skiko.$_$.t3;
   var UnsupportedOperationException_init_$Create$_0 = kotlin_kotlin.$_$.k2;
-  var Companion_getInstance_3 = kotlin_org_jetbrains_skiko_skiko.$_$.a4;
-  var toFloatArray = kotlin_kotlin.$_$.p8;
-  var GradientStyle = kotlin_org_jetbrains_skiko_skiko.$_$.m4;
-  var FilterTileMode_CLAMP_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.e2;
-  var FilterTileMode_DECAL_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.f2;
-  var FilterTileMode_MIRROR_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.g2;
-  var FilterTileMode_REPEAT_getInstance = kotlin_org_jetbrains_skiko_skiko.$_$.h2;
   //endregion
   //region block: pre-declaration
   setMetadataFor(Companion, 'Companion', objectMeta);
   setMetadataFor(BlendMode, 'BlendMode', classMeta);
-  setMetadataFor(Companion_0, 'Companion', objectMeta);
   setMetadataFor(Brush, 'Brush', classMeta);
   setMetadataFor(ShaderBrush, 'ShaderBrush', classMeta, Brush);
   setMetadataFor(SolidColor, 'SolidColor', classMeta, Brush);
-  setMetadataFor(LinearGradient, 'LinearGradient', classMeta, ShaderBrush);
   function clipRect(rect, clipOp) {
-    return this.g3s(rect.a34_1, rect.b34_1, rect.c34_1, rect.d34_1, clipOp);
+    return this.o3q(rect.a34_1, rect.b34_1, rect.c34_1, rect.d34_1, clipOp);
   }
   function clipRect$default(rect, clipOp, $super) {
-    clipOp = clipOp === VOID ? Companion_getInstance_6().j3s_1 : clipOp;
+    clipOp = clipOp === VOID ? Companion_getInstance_4().r3q_1 : clipOp;
     var tmp;
     if ($super === VOID) {
-      this.f3s(rect, clipOp);
+      this.n3q(rect, clipOp);
       tmp = Unit_instance;
     } else {
       clipRect(rect, clipOp);
@@ -182,79 +170,77 @@
     return tmp;
   }
   function clipPath$default(path, clipOp, $super) {
-    clipOp = clipOp === VOID ? Companion_getInstance_6().j3s_1 : clipOp;
+    clipOp = clipOp === VOID ? Companion_getInstance_4().r3q_1 : clipOp;
     var tmp;
     if ($super === VOID) {
-      this.k3s(path, clipOp);
+      this.s3q(path, clipOp);
       tmp = Unit_instance;
     } else {
-      tmp = $super.k3s.call(this, path, new ClipOp(clipOp));
+      tmp = $super.s3q.call(this, path, new ClipOp(clipOp));
     }
     return tmp;
   }
   function drawRect(rect, paint) {
-    return this.n3s(rect.a34_1, rect.b34_1, rect.c34_1, rect.d34_1, paint);
+    return this.v3q(rect.a34_1, rect.b34_1, rect.c34_1, rect.d34_1, paint);
   }
   setMetadataFor(Canvas, 'Canvas', interfaceMeta);
-  setMetadataFor(Companion_1, 'Companion', objectMeta);
+  setMetadataFor(Companion_0, 'Companion', objectMeta);
   setMetadataFor(ClipOp, 'ClipOp', classMeta);
-  setMetadataFor(Companion_2, 'Companion', objectMeta);
+  setMetadataFor(Companion_1, 'Companion', objectMeta);
   setMetadataFor(Color, 'Color', classMeta);
+  setMetadataFor(Companion_2, 'Companion', objectMeta);
   setMetadataFor(Companion_3, 'Companion', objectMeta);
   setMetadataFor(Companion_4, 'Companion', objectMeta);
-  setMetadataFor(Companion_5, 'Companion', objectMeta);
   setMetadataFor(Matrix, 'Matrix', classMeta);
   setMetadataFor(Outline, 'Outline', classMeta);
   setMetadataFor(Rectangle, 'Rectangle', classMeta, Outline);
   setMetadataFor(Rounded, 'Rounded', classMeta, Outline);
   setMetadataFor(Generic, 'Generic', classMeta, Outline);
-  setMetadataFor(Companion_6, 'Companion', objectMeta);
+  setMetadataFor(Companion_5, 'Companion', objectMeta);
   function addPath$default(path, offset, $super) {
-    offset = offset === VOID ? Companion_getInstance_0().u33_1 : offset;
+    offset = offset === VOID ? Companion_getInstance().u33_1 : offset;
     var tmp;
     if ($super === VOID) {
-      this.q3x(path, offset);
+      this.l3w(path, offset);
       tmp = Unit_instance;
     } else {
-      tmp = $super.q3x.call(this, path, new Offset_0(offset));
+      tmp = $super.l3w.call(this, path, new Offset_0(offset));
     }
     return tmp;
   }
   setMetadataFor(Path, 'Path', interfaceMeta);
+  setMetadataFor(Companion_6, 'Companion', objectMeta);
   setMetadataFor(Companion_7, 'Companion', objectMeta);
-  setMetadataFor(Companion_8, 'Companion', objectMeta);
   setMetadataFor(RectangleShape$1, VOID, classMeta);
-  setMetadataFor(Companion_9, 'Companion', objectMeta);
+  setMetadataFor(Companion_8, 'Companion', objectMeta);
   setMetadataFor(Shadow, 'Shadow', classMeta, VOID, VOID, Shadow);
-  setMetadataFor(Companion_10, 'Companion', objectMeta);
+  setMetadataFor(Companion_9, 'Companion', objectMeta);
   setMetadataFor(StrokeCap, 'StrokeCap', classMeta);
-  setMetadataFor(Companion_11, 'Companion', objectMeta);
+  setMetadataFor(Companion_10, 'Companion', objectMeta);
   setMetadataFor(StrokeJoin, 'StrokeJoin', classMeta);
-  setMetadataFor(Companion_12, 'Companion', objectMeta);
-  setMetadataFor(TileMode, 'TileMode', classMeta);
   setMetadataFor(Adaptation, 'Adaptation', classMeta);
   setMetadataFor(Adaptation$Companion$Bradford$1, VOID, classMeta, Adaptation);
   setMetadataFor(Adaptation$Companion$VonKries$1, VOID, classMeta, Adaptation);
   setMetadataFor(Adaptation$Companion$Ciecat02$1, VOID, classMeta, Adaptation);
-  setMetadataFor(Companion_13, 'Companion', objectMeta);
-  setMetadataFor(Companion_14, 'Companion', objectMeta);
+  setMetadataFor(Companion_11, 'Companion', objectMeta);
+  setMetadataFor(Companion_12, 'Companion', objectMeta);
   setMetadataFor(ColorModel, 'ColorModel', classMeta);
-  setMetadataFor(Companion_15, 'Companion', objectMeta);
+  setMetadataFor(Companion_13, 'Companion', objectMeta);
   setMetadataFor(ColorSpace, 'ColorSpace', classMeta);
   setMetadataFor(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0, 'sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0', classMeta);
   setMetadataFor(ColorSpaces, 'ColorSpaces', objectMeta);
   setMetadataFor(Connector, 'Connector', classMeta);
   setMetadataFor(Connector$Companion$identity$1, VOID, classMeta, Connector);
   setMetadataFor(RgbConnector, 'RgbConnector', classMeta, Connector);
-  setMetadataFor(Companion_16, 'Companion', objectMeta);
+  setMetadataFor(Companion_14, 'Companion', objectMeta);
   setMetadataFor(Illuminant, 'Illuminant', objectMeta);
-  setMetadataFor(Companion_17, 'Companion', objectMeta);
+  setMetadataFor(Companion_15, 'Companion', objectMeta);
   setMetadataFor(Lab, 'Lab', classMeta, ColorSpace);
-  setMetadataFor(Companion_18, 'Companion', objectMeta);
+  setMetadataFor(Companion_16, 'Companion', objectMeta);
   setMetadataFor(Oklab, 'Oklab', classMeta, ColorSpace);
-  setMetadataFor(Companion_19, 'Companion', objectMeta);
+  setMetadataFor(Companion_17, 'Companion', objectMeta);
   setMetadataFor(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_0, 'sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0', classMeta);
-  setMetadataFor(Companion_20, 'Companion', objectMeta);
+  setMetadataFor(Companion_18, 'Companion', objectMeta);
   setMetadataFor(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_1, 'sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0', classMeta);
   setMetadataFor(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_2, 'sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0', classMeta);
   setMetadataFor(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_3, 'sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0', classMeta);
@@ -270,72 +256,72 @@
   setMetadataFor(DrawContext, 'DrawContext', interfaceMeta);
   setMetadataFor(CanvasDrawScope$drawContext$1, VOID, classMeta, VOID, [DrawContext]);
   function get_center_0() {
-    return get_center(this.b43().g34());
+    return get_center(this.z41().g34());
   }
   function get_size() {
-    return this.b43().g34();
+    return this.z41().g34();
   }
   function drawRect$default(brush, topLeft, size, alpha, style, colorFilter, blendMode, $super) {
-    topLeft = topLeft === VOID ? Companion_getInstance_0().u33_1 : topLeft;
+    topLeft = topLeft === VOID ? Companion_getInstance().u33_1 : topLeft;
     size = size === VOID ? offsetSize(this.g34(), this, topLeft) : size;
     alpha = alpha === VOID ? 1.0 : alpha;
     style = style === VOID ? Fill_getInstance() : style;
     colorFilter = colorFilter === VOID ? null : colorFilter;
-    blendMode = blendMode === VOID ? Companion_getInstance_26().e3x_1 : blendMode;
+    blendMode = blendMode === VOID ? Companion_getInstance_23().z3v_1 : blendMode;
     var tmp;
     if ($super === VOID) {
-      this.m3x(brush, topLeft, size, alpha, style, colorFilter, blendMode);
+      this.h3w(brush, topLeft, size, alpha, style, colorFilter, blendMode);
       tmp = Unit_instance;
     } else {
-      tmp = $super.m3x.call(this, brush, new Offset_0(topLeft), new Size_0(size), alpha, style, colorFilter, new BlendMode(blendMode));
+      tmp = $super.h3w.call(this, brush, new Offset_0(topLeft), new Size_0(size), alpha, style, colorFilter, new BlendMode(blendMode));
     }
     return tmp;
   }
   function drawRect$default_0(color, topLeft, size, alpha, style, colorFilter, blendMode, $super) {
-    topLeft = topLeft === VOID ? Companion_getInstance_0().u33_1 : topLeft;
+    topLeft = topLeft === VOID ? Companion_getInstance().u33_1 : topLeft;
     size = size === VOID ? offsetSize(this.g34(), this, topLeft) : size;
     alpha = alpha === VOID ? 1.0 : alpha;
     style = style === VOID ? Fill_getInstance() : style;
     colorFilter = colorFilter === VOID ? null : colorFilter;
-    blendMode = blendMode === VOID ? Companion_getInstance_26().e3x_1 : blendMode;
+    blendMode = blendMode === VOID ? Companion_getInstance_23().z3v_1 : blendMode;
     var tmp;
     if ($super === VOID) {
-      this.j3x(color, topLeft, size, alpha, style, colorFilter, blendMode);
+      this.e3w(color, topLeft, size, alpha, style, colorFilter, blendMode);
       tmp = Unit_instance;
     } else {
-      tmp = $super.j3x.call(this, new Color(color), new Offset_0(topLeft), new Size_0(size), alpha, style, colorFilter, new BlendMode(blendMode));
+      tmp = $super.e3w.call(this, new Color(color), new Offset_0(topLeft), new Size_0(size), alpha, style, colorFilter, new BlendMode(blendMode));
     }
     return tmp;
   }
   function drawCircle$default(color, radius, center, alpha, style, colorFilter, blendMode, $super) {
     radius = radius === VOID ? _Size___get_minDimension__impl__4iso0r(this.g34()) / 2.0 : radius;
-    center = center === VOID ? this.j43() : center;
+    center = center === VOID ? this.h42() : center;
     alpha = alpha === VOID ? 1.0 : alpha;
     style = style === VOID ? Fill_getInstance() : style;
     colorFilter = colorFilter === VOID ? null : colorFilter;
-    blendMode = blendMode === VOID ? Companion_getInstance_26().e3x_1 : blendMode;
+    blendMode = blendMode === VOID ? Companion_getInstance_23().z3v_1 : blendMode;
     var tmp;
     if ($super === VOID) {
-      this.e43(color, radius, center, alpha, style, colorFilter, blendMode);
+      this.c42(color, radius, center, alpha, style, colorFilter, blendMode);
       tmp = Unit_instance;
     } else {
-      tmp = $super.e43.call(this, new Color(color), radius, new Offset_0(center), alpha, style, colorFilter, new BlendMode(blendMode));
+      tmp = $super.c42.call(this, new Color(color), radius, new Offset_0(center), alpha, style, colorFilter, new BlendMode(blendMode));
     }
     return tmp;
   }
   function drawArc$default(color, startAngle, sweepAngle, useCenter, topLeft, size, alpha, style, colorFilter, blendMode, $super) {
-    topLeft = topLeft === VOID ? Companion_getInstance_0().u33_1 : topLeft;
+    topLeft = topLeft === VOID ? Companion_getInstance().u33_1 : topLeft;
     size = size === VOID ? offsetSize(this.g34(), this, topLeft) : size;
     alpha = alpha === VOID ? 1.0 : alpha;
     style = style === VOID ? Fill_getInstance() : style;
     colorFilter = colorFilter === VOID ? null : colorFilter;
-    blendMode = blendMode === VOID ? Companion_getInstance_26().e3x_1 : blendMode;
+    blendMode = blendMode === VOID ? Companion_getInstance_23().z3v_1 : blendMode;
     var tmp;
     if ($super === VOID) {
-      this.g43(color, startAngle, sweepAngle, useCenter, topLeft, size, alpha, style, colorFilter, blendMode);
+      this.e42(color, startAngle, sweepAngle, useCenter, topLeft, size, alpha, style, colorFilter, blendMode);
       tmp = Unit_instance;
     } else {
-      tmp = $super.g43.call(this, new Color(color), startAngle, sweepAngle, useCenter, new Offset_0(topLeft), new Size_0(size), alpha, style, colorFilter, new BlendMode(blendMode));
+      tmp = $super.e42.call(this, new Color(color), startAngle, sweepAngle, useCenter, new Offset_0(topLeft), new Size_0(size), alpha, style, colorFilter, new BlendMode(blendMode));
     }
     return tmp;
   }
@@ -343,13 +329,13 @@
     alpha = alpha === VOID ? 1.0 : alpha;
     style = style === VOID ? Fill_getInstance() : style;
     colorFilter = colorFilter === VOID ? null : colorFilter;
-    blendMode = blendMode === VOID ? Companion_getInstance_26().e3x_1 : blendMode;
+    blendMode = blendMode === VOID ? Companion_getInstance_23().z3v_1 : blendMode;
     var tmp;
     if ($super === VOID) {
-      this.h3x(path, color, alpha, style, colorFilter, blendMode);
+      this.c3w(path, color, alpha, style, colorFilter, blendMode);
       tmp = Unit_instance;
     } else {
-      tmp = $super.h3x.call(this, path, new Color(color), alpha, style, colorFilter, new BlendMode(blendMode));
+      tmp = $super.c3w.call(this, path, new Color(color), alpha, style, colorFilter, new BlendMode(blendMode));
     }
     return tmp;
   }
@@ -357,9 +343,9 @@
   setMetadataFor(CanvasDrawScope, 'CanvasDrawScope', classMeta, VOID, [DrawScope], CanvasDrawScope);
   setMetadataFor(asDrawTransform$1, VOID, classMeta);
   setMetadataFor(DrawStyle, 'DrawStyle', classMeta);
-  setMetadataFor(Companion_21, 'Companion', objectMeta);
+  setMetadataFor(Companion_19, 'Companion', objectMeta);
   setMetadataFor(Fill, 'Fill', objectMeta, DrawStyle);
-  setMetadataFor(Companion_22, 'Companion', objectMeta);
+  setMetadataFor(Companion_20, 'Companion', objectMeta);
   setMetadataFor(Stroke, 'Stroke', classMeta, DrawStyle, VOID, Stroke);
   setMetadataFor(EmptyCanvas, 'EmptyCanvas', classMeta, VOID, [Canvas], EmptyCanvas);
   setMetadataFor(SkiaBackedCanvas, 'SkiaBackedCanvas', classMeta, VOID, [Canvas]);
@@ -372,44 +358,44 @@
   }
   function Companion() {
     Companion_instance_1 = this;
-    this.k3p_1 = _BlendMode___init__impl__q6jalh(0);
-    this.l3p_1 = _BlendMode___init__impl__q6jalh(1);
-    this.m3p_1 = _BlendMode___init__impl__q6jalh(2);
-    this.n3p_1 = _BlendMode___init__impl__q6jalh(3);
-    this.o3p_1 = _BlendMode___init__impl__q6jalh(4);
-    this.p3p_1 = _BlendMode___init__impl__q6jalh(5);
-    this.q3p_1 = _BlendMode___init__impl__q6jalh(6);
-    this.r3p_1 = _BlendMode___init__impl__q6jalh(7);
-    this.s3p_1 = _BlendMode___init__impl__q6jalh(8);
-    this.t3p_1 = _BlendMode___init__impl__q6jalh(9);
-    this.u3p_1 = _BlendMode___init__impl__q6jalh(10);
-    this.v3p_1 = _BlendMode___init__impl__q6jalh(11);
-    this.w3p_1 = _BlendMode___init__impl__q6jalh(12);
-    this.x3p_1 = _BlendMode___init__impl__q6jalh(13);
-    this.y3p_1 = _BlendMode___init__impl__q6jalh(14);
-    this.z3p_1 = _BlendMode___init__impl__q6jalh(15);
-    this.a3q_1 = _BlendMode___init__impl__q6jalh(16);
-    this.b3q_1 = _BlendMode___init__impl__q6jalh(17);
-    this.c3q_1 = _BlendMode___init__impl__q6jalh(18);
-    this.d3q_1 = _BlendMode___init__impl__q6jalh(19);
-    this.e3q_1 = _BlendMode___init__impl__q6jalh(20);
-    this.f3q_1 = _BlendMode___init__impl__q6jalh(21);
-    this.g3q_1 = _BlendMode___init__impl__q6jalh(22);
-    this.h3q_1 = _BlendMode___init__impl__q6jalh(23);
-    this.i3q_1 = _BlendMode___init__impl__q6jalh(24);
-    this.j3q_1 = _BlendMode___init__impl__q6jalh(25);
-    this.k3q_1 = _BlendMode___init__impl__q6jalh(26);
-    this.l3q_1 = _BlendMode___init__impl__q6jalh(27);
-    this.m3q_1 = _BlendMode___init__impl__q6jalh(28);
+    this.d3p_1 = _BlendMode___init__impl__q6jalh(0);
+    this.e3p_1 = _BlendMode___init__impl__q6jalh(1);
+    this.f3p_1 = _BlendMode___init__impl__q6jalh(2);
+    this.g3p_1 = _BlendMode___init__impl__q6jalh(3);
+    this.h3p_1 = _BlendMode___init__impl__q6jalh(4);
+    this.i3p_1 = _BlendMode___init__impl__q6jalh(5);
+    this.j3p_1 = _BlendMode___init__impl__q6jalh(6);
+    this.k3p_1 = _BlendMode___init__impl__q6jalh(7);
+    this.l3p_1 = _BlendMode___init__impl__q6jalh(8);
+    this.m3p_1 = _BlendMode___init__impl__q6jalh(9);
+    this.n3p_1 = _BlendMode___init__impl__q6jalh(10);
+    this.o3p_1 = _BlendMode___init__impl__q6jalh(11);
+    this.p3p_1 = _BlendMode___init__impl__q6jalh(12);
+    this.q3p_1 = _BlendMode___init__impl__q6jalh(13);
+    this.r3p_1 = _BlendMode___init__impl__q6jalh(14);
+    this.s3p_1 = _BlendMode___init__impl__q6jalh(15);
+    this.t3p_1 = _BlendMode___init__impl__q6jalh(16);
+    this.u3p_1 = _BlendMode___init__impl__q6jalh(17);
+    this.v3p_1 = _BlendMode___init__impl__q6jalh(18);
+    this.w3p_1 = _BlendMode___init__impl__q6jalh(19);
+    this.x3p_1 = _BlendMode___init__impl__q6jalh(20);
+    this.y3p_1 = _BlendMode___init__impl__q6jalh(21);
+    this.z3p_1 = _BlendMode___init__impl__q6jalh(22);
+    this.a3q_1 = _BlendMode___init__impl__q6jalh(23);
+    this.b3q_1 = _BlendMode___init__impl__q6jalh(24);
+    this.c3q_1 = _BlendMode___init__impl__q6jalh(25);
+    this.d3q_1 = _BlendMode___init__impl__q6jalh(26);
+    this.e3q_1 = _BlendMode___init__impl__q6jalh(27);
+    this.f3q_1 = _BlendMode___init__impl__q6jalh(28);
   }
   var Companion_instance_1;
-  function Companion_getInstance_4() {
+  function Companion_getInstance_3() {
     if (Companion_instance_1 == null)
       new Companion();
     return Companion_instance_1;
   }
   function BlendMode__toString_impl_uuibkd($this) {
-    return $this === Companion_getInstance_4().k3p_1 ? 'Clear' : $this === Companion_getInstance_4().l3p_1 ? 'Src' : $this === Companion_getInstance_4().m3p_1 ? 'Dst' : $this === Companion_getInstance_4().n3p_1 ? 'SrcOver' : $this === Companion_getInstance_4().o3p_1 ? 'DstOver' : $this === Companion_getInstance_4().p3p_1 ? 'SrcIn' : $this === Companion_getInstance_4().q3p_1 ? 'DstIn' : $this === Companion_getInstance_4().r3p_1 ? 'SrcOut' : $this === Companion_getInstance_4().s3p_1 ? 'DstOut' : $this === Companion_getInstance_4().t3p_1 ? 'SrcAtop' : $this === Companion_getInstance_4().u3p_1 ? 'DstAtop' : $this === Companion_getInstance_4().v3p_1 ? 'Xor' : $this === Companion_getInstance_4().w3p_1 ? 'Plus' : $this === Companion_getInstance_4().x3p_1 ? 'Modulate' : $this === Companion_getInstance_4().y3p_1 ? 'Screen' : $this === Companion_getInstance_4().z3p_1 ? 'Overlay' : $this === Companion_getInstance_4().a3q_1 ? 'Darken' : $this === Companion_getInstance_4().b3q_1 ? 'Lighten' : $this === Companion_getInstance_4().c3q_1 ? 'ColorDodge' : $this === Companion_getInstance_4().d3q_1 ? 'ColorBurn' : $this === Companion_getInstance_4().e3q_1 ? 'HardLight' : $this === Companion_getInstance_4().f3q_1 ? 'Softlight' : $this === Companion_getInstance_4().g3q_1 ? 'Difference' : $this === Companion_getInstance_4().h3q_1 ? 'Exclusion' : $this === Companion_getInstance_4().i3q_1 ? 'Multiply' : $this === Companion_getInstance_4().j3q_1 ? 'Hue' : $this === Companion_getInstance_4().k3q_1 ? 'Saturation' : $this === Companion_getInstance_4().l3q_1 ? 'Color' : $this === Companion_getInstance_4().m3q_1 ? 'Luminosity' : 'Unknown';
+    return $this === Companion_getInstance_3().d3p_1 ? 'Clear' : $this === Companion_getInstance_3().e3p_1 ? 'Src' : $this === Companion_getInstance_3().f3p_1 ? 'Dst' : $this === Companion_getInstance_3().g3p_1 ? 'SrcOver' : $this === Companion_getInstance_3().h3p_1 ? 'DstOver' : $this === Companion_getInstance_3().i3p_1 ? 'SrcIn' : $this === Companion_getInstance_3().j3p_1 ? 'DstIn' : $this === Companion_getInstance_3().k3p_1 ? 'SrcOut' : $this === Companion_getInstance_3().l3p_1 ? 'DstOut' : $this === Companion_getInstance_3().m3p_1 ? 'SrcAtop' : $this === Companion_getInstance_3().n3p_1 ? 'DstAtop' : $this === Companion_getInstance_3().o3p_1 ? 'Xor' : $this === Companion_getInstance_3().p3p_1 ? 'Plus' : $this === Companion_getInstance_3().q3p_1 ? 'Modulate' : $this === Companion_getInstance_3().r3p_1 ? 'Screen' : $this === Companion_getInstance_3().s3p_1 ? 'Overlay' : $this === Companion_getInstance_3().t3p_1 ? 'Darken' : $this === Companion_getInstance_3().u3p_1 ? 'Lighten' : $this === Companion_getInstance_3().v3p_1 ? 'ColorDodge' : $this === Companion_getInstance_3().w3p_1 ? 'ColorBurn' : $this === Companion_getInstance_3().x3p_1 ? 'HardLight' : $this === Companion_getInstance_3().y3p_1 ? 'Softlight' : $this === Companion_getInstance_3().z3p_1 ? 'Difference' : $this === Companion_getInstance_3().a3q_1 ? 'Exclusion' : $this === Companion_getInstance_3().b3q_1 ? 'Multiply' : $this === Companion_getInstance_3().c3q_1 ? 'Hue' : $this === Companion_getInstance_3().d3q_1 ? 'Saturation' : $this === Companion_getInstance_3().e3q_1 ? 'Color' : $this === Companion_getInstance_3().f3q_1 ? 'Luminosity' : 'Unknown';
   }
   function BlendMode__hashCode_impl_93ceri($this) {
     return $this;
@@ -417,185 +403,47 @@
   function BlendMode__equals_impl_1tm25i($this, other) {
     if (!(other instanceof BlendMode))
       return false;
-    if (!($this === (other instanceof BlendMode ? other.n3q_1 : THROW_CCE())))
+    if (!($this === (other instanceof BlendMode ? other.g3q_1 : THROW_CCE())))
       return false;
     return true;
   }
   function BlendMode(value) {
-    Companion_getInstance_4();
-    this.n3q_1 = value;
+    Companion_getInstance_3();
+    this.g3q_1 = value;
   }
   protoOf(BlendMode).toString = function () {
-    return BlendMode__toString_impl_uuibkd(this.n3q_1);
+    return BlendMode__toString_impl_uuibkd(this.g3q_1);
   };
   protoOf(BlendMode).hashCode = function () {
-    return BlendMode__hashCode_impl_93ceri(this.n3q_1);
+    return BlendMode__hashCode_impl_93ceri(this.g3q_1);
   };
   protoOf(BlendMode).equals = function (other) {
-    return BlendMode__equals_impl_1tm25i(this.n3q_1, other);
+    return BlendMode__equals_impl_1tm25i(this.g3q_1, other);
   };
-  function Companion_0() {
-  }
-  protoOf(Companion_0).o3q = function (colors, start, end, tileMode) {
-    return new LinearGradient(colors, null, start, end, tileMode);
-  };
-  protoOf(Companion_0).p3q = function (colors, startY, endY, tileMode) {
-    return this.o3q(colors, Offset(0.0, startY), Offset(0.0, endY), tileMode);
-  };
-  protoOf(Companion_0).q3q = function (colors, startY, endY, tileMode, $super) {
-    startY = startY === VOID ? 0.0 : startY;
-    var tmp;
-    if (endY === VOID) {
-      tmp = Infinity;
-    } else {
-      tmp = endY;
-    }
-    endY = tmp;
-    tileMode = tileMode === VOID ? Companion_getInstance_17().r3q_1 : tileMode;
-    return $super === VOID ? this.p3q(colors, startY, endY, tileMode) : $super.p3q.call(this, colors, startY, endY, new TileMode(tileMode));
-  };
-  var Companion_instance_2;
-  function Companion_getInstance_5() {
-    return Companion_instance_2;
-  }
   function Brush() {
-    this.v3q_1 = Companion_getInstance().x34_1;
   }
   function ShaderBrush() {
-    Brush.call(this);
-    this.y3q_1 = null;
-    this.z3q_1 = Companion_getInstance().x34_1;
   }
-  protoOf(ShaderBrush).w3q = function (size, p, alpha) {
-    var shader = this.y3q_1;
-    if (shader == null ? true : !equals(this.z3q_1, size)) {
-      if (Size__isEmpty_impl_o9ye97(size)) {
-        shader = null;
-        this.y3q_1 = null;
-        this.z3q_1 = Companion_getInstance().x34_1;
-      } else {
-        // Inline function 'kotlin.also' call
-        var this_0 = this.a3r(size);
-        // Inline function 'kotlin.contracts.contract' call
-        // Inline function 'androidx.compose.ui.graphics.ShaderBrush.applyTo.<anonymous>' call
-        this.y3q_1 = this_0;
-        shader = this_0;
-        this.z3q_1 = size;
-      }
-    }
-    if (!equals(p.p3r(), Companion_getInstance_7().b3r_1)) {
-      p.o3r(Companion_getInstance_7().b3r_1);
-    }
-    if (!equals(p.q3r(), shader)) {
-      p.u3e(shader);
-    }
-    if (!(p.w3n() === alpha)) {
-      p.r3r(alpha);
-    }
-  };
   function SolidColor() {
   }
-  function LinearGradient(colors, stops, start, end, tileMode) {
-    stops = stops === VOID ? null : stops;
-    tileMode = tileMode === VOID ? Companion_getInstance_17().r3q_1 : tileMode;
-    ShaderBrush.call(this);
-    this.v3r_1 = colors;
-    this.w3r_1 = stops;
-    this.x3r_1 = start;
-    this.y3r_1 = end;
-    this.z3r_1 = tileMode;
-  }
-  protoOf(LinearGradient).a3r = function (size) {
-    var tmp;
-    var tmp_0 = _Offset___get_x__impl__xvi35n(this.x3r_1);
-    if (tmp_0 === Infinity) {
-      tmp = _Size___get_width__impl__58y75t(size);
-    } else {
-      tmp = _Offset___get_x__impl__xvi35n(this.x3r_1);
-    }
-    var startX = tmp;
-    var tmp_1;
-    var tmp_2 = _Offset___get_y__impl__8bzhra(this.x3r_1);
-    if (tmp_2 === Infinity) {
-      tmp_1 = _Size___get_height__impl__a04p02(size);
-    } else {
-      tmp_1 = _Offset___get_y__impl__8bzhra(this.x3r_1);
-    }
-    var startY = tmp_1;
-    var tmp_3;
-    var tmp_4 = _Offset___get_x__impl__xvi35n(this.y3r_1);
-    if (tmp_4 === Infinity) {
-      tmp_3 = _Size___get_width__impl__58y75t(size);
-    } else {
-      tmp_3 = _Offset___get_x__impl__xvi35n(this.y3r_1);
-    }
-    var endX = tmp_3;
-    var tmp_5;
-    var tmp_6 = _Offset___get_y__impl__8bzhra(this.y3r_1);
-    if (tmp_6 === Infinity) {
-      tmp_5 = _Size___get_height__impl__a04p02(size);
-    } else {
-      tmp_5 = _Offset___get_y__impl__8bzhra(this.y3r_1);
-    }
-    var endY = tmp_5;
-    var tmp0_colors = this.v3r_1;
-    var tmp1_colorStops = this.w3r_1;
-    var tmp2_from = Offset(startX, startY);
-    var tmp3_to = Offset(endX, endY);
-    var tmp4_tileMode = this.z3r_1;
-    return LinearGradientShader(tmp2_from, tmp3_to, tmp0_colors, tmp1_colorStops, tmp4_tileMode);
-  };
-  protoOf(LinearGradient).equals = function (other) {
-    if (this === other)
-      return true;
-    if (!(other instanceof LinearGradient))
-      return false;
-    if (!equals(this.v3r_1, other.v3r_1))
-      return false;
-    if (!equals(this.w3r_1, other.w3r_1))
-      return false;
-    if (!equals(this.x3r_1, other.x3r_1))
-      return false;
-    if (!equals(this.y3r_1, other.y3r_1))
-      return false;
-    if (!(this.z3r_1 === other.z3r_1))
-      return false;
-    return true;
-  };
-  protoOf(LinearGradient).hashCode = function () {
-    var result = hashCode(this.v3r_1);
-    var tmp = imul(31, result);
-    var tmp0_safe_receiver = this.w3r_1;
-    var tmp1_elvis_lhs = tmp0_safe_receiver == null ? null : hashCode(tmp0_safe_receiver);
-    result = tmp + (tmp1_elvis_lhs == null ? 0 : tmp1_elvis_lhs) | 0;
-    result = imul(31, result) + Offset__hashCode_impl_hbql41(this.x3r_1) | 0;
-    result = imul(31, result) + Offset__hashCode_impl_hbql41(this.y3r_1) | 0;
-    result = imul(31, result) + TileMode__hashCode_impl_7u5am9(this.z3r_1) | 0;
-    return result;
-  };
-  protoOf(LinearGradient).toString = function () {
-    var startValue = get_isFinite(this.x3r_1) ? 'start=' + new Offset_0(this.x3r_1) + ', ' : '';
-    var endValue = get_isFinite(this.y3r_1) ? 'end=' + new Offset_0(this.y3r_1) + ', ' : '';
-    return 'LinearGradient(colors=' + this.v3r_1 + ', ' + ('stops=' + this.w3r_1 + ', ') + startValue + endValue + ('tileMode=' + new TileMode(this.z3r_1) + ')');
-  };
   function Canvas() {
   }
   function _ClipOp___init__impl__pqwwy8(value) {
     return value;
   }
-  function Companion_1() {
-    Companion_instance_3 = this;
-    this.i3s_1 = _ClipOp___init__impl__pqwwy8(0);
-    this.j3s_1 = _ClipOp___init__impl__pqwwy8(1);
+  function Companion_0() {
+    Companion_instance_2 = this;
+    this.q3q_1 = _ClipOp___init__impl__pqwwy8(0);
+    this.r3q_1 = _ClipOp___init__impl__pqwwy8(1);
   }
-  var Companion_instance_3;
-  function Companion_getInstance_6() {
-    if (Companion_instance_3 == null)
-      new Companion_1();
-    return Companion_instance_3;
+  var Companion_instance_2;
+  function Companion_getInstance_4() {
+    if (Companion_instance_2 == null)
+      new Companion_0();
+    return Companion_instance_2;
   }
   function ClipOp__toString_impl_vwrlao($this) {
-    return $this === Companion_getInstance_6().i3s_1 ? 'Difference' : $this === Companion_getInstance_6().j3s_1 ? 'Intersect' : 'Unknown';
+    return $this === Companion_getInstance_4().q3q_1 ? 'Difference' : $this === Companion_getInstance_4().r3q_1 ? 'Intersect' : 'Unknown';
   }
   function ClipOp__hashCode_impl_hd6jvl($this) {
     return $this;
@@ -603,22 +451,22 @@
   function ClipOp__equals_impl_g5ajel($this, other) {
     if (!(other instanceof ClipOp))
       return false;
-    if (!($this === (other instanceof ClipOp ? other.s3s_1 : THROW_CCE())))
+    if (!($this === (other instanceof ClipOp ? other.a3r_1 : THROW_CCE())))
       return false;
     return true;
   }
   function ClipOp(value) {
-    Companion_getInstance_6();
-    this.s3s_1 = value;
+    Companion_getInstance_4();
+    this.a3r_1 = value;
   }
   protoOf(ClipOp).toString = function () {
-    return ClipOp__toString_impl_vwrlao(this.s3s_1);
+    return ClipOp__toString_impl_vwrlao(this.a3r_1);
   };
   protoOf(ClipOp).hashCode = function () {
-    return ClipOp__hashCode_impl_hd6jvl(this.s3s_1);
+    return ClipOp__hashCode_impl_hd6jvl(this.a3r_1);
   };
   protoOf(ClipOp).equals = function (other) {
-    return ClipOp__equals_impl_g5ajel(this.s3s_1, other);
+    return ClipOp__equals_impl_g5ajel(this.a3r_1, other);
   };
   function _Color___init__impl__r6cqi2(value) {
     return value;
@@ -635,7 +483,7 @@
     var other = _ULong___init__impl__c78o9k(new Long(63, 0));
     var this_2 = _ULong___init__impl__c78o9k(_ULong___get_data__impl__fggpzb(this_1).nb(_ULong___get_data__impl__fggpzb(other)));
     var id = _ULong___get_data__impl__fggpzb(this_2).ea();
-    return this_0.p3t_1[id];
+    return this_0.x3r_1[id];
   }
   function Color__convert_impl_so5m8t($this, colorSpace) {
     var thisColorSpace = _Color___get_colorSpace__impl__jqqozk($this);
@@ -643,7 +491,7 @@
       return $this;
     }
     var connector = connect(thisColorSpace, colorSpace);
-    return connector.w3t(_Color___get_red__impl__cwrsk6($this), _Color___get_green__impl__bta9rs($this), _Color___get_blue__impl__xwez13($this), _Color___get_alpha__impl__wcfyv1($this));
+    return connector.e3s(_Color___get_red__impl__cwrsk6($this), _Color___get_green__impl__bta9rs($this), _Color___get_blue__impl__xwez13($this), _Color___get_alpha__impl__wcfyv1($this));
   }
   function _Color___get_red__impl__cwrsk6($this) {
     var tmp;
@@ -774,34 +622,34 @@
       tmp = Color__copy_impl_qlvcl1($this, alpha, red, green, blue);
     } else {
       var tmp_0 = $super;
-      tmp = (tmp_0 == null ? null : new Color(tmp_0)).y3t.call(new Color($this), alpha, red, green, blue).x3t_1;
+      tmp = (tmp_0 == null ? null : new Color(tmp_0)).g3s.call(new Color($this), alpha, red, green, blue).f3s_1;
     }
     return tmp;
   }
   function Color__toString_impl_hpzmaq($this) {
-    return 'Color(' + _Color___get_red__impl__cwrsk6($this) + ', ' + _Color___get_green__impl__bta9rs($this) + ', ' + _Color___get_blue__impl__xwez13($this) + ', ' + _Color___get_alpha__impl__wcfyv1($this) + ', ' + _Color___get_colorSpace__impl__jqqozk($this).z3t_1 + ')';
+    return 'Color(' + _Color___get_red__impl__cwrsk6($this) + ', ' + _Color___get_green__impl__bta9rs($this) + ', ' + _Color___get_blue__impl__xwez13($this) + ', ' + _Color___get_alpha__impl__wcfyv1($this) + ', ' + _Color___get_colorSpace__impl__jqqozk($this).h3s_1 + ')';
   }
-  function Companion_2() {
-    Companion_instance_4 = this;
-    this.b3r_1 = Color_2(new Long(-16777216, 0));
-    this.c3r_1 = Color_2(new Long(-12303292, 0));
-    this.d3r_1 = Color_2(new Long(-7829368, 0));
-    this.e3r_1 = Color_2(new Long(-3355444, 0));
-    this.f3r_1 = Color_2(new Long(-1, 0));
-    this.g3r_1 = Color_2(new Long(-65536, 0));
-    this.h3r_1 = Color_2(new Long(-16711936, 0));
-    this.i3r_1 = Color_2(new Long(-16776961, 0));
-    this.j3r_1 = Color_2(new Long(-256, 0));
-    this.k3r_1 = Color_2(new Long(-16711681, 0));
-    this.l3r_1 = Color_2(new Long(-65281, 0));
-    this.m3r_1 = Color_0(0);
-    this.n3r_1 = Color_1(0.0, 0.0, 0.0, 0.0, ColorSpaces_getInstance().n3t_1);
+  function Companion_1() {
+    Companion_instance_3 = this;
+    this.k3s_1 = Color_2(new Long(-16777216, 0));
+    this.l3s_1 = Color_2(new Long(-12303292, 0));
+    this.m3s_1 = Color_2(new Long(-7829368, 0));
+    this.n3s_1 = Color_2(new Long(-3355444, 0));
+    this.o3s_1 = Color_2(new Long(-1, 0));
+    this.p3s_1 = Color_2(new Long(-65536, 0));
+    this.q3s_1 = Color_2(new Long(-16711936, 0));
+    this.r3s_1 = Color_2(new Long(-16776961, 0));
+    this.s3s_1 = Color_2(new Long(-256, 0));
+    this.t3s_1 = Color_2(new Long(-16711681, 0));
+    this.u3s_1 = Color_2(new Long(-65281, 0));
+    this.v3s_1 = Color_0(0);
+    this.w3s_1 = Color_1(0.0, 0.0, 0.0, 0.0, ColorSpaces_getInstance().v3r_1);
   }
-  var Companion_instance_4;
-  function Companion_getInstance_7() {
-    if (Companion_instance_4 == null)
-      new Companion_2();
-    return Companion_instance_4;
+  var Companion_instance_3;
+  function Companion_getInstance_5() {
+    if (Companion_instance_3 == null)
+      new Companion_1();
+    return Companion_instance_3;
   }
   function Color__hashCode_impl_vjyivj($this) {
     return ULong__hashCode_impl_6hv2lb($this);
@@ -809,28 +657,28 @@
   function Color__equals_impl_k06uqz($this, other) {
     if (!(other instanceof Color))
       return false;
-    var tmp0_other_with_cast = other instanceof Color ? other.x3t_1 : THROW_CCE();
+    var tmp0_other_with_cast = other instanceof Color ? other.f3s_1 : THROW_CCE();
     if (!equals($this, tmp0_other_with_cast))
       return false;
     return true;
   }
   function Color(value) {
-    Companion_getInstance_7();
-    this.x3t_1 = value;
+    Companion_getInstance_5();
+    this.f3s_1 = value;
   }
   protoOf(Color).toString = function () {
-    return Color__toString_impl_hpzmaq(this.x3t_1);
+    return Color__toString_impl_hpzmaq(this.f3s_1);
   };
   protoOf(Color).hashCode = function () {
-    return Color__hashCode_impl_vjyivj(this.x3t_1);
+    return Color__hashCode_impl_vjyivj(this.f3s_1);
   };
   protoOf(Color).equals = function (other) {
-    return Color__equals_impl_k06uqz(this.x3t_1, other);
+    return Color__equals_impl_k06uqz(this.f3s_1, other);
   };
   function toArgb(_this__u8e3s4) {
     // Inline function 'kotlin.ULong.toInt' call
     // Inline function 'kotlin.ULong.shr' call
-    var this_0 = _Color___get_value__impl__1pls5m(Color__convert_impl_so5m8t(_this__u8e3s4, ColorSpaces_getInstance().x3s_1));
+    var this_0 = _Color___get_value__impl__1pls5m(Color__convert_impl_so5m8t(_this__u8e3s4, ColorSpaces_getInstance().f3r_1));
     var this_1 = _ULong___init__impl__c78o9k(_ULong___get_data__impl__fggpzb(this_0).mb(32));
     return _ULong___get_data__impl__fggpzb(this_1).ea();
   }
@@ -843,21 +691,21 @@
   }
   function Color_1(red, green, blue, alpha, colorSpace) {
     alpha = alpha === VOID ? 1.0 : alpha;
-    colorSpace = colorSpace === VOID ? ColorSpaces_getInstance().x3s_1 : colorSpace;
+    colorSpace = colorSpace === VOID ? ColorSpaces_getInstance().f3r_1 : colorSpace;
     // Inline function 'kotlin.require' call
     var tmp;
     var tmp_0;
     var tmp_1;
-    var containsLower = colorSpace.c3u(0);
-    if (red <= colorSpace.d3u(0) ? containsLower <= red : false) {
-      var containsLower_0 = colorSpace.c3u(1);
-      tmp_1 = green <= colorSpace.d3u(1) ? containsLower_0 <= green : false;
+    var containsLower = colorSpace.x3s(0);
+    if (red <= colorSpace.y3s(0) ? containsLower <= red : false) {
+      var containsLower_0 = colorSpace.x3s(1);
+      tmp_1 = green <= colorSpace.y3s(1) ? containsLower_0 <= green : false;
     } else {
       tmp_1 = false;
     }
     if (tmp_1) {
-      var containsLower_1 = colorSpace.c3u(2);
-      tmp_0 = blue <= colorSpace.d3u(2) ? containsLower_1 <= blue : false;
+      var containsLower_1 = colorSpace.x3s(2);
+      tmp_0 = blue <= colorSpace.y3s(2) ? containsLower_1 <= blue : false;
     } else {
       tmp_0 = false;
     }
@@ -872,7 +720,7 @@
       var message = 'red = ' + red + ', green = ' + green + ', blue = ' + blue + ', alpha = ' + alpha + ' outside the range for ' + colorSpace;
       throw IllegalArgumentException_init_$Create$(toString(message));
     }
-    if (colorSpace.e3u()) {
+    if (colorSpace.z3s()) {
       var argb = numberToInt(alpha * 255.0 + 0.5) << 24 | numberToInt(red * 255.0 + 0.5) << 16 | numberToInt(green * 255.0 + 0.5) << 8 | numberToInt(blue * 255.0 + 0.5);
       // Inline function 'kotlin.ULong.shl' call
       // Inline function 'kotlin.ULong.and' call
@@ -885,12 +733,12 @@
     }
     // Inline function 'kotlin.require' call
     // Inline function 'kotlin.contracts.contract' call
-    if (!(colorSpace.f3u() === 3)) {
+    if (!(colorSpace.a3t() === 3)) {
       // Inline function 'androidx.compose.ui.graphics.Color.<anonymous>' call
       var message_0 = 'Color only works with ColorSpaces with 3 components';
       throw IllegalArgumentException_init_$Create$(toString(message_0));
     }
-    var id = colorSpace.b3u_1;
+    var id = colorSpace.j3s_1;
     // Inline function 'kotlin.require' call
     // Inline function 'kotlin.contracts.contract' call
     if (!!(id === -1)) {
@@ -966,15 +814,15 @@
     var colorSpace = _Color___get_colorSpace__impl__jqqozk(_this__u8e3s4);
     // Inline function 'kotlin.require' call
     // Inline function 'kotlin.contracts.contract' call
-    if (!equals(colorSpace.a3u_1, Companion_getInstance_19().g3u_1)) {
+    if (!equals(colorSpace.i3s_1, Companion_getInstance_16().b3t_1)) {
       // Inline function 'androidx.compose.ui.graphics.luminance.<anonymous>' call
-      var message = 'The specified color must be encoded in an RGB color space. ' + ('The supplied color space is ' + new ColorModel(colorSpace.a3u_1));
+      var message = 'The specified color must be encoded in an RGB color space. ' + ('The supplied color space is ' + new ColorModel(colorSpace.i3s_1));
       throw IllegalArgumentException_init_$Create$(toString(message));
     }
-    var eotf = (colorSpace instanceof Rgb ? colorSpace : THROW_CCE()).z3u_1;
-    var r = eotf.c3v(_Color___get_red__impl__cwrsk6(_this__u8e3s4));
-    var g = eotf.c3v(_Color___get_green__impl__bta9rs(_this__u8e3s4));
-    var b = eotf.c3v(_Color___get_blue__impl__xwez13(_this__u8e3s4));
+    var eotf = (colorSpace instanceof Rgb ? colorSpace : THROW_CCE()).u3t_1;
+    var r = eotf.x3t(_Color___get_red__impl__cwrsk6(_this__u8e3s4));
+    var g = eotf.x3t(_Color___get_green__impl__bta9rs(_this__u8e3s4));
+    var b = eotf.x3t(_Color___get_blue__impl__xwez13(_this__u8e3s4));
     return saturate(0.2126 * r + 0.7152 * g + 0.0722 * b);
   }
   function Color_3(red, green, blue, alpha) {
@@ -988,18 +836,18 @@
   function _FilterQuality___init__impl__nv51aq(value) {
     return value;
   }
-  function Companion_3() {
-    Companion_instance_5 = this;
-    this.d3v_1 = _FilterQuality___init__impl__nv51aq(0);
-    this.e3v_1 = _FilterQuality___init__impl__nv51aq(1);
-    this.f3v_1 = _FilterQuality___init__impl__nv51aq(2);
-    this.g3v_1 = _FilterQuality___init__impl__nv51aq(3);
+  function Companion_2() {
+    Companion_instance_4 = this;
+    this.y3t_1 = _FilterQuality___init__impl__nv51aq(0);
+    this.z3t_1 = _FilterQuality___init__impl__nv51aq(1);
+    this.a3u_1 = _FilterQuality___init__impl__nv51aq(2);
+    this.b3u_1 = _FilterQuality___init__impl__nv51aq(3);
   }
-  var Companion_instance_5;
-  function Companion_getInstance_8() {
-    if (Companion_instance_5 == null)
-      new Companion_3();
-    return Companion_instance_5;
+  var Companion_instance_4;
+  function Companion_getInstance_6() {
+    if (Companion_instance_4 == null)
+      new Companion_2();
+    return Companion_instance_4;
   }
   function floatToHalf($this, f) {
     var bits = toRawBits(f);
@@ -1041,7 +889,7 @@
     return $this;
   }
   function _Float16___init__impl__fckrew_0(value) {
-    return _Float16___init__impl__fckrew(floatToHalf(Companion_getInstance_9(), value));
+    return _Float16___init__impl__fckrew(floatToHalf(Companion_getInstance_7(), value));
   }
   function Float16__toFloat_impl_6i8dal($this) {
     var bits = _Float16___get_halfValue__impl__89tmwx($this) & 65535;
@@ -1055,7 +903,7 @@
         // Inline function 'kotlin.fromBits' call
         var bits_0 = 1056964608 + m | 0;
         var o = floatFromBits(bits_0);
-        o = o - Companion_getInstance_9().l3w_1;
+        o = o - Companion_getInstance_7().g3v_1;
         return s === 0 ? o : -o;
       }
     } else {
@@ -1073,48 +921,48 @@
     // Inline function 'kotlin.fromBits' call
     return floatFromBits(out);
   }
-  function Companion_4() {
-    Companion_instance_6 = this;
-    this.h3v_1 = 16;
-    this.i3v_1 = _Float16___init__impl__fckrew(5120);
-    this.j3v_1 = 15;
-    this.k3v_1 = -14;
-    this.l3v_1 = _Float16___init__impl__fckrew(-1025);
-    this.m3v_1 = _Float16___init__impl__fckrew(31743);
-    this.n3v_1 = _Float16___init__impl__fckrew(1024);
-    this.o3v_1 = _Float16___init__impl__fckrew(1);
-    this.p3v_1 = _Float16___init__impl__fckrew(32256);
-    this.q3v_1 = _Float16___init__impl__fckrew(-1024);
-    this.r3v_1 = _Float16___init__impl__fckrew(-32768);
-    this.s3v_1 = _Float16___init__impl__fckrew(31744);
-    this.t3v_1 = _Float16___init__impl__fckrew(0);
-    this.u3v_1 = _Float16___init__impl__fckrew_0(1.0);
-    this.v3v_1 = _Float16___init__impl__fckrew_0(-1.0);
-    this.w3v_1 = 15;
-    this.x3v_1 = 32768;
-    this.y3v_1 = 10;
-    this.z3v_1 = 31;
-    this.a3w_1 = 1023;
-    this.b3w_1 = 15;
-    this.c3w_1 = 32767;
-    this.d3w_1 = 31744;
-    this.e3w_1 = 31;
-    this.f3w_1 = 23;
-    this.g3w_1 = 255;
-    this.h3w_1 = 8388607;
-    this.i3w_1 = 127;
-    this.j3w_1 = 4194304;
-    this.k3w_1 = 1056964608;
+  function Companion_3() {
+    Companion_instance_5 = this;
+    this.c3u_1 = 16;
+    this.d3u_1 = _Float16___init__impl__fckrew(5120);
+    this.e3u_1 = 15;
+    this.f3u_1 = -14;
+    this.g3u_1 = _Float16___init__impl__fckrew(-1025);
+    this.h3u_1 = _Float16___init__impl__fckrew(31743);
+    this.i3u_1 = _Float16___init__impl__fckrew(1024);
+    this.j3u_1 = _Float16___init__impl__fckrew(1);
+    this.k3u_1 = _Float16___init__impl__fckrew(32256);
+    this.l3u_1 = _Float16___init__impl__fckrew(-1024);
+    this.m3u_1 = _Float16___init__impl__fckrew(-32768);
+    this.n3u_1 = _Float16___init__impl__fckrew(31744);
+    this.o3u_1 = _Float16___init__impl__fckrew(0);
+    this.p3u_1 = _Float16___init__impl__fckrew_0(1.0);
+    this.q3u_1 = _Float16___init__impl__fckrew_0(-1.0);
+    this.r3u_1 = 15;
+    this.s3u_1 = 32768;
+    this.t3u_1 = 10;
+    this.u3u_1 = 31;
+    this.v3u_1 = 1023;
+    this.w3u_1 = 15;
+    this.x3u_1 = 32767;
+    this.y3u_1 = 31744;
+    this.z3u_1 = 31;
+    this.a3v_1 = 23;
+    this.b3v_1 = 255;
+    this.c3v_1 = 8388607;
+    this.d3v_1 = 127;
+    this.e3v_1 = 4194304;
+    this.f3v_1 = 1056964608;
     var tmp = this;
     // Inline function 'kotlin.fromBits' call
     var bits = 1056964608;
-    tmp.l3w_1 = floatFromBits(bits);
+    tmp.g3v_1 = floatFromBits(bits);
   }
-  var Companion_instance_6;
-  function Companion_getInstance_9() {
-    if (Companion_instance_6 == null)
-      new Companion_4();
-    return Companion_instance_6;
+  var Companion_instance_5;
+  function Companion_getInstance_7() {
+    if (Companion_instance_5 == null)
+      new Companion_3();
+    return Companion_instance_5;
   }
   function _Matrix___init__impl__q3kp4w(values) {
     var tmp;
@@ -1513,7 +1361,7 @@
       tmp = Unit_instance;
     } else {
       var tmp_0 = $super;
-      tmp = (tmp_0 == null ? null : new Matrix(tmp_0)).n3w.call(new Matrix($this), x, y, z);
+      tmp = (tmp_0 == null ? null : new Matrix(tmp_0)).i3v.call(new Matrix($this), x, y, z);
     }
     return tmp;
   }
@@ -1569,26 +1417,26 @@
       tmp = Unit_instance;
     } else {
       var tmp_0 = $super;
-      tmp = (tmp_0 == null ? null : new Matrix(tmp_0)).o3w.call(new Matrix($this), x, y, z);
+      tmp = (tmp_0 == null ? null : new Matrix(tmp_0)).j3v.call(new Matrix($this), x, y, z);
     }
     return tmp;
   }
-  function Companion_5() {
-    this.p3w_1 = 0;
-    this.q3w_1 = 1;
-    this.r3w_1 = 3;
-    this.s3w_1 = 4;
-    this.t3w_1 = 5;
-    this.u3w_1 = 7;
-    this.v3w_1 = 10;
-    this.w3w_1 = 12;
-    this.x3w_1 = 13;
-    this.y3w_1 = 14;
-    this.z3w_1 = 15;
+  function Companion_4() {
+    this.k3v_1 = 0;
+    this.l3v_1 = 1;
+    this.m3v_1 = 3;
+    this.n3v_1 = 4;
+    this.o3v_1 = 5;
+    this.p3v_1 = 7;
+    this.q3v_1 = 10;
+    this.r3v_1 = 12;
+    this.s3v_1 = 13;
+    this.t3v_1 = 14;
+    this.u3v_1 = 15;
   }
-  var Companion_instance_7;
-  function Companion_getInstance_10() {
-    return Companion_instance_7;
+  var Companion_instance_6;
+  function Companion_getInstance_8() {
+    return Companion_instance_6;
   }
   function Matrix__hashCode_impl_s9ntm9($this) {
     return hashCode($this);
@@ -1596,22 +1444,22 @@
   function Matrix__equals_impl_g5p8p9($this, other) {
     if (!(other instanceof Matrix))
       return false;
-    var tmp0_other_with_cast = other instanceof Matrix ? other.m3w_1 : THROW_CCE();
+    var tmp0_other_with_cast = other instanceof Matrix ? other.h3v_1 : THROW_CCE();
     if (!equals($this, tmp0_other_with_cast))
       return false;
     return true;
   }
   function Matrix(values) {
-    this.m3w_1 = values;
+    this.h3v_1 = values;
   }
   protoOf(Matrix).toString = function () {
-    return Matrix__toString_impl_l0abk0(this.m3w_1);
+    return Matrix__toString_impl_l0abk0(this.h3v_1);
   };
   protoOf(Matrix).hashCode = function () {
-    return Matrix__hashCode_impl_s9ntm9(this.m3w_1);
+    return Matrix__hashCode_impl_s9ntm9(this.h3v_1);
   };
   protoOf(Matrix).equals = function (other) {
-    return Matrix__equals_impl_g5p8p9(this.m3w_1, other);
+    return Matrix__equals_impl_g5p8p9(this.h3v_1, other);
   };
   function dot(m1, row, m2, column) {
     // Inline function 'androidx.compose.ui.graphics.Matrix.get' call
@@ -1655,48 +1503,48 @@
   }
   function Rectangle(rect) {
     Outline.call(this);
-    this.a3x_1 = rect;
+    this.v3v_1 = rect;
   }
   protoOf(Rectangle).equals = function (other) {
     if (this === other)
       return true;
     if (!(other instanceof Rectangle))
       return false;
-    if (!this.a3x_1.equals(other.a3x_1))
+    if (!this.v3v_1.equals(other.v3v_1))
       return false;
     return true;
   };
   protoOf(Rectangle).hashCode = function () {
-    return this.a3x_1.hashCode();
+    return this.v3v_1.hashCode();
   };
   function Rounded(roundRect) {
     Outline.call(this);
-    this.b3x_1 = roundRect;
+    this.w3v_1 = roundRect;
     var tmp = this;
     var tmp_0;
-    if (!hasSameCornerRadius(this.b3x_1)) {
+    if (!hasSameCornerRadius(this.w3v_1)) {
       // Inline function 'kotlin.apply' call
       var this_0 = Path_0();
       // Inline function 'kotlin.contracts.contract' call
       // Inline function 'androidx.compose.ui.graphics.Rounded.<anonymous>' call
-      this_0.d3x(this.b3x_1);
+      this_0.y3v(this.w3v_1);
       tmp_0 = this_0;
     } else {
       tmp_0 = null;
     }
-    tmp.c3x_1 = tmp_0;
+    tmp.x3v_1 = tmp_0;
   }
   protoOf(Rounded).equals = function (other) {
     if (this === other)
       return true;
     if (!(other instanceof Rounded))
       return false;
-    if (!this.b3x_1.equals(other.b3x_1))
+    if (!this.w3v_1.equals(other.w3v_1))
       return false;
     return true;
   };
   protoOf(Rounded).hashCode = function () {
-    return this.b3x_1.hashCode();
+    return this.w3v_1.hashCode();
   };
   function Generic() {
   }
@@ -1711,34 +1559,34 @@
     alpha = alpha === VOID ? 1.0 : alpha;
     style = style === VOID ? Fill_getInstance() : style;
     colorFilter = colorFilter === VOID ? null : colorFilter;
-    blendMode = blendMode === VOID ? Companion_getInstance_26().e3x_1 : blendMode;
+    blendMode = blendMode === VOID ? Companion_getInstance_23().z3v_1 : blendMode;
     // Inline function 'androidx.compose.ui.graphics.drawOutlineHelper' call
     var tmp;
     if (outline instanceof Rectangle) {
-      var rect = outline.a3x_1;
-      _this__u8e3s4.j3x(color, topLeft(rect), size(rect), alpha, style, colorFilter, blendMode);
+      var rect = outline.v3v_1;
+      _this__u8e3s4.e3w(color, topLeft(rect), size(rect), alpha, style, colorFilter, blendMode);
       tmp = Unit_instance;
     } else {
       if (outline instanceof Rounded) {
-        var path = outline.c3x_1;
+        var path = outline.x3v_1;
         var tmp_0;
         if (!(path == null)) {
-          _this__u8e3s4.h3x(path, color, alpha, style, colorFilter, blendMode);
+          _this__u8e3s4.c3w(path, color, alpha, style, colorFilter, blendMode);
           tmp_0 = Unit_instance;
         } else {
-          var rrect = outline.b3x_1;
+          var rrect = outline.w3v_1;
           var radius = _CornerRadius___get_x__impl__1594cn(rrect.u34_1);
           var tmp0_topLeft = topLeft_0(rrect);
           var tmp1_size = size_0(rrect);
           var tmp2_cornerRadius = CornerRadius(radius);
-          _this__u8e3s4.i3x(color, tmp0_topLeft, tmp1_size, tmp2_cornerRadius, style, alpha, colorFilter, blendMode);
+          _this__u8e3s4.d3w(color, tmp0_topLeft, tmp1_size, tmp2_cornerRadius, style, alpha, colorFilter, blendMode);
           tmp_0 = Unit_instance;
         }
         tmp = tmp_0;
       } else {
         if (outline instanceof Generic) {
-          var path_0 = outline.g3x_1;
-          _this__u8e3s4.h3x(path_0, color, alpha, style, colorFilter, blendMode);
+          var path_0 = outline.b3w_1;
+          _this__u8e3s4.c3w(path_0, color, alpha, style, colorFilter, blendMode);
           tmp = Unit_instance;
         } else {
           noWhenBranchMatchedException();
@@ -1751,31 +1599,31 @@
     alpha = alpha === VOID ? 1.0 : alpha;
     style = style === VOID ? Fill_getInstance() : style;
     colorFilter = colorFilter === VOID ? null : colorFilter;
-    blendMode = blendMode === VOID ? Companion_getInstance_26().e3x_1 : blendMode;
+    blendMode = blendMode === VOID ? Companion_getInstance_23().z3v_1 : blendMode;
     // Inline function 'androidx.compose.ui.graphics.drawOutlineHelper' call
     var tmp;
     if (outline instanceof Rectangle) {
-      var rect = outline.a3x_1;
-      _this__u8e3s4.m3x(brush, topLeft(rect), size(rect), alpha, style, colorFilter, blendMode);
+      var rect = outline.v3v_1;
+      _this__u8e3s4.h3w(brush, topLeft(rect), size(rect), alpha, style, colorFilter, blendMode);
       tmp = Unit_instance;
     } else {
       if (outline instanceof Rounded) {
-        var path = outline.c3x_1;
+        var path = outline.x3v_1;
         var tmp_0;
         if (!(path == null)) {
-          _this__u8e3s4.k3x(path, brush, alpha, style, colorFilter, blendMode);
+          _this__u8e3s4.f3w(path, brush, alpha, style, colorFilter, blendMode);
           tmp_0 = Unit_instance;
         } else {
-          var rrect = outline.b3x_1;
+          var rrect = outline.w3v_1;
           var radius = _CornerRadius___get_x__impl__1594cn(rrect.u34_1);
-          _this__u8e3s4.l3x(brush, topLeft_0(rrect), size_0(rrect), CornerRadius(radius), alpha, style, colorFilter, blendMode);
+          _this__u8e3s4.g3w(brush, topLeft_0(rrect), size_0(rrect), CornerRadius(radius), alpha, style, colorFilter, blendMode);
           tmp_0 = Unit_instance;
         }
         tmp = tmp_0;
       } else {
         if (outline instanceof Generic) {
-          var path_0 = outline.g3x_1;
-          _this__u8e3s4.k3x(path_0, brush, alpha, style, colorFilter, blendMode);
+          var path_0 = outline.b3w_1;
+          _this__u8e3s4.f3w(path_0, brush, alpha, style, colorFilter, blendMode);
           tmp = Unit_instance;
         } else {
           noWhenBranchMatchedException();
@@ -1799,49 +1647,49 @@
   function _PaintingStyle___init__impl__pwxppo(value) {
     return value;
   }
-  function Companion_6() {
-    Companion_instance_8 = this;
-    this.n3x_1 = _PaintingStyle___init__impl__pwxppo(0);
-    this.o3x_1 = _PaintingStyle___init__impl__pwxppo(1);
+  function Companion_5() {
+    Companion_instance_7 = this;
+    this.i3w_1 = _PaintingStyle___init__impl__pwxppo(0);
+    this.j3w_1 = _PaintingStyle___init__impl__pwxppo(1);
   }
-  var Companion_instance_8;
-  function Companion_getInstance_11() {
-    if (Companion_instance_8 == null)
-      new Companion_6();
-    return Companion_instance_8;
+  var Companion_instance_7;
+  function Companion_getInstance_9() {
+    if (Companion_instance_7 == null)
+      new Companion_5();
+    return Companion_instance_7;
   }
   function Path() {
   }
   function _PathFillType___init__impl__d59lzz(value) {
     return value;
   }
-  function Companion_7() {
-    Companion_instance_9 = this;
-    this.u3x_1 = _PathFillType___init__impl__d59lzz(0);
-    this.v3x_1 = _PathFillType___init__impl__d59lzz(1);
+  function Companion_6() {
+    Companion_instance_8 = this;
+    this.p3w_1 = _PathFillType___init__impl__d59lzz(0);
+    this.q3w_1 = _PathFillType___init__impl__d59lzz(1);
   }
-  var Companion_instance_9;
-  function Companion_getInstance_12() {
-    if (Companion_instance_9 == null)
-      new Companion_7();
-    return Companion_instance_9;
+  var Companion_instance_8;
+  function Companion_getInstance_10() {
+    if (Companion_instance_8 == null)
+      new Companion_6();
+    return Companion_instance_8;
   }
   function _PathOperation___init__impl__8ddeif(value) {
     return value;
   }
-  function Companion_8() {
-    Companion_instance_10 = this;
-    this.w3x_1 = _PathOperation___init__impl__8ddeif(0);
-    this.x3x_1 = _PathOperation___init__impl__8ddeif(1);
-    this.y3x_1 = _PathOperation___init__impl__8ddeif(2);
-    this.z3x_1 = _PathOperation___init__impl__8ddeif(3);
-    this.a3y_1 = _PathOperation___init__impl__8ddeif(4);
+  function Companion_7() {
+    Companion_instance_9 = this;
+    this.r3w_1 = _PathOperation___init__impl__8ddeif(0);
+    this.s3w_1 = _PathOperation___init__impl__8ddeif(1);
+    this.t3w_1 = _PathOperation___init__impl__8ddeif(2);
+    this.u3w_1 = _PathOperation___init__impl__8ddeif(3);
+    this.v3w_1 = _PathOperation___init__impl__8ddeif(4);
   }
-  var Companion_instance_10;
-  function Companion_getInstance_13() {
-    if (Companion_instance_10 == null)
-      new Companion_8();
-    return Companion_instance_10;
+  var Companion_instance_9;
+  function Companion_getInstance_11() {
+    if (Companion_instance_9 == null)
+      new Companion_7();
+    return Companion_instance_9;
   }
   function get_RectangleShape() {
     _init_properties_RectangleShape_kt__k3dd0u();
@@ -1850,7 +1698,7 @@
   var RectangleShape;
   function RectangleShape$1() {
   }
-  protoOf(RectangleShape$1).b3y = function (size, layoutDirection, density) {
+  protoOf(RectangleShape$1).w3w = function (size, layoutDirection, density) {
     return new Rectangle(toRect(size));
   };
   protoOf(RectangleShape$1).toString = function () {
@@ -1863,69 +1711,64 @@
       RectangleShape = new RectangleShape$1();
     }
   }
-  function LinearGradientShader(from, to, colors, colorStops, tileMode) {
-    colorStops = colorStops === VOID ? null : colorStops;
-    tileMode = tileMode === VOID ? Companion_getInstance_17().r3q_1 : tileMode;
-    return ActualLinearGradientShader(from, to, colors, colorStops, tileMode);
+  function Companion_8() {
+    Companion_instance_10 = this;
+    this.x3w_1 = new Shadow();
   }
-  function Companion_9() {
-    Companion_instance_11 = this;
-    this.c3y_1 = new Shadow();
-  }
-  var Companion_instance_11;
-  function Companion_getInstance_14() {
-    if (Companion_instance_11 == null)
-      new Companion_9();
-    return Companion_instance_11;
+  var Companion_instance_10;
+  function Companion_getInstance_12() {
+    if (Companion_instance_10 == null)
+      new Companion_8();
+    return Companion_instance_10;
   }
   function Shadow(color, offset, blurRadius) {
-    Companion_getInstance_14();
+    Companion_getInstance_12();
     color = color === VOID ? Color_2(new Long(-16777216, 0)) : color;
-    offset = offset === VOID ? Companion_getInstance_0().u33_1 : offset;
+    offset = offset === VOID ? Companion_getInstance().u33_1 : offset;
     blurRadius = blurRadius === VOID ? 0.0 : blurRadius;
-    this.d3y_1 = color;
-    this.e3y_1 = offset;
-    this.f3y_1 = blurRadius;
+    this.y3w_1 = color;
+    this.z3w_1 = offset;
+    this.a3x_1 = blurRadius;
   }
   protoOf(Shadow).equals = function (other) {
     if (this === other)
       return true;
     if (!(other instanceof Shadow))
       return false;
-    if (!equals(this.d3y_1, other.d3y_1))
+    if (!equals(this.y3w_1, other.y3w_1))
       return false;
-    if (!equals(this.e3y_1, other.e3y_1))
+    if (!equals(this.z3w_1, other.z3w_1))
       return false;
-    if (!(this.f3y_1 === other.f3y_1))
+    if (!(this.a3x_1 === other.a3x_1))
       return false;
     return true;
   };
   protoOf(Shadow).hashCode = function () {
-    var result = Color__hashCode_impl_vjyivj(this.d3y_1);
-    result = imul(31, result) + Offset__hashCode_impl_hbql41(this.e3y_1) | 0;
-    result = imul(31, result) + getNumberHashCode(this.f3y_1) | 0;
+    var result = Color__hashCode_impl_vjyivj(this.y3w_1);
+    result = imul(31, result) + Offset__hashCode_impl_hbql41(this.z3w_1) | 0;
+    result = imul(31, result) + getNumberHashCode(this.a3x_1) | 0;
     return result;
   };
   protoOf(Shadow).toString = function () {
-    return 'Shadow(color=' + new Color(this.d3y_1) + ', offset=' + new Offset_0(this.e3y_1) + ', blurRadius=' + this.f3y_1 + ')';
+    return 'Shadow(color=' + new Color(this.y3w_1) + ', offset=' + new Offset_0(this.z3w_1) + ', blurRadius=' + this.a3x_1 + ')';
   };
   function _StrokeCap___init__impl__kfgr27(value) {
     return value;
   }
-  function Companion_10() {
-    Companion_instance_12 = this;
-    this.g3y_1 = _StrokeCap___init__impl__kfgr27(0);
-    this.h3y_1 = _StrokeCap___init__impl__kfgr27(1);
-    this.i3y_1 = _StrokeCap___init__impl__kfgr27(2);
+  function Companion_9() {
+    Companion_instance_11 = this;
+    this.b3x_1 = _StrokeCap___init__impl__kfgr27(0);
+    this.c3x_1 = _StrokeCap___init__impl__kfgr27(1);
+    this.d3x_1 = _StrokeCap___init__impl__kfgr27(2);
   }
-  var Companion_instance_12;
-  function Companion_getInstance_15() {
-    if (Companion_instance_12 == null)
-      new Companion_10();
-    return Companion_instance_12;
+  var Companion_instance_11;
+  function Companion_getInstance_13() {
+    if (Companion_instance_11 == null)
+      new Companion_9();
+    return Companion_instance_11;
   }
   function StrokeCap__toString_impl_3xn0rd($this) {
-    return $this === Companion_getInstance_15().g3y_1 ? 'Butt' : $this === Companion_getInstance_15().h3y_1 ? 'Round' : $this === Companion_getInstance_15().i3y_1 ? 'Square' : 'Unknown';
+    return $this === Companion_getInstance_13().b3x_1 ? 'Butt' : $this === Companion_getInstance_13().c3x_1 ? 'Round' : $this === Companion_getInstance_13().d3x_1 ? 'Square' : 'Unknown';
   }
   function StrokeCap__hashCode_impl_posxk8($this) {
     return $this;
@@ -1933,40 +1776,40 @@
   function StrokeCap__equals_impl_m9bjik($this, other) {
     if (!(other instanceof StrokeCap))
       return false;
-    if (!($this === (other instanceof StrokeCap ? other.j3y_1 : THROW_CCE())))
+    if (!($this === (other instanceof StrokeCap ? other.e3x_1 : THROW_CCE())))
       return false;
     return true;
   }
   function StrokeCap(value) {
-    Companion_getInstance_15();
-    this.j3y_1 = value;
+    Companion_getInstance_13();
+    this.e3x_1 = value;
   }
   protoOf(StrokeCap).toString = function () {
-    return StrokeCap__toString_impl_3xn0rd(this.j3y_1);
+    return StrokeCap__toString_impl_3xn0rd(this.e3x_1);
   };
   protoOf(StrokeCap).hashCode = function () {
-    return StrokeCap__hashCode_impl_posxk8(this.j3y_1);
+    return StrokeCap__hashCode_impl_posxk8(this.e3x_1);
   };
   protoOf(StrokeCap).equals = function (other) {
-    return StrokeCap__equals_impl_m9bjik(this.j3y_1, other);
+    return StrokeCap__equals_impl_m9bjik(this.e3x_1, other);
   };
   function _StrokeJoin___init__impl__ig23zz(value) {
     return value;
   }
-  function Companion_11() {
-    Companion_instance_13 = this;
-    this.k3y_1 = _StrokeJoin___init__impl__ig23zz(0);
-    this.l3y_1 = _StrokeJoin___init__impl__ig23zz(1);
-    this.m3y_1 = _StrokeJoin___init__impl__ig23zz(2);
+  function Companion_10() {
+    Companion_instance_12 = this;
+    this.f3x_1 = _StrokeJoin___init__impl__ig23zz(0);
+    this.g3x_1 = _StrokeJoin___init__impl__ig23zz(1);
+    this.h3x_1 = _StrokeJoin___init__impl__ig23zz(2);
   }
-  var Companion_instance_13;
-  function Companion_getInstance_16() {
-    if (Companion_instance_13 == null)
-      new Companion_11();
-    return Companion_instance_13;
+  var Companion_instance_12;
+  function Companion_getInstance_14() {
+    if (Companion_instance_12 == null)
+      new Companion_10();
+    return Companion_instance_12;
   }
   function StrokeJoin__toString_impl_ph4e1r($this) {
-    return $this === Companion_getInstance_16().k3y_1 ? 'Miter' : $this === Companion_getInstance_16().l3y_1 ? 'Round' : $this === Companion_getInstance_16().m3y_1 ? 'Bevel' : 'Unknown';
+    return $this === Companion_getInstance_14().f3x_1 ? 'Miter' : $this === Companion_getInstance_14().g3x_1 ? 'Round' : $this === Companion_getInstance_14().h3x_1 ? 'Bevel' : 'Unknown';
   }
   function StrokeJoin__hashCode_impl_3pyh8w($this) {
     return $this;
@@ -1974,64 +1817,22 @@
   function StrokeJoin__equals_impl_hf9ej8($this, other) {
     if (!(other instanceof StrokeJoin))
       return false;
-    if (!($this === (other instanceof StrokeJoin ? other.n3y_1 : THROW_CCE())))
+    if (!($this === (other instanceof StrokeJoin ? other.i3x_1 : THROW_CCE())))
       return false;
     return true;
   }
   function StrokeJoin(value) {
-    Companion_getInstance_16();
-    this.n3y_1 = value;
+    Companion_getInstance_14();
+    this.i3x_1 = value;
   }
   protoOf(StrokeJoin).toString = function () {
-    return StrokeJoin__toString_impl_ph4e1r(this.n3y_1);
+    return StrokeJoin__toString_impl_ph4e1r(this.i3x_1);
   };
   protoOf(StrokeJoin).hashCode = function () {
-    return StrokeJoin__hashCode_impl_3pyh8w(this.n3y_1);
+    return StrokeJoin__hashCode_impl_3pyh8w(this.i3x_1);
   };
   protoOf(StrokeJoin).equals = function (other) {
-    return StrokeJoin__equals_impl_hf9ej8(this.n3y_1, other);
-  };
-  function _TileMode___init__impl__syhjao(value) {
-    return value;
-  }
-  function Companion_12() {
-    Companion_instance_14 = this;
-    this.r3q_1 = _TileMode___init__impl__syhjao(0);
-    this.s3q_1 = _TileMode___init__impl__syhjao(1);
-    this.t3q_1 = _TileMode___init__impl__syhjao(2);
-    this.u3q_1 = _TileMode___init__impl__syhjao(3);
-  }
-  var Companion_instance_14;
-  function Companion_getInstance_17() {
-    if (Companion_instance_14 == null)
-      new Companion_12();
-    return Companion_instance_14;
-  }
-  function TileMode__toString_impl_tlb7f4($this) {
-    return $this === Companion_getInstance_17().r3q_1 ? 'Clamp' : $this === Companion_getInstance_17().s3q_1 ? 'Repeated' : $this === Companion_getInstance_17().t3q_1 ? 'Mirror' : $this === Companion_getInstance_17().u3q_1 ? 'Decal' : 'Unknown';
-  }
-  function TileMode__hashCode_impl_7u5am9($this) {
-    return $this;
-  }
-  function TileMode__equals_impl_7nvbdv($this, other) {
-    if (!(other instanceof TileMode))
-      return false;
-    if (!($this === (other instanceof TileMode ? other.o3y_1 : THROW_CCE())))
-      return false;
-    return true;
-  }
-  function TileMode(value) {
-    Companion_getInstance_17();
-    this.o3y_1 = value;
-  }
-  protoOf(TileMode).toString = function () {
-    return TileMode__toString_impl_tlb7f4(this.o3y_1);
-  };
-  protoOf(TileMode).hashCode = function () {
-    return TileMode__hashCode_impl_7u5am9(this.o3y_1);
-  };
-  protoOf(TileMode).equals = function (other) {
-    return TileMode__equals_impl_7nvbdv(this.o3y_1, other);
+    return StrokeJoin__equals_impl_hf9ej8(this.i3x_1, other);
   };
   function Adaptation$Companion$Bradford$1() {
     // Inline function 'kotlin.floatArrayOf' call
@@ -2057,24 +1858,24 @@
   protoOf(Adaptation$Companion$Ciecat02$1).toString = function () {
     return 'Ciecat02';
   };
-  function Companion_13() {
-    Companion_instance_15 = this;
+  function Companion_11() {
+    Companion_instance_13 = this;
     var tmp = this;
-    tmp.p3y_1 = new Adaptation$Companion$Bradford$1();
+    tmp.j3x_1 = new Adaptation$Companion$Bradford$1();
     var tmp_0 = this;
-    tmp_0.q3y_1 = new Adaptation$Companion$VonKries$1();
+    tmp_0.k3x_1 = new Adaptation$Companion$VonKries$1();
     var tmp_1 = this;
-    tmp_1.r3y_1 = new Adaptation$Companion$Ciecat02$1();
+    tmp_1.l3x_1 = new Adaptation$Companion$Ciecat02$1();
   }
-  var Companion_instance_15;
-  function Companion_getInstance_18() {
-    if (Companion_instance_15 == null)
-      new Companion_13();
-    return Companion_instance_15;
+  var Companion_instance_13;
+  function Companion_getInstance_15() {
+    if (Companion_instance_13 == null)
+      new Companion_11();
+    return Companion_instance_13;
   }
   function Adaptation(transform) {
-    Companion_getInstance_18();
-    this.s3y_1 = transform;
+    Companion_getInstance_15();
+    this.m3x_1 = transform;
   }
   function _ColorModel___init__impl__b968n9(packedValue) {
     return packedValue;
@@ -2086,33 +1887,33 @@
     // Inline function 'androidx.compose.ui.util.unpackInt1' call
     return _ColorModel___get_packedValue__impl__uvxrhj($this).lb(32).ea();
   }
-  function Companion_14() {
-    Companion_instance_16 = this;
+  function Companion_12() {
+    Companion_instance_14 = this;
     var tmp = this;
     // Inline function 'androidx.compose.ui.util.packInts' call
     var tmp$ret$0 = toLong(3).kb(32).ob(toLong(0).nb(new Long(-1, 0)));
-    tmp.g3u_1 = _ColorModel___init__impl__b968n9(tmp$ret$0);
+    tmp.b3t_1 = _ColorModel___init__impl__b968n9(tmp$ret$0);
     var tmp_0 = this;
     // Inline function 'androidx.compose.ui.util.packInts' call
     var tmp$ret$1 = toLong(3).kb(32).ob(toLong(1).nb(new Long(-1, 0)));
-    tmp_0.h3u_1 = _ColorModel___init__impl__b968n9(tmp$ret$1);
+    tmp_0.c3t_1 = _ColorModel___init__impl__b968n9(tmp$ret$1);
     var tmp_1 = this;
     // Inline function 'androidx.compose.ui.util.packInts' call
     var tmp$ret$2 = toLong(3).kb(32).ob(toLong(2).nb(new Long(-1, 0)));
-    tmp_1.i3u_1 = _ColorModel___init__impl__b968n9(tmp$ret$2);
+    tmp_1.d3t_1 = _ColorModel___init__impl__b968n9(tmp$ret$2);
     var tmp_2 = this;
     // Inline function 'androidx.compose.ui.util.packInts' call
     var tmp$ret$3 = toLong(4).kb(32).ob(toLong(3).nb(new Long(-1, 0)));
-    tmp_2.j3u_1 = _ColorModel___init__impl__b968n9(tmp$ret$3);
+    tmp_2.e3t_1 = _ColorModel___init__impl__b968n9(tmp$ret$3);
   }
-  var Companion_instance_16;
-  function Companion_getInstance_19() {
-    if (Companion_instance_16 == null)
-      new Companion_14();
-    return Companion_instance_16;
+  var Companion_instance_14;
+  function Companion_getInstance_16() {
+    if (Companion_instance_14 == null)
+      new Companion_12();
+    return Companion_instance_14;
   }
   function ColorModel__toString_impl_msukd7($this) {
-    return equals($this, Companion_getInstance_19().g3u_1) ? 'Rgb' : equals($this, Companion_getInstance_19().h3u_1) ? 'Xyz' : equals($this, Companion_getInstance_19().i3u_1) ? 'Lab' : equals($this, Companion_getInstance_19().j3u_1) ? 'Cmyk' : 'Unknown';
+    return equals($this, Companion_getInstance_16().b3t_1) ? 'Rgb' : equals($this, Companion_getInstance_16().c3t_1) ? 'Xyz' : equals($this, Companion_getInstance_16().d3t_1) ? 'Lab' : equals($this, Companion_getInstance_16().e3t_1) ? 'Cmyk' : 'Unknown';
   }
   function ColorModel__hashCode_impl_11onkc($this) {
     return $this.hashCode();
@@ -2120,58 +1921,58 @@
   function ColorModel__equals_impl_dbkfqg($this, other) {
     if (!(other instanceof ColorModel))
       return false;
-    var tmp0_other_with_cast = other instanceof ColorModel ? other.t3y_1 : THROW_CCE();
+    var tmp0_other_with_cast = other instanceof ColorModel ? other.n3x_1 : THROW_CCE();
     if (!$this.equals(tmp0_other_with_cast))
       return false;
     return true;
   }
   function ColorModel(packedValue) {
-    Companion_getInstance_19();
-    this.t3y_1 = packedValue;
+    Companion_getInstance_16();
+    this.n3x_1 = packedValue;
   }
   protoOf(ColorModel).toString = function () {
-    return ColorModel__toString_impl_msukd7(this.t3y_1);
+    return ColorModel__toString_impl_msukd7(this.n3x_1);
   };
   protoOf(ColorModel).hashCode = function () {
-    return ColorModel__hashCode_impl_11onkc(this.t3y_1);
+    return ColorModel__hashCode_impl_11onkc(this.n3x_1);
   };
   protoOf(ColorModel).equals = function (other) {
-    return ColorModel__equals_impl_dbkfqg(this.t3y_1, other);
+    return ColorModel__equals_impl_dbkfqg(this.n3x_1, other);
   };
-  function Companion_15() {
-    this.u3y_1 = -1;
-    this.v3y_1 = 63;
+  function Companion_13() {
+    this.o3x_1 = -1;
+    this.p3x_1 = 63;
   }
-  var Companion_instance_17;
-  function Companion_getInstance_20() {
-    return Companion_instance_17;
+  var Companion_instance_15;
+  function Companion_getInstance_17() {
+    return Companion_instance_15;
   }
   function ColorSpace(name, model, id) {
-    this.z3t_1 = name;
-    this.a3u_1 = model;
-    this.b3u_1 = id;
+    this.h3s_1 = name;
+    this.i3s_1 = model;
+    this.j3s_1 = id;
     // Inline function 'kotlin.text.isEmpty' call
-    var this_0 = this.z3t_1;
+    var this_0 = this.h3s_1;
     if (charSequenceLength(this_0) === 0) {
       throw IllegalArgumentException_init_$Create$('The name of a color space cannot be null and must contain at least 1 character');
     }
-    if (this.b3u_1 < -1 ? true : this.b3u_1 > 63) {
+    if (this.j3s_1 < -1 ? true : this.j3s_1 > 63) {
       throw IllegalArgumentException_init_$Create$('The id must be between -1 and 63');
     }
   }
-  protoOf(ColorSpace).f3u = function () {
-    return _ColorModel___get_componentCount__impl__au0uoc(this.a3u_1);
+  protoOf(ColorSpace).a3t = function () {
+    return _ColorModel___get_componentCount__impl__au0uoc(this.i3s_1);
   };
-  protoOf(ColorSpace).e3u = function () {
+  protoOf(ColorSpace).z3s = function () {
     return false;
   };
-  protoOf(ColorSpace).w3y = function (r, g, b) {
+  protoOf(ColorSpace).q3x = function (r, g, b) {
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$0 = new Float32Array([r, g, b]);
-    return this.x3y(tmp$ret$0);
+    return this.r3x(tmp$ret$0);
   };
-  protoOf(ColorSpace).y3y = function (v0, v1, v2) {
-    var xyz = this.w3y(v0, v1, v2);
+  protoOf(ColorSpace).s3x = function (v0, v1, v2) {
+    var xyz = this.q3x(v0, v1, v2);
     // Inline function 'androidx.compose.ui.util.packFloats' call
     var val1 = xyz[0];
     var val2 = xyz[1];
@@ -2179,23 +1980,23 @@
     var v2_0 = toLong(toRawBits(val2));
     return v1_0.kb(32).ob(v2_0.nb(new Long(-1, 0)));
   };
-  protoOf(ColorSpace).z3y = function (v0, v1, v2) {
-    var xyz = this.w3y(v0, v1, v2);
+  protoOf(ColorSpace).t3x = function (v0, v1, v2) {
+    var xyz = this.q3x(v0, v1, v2);
     return xyz[2];
   };
-  protoOf(ColorSpace).a3z = function (x, y, z, a, colorSpace) {
-    var colors = this.b3z(x, y, z);
+  protoOf(ColorSpace).u3x = function (x, y, z, a, colorSpace) {
+    var colors = this.v3x(x, y, z);
     return Color_1(colors[0], colors[1], colors[2], a, colorSpace);
   };
-  protoOf(ColorSpace).b3z = function (x, y, z) {
-    var xyz = new Float32Array(_ColorModel___get_componentCount__impl__au0uoc(this.a3u_1));
+  protoOf(ColorSpace).v3x = function (x, y, z) {
+    var xyz = new Float32Array(_ColorModel___get_componentCount__impl__au0uoc(this.i3s_1));
     xyz[0] = x;
     xyz[1] = y;
     xyz[2] = z;
-    return this.c3z(xyz);
+    return this.w3x(xyz);
   };
   protoOf(ColorSpace).toString = function () {
-    return this.z3t_1 + ' (id=' + this.b3u_1 + ', model=' + new ColorModel(this.a3u_1) + ')';
+    return this.h3s_1 + ' (id=' + this.j3s_1 + ', model=' + new ColorModel(this.i3s_1) + ')';
   };
   protoOf(ColorSpace).equals = function (other) {
     if (this === other) {
@@ -2205,34 +2006,34 @@
       return false;
     }
     var that = other instanceof ColorSpace ? other : THROW_CCE();
-    if (!(this.b3u_1 === that.b3u_1))
+    if (!(this.j3s_1 === that.j3s_1))
       return false;
-    return !(this.z3t_1 === that.z3t_1) ? false : equals(this.a3u_1, that.a3u_1);
+    return !(this.h3s_1 === that.h3s_1) ? false : equals(this.i3s_1, that.i3s_1);
   };
   protoOf(ColorSpace).hashCode = function () {
-    var result = getStringHashCode(this.z3t_1);
-    result = imul(31, result) + ColorModel__hashCode_impl_11onkc(this.a3u_1) | 0;
-    result = imul(31, result) + this.b3u_1 | 0;
+    var result = getStringHashCode(this.h3s_1);
+    result = imul(31, result) + ColorModel__hashCode_impl_11onkc(this.i3s_1) | 0;
+    result = imul(31, result) + this.j3s_1 | 0;
     return result;
   };
   function connect(_this__u8e3s4, destination, intent) {
-    destination = destination === VOID ? ColorSpaces_getInstance().x3s_1 : destination;
-    intent = intent === VOID ? Companion_getInstance_24().d3z_1 : intent;
-    if (_this__u8e3s4 === ColorSpaces_getInstance().x3s_1) {
-      if (destination === ColorSpaces_getInstance().x3s_1) {
-        return Companion_getInstance_21().h3z_1;
+    destination = destination === VOID ? ColorSpaces_getInstance().f3r_1 : destination;
+    intent = intent === VOID ? Companion_getInstance_21().x3x_1 : intent;
+    if (_this__u8e3s4 === ColorSpaces_getInstance().f3r_1) {
+      if (destination === ColorSpaces_getInstance().f3r_1) {
+        return Companion_getInstance_18().b3y_1;
       }
-      if (destination === ColorSpaces_getInstance().o3t_1 ? intent === Companion_getInstance_24().d3z_1 : false) {
-        return Companion_getInstance_21().i3z_1;
+      if (destination === ColorSpaces_getInstance().w3r_1 ? intent === Companion_getInstance_21().x3x_1 : false) {
+        return Companion_getInstance_18().c3y_1;
       }
-    } else if ((_this__u8e3s4 === ColorSpaces_getInstance().o3t_1 ? destination === ColorSpaces_getInstance().x3s_1 : false) ? intent === Companion_getInstance_24().d3z_1 : false) {
-      return Companion_getInstance_21().j3z_1;
+    } else if ((_this__u8e3s4 === ColorSpaces_getInstance().w3r_1 ? destination === ColorSpaces_getInstance().f3r_1 : false) ? intent === Companion_getInstance_21().x3x_1 : false) {
+      return Companion_getInstance_18().d3y_1;
     }
     if (_this__u8e3s4 === destination) {
-      return Companion_getInstance_21().k3z(_this__u8e3s4);
+      return Companion_getInstance_18().e3y(_this__u8e3s4);
     }
     var tmp;
-    if (equals(_this__u8e3s4.a3u_1, Companion_getInstance_19().g3u_1) ? equals(destination.a3u_1, Companion_getInstance_19().g3u_1) : false) {
+    if (equals(_this__u8e3s4.i3s_1, Companion_getInstance_16().b3t_1) ? equals(destination.i3s_1, Companion_getInstance_16().b3t_1) : false) {
       var tmp_0 = _this__u8e3s4 instanceof Rgb ? _this__u8e3s4 : THROW_CCE();
       tmp = new RgbConnector(tmp_0, destination instanceof Rgb ? destination : THROW_CCE(), intent);
     } else {
@@ -2247,15 +2048,15 @@
     return withSign(response(x < 0.0 ? -x : x, a, b, c, d, g), x);
   }
   function adapt(_this__u8e3s4, whitePoint, adaptation) {
-    adaptation = adaptation === VOID ? Companion_getInstance_18().p3y_1 : adaptation;
-    if (equals(_this__u8e3s4.a3u_1, Companion_getInstance_19().g3u_1)) {
+    adaptation = adaptation === VOID ? Companion_getInstance_15().j3x_1 : adaptation;
+    if (equals(_this__u8e3s4.i3s_1, Companion_getInstance_16().b3t_1)) {
       var rgb = _this__u8e3s4 instanceof Rgb ? _this__u8e3s4 : THROW_CCE();
-      if (compare_0(rgb.n3u_1, whitePoint)) {
+      if (compare_0(rgb.i3t_1, whitePoint)) {
         return _this__u8e3s4;
       }
-      var xyz = whitePoint.n3z();
-      var adaptationTransform = chromaticAdaptation(adaptation.s3y_1, rgb.n3u_1.n3z(), xyz);
-      var transform = mul3x3(adaptationTransform, rgb.s3u_1);
+      var xyz = whitePoint.h3y();
+      var adaptationTransform = chromaticAdaptation(adaptation.m3x_1, rgb.i3t_1.h3y(), xyz);
+      var transform = mul3x3(adaptationTransform, rgb.n3t_1);
       return Rgb_init_$Create$_1(rgb, transform, whitePoint);
     }
     return _this__u8e3s4;
@@ -2306,10 +2107,10 @@
       return true;
     var tmp;
     // Inline function 'kotlin.math.abs' call
-    var x = a.l3z_1 - b.l3z_1;
+    var x = a.f3y_1 - b.f3y_1;
     if (Math.abs(x) < 0.001) {
       // Inline function 'kotlin.math.abs' call
-      var x_0 = a.m3z_1 - b.m3z_1;
+      var x_0 = a.g3y_1 - b.g3y_1;
       tmp = Math.abs(x_0) < 0.001;
     } else {
       tmp = false;
@@ -2412,10 +2213,10 @@
     return tmp;
   }
   function sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0(function_0) {
-    this.o3z_1 = function_0;
+    this.i3y_1 = function_0;
   }
-  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0).c3v = function (double) {
-    return this.o3z_1(double);
+  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0).x3t = function (double) {
+    return this.i3y_1(double);
   };
   function ColorSpaces$ExtendedSrgb$lambda(x) {
     return absRcpResponse(x, 0.9478672985781991, 0.05213270142180095, 0.07739938080495357, 0.04045, 2.4);
@@ -2427,67 +2228,67 @@
     ColorSpaces_instance = this;
     var tmp = this;
     // Inline function 'kotlin.floatArrayOf' call
-    tmp.t3s_1 = new Float32Array([0.64, 0.33, 0.3, 0.6, 0.15, 0.06]);
+    tmp.b3r_1 = new Float32Array([0.64, 0.33, 0.3, 0.6, 0.15, 0.06]);
     var tmp_0 = this;
     // Inline function 'kotlin.floatArrayOf' call
-    tmp_0.u3s_1 = new Float32Array([0.67, 0.33, 0.21, 0.71, 0.14, 0.08]);
-    this.v3s_1 = new TransferParameters(2.4, 0.9478672985781991, 0.05213270142180095, 0.07739938080495357, 0.04045);
-    this.w3s_1 = new TransferParameters(2.2, 0.9478672985781991, 0.05213270142180095, 0.07739938080495357, 0.04045);
-    this.x3s_1 = Rgb_init_$Create$('sRGB IEC61966-2.1', this.t3s_1, Illuminant_getInstance().v3z_1, this.v3s_1, 0);
-    this.y3s_1 = Rgb_init_$Create$_0('sRGB IEC61966-2.1 (Linear)', this.t3s_1, Illuminant_getInstance().v3z_1, 1.0, 0.0, 1.0, 1);
+    tmp_0.c3r_1 = new Float32Array([0.67, 0.33, 0.21, 0.71, 0.14, 0.08]);
+    this.d3r_1 = new TransferParameters(2.4, 0.9478672985781991, 0.05213270142180095, 0.07739938080495357, 0.04045);
+    this.e3r_1 = new TransferParameters(2.2, 0.9478672985781991, 0.05213270142180095, 0.07739938080495357, 0.04045);
+    this.f3r_1 = Rgb_init_$Create$('sRGB IEC61966-2.1', this.b3r_1, Illuminant_getInstance().p3y_1, this.d3r_1, 0);
+    this.g3r_1 = Rgb_init_$Create$_0('sRGB IEC61966-2.1 (Linear)', this.b3r_1, Illuminant_getInstance().p3y_1, 1.0, 0.0, 1.0, 1);
     var tmp_1 = this;
-    var tmp_2 = Illuminant_getInstance().v3z_1;
+    var tmp_2 = Illuminant_getInstance().p3y_1;
     var tmp_3 = ColorSpaces$ExtendedSrgb$lambda;
     var tmp_4 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0(tmp_3);
     var tmp_5 = ColorSpaces$ExtendedSrgb$lambda_0;
-    tmp_1.z3s_1 = new Rgb('scRGB-nl IEC 61966-2-2:2003', this.t3s_1, tmp_2, null, tmp_4, new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0(tmp_5), -0.799, 2.399, this.v3s_1, 2);
-    this.a3t_1 = Rgb_init_$Create$_0('scRGB IEC 61966-2-2:2003', this.t3s_1, Illuminant_getInstance().v3z_1, 1.0, -0.5, 7.499, 3);
+    tmp_1.h3r_1 = new Rgb('scRGB-nl IEC 61966-2-2:2003', this.b3r_1, tmp_2, null, tmp_4, new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0(tmp_5), -0.799, 2.399, this.d3r_1, 2);
+    this.i3r_1 = Rgb_init_$Create$_0('scRGB IEC 61966-2-2:2003', this.b3r_1, Illuminant_getInstance().p3y_1, 1.0, -0.5, 7.499, 3);
     var tmp_6 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$2 = new Float32Array([0.64, 0.33, 0.3, 0.6, 0.15, 0.06]);
-    tmp_6.b3t_1 = Rgb_init_$Create$('Rec. ITU-R BT.709-5', tmp$ret$2, Illuminant_getInstance().v3z_1, new TransferParameters(2.2222222222222223, 0.9099181073703367, 0.09008189262966333, 0.2222222222222222, 0.081), 4);
+    tmp_6.j3r_1 = Rgb_init_$Create$('Rec. ITU-R BT.709-5', tmp$ret$2, Illuminant_getInstance().p3y_1, new TransferParameters(2.2222222222222223, 0.9099181073703367, 0.09008189262966333, 0.2222222222222222, 0.081), 4);
     var tmp_7 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$3 = new Float32Array([0.708, 0.292, 0.17, 0.797, 0.131, 0.046]);
-    tmp_7.c3t_1 = Rgb_init_$Create$('Rec. ITU-R BT.2020-1', tmp$ret$3, Illuminant_getInstance().v3z_1, new TransferParameters(2.2222222222222223, 0.9096697898662786, 0.09033021013372146, 0.2222222222222222, 0.08145), 5);
+    tmp_7.k3r_1 = Rgb_init_$Create$('Rec. ITU-R BT.2020-1', tmp$ret$3, Illuminant_getInstance().p3y_1, new TransferParameters(2.2222222222222223, 0.9096697898662786, 0.09033021013372146, 0.2222222222222222, 0.08145), 5);
     var tmp_8 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$4 = new Float32Array([0.68, 0.32, 0.265, 0.69, 0.15, 0.06]);
-    tmp_8.d3t_1 = Rgb_init_$Create$_0('SMPTE RP 431-2-2007 DCI (P3)', tmp$ret$4, new WhitePoint(0.314, 0.351), 2.6, 0.0, 1.0, 6);
+    tmp_8.l3r_1 = Rgb_init_$Create$_0('SMPTE RP 431-2-2007 DCI (P3)', tmp$ret$4, new WhitePoint(0.314, 0.351), 2.6, 0.0, 1.0, 6);
     var tmp_9 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$5 = new Float32Array([0.68, 0.32, 0.265, 0.69, 0.15, 0.06]);
-    tmp_9.e3t_1 = Rgb_init_$Create$('Display P3', tmp$ret$5, Illuminant_getInstance().v3z_1, this.v3s_1, 7);
-    this.f3t_1 = Rgb_init_$Create$('NTSC (1953)', this.u3s_1, Illuminant_getInstance().r3z_1, new TransferParameters(2.2222222222222223, 0.9099181073703367, 0.09008189262966333, 0.2222222222222222, 0.081), 8);
+    tmp_9.m3r_1 = Rgb_init_$Create$('Display P3', tmp$ret$5, Illuminant_getInstance().p3y_1, this.d3r_1, 7);
+    this.n3r_1 = Rgb_init_$Create$('NTSC (1953)', this.c3r_1, Illuminant_getInstance().l3y_1, new TransferParameters(2.2222222222222223, 0.9099181073703367, 0.09008189262966333, 0.2222222222222222, 0.081), 8);
     var tmp_10 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$6 = new Float32Array([0.63, 0.34, 0.31, 0.595, 0.155, 0.07]);
-    tmp_10.g3t_1 = Rgb_init_$Create$('SMPTE-C RGB', tmp$ret$6, Illuminant_getInstance().v3z_1, new TransferParameters(2.2222222222222223, 0.9099181073703367, 0.09008189262966333, 0.2222222222222222, 0.081), 9);
+    tmp_10.o3r_1 = Rgb_init_$Create$('SMPTE-C RGB', tmp$ret$6, Illuminant_getInstance().p3y_1, new TransferParameters(2.2222222222222223, 0.9099181073703367, 0.09008189262966333, 0.2222222222222222, 0.081), 9);
     var tmp_11 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$7 = new Float32Array([0.64, 0.33, 0.21, 0.71, 0.15, 0.06]);
-    tmp_11.h3t_1 = Rgb_init_$Create$_0('Adobe RGB (1998)', tmp$ret$7, Illuminant_getInstance().v3z_1, 2.2, 0.0, 1.0, 10);
+    tmp_11.p3r_1 = Rgb_init_$Create$_0('Adobe RGB (1998)', tmp$ret$7, Illuminant_getInstance().p3y_1, 2.2, 0.0, 1.0, 10);
     var tmp_12 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$8 = new Float32Array([0.7347, 0.2653, 0.1596, 0.8404, 0.0366, 1.0E-4]);
-    tmp_12.i3t_1 = Rgb_init_$Create$('ROMM RGB ISO 22028-2:2013', tmp$ret$8, Illuminant_getInstance().s3z_1, new TransferParameters(1.8, 1.0, 0.0, 0.0625, 0.031248), 11);
+    tmp_12.q3r_1 = Rgb_init_$Create$('ROMM RGB ISO 22028-2:2013', tmp$ret$8, Illuminant_getInstance().m3y_1, new TransferParameters(1.8, 1.0, 0.0, 0.0625, 0.031248), 11);
     var tmp_13 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$9 = new Float32Array([0.7347, 0.2653, 0.0, 1.0, 1.0E-4, -0.077]);
-    tmp_13.j3t_1 = Rgb_init_$Create$_0('SMPTE ST 2065-1:2012 ACES', tmp$ret$9, Illuminant_getInstance().u3z_1, 1.0, -65504.0, 65504.0, 12);
+    tmp_13.r3r_1 = Rgb_init_$Create$_0('SMPTE ST 2065-1:2012 ACES', tmp$ret$9, Illuminant_getInstance().o3y_1, 1.0, -65504.0, 65504.0, 12);
     var tmp_14 = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$10 = new Float32Array([0.713, 0.293, 0.165, 0.83, 0.128, 0.044]);
-    tmp_14.k3t_1 = Rgb_init_$Create$_0('Academy S-2014-004 ACEScg', tmp$ret$10, Illuminant_getInstance().u3z_1, 1.0, -65504.0, 65504.0, 13);
-    this.l3t_1 = new Xyz('Generic XYZ', 14);
-    this.m3t_1 = new Lab('Generic L*a*b*', 15);
-    this.n3t_1 = Rgb_init_$Create$('None', this.t3s_1, Illuminant_getInstance().v3z_1, this.w3s_1, 16);
-    this.o3t_1 = new Oklab('Oklab', 17);
+    tmp_14.s3r_1 = Rgb_init_$Create$_0('Academy S-2014-004 ACEScg', tmp$ret$10, Illuminant_getInstance().o3y_1, 1.0, -65504.0, 65504.0, 13);
+    this.t3r_1 = new Xyz('Generic XYZ', 14);
+    this.u3r_1 = new Lab('Generic L*a*b*', 15);
+    this.v3r_1 = Rgb_init_$Create$('None', this.b3r_1, Illuminant_getInstance().p3y_1, this.e3r_1, 16);
+    this.w3r_1 = new Oklab('Oklab', 17);
     var tmp_15 = this;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp_15.p3t_1 = [this.x3s_1, this.y3s_1, this.z3s_1, this.a3t_1, this.b3t_1, this.c3t_1, this.d3t_1, this.e3t_1, this.f3t_1, this.g3t_1, this.h3t_1, this.i3t_1, this.j3t_1, this.k3t_1, this.l3t_1, this.m3t_1, this.n3t_1, this.o3t_1];
+    tmp_15.x3r_1 = [this.f3r_1, this.g3r_1, this.h3r_1, this.i3r_1, this.j3r_1, this.k3r_1, this.l3r_1, this.m3r_1, this.n3r_1, this.o3r_1, this.p3r_1, this.q3r_1, this.r3r_1, this.s3r_1, this.t3r_1, this.u3r_1, this.v3r_1, this.w3r_1];
   }
   var ColorSpaces_instance;
   function ColorSpaces_getInstance() {
@@ -2496,30 +2297,30 @@
     return ColorSpaces_instance;
   }
   function computeTransform($this, source, destination, intent) {
-    if (compare_0(source.n3u_1, destination.n3u_1)) {
-      return mul3x3(destination.t3u_1, source.s3u_1);
+    if (compare_0(source.i3t_1, destination.i3t_1)) {
+      return mul3x3(destination.o3t_1, source.n3t_1);
     } else {
-      var transform = source.s3u_1;
-      var inverseTransform = destination.t3u_1;
-      var srcXYZ = source.n3u_1.n3z();
-      var dstXYZ = destination.n3u_1.n3z();
-      if (!compare_0(source.n3u_1, Illuminant_getInstance().s3z_1)) {
-        var tmp = Companion_getInstance_18().p3y_1.s3y_1;
+      var transform = source.n3t_1;
+      var inverseTransform = destination.o3t_1;
+      var srcXYZ = source.i3t_1.h3y();
+      var dstXYZ = destination.i3t_1.h3y();
+      if (!compare_0(source.i3t_1, Illuminant_getInstance().m3y_1)) {
+        var tmp = Companion_getInstance_15().j3x_1.m3x_1;
         // Inline function 'kotlin.collections.copyOf' call
         // Inline function 'kotlin.js.asDynamic' call
-        var tmp$ret$1 = Illuminant_getInstance().y3z_1.slice();
+        var tmp$ret$1 = Illuminant_getInstance().s3y_1.slice();
         var srcAdaptation = chromaticAdaptation(tmp, srcXYZ, tmp$ret$1);
-        transform = mul3x3(srcAdaptation, source.s3u_1);
+        transform = mul3x3(srcAdaptation, source.n3t_1);
       }
-      if (!compare_0(destination.n3u_1, Illuminant_getInstance().s3z_1)) {
-        var tmp_0 = Companion_getInstance_18().p3y_1.s3y_1;
+      if (!compare_0(destination.i3t_1, Illuminant_getInstance().m3y_1)) {
+        var tmp_0 = Companion_getInstance_15().j3x_1.m3x_1;
         // Inline function 'kotlin.collections.copyOf' call
         // Inline function 'kotlin.js.asDynamic' call
-        var tmp$ret$3 = Illuminant_getInstance().y3z_1.slice();
+        var tmp$ret$3 = Illuminant_getInstance().s3y_1.slice();
         var dstAdaptation = chromaticAdaptation(tmp_0, dstXYZ, tmp$ret$3);
-        inverseTransform = inverse3x3(mul3x3(dstAdaptation, destination.s3u_1));
+        inverseTransform = inverse3x3(mul3x3(dstAdaptation, destination.n3t_1));
       }
-      if (intent === Companion_getInstance_24().g3z_1) {
+      if (intent === Companion_getInstance_21().a3y_1) {
         // Inline function 'kotlin.floatArrayOf' call
         var tmp$ret$4 = new Float32Array([srcXYZ[0] / dstXYZ[0], srcXYZ[1] / dstXYZ[1], srcXYZ[2] / dstXYZ[2]]);
         transform = mul3x3Diag(tmp$ret$4, transform);
@@ -2528,37 +2329,37 @@
     }
   }
   function computeTransform_0($this, source, destination, intent) {
-    if (!(intent === Companion_getInstance_24().g3z_1))
+    if (!(intent === Companion_getInstance_21().a3y_1))
       return null;
-    var srcRGB = equals(source.a3u_1, Companion_getInstance_19().g3u_1);
-    var dstRGB = equals(destination.a3u_1, Companion_getInstance_19().g3u_1);
+    var srcRGB = equals(source.i3s_1, Companion_getInstance_16().b3t_1);
+    var dstRGB = equals(destination.i3s_1, Companion_getInstance_16().b3t_1);
     if (srcRGB ? dstRGB : false)
       return null;
     if (srcRGB ? true : dstRGB) {
       var tmp = srcRGB ? source : destination;
       var rgb = tmp instanceof Rgb ? tmp : THROW_CCE();
-      var srcXYZ = srcRGB ? rgb.n3u_1.n3z() : Illuminant_getInstance().y3z_1;
-      var dstXYZ = dstRGB ? rgb.n3u_1.n3z() : Illuminant_getInstance().y3z_1;
+      var srcXYZ = srcRGB ? rgb.i3t_1.h3y() : Illuminant_getInstance().s3y_1;
+      var dstXYZ = dstRGB ? rgb.i3t_1.h3y() : Illuminant_getInstance().s3y_1;
       // Inline function 'kotlin.floatArrayOf' call
       return new Float32Array([srcXYZ[0] / dstXYZ[0], srcXYZ[1] / dstXYZ[1], srcXYZ[2] / dstXYZ[2]]);
     }
     return null;
   }
   function Connector$Companion$identity$1($source) {
-    Connector_init_$Init$($source, $source, Companion_getInstance_24().e3z_1, this);
+    Connector_init_$Init$($source, $source, Companion_getInstance_21().y3x_1, this);
   }
-  protoOf(Connector$Companion$identity$1).w3t = function (r, g, b, a) {
-    return Color_1(r, g, b, a, this.r3t_1);
+  protoOf(Connector$Companion$identity$1).e3s = function (r, g, b, a) {
+    return Color_1(r, g, b, a, this.z3r_1);
   };
   function Connector_init_$Init$(source, destination, intent, $this) {
-    var tmp = equals(source.a3u_1, Companion_getInstance_19().g3u_1) ? adapt(source, Illuminant_getInstance().s3z_1) : source;
+    var tmp = equals(source.i3s_1, Companion_getInstance_16().b3t_1) ? adapt(source, Illuminant_getInstance().m3y_1) : source;
     var tmp_0;
-    if (equals(destination.a3u_1, Companion_getInstance_19().g3u_1)) {
-      tmp_0 = adapt(destination, Illuminant_getInstance().s3z_1);
+    if (equals(destination.i3s_1, Companion_getInstance_16().b3t_1)) {
+      tmp_0 = adapt(destination, Illuminant_getInstance().m3y_1);
     } else {
       tmp_0 = destination;
     }
-    Connector.call($this, source, destination, tmp, tmp_0, intent, computeTransform_0(Companion_getInstance_21(), source, destination, intent));
+    Connector.call($this, source, destination, tmp, tmp_0, intent, computeTransform_0(Companion_getInstance_18(), source, destination, intent));
     return $this;
   }
   function Connector_init_$Create$(source, destination, intent) {
@@ -2566,48 +2367,48 @@
   }
   function RgbConnector(mSource, mDestination, intent) {
     Connector.call(this, mSource, mDestination, mSource, mDestination, intent, null);
-    this.l40_1 = mSource;
-    this.m40_1 = mDestination;
-    this.n40_1 = computeTransform(this, this.l40_1, this.m40_1, intent);
+    this.f3z_1 = mSource;
+    this.g3z_1 = mDestination;
+    this.h3z_1 = computeTransform(this, this.f3z_1, this.g3z_1, intent);
   }
-  protoOf(RgbConnector).w3t = function (r, g, b, a) {
-    var v0 = this.l40_1.z3u_1.c3v(r);
-    var v1 = this.l40_1.z3u_1.c3v(g);
-    var v2 = this.l40_1.z3u_1.c3v(b);
-    var v01 = mul3x3Float3_0(this.n40_1, v0, v1, v2);
-    var v11 = mul3x3Float3_1(this.n40_1, v0, v1, v2);
-    var v21 = mul3x3Float3_2(this.n40_1, v0, v1, v2);
-    var v02 = this.m40_1.w3u_1.c3v(v01);
-    var v12 = this.m40_1.w3u_1.c3v(v11);
-    var v22 = this.m40_1.w3u_1.c3v(v21);
-    return Color_1(v02, v12, v22, a, this.m40_1);
+  protoOf(RgbConnector).e3s = function (r, g, b, a) {
+    var v0 = this.f3z_1.u3t_1.x3t(r);
+    var v1 = this.f3z_1.u3t_1.x3t(g);
+    var v2 = this.f3z_1.u3t_1.x3t(b);
+    var v01 = mul3x3Float3_0(this.h3z_1, v0, v1, v2);
+    var v11 = mul3x3Float3_1(this.h3z_1, v0, v1, v2);
+    var v21 = mul3x3Float3_2(this.h3z_1, v0, v1, v2);
+    var v02 = this.g3z_1.r3t_1.x3t(v01);
+    var v12 = this.g3z_1.r3t_1.x3t(v11);
+    var v22 = this.g3z_1.r3t_1.x3t(v21);
+    return Color_1(v02, v12, v22, a, this.g3z_1);
   };
-  function Companion_16() {
-    Companion_instance_18 = this;
-    this.h3z_1 = this.k3z(ColorSpaces_getInstance().x3s_1);
-    this.i3z_1 = Connector_init_$Create$(ColorSpaces_getInstance().x3s_1, ColorSpaces_getInstance().o3t_1, Companion_getInstance_24().d3z_1);
-    this.j3z_1 = Connector_init_$Create$(ColorSpaces_getInstance().o3t_1, ColorSpaces_getInstance().x3s_1, Companion_getInstance_24().d3z_1);
+  function Companion_14() {
+    Companion_instance_16 = this;
+    this.b3y_1 = this.e3y(ColorSpaces_getInstance().f3r_1);
+    this.c3y_1 = Connector_init_$Create$(ColorSpaces_getInstance().f3r_1, ColorSpaces_getInstance().w3r_1, Companion_getInstance_21().x3x_1);
+    this.d3y_1 = Connector_init_$Create$(ColorSpaces_getInstance().w3r_1, ColorSpaces_getInstance().f3r_1, Companion_getInstance_21().x3x_1);
   }
-  protoOf(Companion_16).k3z = function (source) {
+  protoOf(Companion_14).e3y = function (source) {
     return new Connector$Companion$identity$1(source);
   };
-  var Companion_instance_18;
-  function Companion_getInstance_21() {
-    if (Companion_instance_18 == null)
-      new Companion_16();
-    return Companion_instance_18;
+  var Companion_instance_16;
+  function Companion_getInstance_18() {
+    if (Companion_instance_16 == null)
+      new Companion_14();
+    return Companion_instance_16;
   }
   function Connector(source, destination, transformSource, transformDestination, renderIntent, transform) {
-    Companion_getInstance_21();
-    this.q3t_1 = source;
-    this.r3t_1 = destination;
-    this.s3t_1 = transformSource;
-    this.t3t_1 = transformDestination;
-    this.u3t_1 = renderIntent;
-    this.v3t_1 = transform;
+    Companion_getInstance_18();
+    this.y3r_1 = source;
+    this.z3r_1 = destination;
+    this.a3s_1 = transformSource;
+    this.b3s_1 = transformDestination;
+    this.c3s_1 = renderIntent;
+    this.d3s_1 = transform;
   }
-  protoOf(Connector).w3t = function (r, g, b, a) {
-    var packed = this.s3t_1.y3y(r, g, b);
+  protoOf(Connector).e3s = function (r, g, b, a) {
+    var packed = this.a3s_1.s3x(r, g, b);
     // Inline function 'androidx.compose.ui.util.unpackFloat1' call
     // Inline function 'kotlin.fromBits' call
     var bits = packed.lb(32).ea();
@@ -2616,28 +2417,28 @@
     // Inline function 'kotlin.fromBits' call
     var bits_0 = packed.nb(new Long(-1, 0)).ea();
     var y = floatFromBits(bits_0);
-    var z = this.s3t_1.z3y(r, g, b);
-    if (!(this.v3t_1 == null)) {
-      x = x * this.v3t_1[0];
-      y = y * this.v3t_1[1];
-      z = z * this.v3t_1[2];
+    var z = this.a3s_1.t3x(r, g, b);
+    if (!(this.d3s_1 == null)) {
+      x = x * this.d3s_1[0];
+      y = y * this.d3s_1[1];
+      z = z * this.d3s_1[2];
     }
-    return this.t3t_1.a3z(x, y, z, a, this.r3t_1);
+    return this.b3s_1.u3x(x, y, z, a, this.z3r_1);
   };
   function Illuminant() {
     Illuminant_instance = this;
-    this.p3z_1 = new WhitePoint(0.44757, 0.40745);
-    this.q3z_1 = new WhitePoint(0.34842, 0.35161);
-    this.r3z_1 = new WhitePoint(0.31006, 0.31616);
-    this.s3z_1 = new WhitePoint(0.34567, 0.3585);
-    this.t3z_1 = new WhitePoint(0.33242, 0.34743);
-    this.u3z_1 = new WhitePoint(0.32168, 0.33767);
-    this.v3z_1 = new WhitePoint(0.31271, 0.32902);
-    this.w3z_1 = new WhitePoint(0.29902, 0.31485);
-    this.x3z_1 = new WhitePoint(0.33333, 0.33333);
+    this.j3y_1 = new WhitePoint(0.44757, 0.40745);
+    this.k3y_1 = new WhitePoint(0.34842, 0.35161);
+    this.l3y_1 = new WhitePoint(0.31006, 0.31616);
+    this.m3y_1 = new WhitePoint(0.34567, 0.3585);
+    this.n3y_1 = new WhitePoint(0.33242, 0.34743);
+    this.o3y_1 = new WhitePoint(0.32168, 0.33767);
+    this.p3y_1 = new WhitePoint(0.31271, 0.32902);
+    this.q3y_1 = new WhitePoint(0.29902, 0.31485);
+    this.r3y_1 = new WhitePoint(0.33333, 0.33333);
     var tmp = this;
     // Inline function 'kotlin.floatArrayOf' call
-    tmp.y3z_1 = new Float32Array([0.964212, 1.0, 0.825188]);
+    tmp.s3y_1 = new Float32Array([0.964212, 1.0, 0.825188]);
   }
   var Illuminant_instance;
   function Illuminant_getInstance() {
@@ -2645,26 +2446,26 @@
       new Illuminant();
     return Illuminant_instance;
   }
-  function Companion_17() {
-    this.o40_1 = 0.008856452;
-    this.p40_1 = 7.787037;
-    this.q40_1 = 0.13793103;
-    this.r40_1 = 0.20689656;
+  function Companion_15() {
+    this.i3z_1 = 0.008856452;
+    this.j3z_1 = 7.787037;
+    this.k3z_1 = 0.13793103;
+    this.l3z_1 = 0.20689656;
   }
-  var Companion_instance_19;
-  function Companion_getInstance_22() {
-    return Companion_instance_19;
+  var Companion_instance_17;
+  function Companion_getInstance_19() {
+    return Companion_instance_17;
   }
   function Lab(name, id) {
-    ColorSpace.call(this, name, Companion_getInstance_19().i3u_1, id);
+    ColorSpace.call(this, name, Companion_getInstance_16().d3t_1, id);
   }
-  protoOf(Lab).c3u = function (component) {
+  protoOf(Lab).x3s = function (component) {
     return component === 0 ? 0.0 : -128.0;
   };
-  protoOf(Lab).d3u = function (component) {
+  protoOf(Lab).y3s = function (component) {
     return component === 0 ? 100.0 : 128.0;
   };
-  protoOf(Lab).x3y = function (v) {
+  protoOf(Lab).r3x = function (v) {
     v[0] = coerceIn(v[0], 0.0, 100.0);
     v[1] = coerceIn(v[1], -128.0, 128.0);
     v[2] = coerceIn(v[2], -128.0, 128.0);
@@ -2674,12 +2475,12 @@
     var x = fx > 0.20689656 ? fx * fx * fx : 0.12841854995680643 * (fx - 0.13793103);
     var y = fy > 0.20689656 ? fy * fy * fy : 0.12841854995680643 * (fy - 0.13793103);
     var z = fz > 0.20689656 ? fz * fz * fz : 0.12841854995680643 * (fz - 0.13793103);
-    v[0] = x * Illuminant_getInstance().y3z_1[0];
-    v[1] = y * Illuminant_getInstance().y3z_1[1];
-    v[2] = z * Illuminant_getInstance().y3z_1[2];
+    v[0] = x * Illuminant_getInstance().s3y_1[0];
+    v[1] = y * Illuminant_getInstance().s3y_1[1];
+    v[2] = z * Illuminant_getInstance().s3y_1[2];
     return v;
   };
-  protoOf(Lab).y3y = function (v0, v1, v2) {
+  protoOf(Lab).s3x = function (v0, v1, v2) {
     var v00 = coerceIn(v0, 0.0, 100.0);
     var v10 = coerceIn(v1, -128.0, 128.0);
     var fy = (v00 + 16.0) / 116.0;
@@ -2687,24 +2488,24 @@
     var x = fx > 0.20689656 ? fx * fx * fx : 0.12841854995680643 * (fx - 0.13793103);
     var y = fy > 0.20689656 ? fy * fy * fy : 0.12841854995680643 * (fy - 0.13793103);
     // Inline function 'androidx.compose.ui.util.packFloats' call
-    var val1 = x * Illuminant_getInstance().y3z_1[0];
-    var val2 = y * Illuminant_getInstance().y3z_1[1];
+    var val1 = x * Illuminant_getInstance().s3y_1[0];
+    var val2 = y * Illuminant_getInstance().s3y_1[1];
     var v1_0 = toLong(toRawBits(val1));
     var v2_0 = toLong(toRawBits(val2));
     return v1_0.kb(32).ob(v2_0.nb(new Long(-1, 0)));
   };
-  protoOf(Lab).z3y = function (v0, v1, v2) {
+  protoOf(Lab).t3x = function (v0, v1, v2) {
     var v00 = coerceIn(v0, 0.0, 100.0);
     var v20 = coerceIn(v2, -128.0, 128.0);
     var fy = (v00 + 16.0) / 116.0;
     var fz = fy - v20 * 0.005;
     var z = fz > 0.20689656 ? fz * fz * fz : 0.12841854995680643 * (fz - 0.13793103);
-    return z * Illuminant_getInstance().y3z_1[2];
+    return z * Illuminant_getInstance().s3y_1[2];
   };
-  protoOf(Lab).a3z = function (x, y, z, a, colorSpace) {
-    var x1 = x / Illuminant_getInstance().y3z_1[0];
-    var y1 = y / Illuminant_getInstance().y3z_1[1];
-    var z1 = z / Illuminant_getInstance().y3z_1[2];
+  protoOf(Lab).u3x = function (x, y, z, a, colorSpace) {
+    var x1 = x / Illuminant_getInstance().s3y_1[0];
+    var y1 = y / Illuminant_getInstance().s3y_1[1];
+    var z1 = z / Illuminant_getInstance().s3y_1[2];
     var tmp;
     if (x1 > 0.008856452) {
       // Inline function 'kotlin.math.pow' call
@@ -2737,10 +2538,10 @@
     var b = 200.0 * (fy - fz);
     return Color_1(coerceIn(l, 0.0, 100.0), coerceIn(a1, -128.0, 128.0), coerceIn(b, -128.0, 128.0), a, colorSpace);
   };
-  protoOf(Lab).c3z = function (v) {
-    var x = v[0] / Illuminant_getInstance().y3z_1[0];
-    var y = v[1] / Illuminant_getInstance().y3z_1[1];
-    var z = v[2] / Illuminant_getInstance().y3z_1[2];
+  protoOf(Lab).w3x = function (v) {
+    var x = v[0] / Illuminant_getInstance().s3y_1[0];
+    var y = v[1] / Illuminant_getInstance().s3y_1[1];
+    var z = v[2] / Illuminant_getInstance().s3y_1[2];
     var tmp;
     if (x > 0.008856452) {
       // Inline function 'kotlin.math.pow' call
@@ -2776,79 +2577,79 @@
     v[2] = coerceIn(b, -128.0, 128.0);
     return v;
   };
-  function Companion_18() {
-    Companion_instance_20 = this;
+  function Companion_16() {
+    Companion_instance_18 = this;
     var tmp = this;
     // Inline function 'kotlin.floatArrayOf' call
     var tmp$ret$0 = new Float32Array([0.818933, 0.032984544, 0.0482003, 0.36186674, 0.9293119, 0.26436627, -0.12885971, 0.03614564, 0.6338517]);
-    tmp.v40_1 = mul3x3(tmp$ret$0, chromaticAdaptation(Companion_getInstance_18().p3y_1.s3y_1, Illuminant_getInstance().s3z_1.n3z(), Illuminant_getInstance().v3z_1.n3z()));
+    tmp.p3z_1 = mul3x3(tmp$ret$0, chromaticAdaptation(Companion_getInstance_15().j3x_1.m3x_1, Illuminant_getInstance().m3y_1.h3y(), Illuminant_getInstance().p3y_1.h3y()));
     var tmp_0 = this;
     // Inline function 'kotlin.floatArrayOf' call
-    tmp_0.w40_1 = new Float32Array([0.21045426, 1.9779985, 0.025904037, 0.7936178, -2.4285922, 0.78277177, -0.004072047, 0.4505937, -0.80867577]);
-    this.x40_1 = inverse3x3(this.v40_1);
-    this.y40_1 = inverse3x3(this.w40_1);
+    tmp_0.q3z_1 = new Float32Array([0.21045426, 1.9779985, 0.025904037, 0.7936178, -2.4285922, 0.78277177, -0.004072047, 0.4505937, -0.80867577]);
+    this.r3z_1 = inverse3x3(this.p3z_1);
+    this.s3z_1 = inverse3x3(this.q3z_1);
   }
-  var Companion_instance_20;
-  function Companion_getInstance_23() {
-    if (Companion_instance_20 == null)
-      new Companion_18();
-    return Companion_instance_20;
+  var Companion_instance_18;
+  function Companion_getInstance_20() {
+    if (Companion_instance_18 == null)
+      new Companion_16();
+    return Companion_instance_18;
   }
   function Oklab(name, id) {
-    Companion_getInstance_23();
-    ColorSpace.call(this, name, Companion_getInstance_19().i3u_1, id);
+    Companion_getInstance_20();
+    ColorSpace.call(this, name, Companion_getInstance_16().d3t_1, id);
   }
-  protoOf(Oklab).c3u = function (component) {
+  protoOf(Oklab).x3s = function (component) {
     return component === 0 ? 0.0 : -0.5;
   };
-  protoOf(Oklab).d3u = function (component) {
+  protoOf(Oklab).y3s = function (component) {
     return component === 0 ? 1.0 : 0.5;
   };
-  protoOf(Oklab).x3y = function (v) {
+  protoOf(Oklab).r3x = function (v) {
     v[0] = coerceIn(v[0], 0.0, 1.0);
     v[1] = coerceIn(v[1], -0.5, 0.5);
     v[2] = coerceIn(v[2], -0.5, 0.5);
-    mul3x3Float3(Companion_getInstance_23().y40_1, v);
+    mul3x3Float3(Companion_getInstance_20().s3z_1, v);
     v[0] = v[0] * v[0] * v[0];
     v[1] = v[1] * v[1] * v[1];
     v[2] = v[2] * v[2] * v[2];
-    mul3x3Float3(Companion_getInstance_23().x40_1, v);
+    mul3x3Float3(Companion_getInstance_20().r3z_1, v);
     return v;
   };
-  protoOf(Oklab).y3y = function (v0, v1, v2) {
+  protoOf(Oklab).s3x = function (v0, v1, v2) {
     var v00 = coerceIn(v0, 0.0, 1.0);
     var v10 = coerceIn(v1, -0.5, 0.5);
     var v20 = coerceIn(v2, -0.5, 0.5);
-    var v01 = mul3x3Float3_0(Companion_getInstance_23().y40_1, v00, v10, v20);
-    var v11 = mul3x3Float3_1(Companion_getInstance_23().y40_1, v00, v10, v20);
-    var v21 = mul3x3Float3_2(Companion_getInstance_23().y40_1, v00, v10, v20);
+    var v01 = mul3x3Float3_0(Companion_getInstance_20().s3z_1, v00, v10, v20);
+    var v11 = mul3x3Float3_1(Companion_getInstance_20().s3z_1, v00, v10, v20);
+    var v21 = mul3x3Float3_2(Companion_getInstance_20().s3z_1, v00, v10, v20);
     var v02 = v01 * v01 * v01;
     var v12 = v11 * v11 * v11;
     var v22 = v21 * v21 * v21;
-    var v03 = mul3x3Float3_0(Companion_getInstance_23().x40_1, v02, v12, v22);
-    var v13 = mul3x3Float3_1(Companion_getInstance_23().x40_1, v02, v12, v22);
+    var v03 = mul3x3Float3_0(Companion_getInstance_20().r3z_1, v02, v12, v22);
+    var v13 = mul3x3Float3_1(Companion_getInstance_20().r3z_1, v02, v12, v22);
     // Inline function 'androidx.compose.ui.util.packFloats' call
     var v1_0 = toLong(toRawBits(v03));
     var v2_0 = toLong(toRawBits(v13));
     return v1_0.kb(32).ob(v2_0.nb(new Long(-1, 0)));
   };
-  protoOf(Oklab).z3y = function (v0, v1, v2) {
+  protoOf(Oklab).t3x = function (v0, v1, v2) {
     var v00 = coerceIn(v0, 0.0, 1.0);
     var v10 = coerceIn(v1, -0.5, 0.5);
     var v20 = coerceIn(v2, -0.5, 0.5);
-    var v01 = mul3x3Float3_0(Companion_getInstance_23().y40_1, v00, v10, v20);
-    var v11 = mul3x3Float3_1(Companion_getInstance_23().y40_1, v00, v10, v20);
-    var v21 = mul3x3Float3_2(Companion_getInstance_23().y40_1, v00, v10, v20);
+    var v01 = mul3x3Float3_0(Companion_getInstance_20().s3z_1, v00, v10, v20);
+    var v11 = mul3x3Float3_1(Companion_getInstance_20().s3z_1, v00, v10, v20);
+    var v21 = mul3x3Float3_2(Companion_getInstance_20().s3z_1, v00, v10, v20);
     var v02 = v01 * v01 * v01;
     var v12 = v11 * v11 * v11;
     var v22 = v21 * v21 * v21;
-    var v23 = mul3x3Float3_2(Companion_getInstance_23().x40_1, v02, v12, v22);
+    var v23 = mul3x3Float3_2(Companion_getInstance_20().r3z_1, v02, v12, v22);
     return v23;
   };
-  protoOf(Oklab).a3z = function (x, y, z, a, colorSpace) {
-    var v0 = mul3x3Float3_0(Companion_getInstance_23().v40_1, x, y, z);
-    var v1 = mul3x3Float3_1(Companion_getInstance_23().v40_1, x, y, z);
-    var v2 = mul3x3Float3_2(Companion_getInstance_23().v40_1, x, y, z);
+  protoOf(Oklab).u3x = function (x, y, z, a, colorSpace) {
+    var v0 = mul3x3Float3_0(Companion_getInstance_20().p3z_1, x, y, z);
+    var v1 = mul3x3Float3_1(Companion_getInstance_20().p3z_1, x, y, z);
+    var v2 = mul3x3Float3_2(Companion_getInstance_20().p3z_1, x, y, z);
     // Inline function 'kotlin.math.sign' call
     var x_0 = v0;
     var tmp = sign(x_0);
@@ -2876,13 +2677,13 @@
     var this_2 = Math.abs(x_7);
     var x_8 = 0.3333333333333333;
     v2 = tmp_1 * Math.pow(this_2, x_8);
-    var v01 = mul3x3Float3_0(Companion_getInstance_23().w40_1, v0, v1, v2);
-    var v11 = mul3x3Float3_1(Companion_getInstance_23().w40_1, v0, v1, v2);
-    var v21 = mul3x3Float3_2(Companion_getInstance_23().w40_1, v0, v1, v2);
+    var v01 = mul3x3Float3_0(Companion_getInstance_20().q3z_1, v0, v1, v2);
+    var v11 = mul3x3Float3_1(Companion_getInstance_20().q3z_1, v0, v1, v2);
+    var v21 = mul3x3Float3_2(Companion_getInstance_20().q3z_1, v0, v1, v2);
     return Color_1(v01, v11, v21, a, colorSpace);
   };
-  protoOf(Oklab).c3z = function (v) {
-    mul3x3Float3(Companion_getInstance_23().v40_1, v);
+  protoOf(Oklab).w3x = function (v) {
+    mul3x3Float3(Companion_getInstance_20().p3z_1, v);
     // Inline function 'kotlin.math.sign' call
     var x = v[0];
     var tmp = sign(x);
@@ -2910,58 +2711,58 @@
     var this_2 = Math.abs(x_6);
     var x_7 = 0.3333333333333333;
     v[2] = tmp_1 * Math.pow(this_2, x_7);
-    mul3x3Float3(Companion_getInstance_23().w40_1, v);
+    mul3x3Float3(Companion_getInstance_20().q3z_1, v);
     return v;
   };
   function _RenderIntent___init__impl__jceahd(value) {
     return value;
   }
-  function Companion_19() {
-    Companion_instance_21 = this;
-    this.d3z_1 = _RenderIntent___init__impl__jceahd(0);
-    this.e3z_1 = _RenderIntent___init__impl__jceahd(1);
-    this.f3z_1 = _RenderIntent___init__impl__jceahd(2);
-    this.g3z_1 = _RenderIntent___init__impl__jceahd(3);
+  function Companion_17() {
+    Companion_instance_19 = this;
+    this.x3x_1 = _RenderIntent___init__impl__jceahd(0);
+    this.y3x_1 = _RenderIntent___init__impl__jceahd(1);
+    this.z3x_1 = _RenderIntent___init__impl__jceahd(2);
+    this.a3y_1 = _RenderIntent___init__impl__jceahd(3);
   }
-  var Companion_instance_21;
-  function Companion_getInstance_24() {
-    if (Companion_instance_21 == null)
-      new Companion_19();
-    return Companion_instance_21;
+  var Companion_instance_19;
+  function Companion_getInstance_21() {
+    if (Companion_instance_19 == null)
+      new Companion_17();
+    return Companion_instance_19;
   }
   function isSrgb($this, primaries, whitePoint, OETF, EOTF, min, max, id) {
     if (id === 0)
       return true;
-    if (!compare(primaries, ColorSpaces_getInstance().t3s_1)) {
+    if (!compare(primaries, ColorSpaces_getInstance().b3r_1)) {
       return false;
     }
-    if (!compare_0(whitePoint, Illuminant_getInstance().v3z_1)) {
+    if (!compare_0(whitePoint, Illuminant_getInstance().p3y_1)) {
       return false;
     }
     if (!(min === 0.0))
       return false;
     if (!(max === 1.0))
       return false;
-    var srgb = ColorSpaces_getInstance().x3s_1;
+    var srgb = ColorSpaces_getInstance().f3r_1;
     var x = 0.0;
     while (x <= 1.0) {
-      if (!compare_1($this, x, OETF, srgb.u3u_1))
+      if (!compare_1($this, x, OETF, srgb.p3t_1))
         return false;
-      if (!compare_1($this, x, EOTF, srgb.x3u_1))
+      if (!compare_1($this, x, EOTF, srgb.s3t_1))
         return false;
       x = x + 0.00392156862745098;
     }
     return true;
   }
   function compare_1($this, point, a, b) {
-    var rA = a.c3v(point);
-    var rB = b.c3v(point);
+    var rA = a.x3t(point);
+    var rB = b.x3t(point);
     // Inline function 'kotlin.math.abs' call
     var x = rA - rB;
     return Math.abs(x) <= 0.001;
   }
   function isWideGamut($this, primaries, min, max) {
-    return (area($this, primaries) / area($this, ColorSpaces_getInstance().u3s_1) > 0.9 ? contains($this, primaries, ColorSpaces_getInstance().t3s_1) : false) ? true : min < 0.0 ? max > 1.0 : false;
+    return (area($this, primaries) / area($this, ColorSpaces_getInstance().c3r_1) > 0.9 ? contains($this, primaries, ColorSpaces_getInstance().b3r_1) : false) ? true : min < 0.0 ? max > 1.0 : false;
   }
   function area($this, primaries) {
     var rx = primaries[0];
@@ -3018,8 +2819,8 @@
     var gy = primaries[3];
     var bx = primaries[4];
     var by = primaries[5];
-    var wx = whitePoint.l3z_1;
-    var wy = whitePoint.m3z_1;
+    var wx = whitePoint.f3y_1;
+    var wy = whitePoint.g3y_1;
     var oneRxRy = (1 - rx) / ry;
     var oneGxGy = (1 - gx) / gy;
     var oneBxBy = (1 - bx) / by;
@@ -3040,17 +2841,17 @@
     return new Float32Array([rYRy * rx, rY, rYRy * (1.0 - rx - ry), gYGy * gx, gY, gYGy * (1.0 - gx - gy), bYBy * bx, bY, bYBy * (1.0 - bx - by)]);
   }
   function sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_0(function_0) {
-    this.c41_1 = function_0;
+    this.w3z_1 = function_0;
   }
-  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_0).c3v = function (double) {
-    return this.c41_1(double);
+  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_0).x3t = function (double) {
+    return this.w3z_1(double);
   };
   function Rgb$Companion$DoubleIdentity$lambda(d) {
     return d;
   }
   function Rgb_init_$Init$(name, primaries, whitePoint, function_0, id, $this) {
     var tmp;
-    if (function_0.i41_1 === 0.0 ? function_0.j41_1 === 0.0 : false) {
+    if (function_0.c40_1 === 0.0 ? function_0.d40_1 === 0.0 : false) {
       var tmp_0 = Rgb$_init_$lambda_yyl4se(function_0);
       tmp = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_3(tmp_0);
     } else {
@@ -3059,7 +2860,7 @@
     }
     var tmp_2 = tmp;
     var tmp_3;
-    if (function_0.i41_1 === 0.0 ? function_0.j41_1 === 0.0 : false) {
+    if (function_0.c40_1 === 0.0 ? function_0.d40_1 === 0.0 : false) {
       var tmp_4 = Rgb$_init_$lambda_yyl4se_1(function_0);
       tmp_3 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_3(tmp_4);
     } else {
@@ -3075,7 +2876,7 @@
   function Rgb_init_$Init$_0(name, primaries, whitePoint, gamma, min, max, id, $this) {
     var tmp;
     if (gamma === 1.0) {
-      tmp = Companion_getInstance_25().k41_1;
+      tmp = Companion_getInstance_22().e40_1;
     } else {
       var tmp_0 = Rgb$_init_$lambda_yyl4se_3(gamma);
       tmp = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_4(tmp_0);
@@ -3083,7 +2884,7 @@
     var tmp_1 = tmp;
     var tmp_2;
     if (gamma === 1.0) {
-      tmp_2 = Companion_getInstance_25().k41_1;
+      tmp_2 = Companion_getInstance_22().e40_1;
     } else {
       var tmp_3 = Rgb$_init_$lambda_yyl4se_4(gamma);
       tmp_2 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_4(tmp_3);
@@ -3095,86 +2896,86 @@
     return Rgb_init_$Init$_0(name, primaries, whitePoint, gamma, min, max, id, objectCreate(protoOf(Rgb)));
   }
   function Rgb_init_$Init$_1(colorSpace, transform, whitePoint, $this) {
-    Rgb.call($this, colorSpace.z3t_1, colorSpace.r3u_1, whitePoint, transform, colorSpace.u3u_1, colorSpace.x3u_1, colorSpace.o3u_1, colorSpace.p3u_1, colorSpace.q3u_1, -1);
+    Rgb.call($this, colorSpace.h3s_1, colorSpace.m3t_1, whitePoint, transform, colorSpace.p3t_1, colorSpace.s3t_1, colorSpace.j3t_1, colorSpace.k3t_1, colorSpace.l3t_1, -1);
     return $this;
   }
   function Rgb_init_$Create$_1(colorSpace, transform, whitePoint) {
     return Rgb_init_$Init$_1(colorSpace, transform, whitePoint, objectCreate(protoOf(Rgb)));
   }
-  function Companion_20() {
-    Companion_instance_22 = this;
+  function Companion_18() {
+    Companion_instance_20 = this;
     var tmp = this;
     var tmp_0 = Rgb$Companion$DoubleIdentity$lambda;
-    tmp.k41_1 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_0(tmp_0);
+    tmp.e40_1 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_0(tmp_0);
   }
-  var Companion_instance_22;
-  function Companion_getInstance_25() {
-    if (Companion_instance_22 == null)
-      new Companion_20();
-    return Companion_instance_22;
+  var Companion_instance_20;
+  function Companion_getInstance_22() {
+    if (Companion_instance_20 == null)
+      new Companion_18();
+    return Companion_instance_20;
   }
   function sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_1(function_0) {
-    this.l41_1 = function_0;
+    this.f40_1 = function_0;
   }
-  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_1).c3v = function (double) {
-    return this.l41_1(double);
+  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_1).x3t = function (double) {
+    return this.f40_1(double);
   };
   function sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_2(function_0) {
-    this.m41_1 = function_0;
+    this.g40_1 = function_0;
   }
-  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_2).c3v = function (double) {
-    return this.m41_1(double);
+  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_2).x3t = function (double) {
+    return this.g40_1(double);
   };
   function sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_3(function_0) {
-    this.n41_1 = function_0;
+    this.h40_1 = function_0;
   }
-  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_3).c3v = function (double) {
-    return this.n41_1(double);
+  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_3).x3t = function (double) {
+    return this.h40_1(double);
   };
   function sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_4(function_0) {
-    this.o41_1 = function_0;
+    this.i40_1 = function_0;
   }
-  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_4).c3v = function (double) {
-    return this.o41_1(double);
+  protoOf(sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_4).x3t = function (double) {
+    return this.i40_1(double);
   };
   function Rgb$oetf$lambda(this$0) {
     return function (x) {
-      return coerceIn_0(this$0.u3u_1.c3v(x), this$0.o3u_1, this$0.p3u_1);
+      return coerceIn_0(this$0.p3t_1.x3t(x), this$0.j3t_1, this$0.k3t_1);
     };
   }
   function Rgb$oetfFunc$lambda(this$0) {
     return function (x) {
-      return coerceIn_0(this$0.u3u_1.c3v(x), this$0.o3u_1, this$0.p3u_1);
+      return coerceIn_0(this$0.p3t_1.x3t(x), this$0.j3t_1, this$0.k3t_1);
     };
   }
   function Rgb$eotf$lambda(this$0) {
     return function (x) {
-      return this$0.x3u_1.c3v(coerceIn_0(x, this$0.o3u_1, this$0.p3u_1));
+      return this$0.s3t_1.x3t(coerceIn_0(x, this$0.j3t_1, this$0.k3t_1));
     };
   }
   function Rgb$eotfFunc$lambda(this$0) {
     return function (x) {
-      return this$0.x3u_1.c3v(coerceIn_0(x, this$0.o3u_1, this$0.p3u_1));
+      return this$0.s3t_1.x3t(coerceIn_0(x, this$0.j3t_1, this$0.k3t_1));
     };
   }
   function Rgb$_init_$lambda_yyl4se($function) {
     return function (x) {
-      return rcpResponse(x, $function.e41_1, $function.f41_1, $function.g41_1, $function.h41_1, $function.d41_1);
+      return rcpResponse(x, $function.y3z_1, $function.z3z_1, $function.a40_1, $function.b40_1, $function.x3z_1);
     };
   }
   function Rgb$_init_$lambda_yyl4se_0($function) {
     return function (x) {
-      return rcpResponse_0(x, $function.e41_1, $function.f41_1, $function.g41_1, $function.h41_1, $function.i41_1, $function.j41_1, $function.d41_1);
+      return rcpResponse_0(x, $function.y3z_1, $function.z3z_1, $function.a40_1, $function.b40_1, $function.c40_1, $function.d40_1, $function.x3z_1);
     };
   }
   function Rgb$_init_$lambda_yyl4se_1($function) {
     return function (x) {
-      return response(x, $function.e41_1, $function.f41_1, $function.g41_1, $function.h41_1, $function.d41_1);
+      return response(x, $function.y3z_1, $function.z3z_1, $function.a40_1, $function.b40_1, $function.x3z_1);
     };
   }
   function Rgb$_init_$lambda_yyl4se_2($function) {
     return function (x) {
-      return response_0(x, $function.e41_1, $function.f41_1, $function.g41_1, $function.h41_1, $function.i41_1, $function.j41_1, $function.d41_1);
+      return response_0(x, $function.y3z_1, $function.z3z_1, $function.a40_1, $function.b40_1, $function.c40_1, $function.d40_1, $function.x3z_1);
     };
   }
   function Rgb$_init_$lambda_yyl4se_3($gamma) {
@@ -3194,90 +2995,90 @@
     };
   }
   function Rgb(name, primaries, whitePoint, transform, oetf, eotf, min, max, transferParameters, id) {
-    Companion_getInstance_25();
-    ColorSpace.call(this, name, Companion_getInstance_19().g3u_1, id);
-    this.n3u_1 = whitePoint;
-    this.o3u_1 = min;
-    this.p3u_1 = max;
-    this.q3u_1 = transferParameters;
-    this.u3u_1 = oetf;
+    Companion_getInstance_22();
+    ColorSpace.call(this, name, Companion_getInstance_16().b3t_1, id);
+    this.i3t_1 = whitePoint;
+    this.j3t_1 = min;
+    this.k3t_1 = max;
+    this.l3t_1 = transferParameters;
+    this.p3t_1 = oetf;
     var tmp = this;
-    tmp.v3u_1 = Rgb$oetf$lambda(this);
+    tmp.q3t_1 = Rgb$oetf$lambda(this);
     var tmp_0 = this;
     var tmp_1 = Rgb$oetfFunc$lambda(this);
-    tmp_0.w3u_1 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_1(tmp_1);
-    this.x3u_1 = eotf;
+    tmp_0.r3t_1 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_1(tmp_1);
+    this.s3t_1 = eotf;
     var tmp_2 = this;
-    tmp_2.y3u_1 = Rgb$eotf$lambda(this);
+    tmp_2.t3t_1 = Rgb$eotf$lambda(this);
     var tmp_3 = this;
     var tmp_4 = Rgb$eotfFunc$lambda(this);
-    tmp_3.z3u_1 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_2(tmp_4);
+    tmp_3.u3t_1 = new sam$androidx_compose_ui_graphics_colorspace_DoubleFunction$0_2(tmp_4);
     if (!(primaries.length === 6) ? !(primaries.length === 9) : false) {
       throw IllegalArgumentException_init_$Create$("The color space's primaries must be defined as an array of 6 floats in xyY or 9 floats in XYZ");
     }
-    if (this.o3u_1 >= this.p3u_1) {
-      throw IllegalArgumentException_init_$Create$('Invalid range: min=' + this.o3u_1 + ', max=' + this.p3u_1 + '; min must ' + 'be strictly < max');
+    if (this.j3t_1 >= this.k3t_1) {
+      throw IllegalArgumentException_init_$Create$('Invalid range: min=' + this.j3t_1 + ', max=' + this.k3t_1 + '; min must ' + 'be strictly < max');
     }
-    this.r3u_1 = xyPrimaries(Companion_getInstance_25(), primaries);
+    this.m3t_1 = xyPrimaries(Companion_getInstance_22(), primaries);
     if (transform == null) {
-      this.s3u_1 = computeXYZMatrix(Companion_getInstance_25(), this.r3u_1, this.n3u_1);
+      this.n3t_1 = computeXYZMatrix(Companion_getInstance_22(), this.m3t_1, this.i3t_1);
     } else {
       if (!(transform.length === 9)) {
         throw IllegalArgumentException_init_$Create$('Transform must have 9 entries! Has ' + ('' + transform.length));
       }
-      this.s3u_1 = transform;
+      this.n3t_1 = transform;
     }
-    this.t3u_1 = inverse3x3(this.s3u_1);
-    this.a3v_1 = isWideGamut(Companion_getInstance_25(), this.r3u_1, this.o3u_1, this.p3u_1);
-    this.b3v_1 = isSrgb(Companion_getInstance_25(), this.r3u_1, this.n3u_1, oetf, eotf, this.o3u_1, this.p3u_1, id);
+    this.o3t_1 = inverse3x3(this.n3t_1);
+    this.v3t_1 = isWideGamut(Companion_getInstance_22(), this.m3t_1, this.j3t_1, this.k3t_1);
+    this.w3t_1 = isSrgb(Companion_getInstance_22(), this.m3t_1, this.i3t_1, oetf, eotf, this.j3t_1, this.k3t_1, id);
   }
-  protoOf(Rgb).e3u = function () {
-    return this.b3v_1;
+  protoOf(Rgb).z3s = function () {
+    return this.w3t_1;
   };
-  protoOf(Rgb).c3u = function (component) {
-    return this.o3u_1;
+  protoOf(Rgb).x3s = function (component) {
+    return this.j3t_1;
   };
-  protoOf(Rgb).d3u = function (component) {
-    return this.p3u_1;
+  protoOf(Rgb).y3s = function (component) {
+    return this.k3t_1;
   };
-  protoOf(Rgb).x3y = function (v) {
-    v[0] = this.z3u_1.c3v(v[0]);
-    v[1] = this.z3u_1.c3v(v[1]);
-    v[2] = this.z3u_1.c3v(v[2]);
-    return mul3x3Float3(this.s3u_1, v);
+  protoOf(Rgb).r3x = function (v) {
+    v[0] = this.u3t_1.x3t(v[0]);
+    v[1] = this.u3t_1.x3t(v[1]);
+    v[2] = this.u3t_1.x3t(v[2]);
+    return mul3x3Float3(this.n3t_1, v);
   };
-  protoOf(Rgb).y3y = function (v0, v1, v2) {
-    var v00 = this.z3u_1.c3v(v0);
-    var v10 = this.z3u_1.c3v(v1);
-    var v20 = this.z3u_1.c3v(v2);
-    var x = mul3x3Float3_0(this.s3u_1, v00, v10, v20);
-    var y = mul3x3Float3_1(this.s3u_1, v00, v10, v20);
+  protoOf(Rgb).s3x = function (v0, v1, v2) {
+    var v00 = this.u3t_1.x3t(v0);
+    var v10 = this.u3t_1.x3t(v1);
+    var v20 = this.u3t_1.x3t(v2);
+    var x = mul3x3Float3_0(this.n3t_1, v00, v10, v20);
+    var y = mul3x3Float3_1(this.n3t_1, v00, v10, v20);
     // Inline function 'androidx.compose.ui.util.packFloats' call
     var v1_0 = toLong(toRawBits(x));
     var v2_0 = toLong(toRawBits(y));
     return v1_0.kb(32).ob(v2_0.nb(new Long(-1, 0)));
   };
-  protoOf(Rgb).z3y = function (v0, v1, v2) {
-    var v00 = this.z3u_1.c3v(v0);
-    var v10 = this.z3u_1.c3v(v1);
-    var v20 = this.z3u_1.c3v(v2);
-    var z = mul3x3Float3_2(this.s3u_1, v00, v10, v20);
+  protoOf(Rgb).t3x = function (v0, v1, v2) {
+    var v00 = this.u3t_1.x3t(v0);
+    var v10 = this.u3t_1.x3t(v1);
+    var v20 = this.u3t_1.x3t(v2);
+    var z = mul3x3Float3_2(this.n3t_1, v00, v10, v20);
     return z;
   };
-  protoOf(Rgb).a3z = function (x, y, z, a, colorSpace) {
-    var v0 = mul3x3Float3_0(this.t3u_1, x, y, z);
-    var v1 = mul3x3Float3_1(this.t3u_1, x, y, z);
-    var v2 = mul3x3Float3_2(this.t3u_1, x, y, z);
-    v0 = this.w3u_1.c3v(v0);
-    v1 = this.w3u_1.c3v(v1);
-    v2 = this.w3u_1.c3v(v2);
+  protoOf(Rgb).u3x = function (x, y, z, a, colorSpace) {
+    var v0 = mul3x3Float3_0(this.o3t_1, x, y, z);
+    var v1 = mul3x3Float3_1(this.o3t_1, x, y, z);
+    var v2 = mul3x3Float3_2(this.o3t_1, x, y, z);
+    v0 = this.r3t_1.x3t(v0);
+    v1 = this.r3t_1.x3t(v1);
+    v2 = this.r3t_1.x3t(v2);
     return Color_1(v0, v1, v2, a, colorSpace);
   };
-  protoOf(Rgb).c3z = function (v) {
-    mul3x3Float3(this.t3u_1, v);
-    v[0] = this.w3u_1.c3v(v[0]);
-    v[1] = this.w3u_1.c3v(v[1]);
-    v[2] = this.w3u_1.c3v(v[2]);
+  protoOf(Rgb).w3x = function (v) {
+    mul3x3Float3(this.o3t_1, v);
+    v[0] = this.r3t_1.x3t(v[0]);
+    v[1] = this.r3t_1.x3t(v[1]);
+    v[2] = this.r3t_1.x3t(v[2]);
     return v;
   };
   protoOf(Rgb).equals = function (other) {
@@ -3288,77 +3089,77 @@
     if (!protoOf(ColorSpace).equals.call(this, other))
       return false;
     var rgb = other instanceof Rgb ? other : THROW_CCE();
-    if (!(compareTo(rgb.o3u_1, this.o3u_1) === 0))
+    if (!(compareTo(rgb.j3t_1, this.j3t_1) === 0))
       return false;
-    if (!(compareTo(rgb.p3u_1, this.p3u_1) === 0))
+    if (!(compareTo(rgb.k3t_1, this.k3t_1) === 0))
       return false;
-    if (!this.n3u_1.equals(rgb.n3u_1))
+    if (!this.i3t_1.equals(rgb.i3t_1))
       return false;
-    if (!contentEquals(this.r3u_1, rgb.r3u_1))
+    if (!contentEquals(this.m3t_1, rgb.m3t_1))
       return false;
-    if (!(this.q3u_1 == null)) {
-      return equals(this.q3u_1, rgb.q3u_1);
-    } else if (rgb.q3u_1 == null) {
+    if (!(this.l3t_1 == null)) {
+      return equals(this.l3t_1, rgb.l3t_1);
+    } else if (rgb.l3t_1 == null) {
       return true;
     }
-    return !equals(this.u3u_1, rgb.u3u_1) ? false : equals(this.x3u_1, rgb.x3u_1);
+    return !equals(this.p3t_1, rgb.p3t_1) ? false : equals(this.s3t_1, rgb.s3t_1);
   };
   protoOf(Rgb).hashCode = function () {
     var result = protoOf(ColorSpace).hashCode.call(this);
-    result = imul(31, result) + this.n3u_1.hashCode() | 0;
-    result = imul(31, result) + contentHashCode(this.r3u_1) | 0;
-    result = imul(31, result) + (!(this.o3u_1 === 0.0) ? toBits(this.o3u_1) : 0) | 0;
-    result = imul(31, result) + (!(this.p3u_1 === 0.0) ? toBits(this.p3u_1) : 0) | 0;
-    result = imul(31, result) + (!(this.q3u_1 == null) ? this.q3u_1.hashCode() : 0) | 0;
-    if (this.q3u_1 == null) {
-      result = imul(31, result) + hashCode(this.u3u_1) | 0;
-      result = imul(31, result) + hashCode(this.x3u_1) | 0;
+    result = imul(31, result) + this.i3t_1.hashCode() | 0;
+    result = imul(31, result) + contentHashCode(this.m3t_1) | 0;
+    result = imul(31, result) + (!(this.j3t_1 === 0.0) ? toBits(this.j3t_1) : 0) | 0;
+    result = imul(31, result) + (!(this.k3t_1 === 0.0) ? toBits(this.k3t_1) : 0) | 0;
+    result = imul(31, result) + (!(this.l3t_1 == null) ? this.l3t_1.hashCode() : 0) | 0;
+    if (this.l3t_1 == null) {
+      result = imul(31, result) + hashCode(this.p3t_1) | 0;
+      result = imul(31, result) + hashCode(this.s3t_1) | 0;
     }
     return result;
   };
   function TransferParameters(gamma, a, b, c, d, e, f) {
     e = e === VOID ? 0.0 : e;
     f = f === VOID ? 0.0 : f;
-    this.d41_1 = gamma;
-    this.e41_1 = a;
-    this.f41_1 = b;
-    this.g41_1 = c;
-    this.h41_1 = d;
-    this.i41_1 = e;
-    this.j41_1 = f;
-    if ((((((isNaN_0(this.e41_1) ? true : isNaN_0(this.f41_1)) ? true : isNaN_0(this.g41_1)) ? true : isNaN_0(this.h41_1)) ? true : isNaN_0(this.i41_1)) ? true : isNaN_0(this.j41_1)) ? true : isNaN_0(this.d41_1)) {
+    this.x3z_1 = gamma;
+    this.y3z_1 = a;
+    this.z3z_1 = b;
+    this.a40_1 = c;
+    this.b40_1 = d;
+    this.c40_1 = e;
+    this.d40_1 = f;
+    if ((((((isNaN_0(this.y3z_1) ? true : isNaN_0(this.z3z_1)) ? true : isNaN_0(this.a40_1)) ? true : isNaN_0(this.b40_1)) ? true : isNaN_0(this.c40_1)) ? true : isNaN_0(this.d40_1)) ? true : isNaN_0(this.x3z_1)) {
       throw IllegalArgumentException_init_$Create$('Parameters cannot be NaN');
     }
-    if (!(this.h41_1 >= 0.0 ? this.h41_1 <= 1.0 : false)) {
-      throw IllegalArgumentException_init_$Create$('Parameter d must be in the range [0..1], was ' + ('' + this.h41_1));
+    if (!(this.b40_1 >= 0.0 ? this.b40_1 <= 1.0 : false)) {
+      throw IllegalArgumentException_init_$Create$('Parameter d must be in the range [0..1], was ' + ('' + this.b40_1));
     }
-    if (this.h41_1 === 0.0 ? this.e41_1 === 0.0 ? true : this.d41_1 === 0.0 : false) {
+    if (this.b40_1 === 0.0 ? this.y3z_1 === 0.0 ? true : this.x3z_1 === 0.0 : false) {
       throw IllegalArgumentException_init_$Create$('Parameter a or g is zero, the transfer function is constant');
     }
-    if (this.h41_1 >= 1.0 ? this.g41_1 === 0.0 : false) {
+    if (this.b40_1 >= 1.0 ? this.a40_1 === 0.0 : false) {
       throw IllegalArgumentException_init_$Create$('Parameter c is zero, the transfer function is constant');
     }
-    if ((this.e41_1 === 0.0 ? true : this.d41_1 === 0.0) ? this.g41_1 === 0.0 : false) {
+    if ((this.y3z_1 === 0.0 ? true : this.x3z_1 === 0.0) ? this.a40_1 === 0.0 : false) {
       throw IllegalArgumentException_init_$Create$('Parameter a or g is zero, and c is zero, the transfer function is constant');
     }
-    if (this.g41_1 < 0.0) {
+    if (this.a40_1 < 0.0) {
       throw IllegalArgumentException_init_$Create$('The transfer function must be increasing');
     }
-    if (this.e41_1 < 0.0 ? true : this.d41_1 < 0.0) {
+    if (this.y3z_1 < 0.0 ? true : this.x3z_1 < 0.0) {
       throw IllegalArgumentException_init_$Create$('The transfer function must be positive or increasing');
     }
   }
   protoOf(TransferParameters).toString = function () {
-    return 'TransferParameters(gamma=' + this.d41_1 + ', a=' + this.e41_1 + ', b=' + this.f41_1 + ', c=' + this.g41_1 + ', d=' + this.h41_1 + ', e=' + this.i41_1 + ', f=' + this.j41_1 + ')';
+    return 'TransferParameters(gamma=' + this.x3z_1 + ', a=' + this.y3z_1 + ', b=' + this.z3z_1 + ', c=' + this.a40_1 + ', d=' + this.b40_1 + ', e=' + this.c40_1 + ', f=' + this.d40_1 + ')';
   };
   protoOf(TransferParameters).hashCode = function () {
-    var result = getNumberHashCode(this.d41_1);
-    result = imul(result, 31) + getNumberHashCode(this.e41_1) | 0;
-    result = imul(result, 31) + getNumberHashCode(this.f41_1) | 0;
-    result = imul(result, 31) + getNumberHashCode(this.g41_1) | 0;
-    result = imul(result, 31) + getNumberHashCode(this.h41_1) | 0;
-    result = imul(result, 31) + getNumberHashCode(this.i41_1) | 0;
-    result = imul(result, 31) + getNumberHashCode(this.j41_1) | 0;
+    var result = getNumberHashCode(this.x3z_1);
+    result = imul(result, 31) + getNumberHashCode(this.y3z_1) | 0;
+    result = imul(result, 31) + getNumberHashCode(this.z3z_1) | 0;
+    result = imul(result, 31) + getNumberHashCode(this.a40_1) | 0;
+    result = imul(result, 31) + getNumberHashCode(this.b40_1) | 0;
+    result = imul(result, 31) + getNumberHashCode(this.c40_1) | 0;
+    result = imul(result, 31) + getNumberHashCode(this.d40_1) | 0;
     return result;
   };
   protoOf(TransferParameters).equals = function (other) {
@@ -3367,36 +3168,36 @@
     if (!(other instanceof TransferParameters))
       return false;
     var tmp0_other_with_cast = other instanceof TransferParameters ? other : THROW_CCE();
-    if (!equals(this.d41_1, tmp0_other_with_cast.d41_1))
+    if (!equals(this.x3z_1, tmp0_other_with_cast.x3z_1))
       return false;
-    if (!equals(this.e41_1, tmp0_other_with_cast.e41_1))
+    if (!equals(this.y3z_1, tmp0_other_with_cast.y3z_1))
       return false;
-    if (!equals(this.f41_1, tmp0_other_with_cast.f41_1))
+    if (!equals(this.z3z_1, tmp0_other_with_cast.z3z_1))
       return false;
-    if (!equals(this.g41_1, tmp0_other_with_cast.g41_1))
+    if (!equals(this.a40_1, tmp0_other_with_cast.a40_1))
       return false;
-    if (!equals(this.h41_1, tmp0_other_with_cast.h41_1))
+    if (!equals(this.b40_1, tmp0_other_with_cast.b40_1))
       return false;
-    if (!equals(this.i41_1, tmp0_other_with_cast.i41_1))
+    if (!equals(this.c40_1, tmp0_other_with_cast.c40_1))
       return false;
-    if (!equals(this.j41_1, tmp0_other_with_cast.j41_1))
+    if (!equals(this.d40_1, tmp0_other_with_cast.d40_1))
       return false;
     return true;
   };
   function WhitePoint(x, y) {
-    this.l3z_1 = x;
-    this.m3z_1 = y;
+    this.f3y_1 = x;
+    this.g3y_1 = y;
   }
-  protoOf(WhitePoint).n3z = function () {
+  protoOf(WhitePoint).h3y = function () {
     // Inline function 'kotlin.floatArrayOf' call
-    return new Float32Array([this.l3z_1 / this.m3z_1, 1.0, (1.0 - this.l3z_1 - this.m3z_1) / this.m3z_1]);
+    return new Float32Array([this.f3y_1 / this.g3y_1, 1.0, (1.0 - this.f3y_1 - this.g3y_1) / this.g3y_1]);
   };
   protoOf(WhitePoint).toString = function () {
-    return 'WhitePoint(x=' + this.l3z_1 + ', y=' + this.m3z_1 + ')';
+    return 'WhitePoint(x=' + this.f3y_1 + ', y=' + this.g3y_1 + ')';
   };
   protoOf(WhitePoint).hashCode = function () {
-    var result = getNumberHashCode(this.l3z_1);
-    result = imul(result, 31) + getNumberHashCode(this.m3z_1) | 0;
+    var result = getNumberHashCode(this.f3y_1);
+    result = imul(result, 31) + getNumberHashCode(this.g3y_1) | 0;
     return result;
   };
   protoOf(WhitePoint).equals = function (other) {
@@ -3405,9 +3206,9 @@
     if (!(other instanceof WhitePoint))
       return false;
     var tmp0_other_with_cast = other instanceof WhitePoint ? other : THROW_CCE();
-    if (!equals(this.l3z_1, tmp0_other_with_cast.l3z_1))
+    if (!equals(this.f3y_1, tmp0_other_with_cast.f3y_1))
       return false;
-    if (!equals(this.m3z_1, tmp0_other_with_cast.m3z_1))
+    if (!equals(this.g3y_1, tmp0_other_with_cast.g3y_1))
       return false;
     return true;
   };
@@ -3415,21 +3216,21 @@
     return coerceIn(x, -2.0, 2.0);
   }
   function Xyz(name, id) {
-    ColorSpace.call(this, name, Companion_getInstance_19().h3u_1, id);
+    ColorSpace.call(this, name, Companion_getInstance_16().c3t_1, id);
   }
-  protoOf(Xyz).c3u = function (component) {
+  protoOf(Xyz).x3s = function (component) {
     return -2.0;
   };
-  protoOf(Xyz).d3u = function (component) {
+  protoOf(Xyz).y3s = function (component) {
     return 2.0;
   };
-  protoOf(Xyz).x3y = function (v) {
+  protoOf(Xyz).r3x = function (v) {
     v[0] = clamp(this, v[0]);
     v[1] = clamp(this, v[1]);
     v[2] = clamp(this, v[2]);
     return v;
   };
-  protoOf(Xyz).y3y = function (v0, v1, v2) {
+  protoOf(Xyz).s3x = function (v0, v1, v2) {
     // Inline function 'androidx.compose.ui.util.packFloats' call
     var val1 = clamp(this, v0);
     var val2 = clamp(this, v1);
@@ -3437,20 +3238,20 @@
     var v2_0 = toLong(toRawBits(val2));
     return v1_0.kb(32).ob(v2_0.nb(new Long(-1, 0)));
   };
-  protoOf(Xyz).z3y = function (v0, v1, v2) {
+  protoOf(Xyz).t3x = function (v0, v1, v2) {
     return clamp(this, v2);
   };
-  protoOf(Xyz).a3z = function (x, y, z, a, colorSpace) {
+  protoOf(Xyz).u3x = function (x, y, z, a, colorSpace) {
     return Color_1(clamp(this, x), clamp(this, y), clamp(this, z), a, colorSpace);
   };
-  protoOf(Xyz).c3z = function (v) {
+  protoOf(Xyz).w3x = function (v) {
     v[0] = clamp(this, v[0]);
     v[1] = clamp(this, v[1]);
     v[2] = clamp(this, v[2]);
     return v;
   };
   function obtainFillPaint($this) {
-    var tmp0_elvis_lhs = $this.u41_1;
+    var tmp0_elvis_lhs = $this.o40_1;
     var tmp;
     if (tmp0_elvis_lhs == null) {
       // Inline function 'kotlin.also' call
@@ -3458,10 +3259,10 @@
       var this_0 = Paint();
       // Inline function 'kotlin.contracts.contract' call
       // Inline function 'androidx.compose.ui.graphics.drawscope.CanvasDrawScope.obtainFillPaint.<anonymous>' call
-      this_0.w41(Companion_getInstance_11().n3x_1);
+      this_0.q40(Companion_getInstance_9().i3w_1);
       // Inline function 'kotlin.contracts.contract' call
       // Inline function 'androidx.compose.ui.graphics.drawscope.CanvasDrawScope.obtainFillPaint.<anonymous>' call
-      $this.u41_1 = this_0;
+      $this.o40_1 = this_0;
       tmp = this_0;
     } else {
       tmp = tmp0_elvis_lhs;
@@ -3469,7 +3270,7 @@
     return tmp;
   }
   function obtainStrokePaint($this) {
-    var tmp0_elvis_lhs = $this.v41_1;
+    var tmp0_elvis_lhs = $this.p40_1;
     var tmp;
     if (tmp0_elvis_lhs == null) {
       // Inline function 'kotlin.also' call
@@ -3477,10 +3278,10 @@
       var this_0 = Paint();
       // Inline function 'kotlin.contracts.contract' call
       // Inline function 'androidx.compose.ui.graphics.drawscope.CanvasDrawScope.obtainStrokePaint.<anonymous>' call
-      this_0.w41(Companion_getInstance_11().o3x_1);
+      this_0.q40(Companion_getInstance_9().j3w_1);
       // Inline function 'kotlin.contracts.contract' call
       // Inline function 'androidx.compose.ui.graphics.drawscope.CanvasDrawScope.obtainStrokePaint.<anonymous>' call
-      $this.v41_1 = this_0;
+      $this.p40_1 = this_0;
       tmp = this_0;
     } else {
       tmp = tmp0_elvis_lhs;
@@ -3497,20 +3298,20 @@
         var this_0 = obtainStrokePaint($this);
         // Inline function 'kotlin.contracts.contract' call
         // Inline function 'androidx.compose.ui.graphics.drawscope.CanvasDrawScope.selectPaint.<anonymous>' call
-        if (!(this_0.q3e() === drawStyle.x41_1)) {
-          this_0.p3e(drawStyle.x41_1);
+        if (!(this_0.j3e() === drawStyle.r40_1)) {
+          this_0.i3e(drawStyle.r40_1);
         }
-        if (!(this_0.d42() === drawStyle.z41_1)) {
-          this_0.c42(drawStyle.z41_1);
+        if (!(this_0.x40() === drawStyle.t40_1)) {
+          this_0.w40(drawStyle.t40_1);
         }
-        if (!(this_0.f42() === drawStyle.y41_1)) {
-          this_0.e42(drawStyle.y41_1);
+        if (!(this_0.z40() === drawStyle.s40_1)) {
+          this_0.y40(drawStyle.s40_1);
         }
-        if (!(this_0.h42() === drawStyle.a42_1)) {
-          this_0.g42(drawStyle.a42_1);
+        if (!(this_0.b41() === drawStyle.u40_1)) {
+          this_0.a41(drawStyle.u40_1);
         }
-        if (!equals(this_0.j42(), drawStyle.b42_1)) {
-          this_0.i42(drawStyle.b42_1);
+        if (!equals(this_0.d41(), drawStyle.v40_1)) {
+          this_0.c41(drawStyle.v40_1);
         }
         tmp = this_0;
       } else {
@@ -3525,31 +3326,31 @@
     // Inline function 'kotlin.contracts.contract' call
     // Inline function 'androidx.compose.ui.graphics.drawscope.CanvasDrawScope.configurePaint.<anonymous>' call
     if (!(brush == null)) {
-      brush.w3q($this.g34(), this_0, alpha);
+      brush.h3q($this.g34(), this_0, alpha);
     } else {
-      if (!(this_0.q3r() == null)) {
-        this_0.u3e(null);
+      if (!(this_0.e41() == null)) {
+        this_0.n3e(null);
       }
-      if (!equals(this_0.p3r(), Companion_getInstance_7().b3r_1)) {
-        this_0.o3r(Companion_getInstance_7().b3r_1);
+      if (!equals(this_0.g41(), Companion_getInstance_5().k3s_1)) {
+        this_0.f41(Companion_getInstance_5().k3s_1);
       }
-      if (!(this_0.w3n() === alpha)) {
-        this_0.r3r(alpha);
+      if (!(this_0.p3n() === alpha)) {
+        this_0.h41(alpha);
       }
     }
-    if (!equals(this_0.l42(), colorFilter)) {
-      this_0.k42(colorFilter);
+    if (!equals(this_0.j41(), colorFilter)) {
+      this_0.i41(colorFilter);
     }
-    if (!(this_0.n42() === blendMode)) {
-      this_0.m42(blendMode);
+    if (!(this_0.l41() === blendMode)) {
+      this_0.k41(blendMode);
     }
-    if (!(this_0.p42() === filterQuality)) {
-      this_0.o42(filterQuality);
+    if (!(this_0.n41() === filterQuality)) {
+      this_0.m41(filterQuality);
     }
     return this_0;
   }
   function configurePaint$default($this, brush, style, alpha, colorFilter, blendMode, filterQuality, $super) {
-    filterQuality = filterQuality === VOID ? Companion_getInstance_26().f3x_1 : filterQuality;
+    filterQuality = filterQuality === VOID ? Companion_getInstance_23().a3w_1 : filterQuality;
     return configurePaint($this, brush, style, alpha, colorFilter, blendMode, filterQuality);
   }
   function configurePaint_0($this, color, style, alpha, colorFilter, blendMode, filterQuality) {
@@ -3558,25 +3359,25 @@
     // Inline function 'kotlin.contracts.contract' call
     // Inline function 'androidx.compose.ui.graphics.drawscope.CanvasDrawScope.configurePaint.<anonymous>' call
     var targetColor = modulate(color, $this, alpha);
-    if (!equals(this_0.p3r(), targetColor)) {
-      this_0.o3r(targetColor);
+    if (!equals(this_0.g41(), targetColor)) {
+      this_0.f41(targetColor);
     }
-    if (!(this_0.q3r() == null)) {
-      this_0.u3e(null);
+    if (!(this_0.e41() == null)) {
+      this_0.n3e(null);
     }
-    if (!equals(this_0.l42(), colorFilter)) {
-      this_0.k42(colorFilter);
+    if (!equals(this_0.j41(), colorFilter)) {
+      this_0.i41(colorFilter);
     }
-    if (!(this_0.n42() === blendMode)) {
-      this_0.m42(blendMode);
+    if (!(this_0.l41() === blendMode)) {
+      this_0.k41(blendMode);
     }
-    if (!(this_0.p42() === filterQuality)) {
-      this_0.o42(filterQuality);
+    if (!(this_0.n41() === filterQuality)) {
+      this_0.m41(filterQuality);
     }
     return this_0;
   }
   function configurePaint$default_0($this, color, style, alpha, colorFilter, blendMode, filterQuality, $super) {
-    filterQuality = filterQuality === VOID ? Companion_getInstance_26().f3x_1 : filterQuality;
+    filterQuality = filterQuality === VOID ? Companion_getInstance_23().a3w_1 : filterQuality;
     return configurePaint_0($this, color, style, alpha, colorFilter, blendMode, filterQuality);
   }
   function modulate(_this__u8e3s4, $this, alpha) {
@@ -3592,32 +3393,32 @@
     density = density === VOID ? get_DefaultDensity() : density;
     layoutDirection = layoutDirection === VOID ? LayoutDirection_Ltr_getInstance() : layoutDirection;
     canvas = canvas === VOID ? new EmptyCanvas() : canvas;
-    size = size === VOID ? Companion_getInstance().w34_1 : size;
-    this.q42_1 = density;
-    this.r42_1 = layoutDirection;
-    this.s42_1 = canvas;
-    this.t42_1 = size;
+    size = size === VOID ? Companion_getInstance_0().w34_1 : size;
+    this.o41_1 = density;
+    this.p41_1 = layoutDirection;
+    this.q41_1 = canvas;
+    this.r41_1 = size;
   }
   protoOf(DrawParams).re = function () {
-    return this.q42_1;
+    return this.o41_1;
   };
   protoOf(DrawParams).se = function () {
-    return this.r42_1;
+    return this.p41_1;
   };
-  protoOf(DrawParams).u42 = function () {
-    return this.s42_1;
+  protoOf(DrawParams).s41 = function () {
+    return this.q41_1;
   };
-  protoOf(DrawParams).v42 = function () {
-    return this.t42_1;
+  protoOf(DrawParams).t41 = function () {
+    return this.r41_1;
   };
   protoOf(DrawParams).toString = function () {
-    return 'DrawParams(density=' + this.q42_1 + ', layoutDirection=' + this.r42_1 + ', canvas=' + this.s42_1 + ', size=' + new Size_0(this.t42_1) + ')';
+    return 'DrawParams(density=' + this.o41_1 + ', layoutDirection=' + this.p41_1 + ', canvas=' + this.q41_1 + ', size=' + new Size_0(this.r41_1) + ')';
   };
   protoOf(DrawParams).hashCode = function () {
-    var result = hashCode(this.q42_1);
-    result = imul(result, 31) + this.r42_1.hashCode() | 0;
-    result = imul(result, 31) + hashCode(this.s42_1) | 0;
-    result = imul(result, 31) + Size__hashCode_impl_2h1qpd(this.t42_1) | 0;
+    var result = hashCode(this.o41_1);
+    result = imul(result, 31) + this.p41_1.hashCode() | 0;
+    result = imul(result, 31) + hashCode(this.q41_1) | 0;
+    result = imul(result, 31) + Size__hashCode_impl_2h1qpd(this.r41_1) | 0;
     return result;
   };
   protoOf(DrawParams).equals = function (other) {
@@ -3626,83 +3427,83 @@
     if (!(other instanceof DrawParams))
       return false;
     var tmp0_other_with_cast = other instanceof DrawParams ? other : THROW_CCE();
-    if (!equals(this.q42_1, tmp0_other_with_cast.q42_1))
+    if (!equals(this.o41_1, tmp0_other_with_cast.o41_1))
       return false;
-    if (!this.r42_1.equals(tmp0_other_with_cast.r42_1))
+    if (!this.p41_1.equals(tmp0_other_with_cast.p41_1))
       return false;
-    if (!equals(this.s42_1, tmp0_other_with_cast.s42_1))
+    if (!equals(this.q41_1, tmp0_other_with_cast.q41_1))
       return false;
-    if (!equals(this.t42_1, tmp0_other_with_cast.t42_1))
+    if (!equals(this.r41_1, tmp0_other_with_cast.r41_1))
       return false;
     return true;
   };
   function CanvasDrawScope$drawContext$1(this$0) {
-    this.x42_1 = this$0;
-    this.w42_1 = asDrawTransform(this);
+    this.v41_1 = this$0;
+    this.u41_1 = asDrawTransform(this);
   }
-  protoOf(CanvasDrawScope$drawContext$1).f3h = function () {
-    return this.x42_1.s41_1.s42_1;
+  protoOf(CanvasDrawScope$drawContext$1).x3g = function () {
+    return this.v41_1.m40_1.q41_1;
   };
-  protoOf(CanvasDrawScope$drawContext$1).y42 = function (value) {
-    this.x42_1.s41_1.t42_1 = value;
+  protoOf(CanvasDrawScope$drawContext$1).w41 = function (value) {
+    this.v41_1.m40_1.r41_1 = value;
   };
   protoOf(CanvasDrawScope$drawContext$1).g34 = function () {
-    return this.x42_1.s41_1.t42_1;
+    return this.v41_1.m40_1.r41_1;
   };
-  protoOf(CanvasDrawScope$drawContext$1).z42 = function () {
-    return this.w42_1;
+  protoOf(CanvasDrawScope$drawContext$1).x41 = function () {
+    return this.u41_1;
   };
   function CanvasDrawScope() {
-    this.s41_1 = new DrawParams();
+    this.m40_1 = new DrawParams();
     var tmp = this;
-    tmp.t41_1 = new CanvasDrawScope$drawContext$1(this);
-    this.u41_1 = null;
-    this.v41_1 = null;
+    tmp.n40_1 = new CanvasDrawScope$drawContext$1(this);
+    this.o40_1 = null;
+    this.p40_1 = null;
   }
-  protoOf(CanvasDrawScope).a43 = function () {
-    return this.s41_1.r42_1;
+  protoOf(CanvasDrawScope).y41 = function () {
+    return this.m40_1.p41_1;
   };
   protoOf(CanvasDrawScope).x35 = function () {
-    return this.s41_1.q42_1.x35();
+    return this.m40_1.o41_1.x35();
   };
   protoOf(CanvasDrawScope).i36 = function () {
-    return this.s41_1.q42_1.i36();
+    return this.m40_1.o41_1.i36();
   };
-  protoOf(CanvasDrawScope).b43 = function () {
-    return this.t41_1;
+  protoOf(CanvasDrawScope).z41 = function () {
+    return this.n40_1;
   };
-  protoOf(CanvasDrawScope).m3x = function (brush, topLeft, size, alpha, style, colorFilter, blendMode) {
-    return this.s41_1.s42_1.n3s(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), configurePaint$default(this, brush, style, alpha, colorFilter, blendMode));
+  protoOf(CanvasDrawScope).h3w = function (brush, topLeft, size, alpha, style, colorFilter, blendMode) {
+    return this.m40_1.q41_1.v3q(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), configurePaint$default(this, brush, style, alpha, colorFilter, blendMode));
   };
-  protoOf(CanvasDrawScope).j3x = function (color, topLeft, size, alpha, style, colorFilter, blendMode) {
-    return this.s41_1.s42_1.n3s(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
+  protoOf(CanvasDrawScope).e3w = function (color, topLeft, size, alpha, style, colorFilter, blendMode) {
+    return this.m40_1.q41_1.v3q(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
   };
-  protoOf(CanvasDrawScope).l3x = function (brush, topLeft, size, cornerRadius, alpha, style, colorFilter, blendMode) {
-    return this.s41_1.s42_1.o3s(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), _CornerRadius___get_x__impl__1594cn(cornerRadius), _CornerRadius___get_y__impl__tyvleu(cornerRadius), configurePaint$default(this, brush, style, alpha, colorFilter, blendMode));
+  protoOf(CanvasDrawScope).g3w = function (brush, topLeft, size, cornerRadius, alpha, style, colorFilter, blendMode) {
+    return this.m40_1.q41_1.w3q(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), _CornerRadius___get_x__impl__1594cn(cornerRadius), _CornerRadius___get_y__impl__tyvleu(cornerRadius), configurePaint$default(this, brush, style, alpha, colorFilter, blendMode));
   };
-  protoOf(CanvasDrawScope).i3x = function (color, topLeft, size, cornerRadius, style, alpha, colorFilter, blendMode) {
-    return this.s41_1.s42_1.o3s(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), _CornerRadius___get_x__impl__1594cn(cornerRadius), _CornerRadius___get_y__impl__tyvleu(cornerRadius), configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
+  protoOf(CanvasDrawScope).d3w = function (color, topLeft, size, cornerRadius, style, alpha, colorFilter, blendMode) {
+    return this.m40_1.q41_1.w3q(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), _CornerRadius___get_x__impl__1594cn(cornerRadius), _CornerRadius___get_y__impl__tyvleu(cornerRadius), configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
   };
-  protoOf(CanvasDrawScope).e43 = function (color, radius, center, alpha, style, colorFilter, blendMode) {
-    return this.s41_1.s42_1.p3s(center, radius, configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
+  protoOf(CanvasDrawScope).c42 = function (color, radius, center, alpha, style, colorFilter, blendMode) {
+    return this.m40_1.q41_1.x3q(center, radius, configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
   };
-  protoOf(CanvasDrawScope).g43 = function (color, startAngle, sweepAngle, useCenter, topLeft, size, alpha, style, colorFilter, blendMode) {
-    return this.s41_1.s42_1.q3s(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), startAngle, sweepAngle, useCenter, configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
+  protoOf(CanvasDrawScope).e42 = function (color, startAngle, sweepAngle, useCenter, topLeft, size, alpha, style, colorFilter, blendMode) {
+    return this.m40_1.q41_1.y3q(_Offset___get_x__impl__xvi35n(topLeft), _Offset___get_y__impl__8bzhra(topLeft), _Offset___get_x__impl__xvi35n(topLeft) + _Size___get_width__impl__58y75t(size), _Offset___get_y__impl__8bzhra(topLeft) + _Size___get_height__impl__a04p02(size), startAngle, sweepAngle, useCenter, configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
   };
-  protoOf(CanvasDrawScope).h3x = function (path, color, alpha, style, colorFilter, blendMode) {
-    return this.s41_1.s42_1.r3s(path, configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
+  protoOf(CanvasDrawScope).c3w = function (path, color, alpha, style, colorFilter, blendMode) {
+    return this.m40_1.q41_1.z3q(path, configurePaint$default_0(this, color, style, alpha, colorFilter, blendMode));
   };
-  protoOf(CanvasDrawScope).k3x = function (path, brush, alpha, style, colorFilter, blendMode) {
-    return this.s41_1.s42_1.r3s(path, configurePaint$default(this, brush, style, alpha, colorFilter, blendMode));
+  protoOf(CanvasDrawScope).f3w = function (path, brush, alpha, style, colorFilter, blendMode) {
+    return this.m40_1.q41_1.z3q(path, configurePaint$default(this, brush, style, alpha, colorFilter, blendMode));
   };
   function asDrawTransform(_this__u8e3s4) {
     return new asDrawTransform$1(_this__u8e3s4);
   }
   function asDrawTransform$1($this_asDrawTransform) {
-    this.k43_1 = $this_asDrawTransform;
+    this.i42_1 = $this_asDrawTransform;
   }
-  protoOf(asDrawTransform$1).g3s = function (left, top, right, bottom, clipOp) {
-    this.k43_1.f3h().g3s(left, top, right, bottom, clipOp);
+  protoOf(asDrawTransform$1).o3q = function (left, top, right, bottom, clipOp) {
+    this.i42_1.x3g().o3q(left, top, right, bottom, clipOp);
   };
   function get_DefaultDensity() {
     _init_properties_DrawContext_kt__bfvdzt();
@@ -3723,16 +3524,16 @@
   function offsetSize(_this__u8e3s4, $this, offset) {
     return Size(_Size___get_width__impl__58y75t(_this__u8e3s4) - _Offset___get_x__impl__xvi35n(offset), _Size___get_height__impl__a04p02(_this__u8e3s4) - _Offset___get_y__impl__8bzhra(offset));
   }
-  function Companion_21() {
-    Companion_instance_23 = this;
-    this.e3x_1 = Companion_getInstance_4().n3p_1;
-    this.f3x_1 = Companion_getInstance_8().e3v_1;
+  function Companion_19() {
+    Companion_instance_21 = this;
+    this.z3v_1 = Companion_getInstance_3().g3p_1;
+    this.a3w_1 = Companion_getInstance_6().z3t_1;
   }
-  var Companion_instance_23;
-  function Companion_getInstance_26() {
-    if (Companion_instance_23 == null)
-      new Companion_21();
-    return Companion_instance_23;
+  var Companion_instance_21;
+  function Companion_getInstance_23() {
+    if (Companion_instance_21 == null)
+      new Companion_19();
+    return Companion_instance_21;
   }
   function DrawScope() {
   }
@@ -3746,110 +3547,107 @@
       new Fill();
     return Fill_instance;
   }
-  function Companion_22() {
-    Companion_instance_24 = this;
-    this.l43_1 = 0.0;
-    this.m43_1 = 4.0;
-    this.n43_1 = Companion_getInstance_15().g3y_1;
-    this.o43_1 = Companion_getInstance_16().k3y_1;
+  function Companion_20() {
+    Companion_instance_22 = this;
+    this.j42_1 = 0.0;
+    this.k42_1 = 4.0;
+    this.l42_1 = Companion_getInstance_13().b3x_1;
+    this.m42_1 = Companion_getInstance_14().f3x_1;
   }
-  var Companion_instance_24;
-  function Companion_getInstance_27() {
-    if (Companion_instance_24 == null)
-      new Companion_22();
-    return Companion_instance_24;
+  var Companion_instance_22;
+  function Companion_getInstance_24() {
+    if (Companion_instance_22 == null)
+      new Companion_20();
+    return Companion_instance_22;
   }
   function Stroke(width, miter, cap, join, pathEffect) {
-    Companion_getInstance_27();
+    Companion_getInstance_24();
     width = width === VOID ? 0.0 : width;
     miter = miter === VOID ? 4.0 : miter;
-    cap = cap === VOID ? Companion_getInstance_27().n43_1 : cap;
-    join = join === VOID ? Companion_getInstance_27().o43_1 : join;
+    cap = cap === VOID ? Companion_getInstance_24().l42_1 : cap;
+    join = join === VOID ? Companion_getInstance_24().m42_1 : join;
     pathEffect = pathEffect === VOID ? null : pathEffect;
     DrawStyle.call(this);
-    this.x41_1 = width;
-    this.y41_1 = miter;
-    this.z41_1 = cap;
-    this.a42_1 = join;
-    this.b42_1 = pathEffect;
+    this.r40_1 = width;
+    this.s40_1 = miter;
+    this.t40_1 = cap;
+    this.u40_1 = join;
+    this.v40_1 = pathEffect;
   }
   protoOf(Stroke).equals = function (other) {
     if (this === other)
       return true;
     if (!(other instanceof Stroke))
       return false;
-    if (!(this.x41_1 === other.x41_1))
+    if (!(this.r40_1 === other.r40_1))
       return false;
-    if (!(this.y41_1 === other.y41_1))
+    if (!(this.s40_1 === other.s40_1))
       return false;
-    if (!(this.z41_1 === other.z41_1))
+    if (!(this.t40_1 === other.t40_1))
       return false;
-    if (!(this.a42_1 === other.a42_1))
+    if (!(this.u40_1 === other.u40_1))
       return false;
-    if (!equals(this.b42_1, other.b42_1))
+    if (!equals(this.v40_1, other.v40_1))
       return false;
     return true;
   };
   protoOf(Stroke).hashCode = function () {
-    var result = getNumberHashCode(this.x41_1);
-    result = imul(31, result) + getNumberHashCode(this.y41_1) | 0;
-    result = imul(31, result) + StrokeCap__hashCode_impl_posxk8(this.z41_1) | 0;
-    result = imul(31, result) + StrokeJoin__hashCode_impl_3pyh8w(this.a42_1) | 0;
+    var result = getNumberHashCode(this.r40_1);
+    result = imul(31, result) + getNumberHashCode(this.s40_1) | 0;
+    result = imul(31, result) + StrokeCap__hashCode_impl_posxk8(this.t40_1) | 0;
+    result = imul(31, result) + StrokeJoin__hashCode_impl_3pyh8w(this.u40_1) | 0;
     var tmp = imul(31, result);
-    var tmp0_safe_receiver = this.b42_1;
+    var tmp0_safe_receiver = this.v40_1;
     var tmp1_elvis_lhs = tmp0_safe_receiver == null ? null : hashCode(tmp0_safe_receiver);
     result = tmp + (tmp1_elvis_lhs == null ? 0 : tmp1_elvis_lhs) | 0;
     return result;
   };
   protoOf(Stroke).toString = function () {
-    return 'Stroke(width=' + this.x41_1 + ', miter=' + this.y41_1 + ', cap=' + new StrokeCap(this.z41_1) + ', join=' + new StrokeJoin(this.a42_1) + ', pathEffect=' + this.b42_1 + ')';
+    return 'Stroke(width=' + this.r40_1 + ', miter=' + this.s40_1 + ', cap=' + new StrokeCap(this.t40_1) + ', join=' + new StrokeJoin(this.u40_1) + ', pathEffect=' + this.v40_1 + ')';
   };
   function EmptyCanvas() {
   }
-  protoOf(EmptyCanvas).a3s = function () {
+  protoOf(EmptyCanvas).i3q = function () {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).b3s = function () {
+  protoOf(EmptyCanvas).j3q = function () {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).c3s = function (bounds, paint) {
+  protoOf(EmptyCanvas).k3q = function (bounds, paint) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).d3s = function (dx, dy) {
+  protoOf(EmptyCanvas).l3q = function (dx, dy) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).e3s = function (matrix) {
+  protoOf(EmptyCanvas).m3q = function (matrix) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).g3s = function (left, top, right, bottom, clipOp) {
+  protoOf(EmptyCanvas).o3q = function (left, top, right, bottom, clipOp) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).k3s = function (path, clipOp) {
+  protoOf(EmptyCanvas).s3q = function (path, clipOp) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).n3s = function (left, top, right, bottom, paint) {
+  protoOf(EmptyCanvas).v3q = function (left, top, right, bottom, paint) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).o3s = function (left, top, right, bottom, radiusX, radiusY, paint) {
+  protoOf(EmptyCanvas).w3q = function (left, top, right, bottom, radiusX, radiusY, paint) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).p3s = function (center, radius, paint) {
+  protoOf(EmptyCanvas).x3q = function (center, radius, paint) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).q3s = function (left, top, right, bottom, startAngle, sweepAngle, useCenter, paint) {
+  protoOf(EmptyCanvas).y3q = function (left, top, right, bottom, startAngle, sweepAngle, useCenter, paint) {
     throw UnsupportedOperationException_init_$Create$();
   };
-  protoOf(EmptyCanvas).r3s = function (path, paint) {
+  protoOf(EmptyCanvas).z3q = function (path, paint) {
     throw UnsupportedOperationException_init_$Create$();
   };
   function toSkia(_this__u8e3s4) {
-    return _this__u8e3s4 === Companion_getInstance_4().k3p_1 ? BlendMode_CLEAR_getInstance() : _this__u8e3s4 === Companion_getInstance_4().l3p_1 ? BlendMode_SRC_getInstance() : _this__u8e3s4 === Companion_getInstance_4().m3p_1 ? BlendMode_DST_getInstance() : _this__u8e3s4 === Companion_getInstance_4().n3p_1 ? BlendMode_SRC_OVER_getInstance() : _this__u8e3s4 === Companion_getInstance_4().o3p_1 ? BlendMode_DST_OVER_getInstance() : _this__u8e3s4 === Companion_getInstance_4().p3p_1 ? BlendMode_SRC_IN_getInstance() : _this__u8e3s4 === Companion_getInstance_4().q3p_1 ? BlendMode_DST_IN_getInstance() : _this__u8e3s4 === Companion_getInstance_4().r3p_1 ? BlendMode_SRC_OUT_getInstance() : _this__u8e3s4 === Companion_getInstance_4().s3p_1 ? BlendMode_DST_OUT_getInstance() : _this__u8e3s4 === Companion_getInstance_4().t3p_1 ? BlendMode_SRC_ATOP_getInstance() : _this__u8e3s4 === Companion_getInstance_4().u3p_1 ? BlendMode_DST_ATOP_getInstance() : _this__u8e3s4 === Companion_getInstance_4().v3p_1 ? BlendMode_XOR_getInstance() : _this__u8e3s4 === Companion_getInstance_4().w3p_1 ? BlendMode_PLUS_getInstance() : _this__u8e3s4 === Companion_getInstance_4().x3p_1 ? BlendMode_MODULATE_getInstance() : _this__u8e3s4 === Companion_getInstance_4().y3p_1 ? BlendMode_SCREEN_getInstance() : _this__u8e3s4 === Companion_getInstance_4().z3p_1 ? BlendMode_OVERLAY_getInstance() : _this__u8e3s4 === Companion_getInstance_4().a3q_1 ? BlendMode_DARKEN_getInstance() : _this__u8e3s4 === Companion_getInstance_4().b3q_1 ? BlendMode_LIGHTEN_getInstance() : _this__u8e3s4 === Companion_getInstance_4().c3q_1 ? BlendMode_COLOR_DODGE_getInstance() : _this__u8e3s4 === Companion_getInstance_4().d3q_1 ? BlendMode_COLOR_BURN_getInstance() : _this__u8e3s4 === Companion_getInstance_4().e3q_1 ? BlendMode_HARD_LIGHT_getInstance() : _this__u8e3s4 === Companion_getInstance_4().f3q_1 ? BlendMode_SOFT_LIGHT_getInstance() : _this__u8e3s4 === Companion_getInstance_4().g3q_1 ? BlendMode_DIFFERENCE_getInstance() : _this__u8e3s4 === Companion_getInstance_4().h3q_1 ? BlendMode_EXCLUSION_getInstance() : _this__u8e3s4 === Companion_getInstance_4().i3q_1 ? BlendMode_MULTIPLY_getInstance() : _this__u8e3s4 === Companion_getInstance_4().j3q_1 ? BlendMode_HUE_getInstance() : _this__u8e3s4 === Companion_getInstance_4().k3q_1 ? BlendMode_SATURATION_getInstance() : _this__u8e3s4 === Companion_getInstance_4().l3q_1 ? BlendMode_COLOR_getInstance() : _this__u8e3s4 === Companion_getInstance_4().m3q_1 ? BlendMode_LUMINOSITY_getInstance() : BlendMode_SRC_OVER_getInstance();
-  }
-  function identityMatrix33() {
-    return new Matrix33(new Float32Array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]));
+    return _this__u8e3s4 === Companion_getInstance_3().d3p_1 ? BlendMode_CLEAR_getInstance() : _this__u8e3s4 === Companion_getInstance_3().e3p_1 ? BlendMode_SRC_getInstance() : _this__u8e3s4 === Companion_getInstance_3().f3p_1 ? BlendMode_DST_getInstance() : _this__u8e3s4 === Companion_getInstance_3().g3p_1 ? BlendMode_SRC_OVER_getInstance() : _this__u8e3s4 === Companion_getInstance_3().h3p_1 ? BlendMode_DST_OVER_getInstance() : _this__u8e3s4 === Companion_getInstance_3().i3p_1 ? BlendMode_SRC_IN_getInstance() : _this__u8e3s4 === Companion_getInstance_3().j3p_1 ? BlendMode_DST_IN_getInstance() : _this__u8e3s4 === Companion_getInstance_3().k3p_1 ? BlendMode_SRC_OUT_getInstance() : _this__u8e3s4 === Companion_getInstance_3().l3p_1 ? BlendMode_DST_OUT_getInstance() : _this__u8e3s4 === Companion_getInstance_3().m3p_1 ? BlendMode_SRC_ATOP_getInstance() : _this__u8e3s4 === Companion_getInstance_3().n3p_1 ? BlendMode_DST_ATOP_getInstance() : _this__u8e3s4 === Companion_getInstance_3().o3p_1 ? BlendMode_XOR_getInstance() : _this__u8e3s4 === Companion_getInstance_3().p3p_1 ? BlendMode_PLUS_getInstance() : _this__u8e3s4 === Companion_getInstance_3().q3p_1 ? BlendMode_MODULATE_getInstance() : _this__u8e3s4 === Companion_getInstance_3().r3p_1 ? BlendMode_SCREEN_getInstance() : _this__u8e3s4 === Companion_getInstance_3().s3p_1 ? BlendMode_OVERLAY_getInstance() : _this__u8e3s4 === Companion_getInstance_3().t3p_1 ? BlendMode_DARKEN_getInstance() : _this__u8e3s4 === Companion_getInstance_3().u3p_1 ? BlendMode_LIGHTEN_getInstance() : _this__u8e3s4 === Companion_getInstance_3().v3p_1 ? BlendMode_COLOR_DODGE_getInstance() : _this__u8e3s4 === Companion_getInstance_3().w3p_1 ? BlendMode_COLOR_BURN_getInstance() : _this__u8e3s4 === Companion_getInstance_3().x3p_1 ? BlendMode_HARD_LIGHT_getInstance() : _this__u8e3s4 === Companion_getInstance_3().y3p_1 ? BlendMode_SOFT_LIGHT_getInstance() : _this__u8e3s4 === Companion_getInstance_3().z3p_1 ? BlendMode_DIFFERENCE_getInstance() : _this__u8e3s4 === Companion_getInstance_3().a3q_1 ? BlendMode_EXCLUSION_getInstance() : _this__u8e3s4 === Companion_getInstance_3().b3q_1 ? BlendMode_MULTIPLY_getInstance() : _this__u8e3s4 === Companion_getInstance_3().c3q_1 ? BlendMode_HUE_getInstance() : _this__u8e3s4 === Companion_getInstance_3().d3q_1 ? BlendMode_SATURATION_getInstance() : _this__u8e3s4 === Companion_getInstance_3().e3q_1 ? BlendMode_COLOR_getInstance() : _this__u8e3s4 === Companion_getInstance_3().f3q_1 ? BlendMode_LUMINOSITY_getInstance() : BlendMode_SRC_OVER_getInstance();
   }
   function toSkiaRect(_this__u8e3s4) {
-    return Companion_instance.r3g(_this__u8e3s4.a34_1, _this__u8e3s4.b34_1, _this__u8e3s4.c34_1, _this__u8e3s4.d34_1);
+    return Companion_instance.k3g(_this__u8e3s4.a34_1, _this__u8e3s4.b34_1, _this__u8e3s4.c34_1, _this__u8e3s4.d34_1);
   }
   function toSkiaRRect(_this__u8e3s4) {
     var radii = new Float32Array(8);
@@ -3861,30 +3659,30 @@
     radii[5] = _CornerRadius___get_y__impl__tyvleu(_this__u8e3s4.t34_1);
     radii[6] = _CornerRadius___get_x__impl__1594cn(_this__u8e3s4.u34_1);
     radii[7] = _CornerRadius___get_y__impl__tyvleu(_this__u8e3s4.u34_1);
-    return Companion_instance_0.q3g(_this__u8e3s4.n34_1, _this__u8e3s4.o34_1, _this__u8e3s4.p34_1, _this__u8e3s4.q34_1, radii);
+    return Companion_instance_0.j3g(_this__u8e3s4.n34_1, _this__u8e3s4.o34_1, _this__u8e3s4.p34_1, _this__u8e3s4.q34_1, radii);
   }
   function toComposeRect(_this__u8e3s4) {
     return new Rect(_this__u8e3s4.b39_1, _this__u8e3s4.c39_1, _this__u8e3s4.d39_1, _this__u8e3s4.e39_1);
   }
   function get_nativeCanvas(_this__u8e3s4) {
-    return (_this__u8e3s4 instanceof SkiaBackedCanvas ? _this__u8e3s4 : THROW_CCE()).p43_1;
+    return (_this__u8e3s4 instanceof SkiaBackedCanvas ? _this__u8e3s4 : THROW_CCE()).n42_1;
   }
   function asComposeCanvas(_this__u8e3s4) {
     return new SkiaBackedCanvas(_this__u8e3s4);
   }
   function set_alphaMultiplier(_this__u8e3s4, value) {
-    (_this__u8e3s4 instanceof SkiaBackedCanvas ? _this__u8e3s4 : THROW_CCE()).q43_1 = value;
+    (_this__u8e3s4 instanceof SkiaBackedCanvas ? _this__u8e3s4 : THROW_CCE()).o42_1 = value;
   }
   function _get_skia__ddpejf(_this__u8e3s4, $this) {
     // Inline function 'kotlin.apply' call
     var this_0 = _this__u8e3s4 instanceof SkiaBackedPaint ? _this__u8e3s4 : THROW_CCE();
     // Inline function 'kotlin.contracts.contract' call
     // Inline function 'androidx.compose.ui.graphics.SkiaBackedCanvas.<get-skia>.<anonymous>' call
-    this_0.c44($this.q43_1);
-    return this_0.r43_1;
+    this_0.a43($this.o42_1);
+    return this_0.p42_1;
   }
   function toSkia_0(_this__u8e3s4, $this) {
-    return _this__u8e3s4 === Companion_getInstance_6().i3s_1 ? ClipMode_DIFFERENCE_getInstance() : _this__u8e3s4 === Companion_getInstance_6().j3s_1 ? ClipMode_INTERSECT_getInstance() : ClipMode_INTERSECT_getInstance();
+    return _this__u8e3s4 === Companion_getInstance_4().q3q_1 ? ClipMode_DIFFERENCE_getInstance() : _this__u8e3s4 === Companion_getInstance_4().r3q_1 ? ClipMode_INTERSECT_getInstance() : ClipMode_INTERSECT_getInstance();
   }
   function toSkia_1(_this__u8e3s4, $this) {
     // Inline function 'androidx.compose.ui.graphics.Matrix.get' call
@@ -3922,48 +3720,48 @@
     return new Matrix44(new Float32Array([tmp, tmp_0, tmp_1, tmp_2, tmp_3, tmp_4, tmp_5, tmp_6, tmp_7, tmp_8, tmp_9, tmp_10, tmp_11, tmp_12, tmp_13, tmp$ret$15]));
   }
   function SkiaBackedCanvas(skia) {
-    this.p43_1 = skia;
-    this.q43_1 = 1.0;
+    this.n42_1 = skia;
+    this.o42_1 = 1.0;
   }
-  protoOf(SkiaBackedCanvas).a3s = function () {
-    this.p43_1.w39();
+  protoOf(SkiaBackedCanvas).i3q = function () {
+    this.n42_1.w39();
   };
-  protoOf(SkiaBackedCanvas).b3s = function () {
-    this.p43_1.y39();
+  protoOf(SkiaBackedCanvas).j3q = function () {
+    this.n42_1.y39();
   };
-  protoOf(SkiaBackedCanvas).c3s = function (bounds, paint) {
-    this.p43_1.x39(bounds.a34_1, bounds.b34_1, bounds.c34_1, bounds.d34_1, _get_skia__ddpejf(paint, this));
+  protoOf(SkiaBackedCanvas).k3q = function (bounds, paint) {
+    this.n42_1.x39(bounds.a34_1, bounds.b34_1, bounds.c34_1, bounds.d34_1, _get_skia__ddpejf(paint, this));
   };
-  protoOf(SkiaBackedCanvas).d3s = function (dx, dy) {
-    this.p43_1.i34(dx, dy);
+  protoOf(SkiaBackedCanvas).l3q = function (dx, dy) {
+    this.n42_1.i34(dx, dy);
   };
-  protoOf(SkiaBackedCanvas).e3s = function (matrix) {
+  protoOf(SkiaBackedCanvas).m3q = function (matrix) {
     if (!isIdentity(matrix)) {
-      this.p43_1.u39(toSkia_1(matrix, this));
+      this.n42_1.u39(toSkia_1(matrix, this));
     }
   };
-  protoOf(SkiaBackedCanvas).g3s = function (left, top, right, bottom, clipOp) {
+  protoOf(SkiaBackedCanvas).o3q = function (left, top, right, bottom, clipOp) {
     var antiAlias = true;
-    this.p43_1.r39(Companion_instance.r3g(left, top, right, bottom), toSkia_0(clipOp, this), antiAlias);
+    this.n42_1.r39(Companion_instance.k3g(left, top, right, bottom), toSkia_0(clipOp, this), antiAlias);
   };
-  protoOf(SkiaBackedCanvas).k3s = function (path, clipOp) {
+  protoOf(SkiaBackedCanvas).s3q = function (path, clipOp) {
     var antiAlias = true;
-    this.p43_1.t39(asSkiaPath(path), toSkia_0(clipOp, this), antiAlias);
+    this.n42_1.t39(asSkiaPath(path), toSkia_0(clipOp, this), antiAlias);
   };
-  protoOf(SkiaBackedCanvas).n3s = function (left, top, right, bottom, paint) {
-    this.p43_1.a39(Companion_instance.r3g(left, top, right, bottom), _get_skia__ddpejf(paint, this));
+  protoOf(SkiaBackedCanvas).v3q = function (left, top, right, bottom, paint) {
+    this.n42_1.a39(Companion_instance.k3g(left, top, right, bottom), _get_skia__ddpejf(paint, this));
   };
-  protoOf(SkiaBackedCanvas).o3s = function (left, top, right, bottom, radiusX, radiusY, paint) {
-    this.p43_1.g39(Companion_instance_0.p3g(left, top, right, bottom, radiusX, radiusY), _get_skia__ddpejf(paint, this));
+  protoOf(SkiaBackedCanvas).w3q = function (left, top, right, bottom, radiusX, radiusY, paint) {
+    this.n42_1.g39(Companion_instance_0.i3g(left, top, right, bottom, radiusX, radiusY), _get_skia__ddpejf(paint, this));
   };
-  protoOf(SkiaBackedCanvas).p3s = function (center, radius, paint) {
-    this.p43_1.f39(_Offset___get_x__impl__xvi35n(center), _Offset___get_y__impl__8bzhra(center), radius, _get_skia__ddpejf(paint, this));
+  protoOf(SkiaBackedCanvas).x3q = function (center, radius, paint) {
+    this.n42_1.f39(_Offset___get_x__impl__xvi35n(center), _Offset___get_y__impl__8bzhra(center), radius, _get_skia__ddpejf(paint, this));
   };
-  protoOf(SkiaBackedCanvas).q3s = function (left, top, right, bottom, startAngle, sweepAngle, useCenter, paint) {
-    this.p43_1.z38(left, top, right, bottom, startAngle, sweepAngle, useCenter, _get_skia__ddpejf(paint, this));
+  protoOf(SkiaBackedCanvas).y3q = function (left, top, right, bottom, startAngle, sweepAngle, useCenter, paint) {
+    this.n42_1.z38(left, top, right, bottom, startAngle, sweepAngle, useCenter, _get_skia__ddpejf(paint, this));
   };
-  protoOf(SkiaBackedCanvas).r3s = function (path, paint) {
-    this.p43_1.n39(asSkiaPath(path), _get_skia__ddpejf(paint, this));
+  protoOf(SkiaBackedCanvas).z3q = function (path, paint) {
+    this.n42_1.n39(asSkiaPath(path), _get_skia__ddpejf(paint, this));
   };
   function asComposePaint(_this__u8e3s4) {
     return new SkiaBackedPaint(_this__u8e3s4);
@@ -3972,182 +3770,182 @@
     return new SkiaBackedPaint();
   }
   function updateAlpha($this, alpha, multiplier) {
-    $this.r43_1.n3e(toArgb(Color__copy$default_impl_ectz3s(Color_0($this.r43_1.o3e()), alpha * multiplier)));
+    $this.p42_1.g3e(toArgb(Color__copy$default_impl_ectz3s(Color_0($this.p42_1.h3e()), alpha * multiplier)));
   }
   function updateAlpha$default($this, alpha, multiplier, $super) {
-    alpha = alpha === VOID ? $this.w3n() : alpha;
-    multiplier = multiplier === VOID ? $this.s43_1 : multiplier;
+    alpha = alpha === VOID ? $this.p3n() : alpha;
+    multiplier = multiplier === VOID ? $this.q42_1 : multiplier;
     return updateAlpha($this, alpha, multiplier);
   }
   function toSkia_2(_this__u8e3s4, $this) {
-    return _this__u8e3s4 === Companion_getInstance_11().n3x_1 ? PaintMode_FILL_getInstance() : _this__u8e3s4 === Companion_getInstance_11().o3x_1 ? PaintMode_STROKE_getInstance() : PaintMode_FILL_getInstance();
+    return _this__u8e3s4 === Companion_getInstance_9().i3w_1 ? PaintMode_FILL_getInstance() : _this__u8e3s4 === Companion_getInstance_9().j3w_1 ? PaintMode_STROKE_getInstance() : PaintMode_FILL_getInstance();
   }
   function toSkia_3(_this__u8e3s4, $this) {
-    return _this__u8e3s4 === Companion_getInstance_15().g3y_1 ? PaintStrokeCap_BUTT_getInstance() : _this__u8e3s4 === Companion_getInstance_15().h3y_1 ? PaintStrokeCap_ROUND_getInstance() : _this__u8e3s4 === Companion_getInstance_15().i3y_1 ? PaintStrokeCap_SQUARE_getInstance() : PaintStrokeCap_BUTT_getInstance();
+    return _this__u8e3s4 === Companion_getInstance_13().b3x_1 ? PaintStrokeCap_BUTT_getInstance() : _this__u8e3s4 === Companion_getInstance_13().c3x_1 ? PaintStrokeCap_ROUND_getInstance() : _this__u8e3s4 === Companion_getInstance_13().d3x_1 ? PaintStrokeCap_SQUARE_getInstance() : PaintStrokeCap_BUTT_getInstance();
   }
   function toSkia_4(_this__u8e3s4, $this) {
-    return _this__u8e3s4 === Companion_getInstance_16().k3y_1 ? PaintStrokeJoin_MITER_getInstance() : _this__u8e3s4 === Companion_getInstance_16().l3y_1 ? PaintStrokeJoin_ROUND_getInstance() : _this__u8e3s4 === Companion_getInstance_16().m3y_1 ? PaintStrokeJoin_BEVEL_getInstance() : PaintStrokeJoin_MITER_getInstance();
+    return _this__u8e3s4 === Companion_getInstance_14().f3x_1 ? PaintStrokeJoin_MITER_getInstance() : _this__u8e3s4 === Companion_getInstance_14().g3x_1 ? PaintStrokeJoin_ROUND_getInstance() : _this__u8e3s4 === Companion_getInstance_14().h3x_1 ? PaintStrokeJoin_BEVEL_getInstance() : PaintStrokeJoin_MITER_getInstance();
   }
   function SkiaBackedPaint(skia) {
     skia = skia === VOID ? Paint_init_$Create$() : skia;
-    this.r43_1 = skia;
-    this.s43_1 = 1.0;
-    this.t43_1 = Companion_getInstance_4().n3p_1;
-    this.u43_1 = Companion_getInstance_11().n3x_1;
-    this.v43_1 = Companion_getInstance_15().g3y_1;
-    this.w43_1 = Companion_getInstance_16().l3y_1;
-    this.x43_1 = 0.0;
-    this.y43_1 = Companion_getInstance_8().f3v_1;
-    this.z43_1 = null;
-    this.a44_1 = null;
-    this.b44_1 = null;
+    this.p42_1 = skia;
+    this.q42_1 = 1.0;
+    this.r42_1 = Companion_getInstance_3().g3p_1;
+    this.s42_1 = Companion_getInstance_9().i3w_1;
+    this.t42_1 = Companion_getInstance_13().b3x_1;
+    this.u42_1 = Companion_getInstance_14().g3x_1;
+    this.v42_1 = 0.0;
+    this.w42_1 = Companion_getInstance_6().a3u_1;
+    this.x42_1 = null;
+    this.y42_1 = null;
+    this.z42_1 = null;
   }
-  protoOf(SkiaBackedPaint).d44 = function () {
-    return this.r43_1;
+  protoOf(SkiaBackedPaint).b43 = function () {
+    return this.p42_1;
   };
-  protoOf(SkiaBackedPaint).c44 = function (value) {
+  protoOf(SkiaBackedPaint).a43 = function (value) {
     var multiplier = coerceIn(value, 0.0, 1.0);
     updateAlpha$default(this, VOID, multiplier);
-    this.s43_1 = multiplier;
+    this.q42_1 = multiplier;
   };
-  protoOf(SkiaBackedPaint).r3r = function (value) {
+  protoOf(SkiaBackedPaint).h41 = function (value) {
     updateAlpha$default(this, value);
   };
-  protoOf(SkiaBackedPaint).w3n = function () {
-    return _Color___get_alpha__impl__wcfyv1(Color_0(this.r43_1.o3e()));
+  protoOf(SkiaBackedPaint).p3n = function () {
+    return _Color___get_alpha__impl__wcfyv1(Color_0(this.p42_1.h3e()));
   };
-  protoOf(SkiaBackedPaint).o3r = function (color) {
-    this.r43_1.n3e(toArgb(color));
+  protoOf(SkiaBackedPaint).f41 = function (color) {
+    this.p42_1.g3e(toArgb(color));
   };
-  protoOf(SkiaBackedPaint).p3r = function () {
-    return Color_0(this.r43_1.o3e());
+  protoOf(SkiaBackedPaint).g41 = function () {
+    return Color_0(this.p42_1.h3e());
   };
-  protoOf(SkiaBackedPaint).m42 = function (value) {
-    this.r43_1.w3e(toSkia(value));
-    this.t43_1 = value;
+  protoOf(SkiaBackedPaint).k41 = function (value) {
+    this.p42_1.p3e(toSkia(value));
+    this.r42_1 = value;
   };
-  protoOf(SkiaBackedPaint).n42 = function () {
-    return this.t43_1;
+  protoOf(SkiaBackedPaint).l41 = function () {
+    return this.r42_1;
   };
-  protoOf(SkiaBackedPaint).w41 = function (value) {
-    this.r43_1.m3e(toSkia_2(value, this));
-    this.u43_1 = value;
+  protoOf(SkiaBackedPaint).q40 = function (value) {
+    this.p42_1.f3e(toSkia_2(value, this));
+    this.s42_1 = value;
   };
-  protoOf(SkiaBackedPaint).e44 = function () {
-    return this.u43_1;
+  protoOf(SkiaBackedPaint).c43 = function () {
+    return this.s42_1;
   };
-  protoOf(SkiaBackedPaint).p3e = function (value) {
-    this.r43_1.p3e(value);
+  protoOf(SkiaBackedPaint).i3e = function (value) {
+    this.p42_1.i3e(value);
   };
-  protoOf(SkiaBackedPaint).q3e = function () {
-    return this.r43_1.q3e();
+  protoOf(SkiaBackedPaint).j3e = function () {
+    return this.p42_1.j3e();
   };
-  protoOf(SkiaBackedPaint).c42 = function (value) {
-    this.r43_1.s3e(toSkia_3(value, this));
-    this.v43_1 = value;
+  protoOf(SkiaBackedPaint).w40 = function (value) {
+    this.p42_1.l3e(toSkia_3(value, this));
+    this.t42_1 = value;
   };
-  protoOf(SkiaBackedPaint).d42 = function () {
-    return this.v43_1;
+  protoOf(SkiaBackedPaint).x40 = function () {
+    return this.t42_1;
   };
-  protoOf(SkiaBackedPaint).g42 = function (value) {
-    this.r43_1.t3e(toSkia_4(value, this));
-    this.w43_1 = value;
+  protoOf(SkiaBackedPaint).a41 = function (value) {
+    this.p42_1.m3e(toSkia_4(value, this));
+    this.u42_1 = value;
   };
-  protoOf(SkiaBackedPaint).h42 = function () {
-    return this.w43_1;
+  protoOf(SkiaBackedPaint).b41 = function () {
+    return this.u42_1;
   };
-  protoOf(SkiaBackedPaint).e42 = function (value) {
-    this.r43_1.r3e(value);
-    this.x43_1 = value;
+  protoOf(SkiaBackedPaint).y40 = function (value) {
+    this.p42_1.k3e(value);
+    this.v42_1 = value;
   };
-  protoOf(SkiaBackedPaint).f42 = function () {
-    return this.x43_1;
+  protoOf(SkiaBackedPaint).z40 = function () {
+    return this.v42_1;
   };
-  protoOf(SkiaBackedPaint).o42 = function (_set____db54di) {
-    this.y43_1 = _set____db54di;
+  protoOf(SkiaBackedPaint).m41 = function (_set____db54di) {
+    this.w42_1 = _set____db54di;
   };
-  protoOf(SkiaBackedPaint).p42 = function () {
-    return this.y43_1;
+  protoOf(SkiaBackedPaint).n41 = function () {
+    return this.w42_1;
   };
-  protoOf(SkiaBackedPaint).u3e = function (value) {
-    this.r43_1.u3e(value);
-    this.z43_1 = value;
+  protoOf(SkiaBackedPaint).n3e = function (value) {
+    this.p42_1.n3e(value);
+    this.x42_1 = value;
   };
-  protoOf(SkiaBackedPaint).q3r = function () {
-    return this.z43_1;
+  protoOf(SkiaBackedPaint).e41 = function () {
+    return this.x42_1;
   };
-  protoOf(SkiaBackedPaint).k42 = function (value) {
-    this.r43_1.v3e(value == null ? null : asSkiaColorFilter(value));
-    this.a44_1 = value;
+  protoOf(SkiaBackedPaint).i41 = function (value) {
+    this.p42_1.o3e(value == null ? null : asSkiaColorFilter(value));
+    this.y42_1 = value;
   };
-  protoOf(SkiaBackedPaint).l42 = function () {
-    return this.a44_1;
+  protoOf(SkiaBackedPaint).j41 = function () {
+    return this.y42_1;
   };
-  protoOf(SkiaBackedPaint).i42 = function (value) {
+  protoOf(SkiaBackedPaint).c41 = function (value) {
     var tmp0_safe_receiver = (value == null ? true : value instanceof SkiaBackedPathEffect) ? value : THROW_CCE();
-    this.r43_1.z3e(tmp0_safe_receiver == null ? null : asSkiaPathEffect(tmp0_safe_receiver));
-    this.b44_1 = value;
+    this.p42_1.s3e(tmp0_safe_receiver == null ? null : asSkiaPathEffect(tmp0_safe_receiver));
+    this.z42_1 = value;
   };
-  protoOf(SkiaBackedPaint).j42 = function () {
-    return this.b44_1;
+  protoOf(SkiaBackedPaint).d41 = function () {
+    return this.z42_1;
   };
   function Path_0() {
     return new SkiaBackedPath();
   }
   function toSkiaOperation(_this__u8e3s4, $this) {
-    return _this__u8e3s4 === Companion_getInstance_13().w3x_1 ? PathOp_DIFFERENCE_getInstance() : _this__u8e3s4 === Companion_getInstance_13().x3x_1 ? PathOp_INTERSECT_getInstance() : _this__u8e3s4 === Companion_getInstance_13().y3x_1 ? PathOp_UNION_getInstance() : _this__u8e3s4 === Companion_getInstance_13().z3x_1 ? PathOp_XOR_getInstance() : _this__u8e3s4 === Companion_getInstance_13().a3y_1 ? PathOp_REVERSE_DIFFERENCE_getInstance() : PathOp_XOR_getInstance();
+    return _this__u8e3s4 === Companion_getInstance_11().r3w_1 ? PathOp_DIFFERENCE_getInstance() : _this__u8e3s4 === Companion_getInstance_11().s3w_1 ? PathOp_INTERSECT_getInstance() : _this__u8e3s4 === Companion_getInstance_11().t3w_1 ? PathOp_UNION_getInstance() : _this__u8e3s4 === Companion_getInstance_11().u3w_1 ? PathOp_XOR_getInstance() : _this__u8e3s4 === Companion_getInstance_11().v3w_1 ? PathOp_REVERSE_DIFFERENCE_getInstance() : PathOp_XOR_getInstance();
   }
   function SkiaBackedPath(internalPath) {
     internalPath = internalPath === VOID ? Path_init_$Create$() : internalPath;
-    this.f44_1 = internalPath;
+    this.d43_1 = internalPath;
   }
-  protoOf(SkiaBackedPath).g44 = function (value) {
-    var tmp = this.f44_1;
+  protoOf(SkiaBackedPath).e43 = function (value) {
+    var tmp = this.d43_1;
     var tmp_0;
-    if (value === Companion_getInstance_12().v3x_1) {
+    if (value === Companion_getInstance_10().q3w_1) {
       tmp_0 = PathFillMode_EVEN_ODD_getInstance();
     } else {
       tmp_0 = PathFillMode_WINDING_getInstance();
     }
-    tmp.f3f(tmp_0);
+    tmp.y3e(tmp_0);
   };
-  protoOf(SkiaBackedPath).h44 = function () {
-    if (this.f44_1.g3f().equals(PathFillMode_EVEN_ODD_getInstance())) {
-      return Companion_getInstance_12().v3x_1;
+  protoOf(SkiaBackedPath).f43 = function () {
+    if (this.d43_1.z3e().equals(PathFillMode_EVEN_ODD_getInstance())) {
+      return Companion_getInstance_10().q3w_1;
     } else {
-      return Companion_getInstance_12().u3x_1;
+      return Companion_getInstance_10().p3w_1;
     }
   };
-  protoOf(SkiaBackedPath).p3x = function (rect) {
-    this.f44_1.j3f(toSkiaRect(rect), PathDirection_COUNTER_CLOCKWISE_getInstance());
+  protoOf(SkiaBackedPath).k3w = function (rect) {
+    this.d43_1.c3f(toSkiaRect(rect), PathDirection_COUNTER_CLOCKWISE_getInstance());
   };
-  protoOf(SkiaBackedPath).d3x = function (roundRect) {
-    this.f44_1.l3f(toSkiaRRect(roundRect), PathDirection_COUNTER_CLOCKWISE_getInstance());
+  protoOf(SkiaBackedPath).y3v = function (roundRect) {
+    this.d43_1.e3f(toSkiaRRect(roundRect), PathDirection_COUNTER_CLOCKWISE_getInstance());
   };
-  protoOf(SkiaBackedPath).q3x = function (path, offset) {
-    this.f44_1.n3f(asSkiaPath(path), _Offset___get_x__impl__xvi35n(offset), _Offset___get_y__impl__8bzhra(offset));
+  protoOf(SkiaBackedPath).l3w = function (path, offset) {
+    this.d43_1.g3f(asSkiaPath(path), _Offset___get_x__impl__xvi35n(offset), _Offset___get_y__impl__8bzhra(offset));
   };
   protoOf(SkiaBackedPath).v2b = function () {
-    var fillType = this.h44();
-    this.f44_1.h3f();
-    this.g44(fillType);
+    var fillType = this.f43();
+    this.d43_1.a3f();
+    this.e43(fillType);
   };
-  protoOf(SkiaBackedPath).s3x = function (offset) {
-    this.f44_1.p3f(Companion_getInstance_1().h3e(_Offset___get_x__impl__xvi35n(offset), _Offset___get_y__impl__8bzhra(offset)));
+  protoOf(SkiaBackedPath).n3w = function (offset) {
+    this.d43_1.i3f(Companion_getInstance_1().a3e(_Offset___get_x__impl__xvi35n(offset), _Offset___get_y__impl__8bzhra(offset)));
   };
-  protoOf(SkiaBackedPath).t3x = function (path1, path2, operation) {
-    var path = Companion_getInstance_2().b3f(asSkiaPath(path1), asSkiaPath(path2), toSkiaOperation(operation, this));
+  protoOf(SkiaBackedPath).o3w = function (path1, path2, operation) {
+    var path = Companion_getInstance_2().u3e(asSkiaPath(path1), asSkiaPath(path2), toSkiaOperation(operation, this));
     var tmp = this;
-    tmp.f44_1 = path == null ? this.f44_1 : path;
+    tmp.d43_1 = path == null ? this.d43_1 : path;
     return !(path == null);
   };
   protoOf(SkiaBackedPath).s1t = function () {
-    return this.f44_1.s1t();
+    return this.d43_1.s1t();
   };
   function asSkiaPath(_this__u8e3s4) {
     var tmp;
     if (_this__u8e3s4 instanceof SkiaBackedPath) {
-      tmp = _this__u8e3s4.f44_1;
+      tmp = _this__u8e3s4.d43_1;
     } else {
       throw UnsupportedOperationException_init_$Create$_0('Unable to obtain org.jetbrains.skia.Path');
     }
@@ -4156,72 +3954,38 @@
   function SkiaBackedPathEffect() {
   }
   function asSkiaPathEffect(_this__u8e3s4) {
-    return (_this__u8e3s4 instanceof SkiaBackedPathEffect ? _this__u8e3s4 : THROW_CCE()).i44_1;
+    return (_this__u8e3s4 instanceof SkiaBackedPathEffect ? _this__u8e3s4 : THROW_CCE()).g43_1;
   }
   function asSkiaColorFilter(_this__u8e3s4) {
-    return _this__u8e3s4.j44_1;
-  }
-  function ActualLinearGradientShader(from, to, colors, colorStops, tileMode) {
-    validateColorStops(colors, colorStops);
-    var tmp = Companion_getInstance_3();
-    var tmp_0 = _Offset___get_x__impl__xvi35n(from);
-    var tmp_1 = _Offset___get_y__impl__8bzhra(from);
-    var tmp_2 = _Offset___get_x__impl__xvi35n(to);
-    var tmp_3 = _Offset___get_y__impl__8bzhra(to);
-    var tmp_4 = toIntArray(colors);
-    return tmp.s3g(tmp_0, tmp_1, tmp_2, tmp_3, tmp_4, colorStops == null ? null : toFloatArray(colorStops), new GradientStyle(toSkiaTileMode(tileMode), true, identityMatrix33()));
-  }
-  function validateColorStops(colors, colorStops) {
-    if (colorStops == null) {
-      if (colors.m() < 2) {
-        throw IllegalArgumentException_init_$Create$('colors must have length of at least 2 if colorStops is omitted.');
-      }
-    } else if (!(colors.m() === colorStops.m())) {
-      throw IllegalArgumentException_init_$Create$('colors and colorStops arguments must have equal length.');
-    }
-  }
-  function toIntArray(_this__u8e3s4) {
-    var tmp = 0;
-    var tmp_0 = _this__u8e3s4.m();
-    var tmp_1 = new Int32Array(tmp_0);
-    while (tmp < tmp_0) {
-      var tmp_2 = tmp;
-      tmp_1[tmp_2] = toArgb(_this__u8e3s4.n(tmp_2).x3t_1);
-      tmp = tmp + 1 | 0;
-    }
-    return tmp_1;
-  }
-  function toSkiaTileMode(_this__u8e3s4) {
-    return _this__u8e3s4 === Companion_getInstance_17().r3q_1 ? FilterTileMode_CLAMP_getInstance() : _this__u8e3s4 === Companion_getInstance_17().s3q_1 ? FilterTileMode_REPEAT_getInstance() : _this__u8e3s4 === Companion_getInstance_17().t3q_1 ? FilterTileMode_MIRROR_getInstance() : _this__u8e3s4 === Companion_getInstance_17().u3q_1 ? FilterTileMode_DECAL_getInstance() : FilterTileMode_CLAMP_getInstance();
+    return _this__u8e3s4.h43_1;
   }
   //region block: post-declaration
-  protoOf(CanvasDrawScope).c43 = drawRect$default;
-  protoOf(CanvasDrawScope).d43 = drawRect$default_0;
-  protoOf(CanvasDrawScope).f43 = drawCircle$default;
-  protoOf(CanvasDrawScope).h43 = drawArc$default;
-  protoOf(CanvasDrawScope).i43 = drawPath$default;
-  protoOf(CanvasDrawScope).j43 = get_center_0;
+  protoOf(CanvasDrawScope).a42 = drawRect$default;
+  protoOf(CanvasDrawScope).b42 = drawRect$default_0;
+  protoOf(CanvasDrawScope).d42 = drawCircle$default;
+  protoOf(CanvasDrawScope).f42 = drawArc$default;
+  protoOf(CanvasDrawScope).g42 = drawPath$default;
+  protoOf(CanvasDrawScope).h42 = get_center_0;
   protoOf(CanvasDrawScope).g34 = get_size;
   protoOf(CanvasDrawScope).y35 = toPx;
   protoOf(CanvasDrawScope).a36 = toPx_0;
   protoOf(CanvasDrawScope).z35 = roundToPx;
   protoOf(CanvasDrawScope).e36 = toDp;
   protoOf(CanvasDrawScope).f36 = toSize;
-  protoOf(EmptyCanvas).l3s = clipPath$default;
-  protoOf(EmptyCanvas).f3s = clipRect;
-  protoOf(EmptyCanvas).h3s = clipRect$default;
-  protoOf(EmptyCanvas).m3s = drawRect;
-  protoOf(SkiaBackedCanvas).l3s = clipPath$default;
-  protoOf(SkiaBackedCanvas).f3s = clipRect;
-  protoOf(SkiaBackedCanvas).h3s = clipRect$default;
-  protoOf(SkiaBackedCanvas).m3s = drawRect;
-  protoOf(SkiaBackedPath).r3x = addPath$default;
+  protoOf(EmptyCanvas).t3q = clipPath$default;
+  protoOf(EmptyCanvas).n3q = clipRect;
+  protoOf(EmptyCanvas).p3q = clipRect$default;
+  protoOf(EmptyCanvas).u3q = drawRect;
+  protoOf(SkiaBackedCanvas).t3q = clipPath$default;
+  protoOf(SkiaBackedCanvas).n3q = clipRect;
+  protoOf(SkiaBackedCanvas).p3q = clipRect$default;
+  protoOf(SkiaBackedCanvas).u3q = drawRect;
+  protoOf(SkiaBackedPath).m3w = addPath$default;
   //endregion
   //region block: init
-  Companion_instance_2 = new Companion_0();
-  Companion_instance_7 = new Companion_5();
+  Companion_instance_6 = new Companion_4();
+  Companion_instance_15 = new Companion_13();
   Companion_instance_17 = new Companion_15();
-  Companion_instance_19 = new Companion_17();
   //endregion
   //region block: exports
   _.$_$ = _.$_$ || {};
@@ -4276,16 +4040,15 @@
   _.$_$.w1 = Color__copy$default_impl_ectz3s;
   _.$_$.x1 = Matrix__scale$default_impl_snaws9;
   _.$_$.y1 = Matrix__translate$default_impl_10t8ql;
-  _.$_$.z1 = Companion_getInstance_26;
+  _.$_$.z1 = Companion_getInstance_23;
   _.$_$.a2 = Fill_getInstance;
-  _.$_$.b2 = Companion_getInstance_4;
-  _.$_$.c2 = Companion_instance_2;
-  _.$_$.d2 = Companion_getInstance_6;
-  _.$_$.e2 = Companion_getInstance_7;
+  _.$_$.b2 = Companion_getInstance_3;
+  _.$_$.c2 = Companion_getInstance_4;
+  _.$_$.d2 = Companion_getInstance_5;
+  _.$_$.e2 = Companion_getInstance_9;
   _.$_$.f2 = Companion_getInstance_11;
-  _.$_$.g2 = Companion_getInstance_13;
-  _.$_$.h2 = Companion_getInstance_14;
-  _.$_$.i2 = Companion_getInstance_15;
+  _.$_$.g2 = Companion_getInstance_12;
+  _.$_$.h2 = Companion_getInstance_13;
   //endregion
   return _;
 }));

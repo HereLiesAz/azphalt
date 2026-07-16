@@ -15,13 +15,13 @@
 }(this, function (_, kotlin_kotlin, kotlin_org_jetbrains_kotlinx_atomicfu) {
   'use strict';
   //region block: imports
-  var protoOf = kotlin_kotlin.$_$.jb;
-  var objectMeta = kotlin_kotlin.$_$.ib;
-  var setMetadataFor = kotlin_kotlin.$_$.kb;
+  var protoOf = kotlin_kotlin.$_$.ib;
+  var objectMeta = kotlin_kotlin.$_$.hb;
+  var setMetadataFor = kotlin_kotlin.$_$.jb;
   var Unit_instance = kotlin_kotlin.$_$.q4;
-  var Enum = kotlin_kotlin.$_$.re;
+  var Enum = kotlin_kotlin.$_$.qe;
   var IllegalArgumentException_init_$Create$ = kotlin_kotlin.$_$.q1;
-  var classMeta = kotlin_kotlin.$_$.ba;
+  var classMeta = kotlin_kotlin.$_$.aa;
   var atomic$ref$1 = kotlin_org_jetbrains_kotlinx_atomicfu.$_$.d;
   //endregion
   //region block: pre-declaration
@@ -40,7 +40,7 @@
   var Event_ON_ANY_instance;
   function Companion() {
   }
-  protoOf(Companion).w4r = function (state) {
+  protoOf(Companion).t4q = function (state) {
     switch (state.t9_1) {
       case 2:
         return Event_ON_DESTROY_getInstance();
@@ -52,7 +52,7 @@
         return null;
     }
   };
-  protoOf(Companion).x4r = function (state) {
+  protoOf(Companion).u4q = function (state) {
     switch (state.t9_1) {
       case 1:
         return Event_ON_CREATE_getInstance();
@@ -100,7 +100,7 @@
   function Event(name, ordinal) {
     Enum.call(this, name, ordinal);
   }
-  protoOf(Event).a4s = function () {
+  protoOf(Event).x4q = function () {
     switch (this.t9_1) {
       case 0:
       case 4:
@@ -165,10 +165,10 @@
     return State_RESUMED_instance;
   }
   function Lifecycle() {
-    this.b4s_1 = new AtomicReference(null);
+    this.y4q_1 = new AtomicReference(null);
   }
   function AtomicReference(value) {
-    this.c4s_1 = atomic$ref$1(value);
+    this.z4q_1 = atomic$ref$1(value);
   }
   //region block: init
   Companion_instance = new Companion();

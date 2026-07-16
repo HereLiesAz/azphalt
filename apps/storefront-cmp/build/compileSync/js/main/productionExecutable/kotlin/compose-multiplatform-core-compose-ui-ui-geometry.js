@@ -14,22 +14,22 @@
   //region block: imports
   var imul = Math.imul;
   var FloatCompanionObject_instance = kotlin_kotlin.$_$.c4;
-  var floatFromBits = kotlin_kotlin.$_$.ga;
-  var Long = kotlin_kotlin.$_$.we;
-  var protoOf = kotlin_kotlin.$_$.jb;
-  var objectMeta = kotlin_kotlin.$_$.ib;
-  var setMetadataFor = kotlin_kotlin.$_$.kb;
-  var THROW_CCE = kotlin_kotlin.$_$.df;
-  var classMeta = kotlin_kotlin.$_$.ba;
+  var floatFromBits = kotlin_kotlin.$_$.fa;
+  var Long = kotlin_kotlin.$_$.ve;
+  var protoOf = kotlin_kotlin.$_$.ib;
+  var objectMeta = kotlin_kotlin.$_$.hb;
+  var setMetadataFor = kotlin_kotlin.$_$.jb;
+  var THROW_CCE = kotlin_kotlin.$_$.cf;
+  var classMeta = kotlin_kotlin.$_$.aa;
   var VOID = kotlin_kotlin.$_$.g;
-  var toRawBits = kotlin_kotlin.$_$.ng;
-  var toLong = kotlin_kotlin.$_$.mb;
-  var numberToInt = kotlin_kotlin.$_$.fb;
-  var toString = kotlin_kotlin.$_$.ob;
+  var toRawBits = kotlin_kotlin.$_$.mg;
+  var toLong = kotlin_kotlin.$_$.lb;
+  var numberToInt = kotlin_kotlin.$_$.eb;
+  var toString = kotlin_kotlin.$_$.nb;
   var IllegalStateException_init_$Create$ = kotlin_kotlin.$_$.w1;
-  var isFinite = kotlin_kotlin.$_$.yf;
-  var getNumberHashCode = kotlin_kotlin.$_$.ja;
-  var equals = kotlin_kotlin.$_$.ea;
+  var isFinite = kotlin_kotlin.$_$.xf;
+  var getNumberHashCode = kotlin_kotlin.$_$.ia;
+  var equals = kotlin_kotlin.$_$.da;
   //endregion
   //region block: pre-declaration
   setMetadataFor(Companion, 'Companion', objectMeta);
@@ -539,9 +539,6 @@
       new Companion_3();
     return Companion_instance_3;
   }
-  function Size__isEmpty_impl_o9ye97($this) {
-    return _Size___get_width__impl__58y75t($this) <= 0.0 ? true : _Size___get_height__impl__a04p02($this) <= 0.0;
-  }
   function _Size___get_minDimension__impl__4iso0r($this) {
     // Inline function 'kotlin.math.min' call
     // Inline function 'kotlin.math.absoluteValue' call
@@ -628,15 +625,14 @@
   _.$_$.y = _Offset___get_y__impl__8bzhra;
   _.$_$.z = Size__hashCode_impl_2h1qpd;
   _.$_$.a1 = _Size___get_height__impl__a04p02;
-  _.$_$.b1 = Size__isEmpty_impl_o9ye97;
-  _.$_$.c1 = _Size___get_minDimension__impl__4iso0r;
-  _.$_$.d1 = _Size___get_packedValue__impl__7rlt1o;
-  _.$_$.e1 = _Size___get_width__impl__58y75t;
-  _.$_$.f1 = Offset__copy$default_impl_bmwjg8;
-  _.$_$.g1 = Size__copy$default_impl_nrzrkq;
-  _.$_$.h1 = Companion_getInstance_0;
-  _.$_$.i1 = Companion_getInstance_1;
-  _.$_$.j1 = Companion_getInstance_3;
+  _.$_$.b1 = _Size___get_minDimension__impl__4iso0r;
+  _.$_$.c1 = _Size___get_packedValue__impl__7rlt1o;
+  _.$_$.d1 = _Size___get_width__impl__58y75t;
+  _.$_$.e1 = Offset__copy$default_impl_bmwjg8;
+  _.$_$.f1 = Size__copy$default_impl_nrzrkq;
+  _.$_$.g1 = Companion_getInstance_0;
+  _.$_$.h1 = Companion_getInstance_1;
+  _.$_$.i1 = Companion_getInstance_3;
   //endregion
   return _;
 }));

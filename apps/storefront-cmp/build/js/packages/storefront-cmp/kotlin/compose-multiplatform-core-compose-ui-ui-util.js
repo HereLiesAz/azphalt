@@ -15,9 +15,9 @@
   var VOID = kotlin_kotlin.$_$.g;
   var StringBuilder_init_$Create$ = kotlin_kotlin.$_$.i1;
   var Unit_instance = kotlin_kotlin.$_$.q4;
-  var toString = kotlin_kotlin.$_$.og;
-  var Char = kotlin_kotlin.$_$.me;
-  var isCharSequence = kotlin_kotlin.$_$.ta;
+  var toString = kotlin_kotlin.$_$.ng;
+  var Char = kotlin_kotlin.$_$.le;
+  var isCharSequence = kotlin_kotlin.$_$.sa;
   //endregion
   //region block: pre-declaration
   //endregion
