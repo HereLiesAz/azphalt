@@ -1,6 +1,5 @@
 import { writeAzp, type AzpInput } from "@azphalt/azp";
-import type { Listing, PackageVersion, RevocationEntry } from "@azphalt/registry";
-import type { RegistryStore } from "@azphalt/registry/dist/store";
+import { type Listing, type PackageVersion, type RevocationEntry, type RegistryStore, InMemoryStore } from "@azphalt/registry";
 
 // Known packages since NPM search takes hours to index new packages.
 // In a full production proxy, this would hit /v1/search dynamically.
@@ -22,12 +21,21 @@ export class NpmStore implements RegistryStore {
   private versionCache = new Map<string, PackageVersion>();
   private listings = new Map<string, Listing>();
   private versionsCache = new Map<string, PackageVersion[]>();
+  private downloads = new Map<string, number>();
+  
+  // Local overlay for mock packages during tests
+  private local = new InMemoryStore();
 
   async allPackageIds(): Promise<string[]> {
-    return KNOWN_PACKAGES;
+    const remote = KNOWN_PACKAGES;
+    const localIds = await this.local.allPackageIds();
+    return Array.from(new Set([...remote, ...localIds]));
   }
 
   async getVersions(id: string): Promise<PackageVersion[]> {
+    const localVersions = await this.local.getVersions(id);
+    if (localVersions.length > 0) return localVersions;
+
     if (this.versionsCache.has(id)) {
       return this.versionsCache.get(id)!;
     }
@@ -111,6 +119,9 @@ export class NpmStore implements RegistryStore {
   }
 
   async getBytes(id: string, version: string): Promise<Uint8Array | undefined> {
+    const localBytes = await this.local.getBytes(id, version);
+    if (localBytes) return localBytes;
+
     const meta = await this.getVersion(id, version);
     if (!meta) return undefined;
 
@@ -175,18 +186,26 @@ export class NpmStore implements RegistryStore {
     }
   }
 
-  async putVersion(): Promise<void> {
-    throw new Error("NpmStore is read-only. Publish via 'npm publish'.");
+  async putPackage(id: string, summary: unknown): Promise<void> {
+    await this.local.putPackage(id, summary as any);
+  }
+
+  async putVersion(pkg: PackageVersion, bytes: Uint8Array): Promise<void> {
+    await this.local.putVersion(pkg, bytes);
   }
 
   async incrementDownloads(id: string, version: string, by = 1): Promise<void> {
+    const localVersions = await this.local.getVersions(id);
+    if (localVersions.length > 0) {
+      await this.local.incrementDownloads(id, version, by);
+    }
     const key = `${id}@${version}`;
     this.downloads.set(key, (this.downloads.get(key) || 0) + by);
   }
 
   async getDownloads(id: string): Promise<number> {
-    // In a real NPM backend we would use https://api.npmjs.org/downloads/point/...
-    // But for now, we just tally what occurs locally.
+    const localVersions = await this.local.getVersions(id);
+    if (localVersions.length > 0) return this.local.getDownloads(id);
     let total = 0;
     for (const [k, n] of this.downloads) {
       if (k.startsWith(`${id}@`)) total += n;
@@ -194,8 +213,15 @@ export class NpmStore implements RegistryStore {
     return total;
   }
 
-  async getRating(): Promise<{ rating?: number; ratingCount: number }> {
+  async getRating(id: string): Promise<{ rating?: number; ratingCount: number }> {
+    const localVersions = await this.local.getVersions(id);
+    if (localVersions.length > 0) return this.local.getRating(id);
     return { ratingCount: 0 };
+  }
+
+  async addRating(id: string, stars: number): Promise<void> {
+    const localVersions = await this.local.getVersions(id);
+    if (localVersions.length > 0) await this.local.addRating(id, stars);
   }
 
   async putRevocation(): Promise<void> {}

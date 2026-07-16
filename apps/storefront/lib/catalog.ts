@@ -51,6 +51,563 @@ const DITHER_OLD: Omit<Manifest, "files"> = {
   contributes: { filters: [{ id: "apply-dither", name: "Apply Dither", entry: "applyDither" }] },
 };
 
+const MIT_LICENSE =
+  "MIT License\n\nPermission is hereby granted, free of charge, to any person obtaining a copy " +
+  "of this software and associated documentation files (the \"Software\"), to deal in the Software " +
+  "without restriction. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND.\n";
+
+
+function utf8(str: string): Uint8Array { return new TextEncoder().encode(str); }
+
+interface Seed {
+  manifest: Omit<Manifest, "files">;
+  payload: Record<string, Uint8Array>;
+  /** Extra download count to simulate (via repeated `serve`) so browse-by-popularity has signal. */
+  simulatedDownloads?: number;
+  /** Star ratings (0–5) to seed, so the "rating" sort and the rating badges have signal. */
+  ratings?: number[];
+  /** When set, the package is consigned for sale at this price (minor units + ISO-4217 currency). */
+  listPriceCents?: number;
+  /** The consigning creator's marketplace account id (only used when `listPriceCents` is set). */
+  sellerId?: string;
+}
+
+/**
+ * The example catalog. A spread of both `kind`s and every `assetType`, so every page has something
+ * real to render: two executable filters (`kind: "code"`), and asset packs covering LUTs, brushes,
+ * and patterns (`kind: "asset"`).
+ */
+const SEEDS: Seed[] = [
+
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.mobilenetv3",
+      name: "MobileNet V3 (Image Labeling)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Efficient image labeling and ID embedding model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/mobilenetv3.tflite", type: "tflite", role: "labeling" },
+        { path: "assets/mobilenetv3.onnx", type: "onnx", role: "labeling" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/mobilenetv3.tflite": new Uint8Array(100),
+      "assets/mobilenetv3.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.yamnet",
+      name: "YAMNet (Audio Events)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Audio event detection model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/yamnet.tflite", type: "tflite", role: "audio-event" },
+        { path: "assets/yamnet.onnx", type: "onnx", role: "audio-event" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/yamnet.tflite": new Uint8Array(100),
+      "assets/yamnet.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.rfb-320",
+      name: "RFB-320 (Face Detection)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Lightweight face detection model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/version-RFB-320.onnx", type: "onnx", role: "face-detect" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/version-RFB-320.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.selfie-segmentation",
+      name: "Selfie Segmentation",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Subject segmentation model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/selfie_segmentation.tflite", type: "tflite", role: "segmentation" },
+        { path: "assets/selfie_segmentation.onnx", type: "onnx", role: "segmentation" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/selfie_segmentation.tflite": new Uint8Array(100),
+      "assets/selfie_segmentation.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.face-embed",
+      name: "Face Embedding",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Face embedding model for ID matching.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/face-embed.tflite", type: "tflite", role: "face-embedding" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/face-embed.tflite": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.face-detect",
+      name: "Face Detect (TFLite)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "TFLite face detection for mobile.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/face-detect.tflite", type: "tflite", role: "face-detect" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/face-detect.tflite": new Uint8Array(100),
+    }
+  },
+
+  {
+    // A code extension: an on-device halftone filter with a small parameter panel. Consigned.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.hereliesaz.halftone",
+      name: "Halftone Studio",
+      version: "1.2.0",
+      kind: "code",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "A configurable halftone filter — dot, line, and cross-hatch screens with adjustable cell " +
+        "size and angle. Runs on-device against the bitmap, no host engine required.",
+      author: "Az",
+      homepage: "https://hereliesaz.com",
+      runtime: "js",
+      entry: "code/index.js",
+      capabilities: ["bitmap", "params"],
+      contributes: {
+        filters: [
+          { id: "apply-halftone", name: "Apply Halftone", entry: "applyHalftone", ui: "ui/panel.json" },
+        ],
+      },
+    },
+    payload: {
+      "code/index.js": utf8(
+        "export const applyHalftone = (ctx) => {\n" +
+          "  const cell = ctx.params.number('cellSize');\n" +
+          "  const bmp = ctx.bitmap.read(ctx.target);\n" +
+          "  // ...screen the bitmap into halftone dots of size `cell`...\n" +
+          "  ctx.bitmap.write(ctx.target, bmp);\n" +
+          "};\n",
+      ),
+      "ui/panel.json": utf8(
+        JSON.stringify(
+          {
+            controls: [
+              { type: "slider", key: "cellSize", label: "Cell size", min: 2, max: 64, step: 1, default: 8 },
+              { type: "slider", key: "angle", label: "Screen angle", min: 0, max: 180, step: 1, default: 45 },
+              {
+                type: "select",
+                key: "screen",
+                label: "Screen",
+                options: [
+                  { value: "dot", label: "Dot" },
+                  { value: "line", label: "Line" },
+                  { value: "cross", label: "Cross-hatch" },
+                ],
+                default: "dot",
+              },
+            ],
+          },
+          null,
+          2,
+        ),
+      ),
+    },
+    simulatedDownloads: 2140,
+    ratings: [5, 5, 4, 5, 4, 5, 3, 5, 4, 5],
+    listPriceCents: 600,
+    sellerId: "seller_hereliesaz",
+  },
+  {
+    // A LUT asset pack — cinematic color grades. Consigned.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.studioaz.cinelut",
+      name: "CineGrade LUT Pack",
+      version: "2.0.1",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "Twelve cinematic 3D LUTs — teal-and-orange, bleach bypass, and moody night grades — as " +
+        "portable `.cube` files any azphalt host can apply.",
+      author: "Studio Az",
+      homepage: "https://hereliesaz.com",
+      capabilities: ["assets", "bitmap"],
+      preview: { image: "preview/card.svg" },
+      assets: [
+        { type: "lut", path: "assets/teal-orange.cube" },
+        { type: "lut", path: "assets/bleach-bypass.cube" },
+        { type: "lut", path: "assets/night-moody.cube" },
+      ],
+    },
+    payload: {
+      "assets/teal-orange.cube": cubeLut("Teal & Orange"),
+      "assets/bleach-bypass.cube": cubeLut("Bleach Bypass"),
+      "assets/night-moody.cube": cubeLut("Night / Moody"),
+      "preview/card.svg": svgSwatch("#0e7c86", "#f08a24", "CineGrade LUT Pack"),
+    },
+    simulatedDownloads: 1310,
+    ratings: [5, 4, 5, 5, 4, 4],
+    listPriceCents: 1200,
+    sellerId: "seller_studioaz",
+  },
+  {
+    // A free LUT pack — film emulation.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.foldlab.filmluts",
+      name: "Film Emulation LUTs",
+      version: "1.0.0",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "Free, MIT-licensed film-stock emulation LUTs. Reach without a fee — published to the open " +
+        "registry lane; grade in any conforming app.",
+      author: "Fold Lab",
+      capabilities: ["assets", "bitmap"],
+      assets: [
+        { type: "lut", path: "assets/portra.cube" },
+        { type: "lut", path: "assets/tri-x.cube" },
+      ],
+    },
+    payload: {
+      "assets/portra.cube": cubeLut("Portra"),
+      "assets/tri-x.cube": cubeLut("Tri-X"),
+    },
+    simulatedDownloads: 980,
+  },
+  {
+    // A brush pack — consigned would be plausible, but kept free to show a paid/free mix per type.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.brushery.inkbrushes",
+      name: "Ink & Sumi Brushes",
+      version: "1.4.2",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "Twenty ink and sumi-e brushes with host-neutral spacing and angle parameters — normalized " +
+        "from `.abr`/`.brushset` into portable `.azp`.",
+      author: "Brushery",
+      capabilities: ["assets"],
+      assets: [
+        { type: "brush", path: "assets/sumi-round.brush", params: { spacing: 0.08, angle: 0, roundness: 0.9 } },
+        { type: "brush", path: "assets/ink-flat.brush", params: { spacing: 0.05, angle: 30, roundness: 0.4 } },
+      ],
+    },
+    payload: {
+      "assets/sumi-round.brush": utf8("azphalt-brush:sumi-round"),
+      "assets/ink-flat.brush": utf8("azphalt-brush:ink-flat"),
+    },
+    simulatedDownloads: 1725,
+    ratings: [5, 5, 5, 4, 5, 4, 5],
+  },
+  {
+    // A pattern pack — free.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.patternsmith.geopatterns",
+      name: "Geometric Pattern Pack",
+      version: "1.1.0",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "Seamless geometric tiles — isometric grids, herringbone, and hex — as tileable pattern " +
+        "assets for fills and backgrounds.",
+      author: "Pattern Smith",
+      capabilities: ["assets"],
+      assets: [
+        { type: "pattern", path: "assets/herringbone.pattern" },
+        { type: "pattern", path: "assets/hexgrid.pattern" },
+      ],
+    },
+    payload: {
+      "assets/herringbone.pattern": utf8("azphalt-pattern:herringbone"),
+      "assets/hexgrid.pattern": utf8("azphalt-pattern:hexgrid"),
+    },
+    simulatedDownloads: 540,
+  },
+  {
+    // A companion app (kind:"app") — an external Android app / PWA the host launches over a handoff
+    // and gets a validated result back (companion-app.md). App-scoped to GraffitiXR's store. Carries
+    // no /code and no assets — just the header that says how to install and invoke the app.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.acme.ar-stencil-capture",
+      name: "AR Stencil Capture",
+      version: "1.0.0",
+      kind: "app",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "Capture a wall stencil in AR and hand it straight back to your editor. A companion app: it " +
+        "runs in the OS's own sandbox with its own camera permission — azphalt only standardizes the " +
+        "handoff, so the moat holds.",
+      author: "Acme AR",
+      homepage: "https://arstencil.acme.com",
+      preview: { image: "preview/card.svg" },
+      targetApps: ["com.hereliesaz.graffitixr"],
+      app: {
+        platforms: {
+          android: {
+            packageId: "com.acme.arstencil",
+            minSdk: 29,
+            minVersionCode: 120,
+            install: "https://play.google.com/store/apps/details?id=com.acme.arstencil",
+          },
+          pwa: {
+            manifestUrl: "https://arstencil.acme.com/manifest.webmanifest",
+            startUrl: "https://arstencil.acme.com/",
+            version: "2026-06-01T00:00:00Z",
+            shareTargetUrl: "https://arstencil.acme.com/handoff",
+          },
+        },
+        handoffs: [
+          {
+            id: "capture-stencil",
+            action: "capture",
+            name: "Capture AR Stencil",
+            input: { assets: ["image"], params: { wallWidthMm: "number?" } },
+            output: { assets: ["vector", "image"], params: { scaleMm: "number?" } },
+            transport: {
+              android: {
+                intentAction: "com.acme.arstencil.CAPTURE",
+                resultMimeTypes: ["image/svg+xml", "image/png"],
+              },
+              pwa: { shareTargetUrl: "https://arstencil.acme.com/handoff/capture", return: { kind: "postMessage" } },
+            },
+          },
+          {
+            id: "measure-wall",
+            action: "measure",
+            name: "Measure Wall",
+            input: { assets: ["image"] },
+            output: { params: { widthMm: "number", heightMm: "number" } },
+            minAppVersion: { android: 130, pwa: "2026-06-15T00:00:00Z" },
+            transport: {
+              android: { intentAction: "com.acme.arstencil.MEASURE" },
+              pwa: { return: { kind: "postMessage" } },
+            },
+          },
+        ],
+      },
+    },
+    payload: { "preview/card.svg": svgSwatch("#5b21b6", "#7db7ff", "AR Stencil Capture") },
+    simulatedDownloads: 760,
+    ratings: [5, 4, 5, 4],
+  },
+  {
+    // A second free code extension — a dither filter — with a version history to exercise the UI.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.hereliesaz.dither",
+      name: "Dither Kit",
+      version: "0.3.0",
+      kind: "code",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "Ordered and error-diffusion dithering (Bayer, Floyd–Steinberg, Atkinson) with a palette " +
+        "picker. Free on the open lane.",
+      author: "Az",
+      homepage: "https://hereliesaz.com",
+      runtime: "js",
+      entry: "code/index.js",
+      capabilities: ["bitmap", "params", "color"],
+      contributes: {
+        filters: [{ id: "apply-dither", name: "Apply Dither", entry: "applyDither", ui: "ui/panel.json" }],
+        commands: [{ id: "reset-palette", name: "Reset Palette", entry: "resetPalette" }],
+      },
+    },
+    payload: {
+      "code/index.js": utf8(
+        "export const applyDither = (ctx) => { /* ...error diffusion... */ };\n" +
+          "export const resetPalette = (ctx) => { /* ...restore default palette... */ };\n",
+      ),
+      "ui/panel.json": utf8(
+        JSON.stringify(
+          {
+            controls: [
+              {
+                type: "select",
+                key: "algorithm",
+                label: "Algorithm",
+                options: [
+                  { value: "bayer", label: "Bayer (ordered)" },
+                  { value: "floyd", label: "Floyd–Steinberg" },
+                  { value: "atkinson", label: "Atkinson" },
+                ],
+                default: "floyd",
+              },
+              { type: "slider", key: "levels", label: "Levels", min: 2, max: 16, step: 1, default: 4 },
+            ],
+          },
+          null,
+          2,
+        ),
+      ),
+    },
+    simulatedDownloads: 410,
+  },
+  {
+    // Phase 2: Massive AI Model (Sherpa-ONNX Transcription)
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.sherpa-onnx",
+      name: "Sherpa-ONNX Whisper Base",
+      version: "1.0.0",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description: "Local Whisper Base model for Sherpa-ONNX transcription. Downloaded by Guillotine for precise offline transcription.",
+      author: "Azphalt Models",
+      capabilities: ["assets"],
+      assets: [
+        { type: "model", path: "assets/whisper-base.onnx" },
+        { type: "model", path: "assets/tokens.txt" }
+      ],
+    },
+    payload: {
+      // We mock the payload bytes here (tiny 1KB dummy files) to prevent InMemoryStore from crashing the Node process.
+      "assets/whisper-base.onnx": utf8("MOCK_ONNX_BYTES_WHISPER"),
+      "assets/tokens.txt": utf8("MOCK_TOKENS_WHISPER"),
+    },
+    simulatedDownloads: 8900,
+  },
+  {
+    // Phase 2: Massive AI Model (Depth Anything V2)
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.depth-anything",
+      name: "Depth Anything V2",
+      version: "2.1.0",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description: "Monocular depth estimation model for generative object removal and background blur.",
+      author: "Azphalt Models",
+      capabilities: ["assets"],
+      assets: [
+        { type: "model", path: "assets/depth-anything-v2.onnx" }
+      ],
+    },
+    payload: {
+      "assets/depth-anything-v2.onnx": utf8("MOCK_ONNX_BYTES_DEPTH"),
+    },
+    simulatedDownloads: 5400,
+  },
+
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.vosk", name: "Vosk Transcription", version: "0.22.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Offline speech-to-text model for clip transcription.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/vosk-model" }]
+    },
+    payload: { "assets/vosk-model": utf8("MOCK_VOSK_BYTES") }, simulatedDownloads: 6200
+  },
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.spleeter", name: "Spleeter Stem Separation", version: "2.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Separate vocals and accompaniment via ONNX Spleeter.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/spleeter.onnx" }]
+    },
+    payload: { "assets/spleeter.onnx": utf8("MOCK_ONNX_BYTES_SPLEETER") }, simulatedDownloads: 7100
+  },
+
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.image-effects", name: "Image Effects Pack", version: "1.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "TFLite models for super resolution and style transfer.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/effects.tflite" }]
+    },
+    payload: { "assets/effects.tflite": utf8("MOCK_TFLITE_BYTES_EFFECTS") }, simulatedDownloads: 4800
+  },
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.vlm-gemma", name: "Gemma VLM", version: "3.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Multimodal VLM .task for rich frame captioning.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/gemma-3n.task" }]
+    },
+    payload: { "assets/gemma-3n.task": utf8("MOCK_TASK_BYTES_GEMMA") }, simulatedDownloads: 5100
+  }
+];
+
+const DITHER_OLD: Omit<Manifest, "files"> = {
+  azphalt: "0.1",
+  id: "com.hereliesaz.dither",
+  name: "Dither Kit",
+  version: "0.2.0",
+  kind: "code",
+  license: "MIT",
+  compat: ">=0.1",
+  description: "Ordered dithering only.",
+  author: "Az",
+  runtime: "js",
+  entry: "code/index.js",
+  capabilities: ["bitmap", "params"],
+  contributes: { filters: [{ id: "apply-dither", name: "Apply Dither", entry: "applyDither" }] },
+};
+
 import { NpmStore } from "./backend";
 
 /** The live registry + marketplace, wired to a single shared store as the marketplace requires. */
@@ -119,7 +676,39 @@ export async function startCheckout(
 let seeded: Promise<void> | undefined;
 
 async function seed(): Promise<void> {
-  // NpmStore is dynamically seeded from the NPM registry. Nothing to mock!
+  // Publish the older Dither Kit version first so the newer one supersedes it in `latest`.
+  const oldAzp = writeAzp({
+    manifest: DITHER_OLD,
+    payload: { "code/index.js": utf8("export const applyDither = (ctx) => {};\n") },
+    license: MIT_LICENSE,
+  });
+  await registry.publish(oldAzp.azp);
+
+  for (const s of SEEDS) {
+    const { azp } = writeAzp({ manifest: s.manifest, payload: s.payload, license: MIT_LICENSE });
+    await registry.publish(azp);
+  }
+
+  // Simulate historical downloads so "popular" ordering is meaningful. `serve` counts a download.
+  for (const s of SEEDS) {
+    const n = s.simulatedDownloads ?? 0;
+    for (let i = 0; i < n; i++) await registry.serve(s.manifest.id);
+  }
+
+  // Seed a few star ratings so the "rating" sort and the rating badges have signal.
+  for (const s of SEEDS) {
+    for (const stars of s.ratings ?? []) store.addRating(s.manifest.id, stars);
+  }
+
+  // Consign the packages flagged for sale onto the paid lane.
+  for (const s of SEEDS) {
+    if (s.listPriceCents != null && s.sellerId) {
+      await market.listForSale(s.manifest.id, s.sellerId, {
+        amountCents: s.listPriceCents,
+        currency: "USD",
+      });
+    }
+  }
 }
 
 /** Ensure the catalog is seeded, then hand back the shared registry + marketplace. */
