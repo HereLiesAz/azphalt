@@ -12,12 +12,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": { "@azphalt/azdk": "workspace:*" },
+  "dependencies": {
+    "@azphalt/azdk": "workspace:*"
+  },
   "devDependencies": {
     "@azphalt/runtime-reference": "workspace:*",
-    "typescript": "^5.6.0",
-    "vitest": "^3.2.6",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
   }
 }
-

@@ -8,9 +8,18 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": { "azphalt-repository-server": "./dist/main.js" },
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "files": ["dist"],
+  "bin": {
+    "azphalt-repository-server": "./dist/main.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
@@ -19,16 +28,15 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@azphalt/azdk": "workspace:*",
     "@azphalt/azp": "workspace:*",
-    "@azphalt/registry": "workspace:*",
-    "@azphalt/azdk": "workspace:*"
+    "@azphalt/registry": "workspace:*"
   },
   "devDependencies": {
     "@azphalt/repository-client": "workspace:*",
-    "typescript": "^5.6.0",
-    "vitest": "^3.2.6",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
   },
   "sideEffects": false
 }
-

@@ -13,14 +13,13 @@
     "clean": "rm -rf dist out"
   },
   "dependencies": {
-    "@azphalt/azp": "workspace:*",
-    "@azphalt/azdk": "workspace:*"
+    "@azphalt/azdk": "workspace:*",
+    "@azphalt/azp": "workspace:*"
   },
   "devDependencies": {
     "@azphalt/runtime-wasm": "workspace:*",
-    "typescript": "^5.6.0",
-    "vitest": "^3.2.6",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
   }
 }
-

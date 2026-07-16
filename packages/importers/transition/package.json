@@ -1,24 +1,41 @@
 {
   "name": "@azphalt/importer-transition",
   "version": "0.1.1",
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Import GL Transitions (gl-transitions.com) into .azp transition assets.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": { "azphalt-import-transition": "./dist/cli.js" },
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "files": ["dist"],
+  "bin": {
+    "azphalt-import-transition": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": { "@azphalt/azp": "workspace:*", "@azphalt/azdk": "workspace:*" },
-  "devDependencies": { "typescript": "^5.6.0", "vitest": "^3.2.6", "@types/node": "^22.0.0" },
+  "dependencies": {
+    "@azphalt/azdk": "workspace:*",
+    "@azphalt/azp": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  },
   "sideEffects": false
 }
-

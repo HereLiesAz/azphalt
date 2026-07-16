@@ -1,88 +1,66 @@
+package main
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.CanvasBasedWindow
-import components.BentoGrid
 import components.HeroSection
-import components.PackageBentoCard
-import components.PackageDto
-import components.fetchPackages
+import components.PackageGrid
+import models.PackageSummary
+import network.fetchRegistryList
+import org.jetbrains.skiko.wasm.onWasmReady
+
+val DarkThemeColors = darkColorScheme(
+    primary = Color(0xFF6C47FF),
+    background = Color(0xFF05050A),
+    surface = Color(0xFF151520),
+    onPrimary = Color.White,
+    onBackground = Color.White,
+    onSurface = Color.White
+)
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    CanvasBasedWindow(title = "Azphalt Storefront") {
-        MaterialTheme(
-            colorScheme = darkColorScheme(
-                background = Color(0xFF0A0A0B), // Deep slate black
-                surface = Color(0xFF16161A), // Sleek elevated surface
-                primary = Color(0xFF9F86FF), // Neon violet for actions
-                onPrimary = Color.White
-            )
-        ) {
-            var packages by remember { mutableStateOf<List<PackageDto>>(emptyList()) }
-            var isLoading by remember { mutableStateOf(true) }
+    onWasmReady {
+        CanvasBasedWindow(title = "Azphalt Storefront") {
+            MaterialTheme(colorScheme = DarkThemeColors) {
+                var packages by remember { mutableStateOf<List<PackageSummary>>(emptyList()) }
 
-            LaunchedEffect(Unit) {
-                packages = fetchPackages()
-                isLoading = false
-            }
-
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(360.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(32.dp),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                // Hero Section spans all columns
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    HeroSection()
+                LaunchedEffect(Unit) {
+                    try {
+                        packages = fetchRegistryList()
+                    } catch (e: Exception) {
+                        println("Failed to fetch packages: $e")
+                    }
                 }
 
-                // Bento Grid layout features span all columns
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    BentoGrid()
-                }
-                
-                // Listings title
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Column(modifier = Modifier.padding(top = 48.dp, bottom = 16.dp)) {
-                        Text(
-                            text = "Featured Listings",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onSurface
+                // Main Storefront Layout with deep space gradient
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(Color(0xFF12121C), Color(0xFF05050A)),
+                                center = Offset(500f, -200f),
+                                radius = 2000f
                             )
                         )
-                    }
-                }
-
-                // Dynamic Listings
-                if (isLoading) {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                ) {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        item {
+                            HeroSection()
                         }
-                    }
-                } else {
-                    items(packages) { pkg ->
-                        PackageBentoCard(pkg)
+                        item {
+                            PackageGrid(packages)
+                        }
                     }
                 }
             }
