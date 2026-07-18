@@ -1,17 +1,31 @@
 {
   "name": "create-azphalt",
-  "version": "0.1.0",
-  "publishConfig": { "access": "public" },
+  "version": "0.1.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Scaffolding tool for azphalt projects.",
   "license": "MIT",
   "author": "Az",
   "type": "module",
-  "bin": { "create-azphalt": "./dist/index.js" },
-  "files": ["dist", "templates"],
+  "bin": {
+    "create-azphalt": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node ./dist/index.js"
   },
-  "dependencies": { "prompts": "^2.4.2", "kolorist": "^1.8.0" },
-  "devDependencies": { "@types/node": "^20.0.0", "@types/prompts": "^2.4.9", "typescript": "^5.0.0" }
+  "dependencies": {
+    "kolorist": "^1.8.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.9.3"
+  }
 }

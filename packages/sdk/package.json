@@ -1,7 +1,9 @@
 {
   "name": "@azphalt/azdk",
   "version": "0.1.1",
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "The typed API an azphalt extension is written against.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",
@@ -23,7 +25,7 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "typescript": "^5.5.0"
+    "typescript": "^5.9.3"
   },
   "sideEffects": false
 }

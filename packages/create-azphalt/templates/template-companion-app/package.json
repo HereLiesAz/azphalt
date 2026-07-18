@@ -1,6 +1,6 @@
 {
   "name": "my-azphalt-companion",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "A companion-app (kind:\"app\") package for azphalt — an Android app or PWA a host launches via a handoff.",
   "type": "module",
   "scripts": {
@@ -10,3 +10,4 @@
     "@azphalt/azp": "^0.1.0"
   }
 }
+

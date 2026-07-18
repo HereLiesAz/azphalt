@@ -168,7 +168,7 @@ describe("Repository API — canonical sample responses (#43)", () => {
       }
       // Without the flag (CI): a missing committed fixture is a failure, not a silent regeneration.
       expect(existsSync(file), `fixture ${name}.json is missing from the repository — run with UPDATE_FIXTURES=1 to create it`).toBe(true);
-      expect(readFileSync(file, "utf8"), `fixture ${name}.json drifted — re-run with UPDATE_FIXTURES=1 if intentional`).toBe(json);
+      expect(readFileSync(file, "utf8").replace(/\r\n/g, "\n"), `fixture ${name}.json drifted — re-run with UPDATE_FIXTURES=1 if intentional`).toBe(json.replace(/\r\n/g, "\n"));
     }
   });
 

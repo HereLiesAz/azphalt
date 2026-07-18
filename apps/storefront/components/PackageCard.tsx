@@ -1,67 +1,22 @@
-/**
- * A compact package card for browse/search grids. Shows the package's name, id, description, a few
- * at-a-glance facts, and — when the package is consigned on the paid lane — its list price. Pure
- * presentation: it takes a {@link PackageSummary} and an optional price, and links to the detail page.
- */
 import Link from "next/link";
-import type { Money, PackageSummary } from "@azphalt/registry";
-import { formatCount, formatMoney, formatRating, kindLabel, previewSrc } from "../lib/format";
+import type { Money } from "@azphalt/registry";
 
-export interface PackageCardProps {
-  pkg: PackageSummary;
-  /** The active listing price, if this package is for sale. `undefined` → free (registry lane). */
-  price?: Money;
-}
-
-export function PackageCard({ pkg, price }: PackageCardProps) {
-  const contributionTotal =
-    pkg.contributes.filters + pkg.contributes.tools + pkg.contributes.commands;
-  const isApp = pkg.kind === "app";
-  const preview = previewSrc(pkg.id, pkg.preview?.image);
-
+export function PackageCard({ pkg, price }: { pkg: any; price?: Money }) {
   return (
-    <article className="card">
-      {preview ? (
-        <Link href={`/p/${pkg.id}`} className="card-preview" aria-label={`${pkg.name} preview`}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- in-package proxy or validated external URL */}
-          <img src={preview} alt="" loading="lazy" />
-        </Link>
-      ) : null}
-      <div className="card-title">
-        <Link href={`/p/${pkg.id}`}>{pkg.name}</Link>
-        {isApp ? (
-          <span className="kind-badge app">App</span>
-        ) : price ? (
-          <span className="price-badge">{formatMoney(price)}</span>
-        ) : (
-          <span className="free-badge">Free</span>
+    <Link href={`/pkg/${pkg.id}`} className="card package-card">
+      <div className="card-header">
+        <h3>{pkg.name || pkg.id}</h3>
+        {price && (
+          <span className="price">
+            {(price.amountCents / 100).toFixed(2)} {price.currency}
+          </span>
         )}
       </div>
-      <div className="id">{pkg.id}</div>
-      {pkg.description ? <p className="desc">{pkg.description}</p> : null}
-
-      <div className="chips">
-        <span className="chip">{kindLabel(pkg.kind)}</span>
-        {pkg.assetTypes.map((t) => (
-          <span className="chip" key={t}>
-            {t}
-          </span>
-        ))}
-        {contributionTotal > 0 ? (
-          <span className="chip">
-            {contributionTotal} contribution{contributionTotal === 1 ? "" : "s"}
-          </span>
-        ) : null}
+      <p className="card-desc">{pkg.description}</p>
+      <div className="card-meta">
+        <span className="author">by {pkg.author || 'Unknown'}</span>
+        <span className="version">v{pkg.version}</span>
       </div>
-
-      <div className="meta">
-        <span>v{pkg.version}</span>
-        {pkg.author ? <span>by {pkg.author}</span> : null}
-        <span>{formatCount(pkg.downloads)} downloads</span>
-        {formatRating(pkg.rating, pkg.ratingCount) ? (
-          <span className="rating">{formatRating(pkg.rating, pkg.ratingCount)}</span>
-        ) : null}
-      </div>
-    </article>
+    </Link>
   );
 }

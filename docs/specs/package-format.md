@@ -75,6 +75,49 @@ A `palette` asset (`type: "palette"`) is a UTF-8 **JSON** file under `/assets`. 
 
 This lets the ecosystem distribute brand-accurate color sets (Montana, MTN, …) as portable `.azp` packages a host can match against real colorants.
 
+### Motion format
+A `motion` asset (`type: "motion"`) in the `az-motion` format is a UTF-8 **JSON** file describing keyframe tracks for temporal properties, often used for kinetic typography. Shape:
+
+~~~json
+{
+  "tracks": {
+    "opacity": [
+      { "time": 0.0, "value": 0.0, "easing": "linear" },
+      { "time": 0.2, "value": 1.0, "easing": "ease-out" },
+      { "time": 1.0, "value": 1.0 }
+    ],
+    "scale": [
+      { "time": 0.0, "value": [0.5, 0.5] },
+      { "time": 0.2, "value": [1.0, 1.0], "easing": "spring" }
+    ],
+    "position": [],
+    "rotation": [],
+    "blur": []
+  }
+}
+~~~
+
+- `tracks` — REQUIRED. Map of animatable properties to either a list of keyframes OR a data binding object. Supported keys:
+  - **Basic**: `opacity`, `scale` (2D/3D array), `position` (3D array), `rotation` (3D array), `blur` (scalar), `color` (hex string), `skew` (2D array), `strokeColor` (hex string), `strokeWidth` (scalar), `shadow` (array `[offsetX, offsetY, blur, hexColor]`).
+  - **Advanced Layer / 3D Effects**:
+    - `camera`: object `{ position: [x,y,z], aim: [x,y,z], aperture: scalar }`.
+    - `motionBlur`: scalar amount.
+    - `extrusion`: object `{ depth: scalar, color: hex }` for 3D protrusion.
+    - `spotlights`: array of objects `{ position: [x,y,z], target: [x,y,z], color: hex, angle: scalar, distance: scalar }`.
+    - `reflection`: object `{ opacity: scalar, distance: scalar }` for floor mirrors.
+    - `bend`: object `{ angle: scalar, radius: scalar }` for page curls/cylindrical bending.
+    - `warp`: object `{ intensity: scalar, direction: [x,y] }` for localized distortion.
+- A track can be a **keyframe array**. A keyframe has:
+  - `time` — REQUIRED, normalized `0.0` to `1.0` progression of the clip/preset.
+  - `value` — REQUIRED, the property value at that time.
+  - `easing` — OPTIONAL, curve to the **next** keyframe (`linear`, `ease-in`, `ease-out`, `ease-in-out`, `spring`; defaults to `linear`).
+- Alternatively, a track can be a **MotionBinding** object (for dynamic AI features):
+  - `bind` — REQUIRED, the AI data stream to track (e.g. `audio.rms`, `speech.wps`, `face.bottom`, `speaker.color`, `depth.occlusion`, `scene.lightVector`, `inpaint.backgroundTexture`, `depth.collision`, `scene.floorMask`, `scene.motionVectors`).
+  - `mapIn` — OPTIONAL array `[min, max]` of the expected input range.
+  - `mapOut` — OPTIONAL array `[min, max]` (or colors) to map the input to.
+
+For text (kinetic typography), the host applies these tracks per-character, per-word, or per-line based on `manifest.params.staggerMode` and delays the start time by `stagger`.
+
 ### LUT application
 A `.cube` file carries only a table plus `DOMAIN_MIN`/`DOMAIN_MAX`; it says nothing about *how* to sample it, so two hosts can produce a visibly different grade from identical bytes. To make a LUT a portable **look**, a host applying a `lut` asset MUST:
 

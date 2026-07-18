@@ -39,7 +39,7 @@ export type AssetType =
   // Reusable video/graphic-catalog assets: a title/lower-third `template` and a compositing `overlay`
   // (PNG or animated). They join `transition`, `motion`, `video`, `audio`, `font` as the temporal catalog.
   | "template" | "overlay"
-  | "tflite" | "litert" | "onnx" | "sherpa-bundle";
+  | "tflite" | "litert" | "onnx" | "sherpa-bundle" | "model" | "task" | "vosk-bundle";
 
 export interface AssetContribution {
   type: AssetType;
@@ -152,6 +152,35 @@ export interface ContentRights {
   attributionRequired?: boolean;
   /** Machine-checkable summary: may the asset be used commercially? (The SPDX `license` is authoritative.) */
   commercialUse?: boolean;
+}
+
+/**
+ * A `motion` asset (`type: "motion"`) wire format (`az-motion`).
+ * Describes temporal tracks for properties like kinetic typography and complex layer effects (camera, extrusion, spotlights).
+ */
+export interface MotionPreset {
+  /** Map of animatable properties to their keyframes or data bindings. */
+  tracks: Record<string, MotionKeyframe[] | MotionBinding>;
+}
+
+/** A single keyframe in an `az-motion` track. */
+export interface MotionKeyframe {
+  /** Normalized `0.0` to `1.0` progression of the clip/preset. */
+  time: number;
+  /** Property value at this time. */
+  value: any;
+  /** Curve to the **next** keyframe (`linear`, `ease-in`, `ease-out`, `ease-in-out`, `spring`; defaults to `linear`). */
+  easing?: "linear" | "ease-in" | "ease-out" | "ease-in-out" | "spring" | (string & {});
+}
+
+/** An AI data binding in an `az-motion` track, providing dynamic runtime evaluation. */
+export interface MotionBinding {
+  /** The AI feature to bind to (e.g. `audio.rms`, `speech.wps`, `speaker.color`, `face.bottom`, `scene.lightVector`, `inpaint.backgroundTexture`). */
+  bind: string;
+  /** Optional normalization array `[min, max]` of the expected input range. */
+  mapIn?: [number, number];
+  /** Optional array `[min, max]` or colors to map the input to. */
+  mapOut?: any[];
 }
 
 /**

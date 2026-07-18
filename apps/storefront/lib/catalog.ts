@@ -13,48 +13,52 @@
  * rest live only in the free registry. The fee — and money in general — exists only on the listings,
  * never in the registry itself.
  */
+import { createPrivateKey, createPublicKey } from "node:crypto";
 import { readAzp, writeAzp } from "@azphalt/azp";
-import { InMemoryStore, Marketplace, Registry } from "@azphalt/registry";
+import { StripePaymentProvider } from "./StripePaymentProvider";
+import {
+  EntitlementAuthorizer,
+  InMemoryStore,
+  Marketplace,
+  Registry,
+  RegistryError,
+  denyAllAuthorizer,
+  issueEntitlement,
+  type CheckoutSession,
+  type DownloadAuthorizer,
+  type EntitlementToken,
+  type PriceBreakdown,
+  type Listing,
+} from "@azphalt/registry";
 import type { Manifest } from "@azphalt/azdk";
 
-/** SPDX MIT text stamped into every example package's required `LICENSE` entry. */
+
+
+/** An earlier version of Dither Kit, published first so its detail page shows a version history. */
+const DITHER_OLD: Omit<Manifest, "files"> = {
+  azphalt: "0.1",
+  id: "com.hereliesaz.dither",
+  name: "Dither Kit",
+  version: "0.2.0",
+  kind: "code",
+  license: "MIT",
+  compat: ">=0.1",
+  description: "Ordered dithering only.",
+  author: "Az",
+  runtime: "js",
+  entry: "code/index.js",
+  capabilities: ["bitmap", "params"],
+  contributes: { filters: [{ id: "apply-dither", name: "Apply Dither", entry: "applyDither" }] },
+};
+
 const MIT_LICENSE =
   "MIT License\n\nPermission is hereby granted, free of charge, to any person obtaining a copy " +
   "of this software and associated documentation files (the \"Software\"), to deal in the Software " +
   "without restriction. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND.\n";
 
-const utf8 = (s: string) => new TextEncoder().encode(s);
 
-/**
- * A tiny self-contained SVG store-card swatch, so a package can ship a real in-package `preview.image`
- * (served by `/api/preview/[id]`). SVG-in-`<img>` can't run script, and the labels are static, so it's
- * safe to render. Kept small and deterministic.
- */
-function svgSwatch(from: string, to: string, label: string): Uint8Array {
-  return utf8(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180" role="img" aria-label="${label}">` +
-      `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
-      `<stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs>` +
-      `<rect width="320" height="180" fill="url(#g)"/>` +
-      `<text x="16" y="166" font-family="sans-serif" font-size="14" fill="#ffffff" opacity="0.9">${label}</text>` +
-      `</svg>`,
-  );
-}
+function utf8(str: string): Uint8Array { return new TextEncoder().encode(str); }
 
-/** A tiny but plausible `.cube` LUT payload, so LUT packs ship real (if trivial) asset bytes. */
-function cubeLut(title: string): Uint8Array {
-  return utf8(
-    `TITLE "${title}"\nLUT_3D_SIZE 2\n` +
-      "0.0 0.0 0.0\n1.0 0.0 0.0\n0.0 1.0 0.0\n1.0 1.0 0.0\n" +
-      "0.0 0.0 1.0\n1.0 0.0 1.0\n0.0 1.0 1.0\n1.0 1.0 1.0\n",
-  );
-}
-
-/**
- * One seed definition: the manifest (minus computed `files`), its payload bytes, and an optional
- * count of simulated historical downloads used to make the "popular" ordering on the home page
- * meaningful. Downloads are simulated by serving the package that many times.
- */
 interface Seed {
   manifest: Omit<Manifest, "files">;
   payload: Record<string, Uint8Array>;
@@ -74,6 +78,140 @@ interface Seed {
  * and patterns (`kind: "asset"`).
  */
 const SEEDS: Seed[] = [
+
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.mobilenetv3",
+      name: "MobileNet V3 (Image Labeling)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Efficient image labeling and ID embedding model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/mobilenetv3.tflite", type: "tflite", role: "labeling" },
+        { path: "assets/mobilenetv3.onnx", type: "onnx", role: "labeling" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/mobilenetv3.tflite": new Uint8Array(100),
+      "assets/mobilenetv3.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.yamnet",
+      name: "YAMNet (Audio Events)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Audio event detection model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/yamnet.tflite", type: "tflite", role: "audio-event" },
+        { path: "assets/yamnet.onnx", type: "onnx", role: "audio-event" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/yamnet.tflite": new Uint8Array(100),
+      "assets/yamnet.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.rfb-320",
+      name: "RFB-320 (Face Detection)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Lightweight face detection model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/version-RFB-320.onnx", type: "onnx", role: "face-detect" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/version-RFB-320.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.selfie-segmentation",
+      name: "Selfie Segmentation",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Subject segmentation model.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/selfie_segmentation.tflite", type: "tflite", role: "segmentation" },
+        { path: "assets/selfie_segmentation.onnx", type: "onnx", role: "segmentation" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/selfie_segmentation.tflite": new Uint8Array(100),
+      "assets/selfie_segmentation.onnx": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.face-embed",
+      name: "Face Embedding",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "Face embedding model for ID matching.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/face-embed.tflite", type: "tflite", role: "face-embedding" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/face-embed.tflite": new Uint8Array(100),
+    }
+  },
+  {
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.face-detect",
+      name: "Face Detect (TFLite)",
+      version: "1.0.0",
+      kind: "asset",
+      license: "Apache-2.0",
+      compat: ">=0.1",
+      description: "TFLite face detection for mobile.",
+      author: "Azphalt Core",
+      homepage: "https://hereliesaz.com",
+      assets: [
+        { path: "assets/face-detect.tflite", type: "tflite", role: "face-detect" }
+      ]
+    },
+    payload: {
+      "LICENSE": utf8(MIT_LICENSE),
+      "assets/face-detect.tflite": new Uint8Array(100),
+    }
+  },
+
   {
     // A code extension: an on-device halftone filter with a small parameter panel. Consigned.
     manifest: {
@@ -371,9 +509,89 @@ const SEEDS: Seed[] = [
     },
     simulatedDownloads: 410,
   },
+  {
+    // Phase 2: Massive AI Model (Sherpa-ONNX Transcription)
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.sherpa-onnx",
+      name: "Sherpa-ONNX Whisper Base",
+      version: "1.0.0",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description: "Local Whisper Base model for Sherpa-ONNX transcription. Downloaded by Guillotine for precise offline transcription.",
+      author: "Azphalt Models",
+      capabilities: ["assets"],
+      assets: [
+        { type: "model", path: "assets/whisper-base.onnx" },
+        { type: "model", path: "assets/tokens.txt" }
+      ],
+    },
+    payload: {
+      // We mock the payload bytes here (tiny 1KB dummy files) to prevent InMemoryStore from crashing the Node process.
+      "assets/whisper-base.onnx": utf8("MOCK_ONNX_BYTES_WHISPER"),
+      "assets/tokens.txt": utf8("MOCK_TOKENS_WHISPER"),
+    },
+    simulatedDownloads: 8900,
+  },
+  {
+    // Phase 2: Massive AI Model (Depth Anything V2)
+    manifest: {
+      azphalt: "0.1",
+      id: "com.azphalt.model.depth-anything",
+      name: "Depth Anything V2",
+      version: "2.1.0",
+      kind: "asset",
+      license: "MIT",
+      compat: ">=0.1",
+      description: "Monocular depth estimation model for generative object removal and background blur.",
+      author: "Azphalt Models",
+      capabilities: ["assets"],
+      assets: [
+        { type: "model", path: "assets/depth-anything-v2.onnx" }
+      ],
+    },
+    payload: {
+      "assets/depth-anything-v2.onnx": utf8("MOCK_ONNX_BYTES_DEPTH"),
+    },
+    simulatedDownloads: 5400,
+  },
+
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.vosk", name: "Vosk Transcription", version: "0.22.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Offline speech-to-text model for clip transcription.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/vosk-model" }]
+    },
+    payload: { "assets/vosk-model": utf8("MOCK_VOSK_BYTES") }, simulatedDownloads: 6200
+  },
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.spleeter", name: "Spleeter Stem Separation", version: "2.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Separate vocals and accompaniment via ONNX Spleeter.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/spleeter.onnx" }]
+    },
+    payload: { "assets/spleeter.onnx": utf8("MOCK_ONNX_BYTES_SPLEETER") }, simulatedDownloads: 7100
+  },
+
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.image-effects", name: "Image Effects Pack", version: "1.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "TFLite models for super resolution and style transfer.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/effects.tflite" }]
+    },
+    payload: { "assets/effects.tflite": utf8("MOCK_TFLITE_BYTES_EFFECTS") }, simulatedDownloads: 4800
+  },
+  {
+    manifest: {
+      azphalt: "0.1", id: "com.azphalt.model.vlm-gemma", name: "Gemma VLM", version: "3.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+      description: "Multimodal VLM .task for rich frame captioning.", author: "Azphalt Models", capabilities: ["assets"],
+      assets: [{ type: "model", path: "assets/gemma-3n.task" }]
+    },
+    payload: { "assets/gemma-3n.task": utf8("MOCK_TASK_BYTES_GEMMA") }, simulatedDownloads: 5100
+  }
 ];
 
-/** An earlier version of Dither Kit, published first so its detail page shows a version history. */
 const DITHER_OLD: Omit<Manifest, "files"> = {
   azphalt: "0.1",
   id: "com.hereliesaz.dither",
@@ -390,10 +608,66 @@ const DITHER_OLD: Omit<Manifest, "files"> = {
   contributes: { filters: [{ id: "apply-dither", name: "Apply Dither", entry: "applyDither" }] },
 };
 
+import { NpmStore } from "./backend";
+
 /** The live registry + marketplace, wired to a single shared store as the marketplace requires. */
-const store = new InMemoryStore();
+const store = new NpmStore();
 const registry = new Registry(store);
-const market = new Marketplace(registry, store);
+const payments = new StripePaymentProvider();
+const market = new Marketplace(registry, store, { payments });
+
+/* ─────────────────────────── The paid lane's gate ─────────────────────────── */
+
+/**
+ * The registry's Ed25519 signing key (PEM PKCS#8), from `AZPHALT_SIGNING_KEY`.
+ *
+ * Unset is the safe default, not a broken one: with no key the storefront can neither issue nor
+ * verify entitlements, so {@link authorizer} denies every paid download (`401`) and issuance is off.
+ * That keeps `next dev` and the tests running with no secrets and no services, and makes gating a
+ * deliberate deployment choice rather than something that silently half-works.
+ *
+ * Generate one with: `openssl genpkey -algorithm ed25519`.
+ */
+const signingKey = process.env.AZPHALT_SIGNING_KEY?.trim() || undefined;
+
+/** The base64 SPKI DER public key for [pem] — the form `verifyEntitlement` matches `trustedKeys` on. */
+function publicKeyOf(pem: string): string {
+  const key = createPrivateKey(pem);
+  if (key.asymmetricKeyType !== "ed25519") {
+    throw new Error("AZPHALT_SIGNING_KEY must be an ed25519 private key (openssl genpkey -algorithm ed25519)");
+  }
+  return Buffer.from(createPublicKey(key).export({ type: "spki", format: "der" })).toString("base64");
+}
+
+/**
+ * Gates paid downloads. A key present ⇒ trust entitlements this storefront signed; absent ⇒ deny all.
+ *
+ * A malformed key throws at module load rather than degrading to `denyAll`: a deployment that meant
+ * to enable the paid lane should fail loudly, not serve `401`s that look like a working gate.
+ */
+export const authorizer: DownloadAuthorizer = signingKey
+  ? new EntitlementAuthorizer([publicKeyOf(signingKey)])
+  : denyAllAuthorizer;
+
+/**
+ * What a package costs the caller: `paid` exactly when it carries an **active** consignment listing.
+ * The same rule the reference server gates on (`apps/repository-server/src/handler.ts`).
+ */
+export async function priceStatus(id: string): Promise<"free" | "paid"> {
+  await getCatalog();
+  const listing = await market.getListing(id);
+  return listing && listing.status === "active" ? "paid" : "free";
+}
+
+/** Open a checkout session and remember what it was for, so webhooks can fulfil it. */
+export async function startCheckout(
+  packageId: string,
+  buyerId: string,
+): Promise<{ session: CheckoutSession; breakdown: PriceBreakdown; listing: Listing }> {
+  const { market: m } = await getCatalog();
+  const result = await m.checkout(packageId, buyerId);
+  return result;
+}
 
 /**
  * Seed the catalog exactly once. Memoized as a promise so concurrent requests (and Next's parallel

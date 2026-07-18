@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/importer-motion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": { "access": "public" },
   "description": "Import motion into .azp asset packages.",
   "license": "MIT",
@@ -20,3 +20,4 @@
   "dependencies": { "@azphalt/azp": "workspace:*", "@azphalt/azdk": "workspace:*" },
   "sideEffects": false
 }
+

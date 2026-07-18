@@ -16,7 +16,7 @@ export interface Compat {
   version: [number, number, number];
 }
 
-const COMPAT_RE = /^\s*(>=|<=|>|<|=)?\s*(\d+)(?:\.(\d+))?(?:\.(\d+))?\s*$/;
+const COMPAT_RE = /^\s*(?:(>=|<=|>|<|=)\s*)?(\d+)(?:\.(\d+))?(?:\.(\d+))?\s*$/;
 
 /** Parse a `compat` (or a bare host version) into its comparator + version, or `null` if malformed. */
 export function parseCompat(compat: string): Compat | null {

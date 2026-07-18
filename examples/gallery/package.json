@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/example-gallery",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "A gallery of example azphalt packages — several per asset type and per extension kind. Doubles as a fixture set.",
   "license": "MIT",
@@ -13,13 +13,13 @@
     "clean": "rm -rf dist out"
   },
   "dependencies": {
-    "@azphalt/azp": "workspace:*",
-    "@azphalt/azdk": "workspace:*"
+    "@azphalt/azdk": "workspace:*",
+    "@azphalt/azp": "workspace:*"
   },
   "devDependencies": {
     "@azphalt/runtime-wasm": "workspace:*",
-    "typescript": "^5.6.0",
-    "vitest": "^3.2.6",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
   }
 }

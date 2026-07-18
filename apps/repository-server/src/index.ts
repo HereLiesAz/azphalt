@@ -27,5 +27,8 @@ export type {
   RepoResponse,
 } from "./handler.js";
 export { createRepositoryServer } from "./server.js";
-export { InMemoryAuthorizer, EntitlementAuthorizer, denyAllAuthorizer } from "./authorize.js";
-export type { DownloadAuthorizer, AuthDecision, AuthInput } from "./authorize.js";
+// Re-exported from @azphalt/registry, where the authorizers now live so the reference server and the
+// storefront gate paid downloads with one shared implementation. Kept exported here so existing
+// consumers of this package's surface don't break.
+export { InMemoryAuthorizer, EntitlementAuthorizer, denyAllAuthorizer } from "@azphalt/registry";
+export type { DownloadAuthorizer, AuthDecision, AuthInput } from "@azphalt/registry";

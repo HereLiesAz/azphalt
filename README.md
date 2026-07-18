@@ -59,6 +59,10 @@ The `docs/` tree also builds as a VitePress site (`pnpm --filter docs build`).
 
 Spec-first, and now substantially built: the SDK, the `.azp` container with signing and a trust model, a wide importer family, both runtimes (the reference contract and the QuickJS-in-WASM / raw-WASM sandbox), a conformance suite, and the registry with its consignment marketplace and a reference repository backend. The first conforming native hosts are [GraffitiXR](https://github.com/HereLiesAz/GraffitiXR) (paint / AR) and [Guillotine](https://github.com/HereLiesAz/Guillotine) (video / audio, temporal), which adopt azphalt across their own engine boundaries. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and its reasoning.
 
+## Future Projects
+
+Azphalt's portable extension architecture is designed to power the next generation of creative tools. Among the future projects planned to adopt the standard is a **viable alternative to Figma**—a fully-featured design tool that uses azphalt natively for its plugin and extension ecosystem.
+
 ## License
 
 MIT. See [`LICENSE`](LICENSE).

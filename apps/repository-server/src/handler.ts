@@ -22,7 +22,7 @@
  */
 import { RegistryError, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
 import type { PackageSearchResponse, PackageSummary, RepositoryErrorCode, RepositoryIndex } from "@azphalt/azdk";
-import { denyAllAuthorizer, type DownloadAuthorizer } from "./authorize.js";
+import { denyAllAuthorizer, type DownloadAuthorizer } from "@azphalt/registry";
 
 /** Map the HTTP `sort` vocabulary (`popular`/`recent`/`rating`/`name`) onto registry summaries. */
 function applySort(list: RegistrySummary[], sort: string | null): RegistrySummary[] {

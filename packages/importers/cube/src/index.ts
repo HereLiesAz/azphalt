@@ -91,7 +91,7 @@ export function importCube(cubeText: string, licenseText: string, opts: ImportOp
 
 /** Filesystem-safe stem: lowercase, runs of non-alphanumerics to single hyphens. */
 function slug(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "lut";
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "") || "lut";
 }
 
 export { parseCube } from "./parse-cube.js";
