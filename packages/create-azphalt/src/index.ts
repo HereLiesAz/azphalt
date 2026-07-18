@@ -43,8 +43,20 @@ const TEMPLATES = [
  * name is dropped so the `azphalt` segment isn't doubled.
  */
 export function toPackageId(namespace: string, name: string): string {
-  const reversed = namespace.trim().replace(/^\.+|\.+$/g, '').split('.').filter(Boolean).reverse().join('.');
-  const pkg = name.trim().toLowerCase().replace(/^azphalt-/, '').replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+  // Lowercase, collapse any run of invalid characters to a single hyphen, and trim hyphens WITHOUT an
+  // anchored `+` regex (those backtrack on repetitive input — CodeQL flags them as polynomial ReDoS).
+  const trimDashes = (s: string): string => {
+    let a = 0;
+    let b = s.length;
+    while (a < b && s[a] === '-') a++;
+    while (b > a && s[b - 1] === '-') b--;
+    return s.slice(a, b);
+  };
+  const clean = (s: string): string => trimDashes(s.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+  const reversed = namespace.trim().toLowerCase().split('.').map(clean).filter(Boolean).reverse().join('.');
+  let pkg = name.trim().toLowerCase();
+  if (pkg.startsWith('azphalt-')) pkg = pkg.slice('azphalt-'.length);
+  pkg = clean(pkg);
   return `${reversed || 'com.example'}.azphalt.${pkg || 'my-package'}`;
 }
 
