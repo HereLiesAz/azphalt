@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/repository-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": { "access": "public" },
   "description": "Client SDK for the azphalt Repository API.",
   "license": "MIT",
@@ -19,3 +19,4 @@
   "dependencies": { "@azphalt/azdk": "workspace:*" },
   "sideEffects": false
 }
+

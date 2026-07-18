@@ -1,0 +1,49 @@
+{
+	"folders": [
+		{
+			"path": "../../../Guillotine"
+		},
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../azphalt-generator-checkerboard"
+		},
+		{
+			"path": "../../../azphalt-generator-countdown"
+		},
+		{
+			"path": "../../../azphalt-generator-glitch"
+		},
+		{
+			"path": "../../../azphalt-generator-gradient"
+		},
+		{
+			"path": "../../../azphalt-generator-lensflare"
+		},
+		{
+			"path": "../../../azphalt-generator-noise"
+		},
+		{
+			"path": "../../../azphalt-generator-particles"
+		},
+		{
+			"path": "../../../azphalt-generator-smpte"
+		},
+		{
+			"path": "../../../azphalt-generator-solid"
+		},
+		{
+			"path": "../../../azphalt-generator-timecode"
+		},
+		{
+			"path": "../../../azphalt-plugin-vegas-motion-track"
+		},
+		{
+			"path": "../../../azphalt-plugin-vegas-stabilize"
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "automatic"
+	}
+}

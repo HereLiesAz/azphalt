@@ -4,7 +4,7 @@
  * `@azphalt/azp` directly; the rest drive a {@link CodeHost} — any host exposing the bytes-in
  * `runFilter` contract (`@azphalt/runtime-wasm` is the worked example).
  */
-import { verifyAzp, readAzp } from "@azphalt/azp";
+import { verifyAzp, readAzp, compatSatisfies } from "@azphalt/azp";
 import type { Capability, Panel } from "@azphalt/azdk";
 import { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 import * as fx from "./fixtures.js";
@@ -72,19 +72,7 @@ const world = (bitmap: ConformanceBitmap, params: Record<string, unknown> = {}):
   bitmap,
 });
 
-/** `>=X.Y[.Z]` (or bare `X.Y[.Z]`) satisfied by `version`. Patch defaults to 0 when omitted. */
-export function satisfiesCompat(version: string, compat: string): boolean {
-  const parse = (s: string) => {
-    const m = /(\d+)\.(\d+)(?:\.(\d+))?/.exec(s);
-    return m ? [Number(m[1]), Number(m[2]), Number(m[3] ?? 0)] : null;
-  };
-  const v = parse(version);
-  const c = parse(compat);
-  if (!v || !c) return false;
-  if (v[0] !== c[0]) return v[0] > c[0];
-  if (v[1] !== c[1]) return v[1] > c[1];
-  return v[2] >= c[2];
-}
+
 
 /* ───────────────────────── package-level (host-agnostic) ───────────────────────── */
 
@@ -193,7 +181,7 @@ export function checkCompatGating(host: CodeHost): CheckResult {
   const id = "compat-version";
   const title = "Host reports an API version that satisfies a package's compat";
   if (!host.apiVersion) return fail(id, title, "host does not report an apiVersion");
-  return satisfiesCompat(host.apiVersion, ">=0.1")
+  return compatSatisfies(host.apiVersion, ">=0.1")
     ? pass(id, title, `apiVersion ${host.apiVersion} satisfies >=0.1`)
     : fail(id, title, `apiVersion ${host.apiVersion} does not satisfy >=0.1`);
 }

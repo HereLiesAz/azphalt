@@ -15,15 +15,14 @@
  *
  * @type {import('next').NextConfig}
  */
-import { dirname, join } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Pin the file-tracing root to the workspace root. Left unset, Next infers it by walking up for
-// lockfiles and picking the outermost — so an unrelated package-lock.json anywhere above the repo
-// (e.g. in the user's home dir) silently re-roots the trace there and `.next/standalone` gains a
-// prefix of the path from THAT root down to the app. scripts/bundle.mjs looks for the app at
-// `apps/storefront`, so a drifted root breaks the bundle on some machines and not others.
-const workspaceRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+// Pin the file-tracing root to the monorepo root. Otherwise Next *infers* it (walking up for a
+// lockfile) and the guess differs across machines/OSes — on some setups the standalone tree nests
+// under `apps/storefront/`, on others it lands elsewhere, so `scripts/bundle.mjs` can't rely on a
+// fixed path. Pinning it makes the `.next/standalone` layout deterministic everywhere.
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 // Next requires basePath to start with "/" and not end with one; normalize so a value like
 // "azphalt" or "/azphalt/" doesn't fail the build.
@@ -39,9 +38,20 @@ const nextConfig = {
   transpilePackages: ["@azphalt/registry", "@azphalt/azp", "@azphalt/azdk"],
   // A self-contained server bundle, convenient for `node .next/standalone/.../server.js`.
   output: "standalone",
-  outputFileTracingRoot: workspaceRoot,
+  // Deterministic standalone layout across machines (see `repoRoot` above).
+  outputFileTracingRoot: repoRoot,
   // Optional sub-path mount (baked in at build time). Next prefixes routes + assets with it.
   ...(basePath ? { basePath } : {}),
+  async rewrites() {
+    return {
+      fallback: [
+        {
+          source: "/:path*",
+          destination: "/index.html",
+        },
+      ],
+    };
+  },
 };
 
 export default nextConfig;

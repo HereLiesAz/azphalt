@@ -27,7 +27,13 @@ const ASSET_DOMAINS: Record<AssetType, MediaDomain[]> = {
   hdri: ["3d"], motion: ["video"], palette: ["image"], image: ["image"], video: ["video"],
   font: ["font"], audio: ["audio"], vector: ["image"],
   template: ["image", "video"], overlay: ["image", "video"],
-  tflite: ["model"], litert: ["model"], onnx: ["model"], "sherpa-bundle": ["model"],
+  tflite: ["model"],
+  litert: ["model"],
+  onnx: ["model"],
+  "sherpa-bundle": ["model"],
+  model: ["model"],
+  task: ["model"],
+  "vosk-bundle": ["model"],
 };
 
 /**
@@ -278,11 +284,9 @@ export class Registry {
   /** Browse the catalog with optional filters and sorting. One summary per package. */
   async list(query: ListQuery = {}): Promise<PackageSummary[]> {
     const ids = await this.store.allPackageIds();
-    let out: PackageSummary[] = [];
-    for (const id of ids) {
-      const s = await this.getSummary(id);
-      if (s) out.push(s);
-    }
+    const summaries = await Promise.all(ids.map(id => this.getSummary(id)));
+    let out: PackageSummary[] = summaries.filter((s): s is PackageSummary => s !== undefined);
+    
     if (query.kind) out = out.filter((s) => s.kind === query.kind);
     if (query.assetType) out = out.filter((s) => s.assetTypes.includes(query.assetType!));
     if (query.capability) out = out.filter((s) => s.capabilities.includes(query.capability!));
