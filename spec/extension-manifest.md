@@ -6,7 +6,7 @@
 | Field | Req | Notes |
 |---|---|---|
 | `azphalt` | ✔ | Format version, e.g. `"0.1"`. Marks the file as an azphalt manifest. |
-| `id` | ✔ | Reverse-DNS, globally unique — e.g. `com.hereliesaz.halftone`. |
+| `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
 | `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app`. |
