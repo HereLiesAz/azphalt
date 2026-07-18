@@ -9,6 +9,13 @@ import type { Capability, Panel } from "@azphalt/azdk";
 import { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 import * as fx from "./fixtures.js";
 
+/**
+ * The version-compat predicate lives in `@azphalt/azp` as {@link compatSatisfies}. The conformance
+ * suite re-exports it under `satisfiesCompat` — the name its checks and consumers reference — so
+ * there is a single source of truth for "does this host's apiVersion satisfy a package's compat".
+ */
+export { compatSatisfies as satisfiesCompat } from "@azphalt/azp";
+
 /** A bitmap crossing the host boundary (RGBA8, `data.length === width*height*4`). */
 export interface ConformanceBitmap {
   data: number[];
