@@ -13,7 +13,7 @@
 export const FORMAT_VERSION = "0.1" as const;
 
 /* ───────────────────────────── Manifest ───────────────────────────── */
-export type Kind = "asset" | "code" | "mixed" | "app";
+export type Kind = "asset" | "code" | "mixed" | "app" | "mcp";
 export type Runtime = "js" | "wasm";
 
 /** 
@@ -472,6 +472,14 @@ export interface Manifest {
   app?: AppManifest;
 
   /**
+   * For a `kind: "mcp"` **MCP server** package — a header that declares how a host reaches an MCP
+   * server (on-device WASI / per-platform native, and/or remote http/sse) and what it offers. Like
+   * {@link AppManifest} it carries no `/code` sandbox payload and no `capabilities`; the host's MCP
+   * client runs/connects it under user consent. See {@link McpManifest} and `spec/mcp-server.md`.
+   */
+  mcp?: McpManifest;
+
+  /**
    * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffitixr"]`).
    * A repository shows an app-scoped package only to a matching app; **absent or empty means the
    * package is global** (available to every app). Scoping is a discovery filter, not access control.
@@ -594,6 +602,121 @@ export interface PwaTransport {
   shareTargetUrl?: string;
   /** How the result comes back: `postMessage` (default round-trip) or `fire-and-forget` (no return). */
   return?: { kind: "postMessage" | "fire-and-forget" };
+}
+
+/* ───────────────────────────── MCP server (`kind: "mcp"`) ───────────────────────────── */
+
+/**
+ * The `mcp` block of a `kind: "mcp"` package — an **MCP server** a host connects to. Like a companion
+ * app it is a manifest *header*: it declares how to reach the server (on-device or remote) and what it
+ * offers, carries no `/code` sandbox payload and no azphalt `capabilities`, and the host's MCP client
+ * runs/connects it under user consent. On-device is first-class on every platform (mobile included);
+ * remote is the fallback. See `spec/mcp-server.md`.
+ */
+export interface McpManifest {
+  /** Values the host prompts for at connect time and substitutes as `${input:<id>}`. Never stored in the package. */
+  inputs?: McpInput[];
+  /** One or more logical servers — at least one is required. */
+  servers: McpServer[];
+  /** Descriptive advertisement of what the server exposes — powers the store card and a host pre-check. */
+  offers?: McpOffers;
+}
+
+/** One value the host prompts the user for at connect time (mirrors VS Code's `inputs`). */
+export interface McpInput {
+  /** Stable id, referenced elsewhere in the block as `${input:<id>}`. */
+  id: string;
+  /** Prompt kind. `promptString` is the only blessed value in 0.1; the union stays open for later. */
+  type: "promptString" | (string & {});
+  /** Human-readable prompt description. */
+  description?: string;
+  /** Whether the entered value is a secret (masked, not echoed). */
+  password?: boolean;
+}
+
+/**
+ * One logical MCP server. **At least one** of `local` / `remote` is required; a host runs the first
+ * transport it supports, preferring on-device (`local.wasi` → `local.platforms.<platform>` → `remote`).
+ */
+export interface McpServer {
+  /** Stable id within the package. */
+  id: string;
+  /** On-device transport — preferred on every platform. At least one of `wasi` / `platforms` when present. */
+  local?: McpLocalTransport;
+  /** Remote transport — any platform, chosen only when the author/user wants it. */
+  remote?: McpRemoteTransport;
+}
+
+/** The on-device transport: a portable WASI target and/or per-platform native launch descriptors. */
+export interface McpLocalTransport {
+  /** Portable: runs on-device on desktop AND mobile via the host's WASI runtime. */
+  wasi?: McpWasiServer;
+  /** Per-platform native launch descriptors — at least one when present. */
+  platforms?: AtLeastOne<{ desktop: McpDesktopLaunch; android: McpAndroidLaunch }>;
+}
+
+/**
+ * A WASI MCP server delivered as a WASM module — bundled (`module` is an in-package path) or a remote
+ * header (`module` is `""` with `remoteUrl` + `checksum`, the same pattern as a large model asset). The
+ * host runs it in its WASI runtime with the OS/host permissions in `grants`, consented by the user —
+ * these are NOT azphalt editor capabilities.
+ */
+export interface McpWasiServer {
+  /** In-package path to the `.wasm` module, or `""` when delivered via `remoteUrl`. */
+  module: string;
+  /** URL to fetch the module from when `module` is `""`. */
+  remoteUrl?: string;
+  /** `sha256-<hex>` of the remote module — a host MUST verify before running. Required with `remoteUrl`. */
+  checksum?: string;
+  /** Advisory byte size of the remote module. */
+  byteSize?: number;
+  /** Server args (may contain `${input:<id>}` references). */
+  args?: string[];
+  /** Environment variables (values may contain `${input:<id>}`; no literal secrets). */
+  env?: Record<string, string>;
+  /** Host/WASI-level permissions the server requests, user-consented (e.g. `fs:read`, `fs:write`, `net`). */
+  grants?: string[];
+}
+
+/** A desktop native launch (VS Code parity): a command line the host spawns for a stdio server. */
+export interface McpDesktopLaunch {
+  /** Executable, e.g. `"npx"`. */
+  command: string;
+  /** Arguments (may contain `${input:<id>}` references). */
+  args?: string[];
+  /** Environment variables (values may contain `${input:<id>}`; no literal secrets). */
+  env?: Record<string, string>;
+}
+
+/**
+ * An Android native launch descriptor for an on-device server. Its exact shape is still being settled
+ * (`spec/mcp-server.md § Open questions`); 0.1 carries a launch component the host resolves.
+ */
+export interface McpAndroidLaunch {
+  /** A bundled/installed component or host-runtime entry the host launches to run the server on-device. */
+  component: string;
+  /** Arguments (may contain `${input:<id>}` references). */
+  args?: string[];
+}
+
+/** A remote MCP server reached over HTTP or SSE. */
+export interface McpRemoteTransport {
+  /** Transport protocol. */
+  type: "http" | "sse";
+  /** Endpoint URL. */
+  url: string;
+  /** Request headers (values may contain `${input:<id>}`; no literal secrets). */
+  headers?: Record<string, string>;
+}
+
+/** Descriptive advertisement of what the server exposes (advisory — the live MCP handshake is authoritative). */
+export interface McpOffers {
+  /** Tool names the server exposes, or a boolean presence flag. */
+  tools?: string[] | boolean;
+  /** Resource names, or a presence flag. */
+  resources?: string[] | boolean;
+  /** Prompt names, or a presence flag. */
+  prompts?: string[] | boolean;
 }
 
 /* ───────────────────────────── UI schema ───────────────────────────── */
