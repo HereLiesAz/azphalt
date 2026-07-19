@@ -23,19 +23,36 @@ jobs:
           API=https://api.vercel.com
           auth=(-H "Authorization: Bearer $TOKEN")
 
-          teamId=$(curl -s "${auth[@]}" "$API/v2/teams" | jq -r '.teams[0].id // empty')
-          tq=""; [ -n "$teamId" ] && tq="&teamId=$teamId"
-          echo "team: ${teamId:-<personal account>}"
+          echo "=== whoami (/v2/user) ==="
+          curl -s "${auth[@]}" "$API/v2/user" | jq -r '{user: (.user.username // .username), email: (.user.email // .email)}' 2>/dev/null || echo "(user call failed)"
 
-          projs=$(curl -s "${auth[@]}" "$API/v9/projects?limit=100$tq")
-          pid=$(echo "$projs" | jq -r '.projects[] | select(.name|test("storefront|azphalt";"i")) | .id' | head -1)
-          pname=$(echo "$projs" | jq -r --arg id "$pid" '.projects[] | select(.id==$id) | .name')
+          echo "=== teams (/v2/teams) ==="
+          teamsRaw=$(curl -s "${auth[@]}" "$API/v2/teams")
+          echo "$teamsRaw" | jq -r '.teams[]? | "\(.id)  \(.slug)  \(.name)"' 2>/dev/null || echo "$teamsRaw" | head -c 800
+
+          # Try each known scope: personal, then every team, then the slug from the deploy URL.
+          slugFromUrl="azs-projects-e393a284"
+          scopes=$(echo "$teamsRaw" | jq -r '.teams[]?.id' 2>/dev/null)
+          echo "=== searching for the storefront project across scopes ==="
+          pid=""; teamId=""
+          for tid in "" $scopes; do
+            q="limit=100"; [ -n "$tid" ] && q="$q&teamId=$tid"
+            resp=$(curl -s "${auth[@]}" "$API/v9/projects?$q")
+            names=$(echo "$resp" | jq -r '.projects[]?.name' 2>/dev/null | tr '\n' ' ')
+            echo "scope [${tid:-personal}]: ${names:-<none/err>}"
+            hit=$(echo "$resp" | jq -r '.projects[]? | select(.name|test("storefront|azphalt";"i")) | .id' 2>/dev/null | head -1)
+            if [ -n "$hit" ]; then pid="$hit"; teamId="$tid"; break; fi
+          done
+          # Fallback: resolve the team by the slug embedded in the deploy URL.
           if [ -z "$pid" ]; then
-            echo "Could not find a storefront/azphalt project. Projects seen:"
-            echo "$projs" | jq -r '.projects[]?.name'
-            exit 1
+            resp=$(curl -s "${auth[@]}" "$API/v9/projects?limit=100&slug=$slugFromUrl")
+            pid=$(echo "$resp" | jq -r '.projects[]? | select(.name|test("storefront|azphalt";"i")) | .id' 2>/dev/null | head -1)
+            tid2=$(curl -s "${auth[@]}" "$API/v2/teams?slug=$slugFromUrl" | jq -r '.id // .teams[0].id // empty' 2>/dev/null)
+            [ -n "$tid2" ] && teamId="$tid2"
           fi
-          echo "project: $pname ($pid)"
+          tq=""; [ -n "$teamId" ] && tq="&teamId=$teamId"
+          if [ -z "$pid" ]; then echo "Could not find the storefront project in any accessible scope."; exit 1; fi
+          echo "project: $pid   team: ${teamId:-<personal>}"
 
           if [ -n "$DEP_INPUT" ]; then
             did="$DEP_INPUT"
