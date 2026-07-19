@@ -51,14 +51,30 @@ export class NpmStore implements RegistryStore {
       
       const out: PackageVersion[] = [];
       const versions = data.versions || {};
-      
-      for (const [ver, manifest] of Object.entries(versions)) {
+
+      for (const [ver, raw] of Object.entries(versions)) {
+        const npm = raw as any;
+        // An npm `package.json` is NOT an azphalt manifest — it has no `id`/`kind`/`compat`. Normalize
+        // it into a minimal, valid azphalt manifest so Registry.getSummary derives a real `id` (it
+        // reads `manifest.id`); without this the summary's id is undefined and the storefront PWA's
+        // strict `models.PackageSummary` deserializer throws "Field 'id' is required".
+        const author = typeof npm.author === "string" ? npm.author : npm.author?.name;
         const pv: PackageVersion = {
           id: data.name,
           version: ver,
-          manifest: manifest as any,
-          size: (manifest as any).dist?.unpackedSize || 0,
-          digest: (manifest as any).dist?.shasum || "",
+          manifest: {
+            azphalt: "0.1",
+            id: data.name,
+            version: ver,
+            name: npm.name || data.name,
+            kind: "code",
+            license: typeof npm.license === "string" ? npm.license : "MIT",
+            compat: ">=0.1",
+            author,
+            description: npm.description || "",
+          } as any,
+          size: npm.dist?.unpackedSize || 0,
+          digest: npm.dist?.shasum || "",
           publishedAt: data.time?.[ver] || new Date().toISOString()
         };
         out.push(pv);
