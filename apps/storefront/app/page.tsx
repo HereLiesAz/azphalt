@@ -1,8 +1,11 @@
 export default function Home() {
+  // The UI is a Compose Multiplatform (Kotlin/Wasm) app; the built bundle renders into this canvas
+  // (#ComposeTarget). Size it to the full viewport directly (viewport units, so it doesn't depend on
+  // an ancestor's resolved height); the html/body reset lives in globals.css.
   return (
-    <div style={{ width: "100vw", height: "100vh", margin: 0, padding: 0 }}>
-      <canvas id="ComposeTarget" style={{ width: "100%", height: "100%" }}></canvas>
-      <script src="/storefront-cmp.js"></script>
-    </div>
+    <>
+      <canvas id="ComposeTarget" style={{ display: 'block', width: '100vw', height: '100vh' }}></canvas>
+      <script src="/storefront-cmp.js" async></script>
+    </>
   );
 }
