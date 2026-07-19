@@ -1,0 +1,68 @@
+name: Build and Release Desktop Executables
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build Desktop Distribution
+        run: ./gradlew :apps:storefront-cmp:packageReleaseDistributionForCurrentOS
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution-artifacts-${{ matrix.os }}
+          path: apps/storefront-cmp/build/compose/binaries/main/
+          
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          merge-multiple: true
+
+      - name: Update or Create 'latest' Tag
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -f latest
+          git push -f origin latest
+          
+      - name: Publish to Rolling Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: latest
+          name: Azphalt Storefront (Latest)
+          body: "Rolling release containing the latest desktop executables for Windows, macOS, and Linux."
+          files: |
+            ./artifacts/**/*.msi
+            ./artifacts/**/*.dmg
+            ./artifacts/**/*.deb

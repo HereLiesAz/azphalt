@@ -3,13 +3,10 @@ package network
 import kotlin.js.JsString
 import kotlinx.browser.window
 import kotlinx.coroutines.await
-import kotlinx.serialization.json.Json
 import models.PackageSummary
 import org.w3c.fetch.Response
 
-val json = Json { ignoreUnknownKeys = true }
-
-suspend fun fetchRegistryList(): List<PackageSummary> {
+actual suspend fun fetchRegistryList(): List<PackageSummary> {
     // Kotlin/Wasm needs each Promise<T>.await() pinned via the receiver's expected type: fetch
     // resolves to a Response, and Response.text() resolves to a JsString we bring to a Kotlin String.
     val response: Response = window.fetch("/api/packages").await()

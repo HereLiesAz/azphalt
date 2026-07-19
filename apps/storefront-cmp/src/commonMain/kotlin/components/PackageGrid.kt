@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.browser.window
 import models.PackageSummary
 import theme.ExpressiveMotion
 import theme.glassmorphicPanel
@@ -65,7 +64,7 @@ fun PackageBentoCard(pkg: PackageSummary) {
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = { window.alert("Navigate to ${pkg.id}") }
+                onClick = { println("Navigate to ${pkg.id}") }
             )
             .padding(24.dp)
     ) {
