@@ -1,3 +1,14 @@
 kotlin-js-store/
 build/
 .gradle/
+
+# Vendored Gradle distribution and its download — the wrapper fetches Gradle 8.7
+# (see gradle/wrapper/gradle-wrapper.properties); never commit the unpacked distro or the zip.
+gradle-8.7/
+gradle-*/
+gradle.zip
+*.zip
+
+# Local Gradle/IDE state
+local.properties
+.kotlin/

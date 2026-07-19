@@ -186,10 +186,6 @@ export class NpmStore implements RegistryStore {
     }
   }
 
-  async putPackage(id: string, summary: unknown): Promise<void> {
-    await this.local.putPackage(id, summary as any);
-  }
-
   async putVersion(pkg: PackageVersion, bytes: Uint8Array): Promise<void> {
     await this.local.putVersion(pkg, bytes);
   }
