@@ -17,6 +17,13 @@ export async function GET() {
     version: p.version,
     kind: p.kind,
     capabilities: p.capabilities,
+    downloads: p.downloads,
+    rating: p.rating,
+    ratingCount: p.ratingCount,
+    updatedAt: p.updatedAt,
+    targetApps: p.targetApps,
+    mediaDomains: p.mediaDomains,
+    types: p.assetTypes,
     price: priceById.get(p.id) || null
   }));
 

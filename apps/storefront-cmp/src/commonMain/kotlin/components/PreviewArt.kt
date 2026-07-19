@@ -1,15 +1,7 @@
 package components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -45,21 +37,14 @@ private fun styleFor(pkg: PackageSummary): ArtStyle {
     }
 }
 
+/**
+ * @param phase a 0..1 clock, supplied by the caller. A grid drives one shared clock and passes it only
+ * to the currently-active card (a still frame to the rest), so exactly one preview animates at a time.
+ */
 @Composable
-fun PreviewArt(pkg: PackageSummary, tint: Color, modifier: Modifier = Modifier) {
-    val transition = rememberInfiniteTransition(label = "art")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(durationMillis = 5200, easing = LinearEasing), RepeatMode.Restart),
-        label = "phase",
-    )
-    val pulse by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(durationMillis = 2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "pulse",
-    )
+fun PreviewArt(pkg: PackageSummary, tint: Color, phase: Float, modifier: Modifier = Modifier) {
+    // Derive a 0..1 "breathing" pulse from the linear phase.
+    val pulse = 0.5f + 0.5f * sin(phase * TAU)
     val style = styleFor(pkg)
     Canvas(modifier = modifier) {
         when (style) {

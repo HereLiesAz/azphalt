@@ -3,28 +3,20 @@ package components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HeroSection(
-    total: Int,
-    selectedFilter: Int,
-    onFilter: (Int) -> Unit,
-) {
+fun HeroSection(total: Int) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 40.dp, bottom = 20.dp),
     ) {
-        // Tagline pill — a high-contrast secondary container chip.
+        // Tagline pill.
         Surface(
             color = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -39,7 +31,6 @@ fun HeroSection(
 
         Spacer(Modifier.height(20.dp))
 
-        // Emphasized display headline — a colored second line for expressive contrast.
         Text(
             text = "The open extension",
             style = MaterialTheme.typography.displayLarge,
@@ -59,21 +50,5 @@ fun HeroSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.widthIn(max = 640.dp),
         )
-
-        Spacer(Modifier.height(28.dp))
-
-        // Button group — a segmented single-choice filter (All / Free / Paid).
-        val options = listOf("All", "Free", "Paid")
-        SingleChoiceSegmentedButtonRow {
-            options.forEachIndexed { index, label ->
-                SegmentedButton(
-                    selected = selectedFilter == index,
-                    onClick = { onFilter(index) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                ) {
-                    Text(label, fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
     }
 }

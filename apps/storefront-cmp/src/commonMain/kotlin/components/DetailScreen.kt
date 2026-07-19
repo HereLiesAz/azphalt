@@ -1,5 +1,11 @@
 package components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +17,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +30,13 @@ import models.PackageSummary
 fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     val (container, onContainer) = paletteFor(pkg.id)
+    val transition = rememberInfiniteTransition(label = "detail")
+    val phase by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(durationMillis = 5200, easing = LinearEasing), RepeatMode.Restart),
+        label = "phase",
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -47,7 +61,7 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
                     .clip(RoundedCornerShape(32.dp))
                     .background(container),
             ) {
-                PreviewArt(pkg, tint = onContainer, modifier = Modifier.fillMaxSize())
+                PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,

@@ -58,7 +58,7 @@ internal fun priceLabel(pkg: PackageSummary): String =
 internal fun isPaid(pkg: PackageSummary): Boolean = pkg.price != null || pkg.priceStatus == "paid"
 
 @Composable
-fun PackageBentoCard(pkg: PackageSummary, onOpen: (PackageSummary) -> Unit) {
+fun PackageBentoCard(pkg: PackageSummary, phase: Float, onOpen: (PackageSummary) -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     val pressed by interaction.collectIsPressedAsState()
@@ -96,7 +96,7 @@ fun PackageBentoCard(pkg: PackageSummary, onOpen: (PackageSummary) -> Unit) {
                     .weight(1f)
                     .background(onContainer.copy(alpha = 0.05f)),
             ) {
-                PreviewArt(pkg, tint = onContainer, modifier = Modifier.fillMaxSize())
+                PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
