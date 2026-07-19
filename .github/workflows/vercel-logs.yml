@@ -23,8 +23,11 @@ jobs:
           API=https://api.vercel.com
           auth=(-H "Authorization: Bearer $TOKEN")
 
+          echo "token length: ${#TOKEN} (should be ~24 for a Vercel token)"
           echo "=== whoami (/v2/user) ==="
-          curl -s "${auth[@]}" "$API/v2/user" | jq -r '{user: (.user.username // .username), email: (.user.email // .email)}' 2>/dev/null || echo "(user call failed)"
+          code=$(curl -s -o /tmp/u.json -w "%{http_code}" "${auth[@]}" "$API/v2/user")
+          echo "/v2/user -> HTTP $code"
+          head -c 600 /tmp/u.json; echo
 
           echo "=== teams (/v2/teams) ==="
           teamsRaw=$(curl -s "${auth[@]}" "$API/v2/teams")
