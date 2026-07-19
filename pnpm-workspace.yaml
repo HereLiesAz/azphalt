@@ -1,5 +1,9 @@
 packages:
   - "apps/*"
+  # storefront-cmp is a Gradle/Kotlin-Wasm project, not a pnpm package. Its package.json exists only
+  # to pin the package manager for Kotlin's Yarn tooling; keep it out of the pnpm workspace so it
+  # never lands in pnpm-lock.yaml (which would break `pnpm install --frozen-lockfile` in CI).
+  - "!apps/storefront-cmp"
   - "packages/*"
   - "packages/importers/*"
   - "packages/create-azphalt"

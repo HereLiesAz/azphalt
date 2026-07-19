@@ -22,6 +22,7 @@ import {
   Marketplace,
   Registry,
   RegistryError,
+  StubPaymentProvider,
   denyAllAuthorizer,
   issueEntitlement,
   type CheckoutSession,
@@ -58,6 +59,25 @@ const MIT_LICENSE =
 
 
 function utf8(str: string): Uint8Array { return new TextEncoder().encode(str); }
+
+function svgSwatch(from: string, to: string, label: string): Uint8Array {
+  return utf8(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180" role="img" aria-label="${label}">` +
+      `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+      `<stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs>` +
+      `<rect width="320" height="180" fill="url(#g)"/>` +
+      `<text x="16" y="166" font-family="sans-serif" font-size="14" fill="#ffffff" opacity="0.9">${label}</text>` +
+      `</svg>`,
+  );
+}
+
+function cubeLut(title: string): Uint8Array {
+  return utf8(
+    `TITLE "${title}"\nLUT_3D_SIZE 2\n` +
+      "0.0 0.0 0.0\n1.0 0.0 0.0\n0.0 1.0 0.0\n1.0 1.0 0.0\n" +
+      "0.0 0.0 1.0\n1.0 0.0 1.0\n0.0 1.0 1.0\n1.0 1.0 1.0\n",
+  );
+}
 
 interface Seed {
   manifest: Omit<Manifest, "files">;
@@ -592,28 +612,15 @@ const SEEDS: Seed[] = [
   }
 ];
 
-const DITHER_OLD: Omit<Manifest, "files"> = {
-  azphalt: "0.1",
-  id: "com.hereliesaz.dither",
-  name: "Dither Kit",
-  version: "0.2.0",
-  kind: "code",
-  license: "MIT",
-  compat: ">=0.1",
-  description: "Ordered dithering only.",
-  author: "Az",
-  runtime: "js",
-  entry: "code/index.js",
-  capabilities: ["bitmap", "params"],
-  contributes: { filters: [{ id: "apply-dither", name: "Apply Dither", entry: "applyDither" }] },
-};
-
 import { NpmStore } from "./backend";
 
 /** The live registry + marketplace, wired to a single shared store as the marketplace requires. */
 const store = new NpmStore();
 const registry = new Registry(store);
-const payments = new StripePaymentProvider();
+// StubPaymentProvider is the default: it records sessions in memory and moves no money, so `next dev`
+// and the tests run with no secrets and no network. A deployment that sets STRIPE_SECRET_KEY opts in
+// to the real split-payout provider. See apps/storefront/README.md § "Payments are stubbed (dev only)".
+const payments = process.env.STRIPE_SECRET_KEY ? new StripePaymentProvider() : new StubPaymentProvider();
 const market = new Marketplace(registry, store, { payments });
 
 /* ─────────────────────────── The paid lane's gate ─────────────────────────── */
@@ -659,13 +666,23 @@ export async function priceStatus(id: string): Promise<"free" | "paid"> {
   return listing && listing.status === "active" ? "paid" : "free";
 }
 
-/** Open a checkout session and remember what it was for, so webhooks can fulfil it. */
+/**
+ * What each open checkout session was for: `sessionId → { packageId, buyerId }`. Fulfilment
+ * (`POST /api/checkout/complete`) mints the entitlement from *this* record, never from its own
+ * request body, so a caller cannot mint a license for a package it never checked out. In-memory and
+ * process-local, matching the stand-in registry above — a real deployment persists this beside the
+ * payment session.
+ */
+export const sessionRecords = new Map<string, { packageId: string; buyerId: string }>();
+
+/** Open a checkout session and remember what it was for, so fulfilment can mint against it. */
 export async function startCheckout(
   packageId: string,
   buyerId: string,
 ): Promise<{ session: CheckoutSession; breakdown: PriceBreakdown; listing: Listing }> {
   const { market: m } = await getCatalog();
   const result = await m.checkout(packageId, buyerId);
+  sessionRecords.set(result.session.id, { packageId, buyerId });
   return result;
 }
 
