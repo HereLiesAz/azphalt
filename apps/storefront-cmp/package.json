@@ -1,0 +1,8 @@
+{
+  "name": "@azphalt/storefront-cmp",
+  "version": "0.1.1",
+  "private": true,
+  "description": "Compose Multiplatform (Kotlin/Wasm) storefront UI. Built with Gradle, not pnpm.",
+  "license": "MIT",
+  "packageManager": "yarn@1.22.22"
+}

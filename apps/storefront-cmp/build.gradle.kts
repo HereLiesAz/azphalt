@@ -1,20 +1,21 @@
 plugins {
-    kotlin("multiplatform") version "1.9.24"
-    kotlin("plugin.serialization") version "1.9.24"
-    id("org.jetbrains.compose") version "1.6.11"
+    kotlin("multiplatform") version "2.4.0"
+    kotlin("plugin.serialization") version "2.4.0"
+    // Kotlin 2.0+ split the Compose compiler into its own plugin, versioned with Kotlin.
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
+    id("org.jetbrains.compose") version "1.11.0"
 }
 
 group = "com.azphalt.storefront"
 version = "0.1.1"
 
 kotlin {
-    js(IR) {
-        moduleName = "storefront-cmp"
+    // Compose for Web now targets Kotlin/Wasm (WasmGC), not the legacy js(IR) canvas.
+    wasmJs {
+        outputModuleName = "storefront-cmp"
         browser {
             commonWebpackConfig {
-                cssSupport {
-                    enabled.set(true)
-                }
+                outputFileName = "storefront-cmp.js"
             }
             distribution {
                 // Next.js static asset folder
@@ -25,16 +26,15 @@ kotlin {
     }
 
     sourceSets {
-        val jsMain by getting {
+        val wasmJsMain by getting {
             dependencies {
-                implementation(compose.ui)
-                implementation(compose.material3)
                 implementation(compose.runtime)
-                
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-                
-                // (No NPM dependencies needed; models are pure Kotlin serialization)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                // compose.ui brings kotlinx-browser (document/window/fetch) and coroutines transitively.
             }
         }
     }

@@ -5,3 +5,14 @@ out/
 
 # Standalone deploy bundle (scripts/bundle.mjs output)
 dist-server
+
+# Compose/Kotlin-Wasm build output, emitted here by apps/storefront-cmp's
+# `wasmJsBrowserDistribution` task. Generated artifacts — regenerate with:
+#   pnpm --dir ../storefront-cmp exec ./gradlew wasmJsBrowserDistribution
+/public/*.wasm
+/public/index.html
+/public/storefront-cmp.js
+/public/storefront-cmp.js.map
+/public/storefront-cmp.js.LICENSE.txt
+/public/skiko.*
+/public/META-INF/
