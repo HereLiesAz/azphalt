@@ -2,10 +2,118 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { generateKeyPairSync } from "node:crypto";
 import prompts from "prompts";
 import { blue, cyan, green, reset, yellow } from "kolorist";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Generate an Ed25519 publisher signing key. Mirrors `@azphalt/azp`'s `generateSigningKey` but uses
+ * `node:crypto` directly so the scaffolder takes no runtime dependency on the SDK. The PKCS8 PEM
+ * private key is the publisher's secret (store it as a CI secret); the base64 SPKI public key is the
+ * publisher's identity that hosts pin on first install.
+ */
+function generatePublisherKey(): { privateKey: string; publicKey: string } {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  return {
+    privateKey: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+    publicKey: Buffer.from(publicKey.export({ type: "spki", format: "der" })).toString("base64"),
+  };
+}
+
+/**
+ * Write the signing scaffold into a freshly created project: a release workflow that signs every
+ * built `.azp` with the `AZP_PRIVATE_KEY` secret before publishing, a `SIGNING.md` recording the
+ * publisher public key + setup steps, the private key as a git-ignored local file, and a `.gitignore`
+ * entry so that key is never committed. Signing at creation is what lets a host pin this publisher on
+ * first install and reject later updates from anyone else (see spec § Publisher continuity).
+ */
+function writeSigningScaffold(root: string, key: { privateKey: string; publicKey: string }): void {
+  const wfDir = path.join(root, ".github", "workflows");
+  fs.mkdirSync(wfDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(wfDir, "sign-release.yml"),
+    `name: sign-release
+# Builds the package, signs every produced .azp with the publisher key (repo/org secret
+# AZP_PRIVATE_KEY), and publishes on a v* tag. Signing establishes publisher continuity: a host pins
+# this key on first install and rejects any later update signed by a different key.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - name: Sign the .azp
+        env:
+          AZP_PRIVATE_KEY: \${{ secrets.AZP_PRIVATE_KEY }}
+        run: |
+          test -n "$AZP_PRIVATE_KEY" || { echo "::error::AZP_PRIVATE_KEY secret is not set — see SIGNING.md"; exit 1; }
+          node -e '
+            const fs=require("fs");
+            const { signAzp }=require("@azphalt/azp");
+            const pk=process.env.AZP_PRIVATE_KEY;
+            for (const f of fs.readdirSync(".").filter(n=>n.endsWith(".azp"))) {
+              fs.writeFileSync(f, signAzp(fs.readFileSync(f), { privateKey: pk }));
+              console.log("signed "+f);
+            }
+          '
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.azp'
+`,
+  );
+
+  fs.writeFileSync(
+    path.join(root, "SIGNING.md"),
+    `# Signing this extension
+
+This project signs its \`.azp\` at release time so hosts can verify **you** — the original publisher —
+are the one shipping every update (azphalt spec § Publisher continuity).
+
+## Publisher public key
+
+\`\`\`
+${key.publicKey}
+\`\`\`
+
+Hosts pin this key the first time a user installs the extension and then reject any update signed by a
+different key (a legitimate key rotation needs explicit user approval or a registry counter-signature).
+
+## One-time setup
+
+1. A signing key was generated for you at \`azp-signing-key.pem\` (PKCS8 PEM). **Keep it secret** — it is
+   git-ignored. Anyone with it can publish updates as you.
+2. Add it as a CI secret named \`AZP_PRIVATE_KEY\` (repo: *Settings → Secrets and variables → Actions*;
+   or an org secret shared to all your extension repos):
+   \`\`\`sh
+   gh secret set AZP_PRIVATE_KEY < azp-signing-key.pem
+   \`\`\`
+3. Push a \`v*\` tag (or run the **sign-release** workflow) to build, sign, and publish.
+
+Reuse the **same** key across all your extensions so a host recognizes one publisher identity for you.
+`,
+  );
+
+  const keyFile = path.join(root, "azp-signing-key.pem");
+  fs.writeFileSync(keyFile, key.privateKey, { mode: 0o600 });
+
+  const giPath = path.join(root, ".gitignore");
+  const gi = fs.existsSync(giPath) ? fs.readFileSync(giPath, "utf-8") : "";
+  if (!gi.split(/\r?\n/).includes("azp-signing-key.pem")) {
+    fs.writeFileSync(giPath, gi + (gi.endsWith("\n") || gi === "" ? "" : "\n") + "azp-signing-key.pem\n");
+  }
+}
 
 const TEMPLATES = [
   {
@@ -147,6 +255,13 @@ async function init() {
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
     console.log(`  ${green('id')} ${manifest.id}`);
   }
+
+  // Sign at creation: generate a publisher key and a signing release workflow so the very first
+  // release a user installs establishes the publisher pin (spec § Publisher continuity).
+  const publisherKey = generatePublisherKey();
+  writeSigningScaffold(root, publisherKey);
+  console.log(`  ${green('publisher key')} ${publisherKey.publicKey}`);
+  console.log(`  ${yellow('signing key written to azp-signing-key.pem (git-ignored) — see SIGNING.md')}`);
 
   console.log(`\n${green('Done.')} Now run:\n`);
   console.log(`  cd ${projectName}`);

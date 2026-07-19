@@ -102,5 +102,14 @@ Signing is **implemented**: `@azphalt/azp` produces `signature.json` (`signAzp` 
 3. Treat an unsigned or untrusted-but-valid package as having integrity but no established provenance, and warn accordingly (e.g., "not from a trusted signer; install only from sources you trust").
 4. For any **remote asset** — an `assets[]` entry (or `files[]` member) delivered by `remoteUrl` rather than bundled — verify the downloaded bytes against its `checksum` (`sha256-<hex>`) **before use, and reject on mismatch**. These bytes aren't in the `files` map, so `verifyAzp` can't cover them; the check happens lazily at fetch time (see extension-manifest.md § assets). The signed manifest makes the `checksum` value itself trustworthy.
 
+### Publisher continuity (updates)
+Integrity and a valid signature say a package is internally consistent and names its signer; they do **not**, on their own, say an *update* comes from the same party as the version already installed — a package `id` is just a string, and anyone can put `com.acme.azphalt.thing` in a manifest. To stop a third party from replacing an installed extension via a same-`id` package, a host that supports updating an installed extension MUST enforce **publisher continuity**:
+
+- On first install of an `id`, record ("pin") the signer's SPKI public key (trust-on-first-use). An unsigned first install pins nothing.
+- On any later install/update of the same `id`, the new package's signer MUST equal the pinned key. A different key — or a signed→unsigned regression — MUST be rejected as a *publisher change* rather than silently applied. The rejection is distinct from the generic "untrusted signer" warning: it means "not the party you installed from."
+- A host MAY allow the user to **approve** a publisher change (a legitimate key rotation) explicitly, after which it re-pins to the new key. A registry `countersignature` chaining the new key to the old (or to a trusted registry) MAY be accepted automatically in place of a manual prompt.
+
+Because only the holder of the pinned private key can produce a package whose signature verifies against the pinned public key, this makes "only the original publisher can push an accepted update" enforceable **offline**, without a central authority. Publishers SHOULD therefore **sign at package-creation time** (keep one signing key per publisher; store the PKCS8 PEM private key as a CI secret and sign the built `.azp` with `signAzp` before publishing) so the very first release a user installs establishes the pin. *Reference host implementation:* Guillotine's `AzpPublisherPins` + `AzpModelInstall`.
+
 ## Versioning
 - `azphalt` (format version) gates compatibility. The package's own `version` is semver.
