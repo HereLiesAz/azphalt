@@ -1,0 +1,17 @@
+{
+  "name": "Azphalt Storefront",
+  "short_name": "Azphalt",
+  "description": "Azphalt Consignment Marketplace Storefront",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05050A",
+  "theme_color": "#6C47FF",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
