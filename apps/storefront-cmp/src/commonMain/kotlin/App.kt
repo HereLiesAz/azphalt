@@ -2,7 +2,10 @@ package main
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.*
@@ -10,8 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import components.HeroSection
-import components.PackageGrid
+import components.PackageBentoCard
 import models.PackageSummary
 import network.fetchRegistryList
 
@@ -49,12 +53,23 @@ fun StorefrontApp() {
                     )
                 )
         ) {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                item {
+            // A SINGLE vertical scroll container. The previous structure nested the package
+            // LazyVerticalGrid inside a LazyColumn item, which measures the grid with an infinite
+            // maximum height — Compose throws IllegalStateException at runtime and the whole app
+            // renders blank. Here the grid IS the scroller, and the hero is a full-width header via
+            // a spanning item.
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 340.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(32.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp)
+            ) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
                     HeroSection()
                 }
-                item {
-                    PackageGrid(packages)
+                items(packages) { pkg ->
+                    PackageBentoCard(pkg)
                 }
             }
         }

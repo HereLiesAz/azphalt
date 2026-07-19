@@ -7,9 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -26,21 +23,6 @@ import models.PackageSummary
 import theme.ExpressiveMotion
 import theme.glassmorphicPanel
 import theme.skeuomorphicSurface
-
-@Composable
-fun PackageGrid(packages: List<PackageSummary>) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 340.dp),
-        contentPadding = PaddingValues(32.dp),
-        horizontalArrangement = Arrangement.spacedBy(32.dp),
-        verticalArrangement = Arrangement.spacedBy(32.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        items(packages) { pkg ->
-            PackageBentoCard(pkg)
-        }
-    }
-}
 
 @Composable
 fun PackageBentoCard(pkg: PackageSummary) {
