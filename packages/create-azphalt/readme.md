@@ -10,13 +10,35 @@ pnpm create azphalt
 yarn create azphalt
 ~~~
 
-It asks for a project name and a template, copies the template into a new directory, and sets the project's `package.json` name. Then:
+It asks for a project name, **your namespace**, and a template, copies the template into a new directory,
+sets the project's `package.json` name, and fills in the manifest `id`. Then:
 
 ~~~sh
 cd my-azphalt-project
 npm install
 npm run dev
 ~~~
+
+## Naming (`id`)
+
+Every package needs a globally-unique reverse-DNS `id`. You don't hand-write it — the scaffolder asks
+for **a namespace (a domain you own)** and builds the id for you:
+
+~~~
+<reversed-domain>.azphalt.<name>
+~~~
+
+Give any domain — `com`, `io`, `org`, `space`, whatever you own. It's reversed, an `azphalt` segment is
+inserted (marking it an azphalt package and keeping all your packages in one sub-namespace), then the
+project name is appended:
+
+| You enter | Project | Generated `id` |
+|---|---|---|
+| `developer.space` | `my-plugin` | `space.developer.azphalt.my-plugin` |
+| `hereliesaz.com` | `halftone` | `com.hereliesaz.azphalt.halftone` |
+| `acme.io` | `azphalt-glow` | `io.acme.azphalt.glow` |
+
+(A leading `azphalt-` on the project name is dropped so the segment isn't doubled.)
 
 ## Templates
 

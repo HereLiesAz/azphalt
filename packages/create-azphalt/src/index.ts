@@ -35,10 +35,35 @@ const TEMPLATES = [
   }
 ];
 
+/**
+ * Build a package id from the author's namespace and project name, following the convention
+ * `<reversed-domain>.azphalt.<name>`. You give a domain you own (`developer.space`, `acme.io`,
+ * `hereliesaz.com`); we reverse it, insert the `azphalt` segment, and append the package name — e.g.
+ * `developer.space` + `my-plugin` -> `space.developer.azphalt.my-plugin`. A leading `azphalt-` on the
+ * name is dropped so the `azphalt` segment isn't doubled.
+ */
+export function toPackageId(namespace: string, name: string): string {
+  // Lowercase, collapse any run of invalid characters to a single hyphen, and trim hyphens WITHOUT an
+  // anchored `+` regex (those backtrack on repetitive input — CodeQL flags them as polynomial ReDoS).
+  const trimDashes = (s: string): string => {
+    let a = 0;
+    let b = s.length;
+    while (a < b && s[a] === '-') a++;
+    while (b > a && s[b - 1] === '-') b--;
+    return s.slice(a, b);
+  };
+  const clean = (s: string): string => trimDashes(s.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+  const reversed = namespace.trim().toLowerCase().split('.').map(clean).filter(Boolean).reverse().join('.');
+  let pkg = name.trim().toLowerCase();
+  if (pkg.startsWith('azphalt-')) pkg = pkg.slice('azphalt-'.length);
+  pkg = clean(pkg);
+  return `${reversed || 'com.example'}.azphalt.${pkg || 'my-package'}`;
+}
+
 async function init() {
   console.log(`\n${cyan('azphalt')} open extension standard\n`);
 
-  let result: prompts.Answers<"projectName" | "template">;
+  let result: prompts.Answers<"projectName" | "namespace" | "template">;
 
   try {
     result = await prompts([
@@ -47,6 +72,12 @@ async function init() {
         name: 'projectName',
         message: reset('Project name:'),
         initial: 'my-azphalt-project'
+      },
+      {
+        type: 'text',
+        name: 'namespace',
+        message: reset('Your namespace (a domain you own, e.g. developer.space):'),
+        initial: 'example.com'
       },
       {
         type: 'select',
@@ -69,7 +100,7 @@ async function init() {
     return;
   }
 
-  const { projectName, template } = result;
+  const { projectName, namespace, template } = result;
   const root = path.join(process.cwd(), projectName);
   
   if (fs.existsSync(root)) {
@@ -106,6 +137,15 @@ async function init() {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
     pkg.name = projectName;
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+  }
+
+  // Set the manifest id from the namespace: <reversed-domain>.azphalt.<name>.
+  const manifestPath = path.join(root, 'manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    manifest.id = toPackageId(namespace, projectName);
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+    console.log(`  ${green('id')} ${manifest.id}`);
   }
 
   console.log(`\n${green('Done.')} Now run:\n`);
