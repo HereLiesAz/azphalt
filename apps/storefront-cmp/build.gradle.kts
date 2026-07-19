@@ -3,7 +3,7 @@ plugins {
     kotlin("plugin.serialization") version "2.4.0"
     // Kotlin 2.0+ split the Compose compiler into its own plugin, versioned with Kotlin.
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
-    id("org.jetbrains.compose") version "1.11.0"
+    id("org.jetbrains.compose") version "1.12.0-beta02"
 }
 
 group = "com.azphalt.storefront"
