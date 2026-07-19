@@ -53,6 +53,13 @@ export interface CheckResult {
 export const pass = (id: string, title: string, detail = "ok"): CheckResult => ({ id, title, ok: true, detail });
 export const fail = (id: string, title: string, detail: string): CheckResult => ({ id, title, ok: false, detail });
 
+/**
+ * Compat gate, re-exported under the conformance package's historical name. The implementation moved to
+ * `@azphalt/azp` as `compatSatisfies`; this alias keeps the conformance surface (`companion-checks`,
+ * `video-audio-checks`, the `index` re-export, and the test hosts) working after that rename.
+ */
+export const satisfiesCompat = compatSatisfies;
+
 /** Run a filter, returning either its result or the thrown error — checks assert on which. */
 async function run(
   host: CodeHost,
