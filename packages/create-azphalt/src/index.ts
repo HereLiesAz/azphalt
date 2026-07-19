@@ -256,6 +256,13 @@ async function init() {
     console.log(`  ${green('id')} ${manifest.id}`);
   }
 
+  // Sign at creation: generate a publisher key and a signing release workflow so the very first
+  // release a user installs establishes the publisher pin (spec § Publisher continuity).
+  const publisherKey = generatePublisherKey();
+  writeSigningScaffold(root, publisherKey);
+  console.log(`  ${green('publisher key')} ${publisherKey.publicKey}`);
+  console.log(`  ${yellow('signing key written to azp-signing-key.pem (git-ignored) — see SIGNING.md')}`);
+
   console.log(`\n${green('Done.')} Now run:\n`);
   console.log(`  cd ${projectName}`);
   console.log(`  npm install`);
