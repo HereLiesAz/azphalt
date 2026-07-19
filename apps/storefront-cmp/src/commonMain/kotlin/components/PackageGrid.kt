@@ -1,131 +1,139 @@
 package components
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import models.PackageSummary
-import theme.ExpressiveMotion
-import theme.glassmorphicPanel
-import theme.skeuomorphicSurface
+
+/** A small pill-shaped indicator (kind, price, capability). */
+@Composable
+private fun Pill(text: String, container: Color, content: Color) {
+    Surface(
+        color = container,
+        contentColor = content,
+        shape = RoundedCornerShape(percent = 50),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
+}
 
 @Composable
 fun PackageBentoCard(pkg: PackageSummary) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val isPressed by interactionSource.collectIsPressedAsState()
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    val pressed by interaction.collectIsPressedAsState()
 
+    // Bouncy, physics-driven scale on hover/press.
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else if (isHovered) 1.02f else 1f,
-        animationSpec = if (isPressed) ExpressiveMotion.FastEffects else ExpressiveMotion.BouncySpring
+        targetValue = if (pressed) 0.96f else if (hovered) 1.03f else 1f,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 520f),
+    )
+    val elevation by animateDpAsState(
+        targetValue = if (hovered) 12.dp else 2.dp,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
     )
 
-    Box(
+    // Rotate the container color by a stable hash of the id — a playful, colorful bento grid.
+    val cs = MaterialTheme.colorScheme
+    val palette = listOf(
+        cs.primaryContainer to cs.onPrimaryContainer,
+        cs.secondaryContainer to cs.onSecondaryContainer,
+        cs.tertiaryContainer to cs.onTertiaryContainer,
+        cs.surfaceContainerHighest to cs.onSurface,
+    )
+    val paletteIndex = ((pkg.id.hashCode() % palette.size) + palette.size) % palette.size
+    val (container, onContainer) = palette[paletteIndex]
+
+    val priceLabel = pkg.price?.let { "$" + (it.amountCents / 100) + "." + (it.amountCents % 100).toString().padStart(2, '0') }
+        ?: "FREE"
+    val paid = pkg.price != null || pkg.priceStatus == "paid"
+
+    ElevatedCard(
+        onClick = { println("Open ${pkg.id}") },
         modifier = Modifier
-            .scale(scale)
-            .height(380.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(32.dp))
-            .glassmorphicPanel(cornerRadius = 32f, intensity = if (isHovered) 1.5f else 1.0f)
-            .background(Color(0xFF151520).copy(alpha = 0.6f))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = { println("Navigate to ${pkg.id}") }
-            )
-            .padding(24.dp)
+            .height(232.dp)
+            .scale(scale),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = container, contentColor = onContainer),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = elevation),
+        interactionSource = interaction,
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Visual Preview Placeholder for the "bento" feel
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.Black.copy(alpha = 0.3f))
-                    .skeuomorphicSurface(depth = 2f)
-            ) {
-                // If we had the actual preview bytes, we'd render an Image here
-                // For now, render a stylish placeholder based on kind
-                Text(
-                    text = pkg.kind.uppercase(),
-                    color = Color.White.copy(alpha = 0.2f),
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            Text(
-                text = pkg.name,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = pkg.description ?: "No description available.",
-                fontSize = 14.sp,
-                color = Color(0xFFA0A0B0),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                lineHeight = 20.sp
-            )
-
-            Spacer(Modifier.height(16.dp))
-
+        Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+            // Top row: kind pill + price pill.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Capabilities badges
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Pill(pkg.kind.uppercase(), onContainer.copy(alpha = 0.14f), onContainer)
+                Pill(
+                    text = priceLabel,
+                    container = if (paid) cs.primary else onContainer.copy(alpha = 0.14f),
+                    content = if (paid) cs.onPrimary else onContainer,
+                )
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            Text(
+                text = pkg.name,
+                style = MaterialTheme.typography.headlineSmall,
+                color = onContainer,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = pkg.description ?: "No description available.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = onContainer.copy(alpha = 0.78f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            if (pkg.capabilities.isNotEmpty() || pkg.author != null) {
+                Spacer(Modifier.height(14.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     pkg.capabilities.take(2).forEach { cap ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF333344))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                cap,
-                                color = Color(0xFFD0D0E0),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
+                        Pill(cap, onContainer.copy(alpha = 0.10f), onContainer.copy(alpha = 0.85f))
+                    }
+                    pkg.author?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = onContainer.copy(alpha = 0.6f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
-
-                // Price tag
-                Text(
-                    text = if (pkg.priceStatus == "paid") "$9.99" else "FREE",
-                    color = if (pkg.priceStatus == "paid") Color(0xFF6C47FF) else Color(0xFF44C088),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Black
-                )
             }
         }
     }

@@ -15,6 +15,8 @@ export async function GET() {
     description: p.description,
     author: p.author,
     version: p.version,
+    kind: p.kind,
+    capabilities: p.capabilities,
     price: priceById.get(p.id) || null
   }));
 

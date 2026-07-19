@@ -1,37 +1,29 @@
 package main
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import components.HeroSection
 import components.PackageBentoCard
 import models.PackageSummary
 import network.fetchRegistryList
-
-val DarkThemeColors = darkColorScheme(
-    primary = Color(0xFF6C47FF),
-    background = Color(0xFF05050A),
-    surface = Color(0xFF151520),
-    onPrimary = Color.White,
-    onBackground = Color.White,
-    onSurface = Color.White
-)
+import theme.AzphaltExpressiveTheme
 
 @Composable
 fun StorefrontApp() {
-    MaterialTheme(colorScheme = DarkThemeColors) {
+    AzphaltExpressiveTheme {
         var packages by remember { mutableStateOf<List<PackageSummary>>(emptyList()) }
+        var filter by remember { mutableStateOf(0) } // 0 = All, 1 = Free, 2 = Paid
 
         LaunchedEffect(Unit) {
             try {
@@ -41,34 +33,41 @@ fun StorefrontApp() {
             }
         }
 
-        // Main Storefront Layout with deep space gradient
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(Color(0xFF12121C), Color(0xFF05050A)),
-                        center = Offset(500f, -200f),
-                        radius = 2000f
-                    )
-                )
-        ) {
-            // A SINGLE vertical scroll container. The previous structure nested the package
-            // LazyVerticalGrid inside a LazyColumn item, which measures the grid with an infinite
-            // maximum height — Compose throws IllegalStateException at runtime and the whole app
-            // renders blank. Here the grid IS the scroller, and the hero is a full-width header via
-            // a spanning item.
+        val shown = when (filter) {
+            1 -> packages.filter { it.priceStatus != "paid" && it.price == null }
+            2 -> packages.filter { it.priceStatus == "paid" || it.price != null }
+            else -> packages
+        }
+
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            floatingActionButton = {
+                ExtendedFloatingActionButton(
+                    onClick = { println("publish") },
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    contentColor = MaterialTheme.colorScheme.onTertiary,
+                ) {
+                    Text("Publish  +", fontWeight = FontWeight.Bold)
+                }
+            },
+        ) { padding ->
+            // A SINGLE scroll container (a nested LazyVerticalGrid-in-LazyColumn crashes Compose).
+            // The hero is a full-width spanning header row above the adaptive card grid.
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 340.dp),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(32.dp),
-                horizontalArrangement = Arrangement.spacedBy(32.dp),
-                verticalArrangement = Arrangement.spacedBy(32.dp)
+                columns = GridCells.Adaptive(minSize = 320.dp),
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 96.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    HeroSection()
+                    HeroSection(
+                        total = packages.size,
+                        selectedFilter = filter,
+                        onFilter = { filter = it },
+                    )
                 }
-                items(packages) { pkg ->
+                items(shown) { pkg ->
                     PackageBentoCard(pkg)
                 }
             }
