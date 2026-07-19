@@ -1,0 +1,73 @@
+name: Build & Deploy Storefront to Vercel
+
+# The "proper" pipeline: build the Kotlin/Wasm UI bundle with Gradle (GitHub
+# Actions has a JDK; Vercel's build image does not), then build the Next app and
+# deploy the prebuilt output to Vercel with the API token. This lets the WASM be
+# built in CI instead of committed to the repo.
+#
+# Manual by default so it doesn't duel with Vercel's own Git integration. To make
+# this the sole deploy path, disable the Vercel project's Git auto-deploys.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-storefront
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java (for the Kotlin/Wasm Gradle build)
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '9.15.0'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Build Kotlin/Wasm bundle (emits into apps/storefront/public)
+        working-directory: apps/storefront-cmp
+        run: ./gradlew wasmJsBrowserDistribution --no-daemon --stacktrace
+
+      - name: Verify the WASM loader was produced
+        run: |
+          test -f apps/storefront/public/storefront-cmp.js || { echo "storefront-cmp.js was not emitted"; exit 1; }
+          ls -la apps/storefront/public/*.wasm apps/storefront/public/storefront-cmp.js
+
+      - name: Install workspace deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve Vercel org & project ids
+        run: |
+          set -uo pipefail
+          API=https://api.vercel.com
+          auth=(-H "Authorization: Bearer $VERCEL_TOKEN")
+          teamId=$(curl -s "${auth[@]}" "$API/v2/teams" | jq -r '.teams[0].id // empty')
+          tq=""; [ -n "$teamId" ] && tq="&teamId=$teamId"
+          pid=$(curl -s "${auth[@]}" "$API/v9/projects?limit=100$tq" | jq -r '.projects[] | select(.name|test("storefront|azphalt";"i")) | .id' | head -1)
+          if [ -z "$pid" ]; then echo "Could not resolve Vercel project id"; exit 1; fi
+          echo "VERCEL_ORG_ID=$teamId" >> "$GITHUB_ENV"
+          echo "VERCEL_PROJECT_ID=$pid" >> "$GITHUB_ENV"
+          echo "Resolved org=$teamId project=$pid"
+
+      - name: Vercel pull / build / deploy (prebuilt, production)
+        run: |
+          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+          url=$(npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "Deployed: $url"
+          echo "### Deployed: $url" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,55 @@
+name: Vercel Build Logs (diagnostic)
+
+# Manually-triggered diagnostic: pulls the latest (or a named) Vercel deployment
+# for the storefront project and prints its build logs, so a failed build's real
+# error is visible in the Actions log. Read-only — it never deploys.
+on:
+  workflow_dispatch:
+    inputs:
+      deployment:
+        description: "Deployment id or url (blank = latest for the storefront project)"
+        required: false
+
+jobs:
+  logs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Vercel deployment build logs
+        env:
+          TOKEN: ${{ secrets.VERCEL_API_KEY }}
+          DEP_INPUT: ${{ inputs.deployment }}
+        run: |
+          set -uo pipefail
+          API=https://api.vercel.com
+          auth=(-H "Authorization: Bearer $TOKEN")
+
+          teamId=$(curl -s "${auth[@]}" "$API/v2/teams" | jq -r '.teams[0].id // empty')
+          tq=""; [ -n "$teamId" ] && tq="&teamId=$teamId"
+          echo "team: ${teamId:-<personal account>}"
+
+          projs=$(curl -s "${auth[@]}" "$API/v9/projects?limit=100$tq")
+          pid=$(echo "$projs" | jq -r '.projects[] | select(.name|test("storefront|azphalt";"i")) | .id' | head -1)
+          pname=$(echo "$projs" | jq -r --arg id "$pid" '.projects[] | select(.id==$id) | .name')
+          if [ -z "$pid" ]; then
+            echo "Could not find a storefront/azphalt project. Projects seen:"
+            echo "$projs" | jq -r '.projects[]?.name'
+            exit 1
+          fi
+          echo "project: $pname ($pid)"
+
+          if [ -n "$DEP_INPUT" ]; then
+            did="$DEP_INPUT"
+          else
+            deps=$(curl -s "${auth[@]}" "$API/v6/deployments?projectId=$pid&limit=1$tq")
+            did=$(echo "$deps" | jq -r '.deployments[0].uid // empty')
+            echo "state:  $(echo "$deps" | jq -r '.deployments[0].state // .deployments[0].readyState // "?"')"
+            echo "url:    https://$(echo "$deps" | jq -r '.deployments[0].url // "?"')"
+            echo "commit: $(echo "$deps" | jq -r '.deployments[0].meta.githubCommitSha // "?"' | cut -c1-7)"
+          fi
+          echo "deployment: $did"
+          echo "=================== BUILD LOGS ==================="
+          logs=$(curl -s "${auth[@]}" "$API/v3/deployments/$did/events?builds=1&limit=1000$tq")
+          out=$(echo "$logs" | jq -r '.[]? | (.payload.text // .text // empty)' 2>/dev/null || true)
+          if [ -n "$out" ]; then echo "$out"; else echo "(no parsed text — raw payload:)"; echo "$logs" | head -c 4000; fi
+          echo ""
+          echo "================================================="
