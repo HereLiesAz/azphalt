@@ -5,9 +5,18 @@ name: Build & Deploy Storefront to Vercel
 # deploy the prebuilt output to Vercel with the API token. This lets the WASM be
 # built in CI instead of committed to the repo.
 #
-# Manual by default so it doesn't duel with Vercel's own Git integration. To make
-# this the sole deploy path, disable the Vercel project's Git auto-deploys.
+# The sole deploy path: Vercel's own Git auto-deploy is disabled via
+# apps/storefront/vercel.json (git.deploymentEnabled.main=false), because Vercel's
+# build image has no JDK to build the Kotlin/Wasm bundle. This runs on every push
+# to main (and on demand) — Actions has a JDK, so it builds the WASM here.
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/storefront/**'
+      - 'apps/storefront-cmp/**'
+      - 'packages/**'
+      - '.github/workflows/deploy-storefront.yml'
   workflow_dispatch:
 
 concurrency:
