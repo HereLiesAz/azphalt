@@ -57,6 +57,9 @@ export const fail = (id: string, title: string, detail: string): CheckResult => 
  * Compat gate, re-exported under the conformance package's historical name. The implementation moved to
  * `@azphalt/azp` as `compatSatisfies`; this alias keeps the conformance surface (`companion-checks`,
  * `video-audio-checks`, the `index` re-export, and the test hosts) working after that rename.
+ *
+ * @deprecated Use `compatSatisfies` from `@azphalt/azp`. TODO: migrate the conformance consumers and the
+ * `index` re-export to `compatSatisfies`, then drop this alias.
  */
 export const satisfiesCompat = compatSatisfies;
 
