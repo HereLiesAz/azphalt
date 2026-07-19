@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app`. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp`. |
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
@@ -259,6 +259,9 @@ For a `kind: "app"` **companion app** (an Android app or PWA a host launches to 
 - `handoffs[]` — the functions the companion offers, each with an `id`, an `action` (the host hook), a declared `input` / `output` (azphalt **assets** and/or structured **params**), and a per-platform `transport` (Android `Intent` + result, or PWA share-target + `postMessage` return).
 
 The moat holds because azphalt grants the companion nothing — the OS governs its permissions, the host never runs its code and **validates** the returned assets/params before use, and the user consents before each handoff. The full contract (transports, return semantics, security, discovery) is normative in **companion-app.md**.
+
+## `mcp`
+For a `kind: "mcp"` **MCP server** (a server a host's MCP client connects to), the manifest carries an `mcp` block instead of `assets`/`entry`/`capabilities`/`app`. Like `app`, it is a *header*: it declares how to reach the server (on-device `local` — a portable `wasi` module and/or a per-platform native launch — and/or a `remote` http/sse url), the `inputs` the host prompts for at connect time (`${input:…}`, never stored), and a descriptive `offers` of its tools/resources/prompts. It grants **no** azphalt capabilities and ships **no** `/code` sandbox payload; the host's MCP client runs/connects it under user consent, in the OS's / a WASI runtime's own sandbox. Secrets are never bundled — a credential-shaped `env`/`headers` value MUST be an `${input:…}` reference, enforced at verify time. The full contract (transports, host selection order, the two sandboxes, verification, discovery) is normative in **mcp-server.md**.
 
 ## Example
 ~~~

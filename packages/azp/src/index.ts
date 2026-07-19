@@ -7,6 +7,7 @@
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { createHash, createPublicKey, verify as cryptoVerify } from "node:crypto";
 import type { Manifest } from "@azphalt/azdk";
+import { validateMcpManifest } from "./mcp.js";
 
 /**
  * Fixed archive timestamp for reproducible output. Built from LOCAL fields on purpose: fflate
@@ -150,6 +151,11 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     }
   }
 
+  // Kind-specific structural rules. Only `kind:"mcp"` has any today; every other kind is unaffected.
+  if (manifest.kind === "mcp") {
+    errors.push(...validateMcpManifest(manifest));
+  }
+
   // Signature (optional): validate an Ed25519 `signature.json` over the stored `manifest.json` bytes.
   const sigRaw = payload["signature.json"];
   if (sigRaw) {
@@ -188,3 +194,4 @@ export { verifyTrust, countersign, trustStoreFromKeys } from "./trust.js";
 export type { TrustStore, TrustedKey, TrustResult, CountersignOptions } from "./trust.js";
 export { parseCompat, compatSatisfies } from "./compat.js";
 export type { Compat, Comparator } from "./compat.js";
+export { validateMcpManifest } from "./mcp.js";

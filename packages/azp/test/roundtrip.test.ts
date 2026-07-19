@@ -133,6 +133,56 @@ describe("azp", () => {
     expect(verifyAzp(azp).ok).toBe(true);
   });
 
+  it("round-trips a kind:\"mcp\" server package (bundled wasi module, verifies)", () => {
+    const wasm = new Uint8Array([0x00, 0x61, 0x73, 0x6d, 1, 0, 0, 0]); // WASM magic + version
+    const mcp = {
+      inputs: [{ id: "root", type: "promptString" as const, description: "Root dir" }],
+      servers: [
+        {
+          id: "filesystem",
+          local: {
+            wasi: { module: "server/fs.wasm", args: ["${input:root}"], grants: ["fs:read", "fs:write"] },
+            platforms: { desktop: { command: "npx", args: ["-y", "@modelcontextprotocol/server-filesystem", "${input:root}"] } },
+          },
+          remote: { type: "http" as const, url: "https://mcp.acme.com/fs" },
+        },
+      ],
+      offers: { tools: ["read_file", "write_file"], resources: true, prompts: false },
+    };
+    const { azp } = writeAzp({
+      manifest: { ...base, id: "com.acme.fs-mcp", name: "Filesystem MCP", kind: "mcp", mcp },
+      payload: { "server/fs.wasm": wasm },
+      license,
+    });
+
+    const back = readAzp(azp).manifest;
+    expect(back.kind).toBe("mcp");
+    expect(back.mcp?.servers[0].local?.wasi?.module).toBe("server/fs.wasm");
+    expect(back.mcp?.servers[0].remote?.url).toBe("https://mcp.acme.com/fs");
+    expect(back.mcp?.offers?.tools).toContain("read_file");
+    expect(verifyAzp(azp).ok).toBe(true);
+  });
+
+  it("rejects a kind:\"mcp\" package that hardcodes a secret", () => {
+    const mcp = {
+      servers: [
+        {
+          id: "svc",
+          remote: { type: "http" as const, url: "https://mcp.acme.com", headers: { Authorization: "Bearer sk-live-abc" } },
+        },
+      ],
+    };
+    const { azp } = writeAzp({
+      manifest: { ...base, id: "com.acme.leaky-mcp", name: "Leaky", kind: "mcp", mcp },
+      payload: {},
+      license,
+    });
+
+    const result = verifyAzp(azp);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("literal secret"))).toBe(true);
+  });
+
   it("flags a digest mismatch when the payload is tampered", () => {
     const { azp } = writeAzp({
       manifest: { ...base, id: "com.hereliesaz.x" },
