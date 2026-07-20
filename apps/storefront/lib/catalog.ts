@@ -39,6 +39,8 @@ import {
   type PriceBreakdown,
   type Listing,
   type RegistryStore,
+  type Report,
+  type ReportReason,
   type SellerAccount,
   type SellerAccountStore,
   type SubscriptionInterval,
@@ -938,6 +940,36 @@ export async function listPurchases(subject: string): Promise<Purchase[]> {
     issuedAt: r.issuedAt,
     token: encodeToken(r.token),
   }));
+}
+
+/**
+ * File an abuse/quality report against a package (marketplace-integrity § 2). A web report is
+ * **untrusted** — it queues for review but never trips the auto-quarantine threshold on its own.
+ * Returns whether this report tipped a version into quarantine (only possible via trusted reports).
+ */
+export async function fileReport(input: {
+  packageId: string;
+  version?: string;
+  reason: ReportReason;
+  detail?: string;
+}): Promise<{ quarantined: boolean }> {
+  const { registry } = await getCatalog();
+  const result = await registry.report({ ...input, trusted: false });
+  return { quarantined: result.quarantined };
+}
+
+/**
+ * Every report across the catalog, newest-first — the moderation queue. Aggregated by walking known
+ * package ids (the reference store has no cross-package report index; a production store would). Like
+ * the rest of this reference storefront it has **no moderator authentication** — a real deployment
+ * gates this behind a moderator session (the spec's `GET /reports` is authenticated).
+ */
+export async function listAllReports(): Promise<Report[]> {
+  await getCatalog();
+  const ids = await store.allPackageIds();
+  // Fetch every package's reports concurrently rather than one-at-a-time.
+  const perPackage = await Promise.all(ids.map((id) => registry.reports(id)));
+  return perPackage.flat().sort((a, b) => (a.reportedAt < b.reportedAt ? 1 : a.reportedAt > b.reportedAt ? -1 : 0));
 }
 
 /** The originating input for a **stub** checkout session (dev fulfilment). Undefined for the Stripe path. */

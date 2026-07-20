@@ -1,22 +1,22 @@
 /**
- * POST /api/reports — file an abuse/quality report against a package (the moderation lane).
+ * The moderation lane (`spec/marketplace-integrity.md § 2`).
  *
- * Body: `{ packageId: string, version?: string, reason: ReportReason, detail?: string }`. The report
- * is stored and, per `spec/marketplace-integrity.md § 2`, enough **trusted** reports auto-quarantine a
- * version. A public web report is **untrusted** — it queues for review but never trips the automatic
- * threshold on its own.
+ * - `POST /api/reports` — file an abuse/quality report `{ packageId, version?, reason, detail? }`. A
+ *   public web report is **untrusted**: it queues for review but never trips the auto-quarantine
+ *   threshold on its own.
+ * - `GET /api/reports` — the moderation queue: every report, newest-first. Like the rest of this
+ *   reference storefront it has **no moderator authentication**; a production deploy gates it behind a
+ *   moderator session (the spec's `GET /reports` is authenticated).
  */
 import { NextResponse } from "next/server";
 import { RegistryError, type ReportReason } from "@azphalt/registry";
-import { getCatalog } from "../../../lib/catalog";
+import { fileReport, listAllReports } from "../../../lib/catalog";
 
 export const dynamic = "force-dynamic";
 
 const REASONS: ReportReason[] = ["malware", "clone", "deceptive", "secret-leak", "broken", "other"];
 
 export async function POST(req: Request) {
-  const { registry } = await getCatalog();
-
   let body: { packageId?: unknown; version?: unknown; reason?: unknown; detail?: unknown };
   try {
     body = (await req.json()) as typeof body;
@@ -34,10 +34,20 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await registry.report({ packageId, version, reason, detail, trusted: false });
-    return NextResponse.json({ ok: true, quarantined: result.quarantined }, { status: 201 });
+    const { quarantined } = await fileReport({ packageId, version, reason, detail });
+    return NextResponse.json({ ok: true, quarantined }, { status: 201 });
   } catch (e) {
     const message = e instanceof RegistryError ? e.message : (e as Error).message;
     return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function GET() {
+  try {
+    const reports = await listAllReports();
+    return NextResponse.json({ reports }, { status: 200 });
+  } catch (e) {
+    console.error("Failed to list reports:", e);
+    return NextResponse.json({ error: "internal error listing reports" }, { status: 500 });
   }
 }
