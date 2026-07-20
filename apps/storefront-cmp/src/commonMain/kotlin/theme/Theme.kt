@@ -88,13 +88,18 @@ private val AzphaltType = Typography(
     labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight(700), letterSpacing = 0.5.sp),
 )
 
-/** Large, friendly, expressive shapes. */
+/**
+ * Sharp, rectangular Metro tiles — AzNavRail's shape language. The rail draws SQUARE / RECTANGLE
+ * buttons with sharp corners and outlines rather than soft, friendly rounding, so every Material
+ * surface that reads its shape from the theme (cards, chips, text fields, dialogs) squares off to
+ * match. A hair of rounding on the smallest sizes keeps hairline outlines from fraying at the corner.
+ */
 private val AzphaltShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(14.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp),
-    extraLarge = RoundedCornerShape(40.dp),
+    extraSmall = RoundedCornerShape(0.dp),
+    small = RoundedCornerShape(0.dp),
+    medium = RoundedCornerShape(0.dp),
+    large = RoundedCornerShape(0.dp),
+    extraLarge = RoundedCornerShape(0.dp),
 )
 
 @Composable
