@@ -147,7 +147,8 @@ export class StripePaymentProvider implements PaymentProvider {
     if (input.interval) {
       // Subscription: a recurring price, and the Connect split expressed as a *percent* (subscription
       // mode has no per-invoice application_fee_amount — the fee applies to every renewal invoice).
-      const feePercent = ((input.platformFee.amountCents / input.amount.amountCents) * 100).toFixed(4);
+      // Stripe caps application_fee_percent at 2 decimal places — more is a validation error.
+      const feePercent = ((input.platformFee.amountCents / input.amount.amountCents) * 100).toFixed(2);
       fields.mode = "subscription";
       fields["line_items[0][price_data][recurring][interval]"] = input.interval;
       fields["subscription_data[application_fee_percent]"] = feePercent;
