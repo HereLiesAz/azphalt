@@ -13,12 +13,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "bundle": "next build && node scripts/bundle.mjs",
+    "seed": "tsx scripts/seed.ts",
     "clean": "rm -rf .next dist-server"
   },
   "dependencies": {
     "@azphalt/azdk": "workspace:*",
     "@azphalt/azp": "workspace:*",
     "@azphalt/registry": "workspace:*",
+    "@azphalt/registry-store-vercel": "workspace:*",
     "@stripe/stripe-js": "^9.10.0",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.24.0",
@@ -33,6 +35,7 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@types/tar-stream": "^3.1.4",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
   }

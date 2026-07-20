@@ -24,9 +24,12 @@ export type { ScanReport, ScanCheck, ScanVerdict, ScanOptions } from "./sweep.js
 export {
   Marketplace,
   StubPaymentProvider,
+  InMemoryPaymentSessionStore,
   DEFAULT_TERMS,
   quote,
   type PaymentProvider,
+  type PaymentSessionStore,
+  type StubPaymentProviderOptions,
   type CheckoutInput,
   type CheckoutSession,
   type MarketplaceOptions,
@@ -40,6 +43,11 @@ export {
   type EntitlementToken,
   type EntitlementResult,
 } from "./entitlement.js";
+export {
+  InMemoryEntitlementStore,
+  type EntitlementStore,
+  type IssuedEntitlement,
+} from "./entitlement-store.js";
 export {
   InMemoryAuthorizer,
   EntitlementAuthorizer,

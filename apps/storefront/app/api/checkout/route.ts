@@ -12,7 +12,7 @@
  */
 import { NextResponse } from "next/server";
 import { RegistryError } from "@azphalt/registry";
-import { startCheckout } from "../../../lib/catalog";
+import { paymentsMode, startCheckout } from "../../../lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -35,16 +35,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ stub: true, error: "packageId is required" }, { status: 400 });
   }
 
+  const stub = paymentsMode === "stub";
   try {
-    // Via startCheckout (not market.checkout) so the session is remembered against its package and
-    // buyer — POST /api/checkout/complete mints the entitlement from that, never from its caller.
+    // Via startCheckout (not market.checkout) so the provider records the session against its package
+    // and buyer — fulfilment mints the entitlement from that stored input, never from its caller.
     const { session, breakdown, listing } = await startCheckout(packageId, buyerId);
     return NextResponse.json(
       {
-        stub: true,
-        message:
-          "Stubbed checkout — the dev payment provider moves no real money. Fulfilment happens when a " +
-          "real provider confirms the session.",
+        stub,
+        // On the real path the client redirects to `session.url` (Stripe hosted checkout), returning to
+        // /checkout/success?session_id=… where the entitlement is retrieved. On the stub path no money
+        // moves; fulfilment is the dev-only /api/checkout/complete route.
+        message: stub
+          ? "Stubbed checkout — the dev payment provider moves no real money. Fulfilment is the dev-only /api/checkout/complete route."
+          : "Redirect the buyer to session.url to complete payment; they return to /checkout/success.",
         session,
         breakdown,
         listing,
@@ -53,8 +57,8 @@ export async function POST(req: Request) {
     );
   } catch (e) {
     if (e instanceof RegistryError) {
-      return NextResponse.json({ stub: true, error: e.message }, { status: 400 });
+      return NextResponse.json({ stub, error: e.message }, { status: 400 });
     }
-    return NextResponse.json({ stub: true, error: (e as Error).message }, { status: 400 });
+    return NextResponse.json({ stub, error: (e as Error).message }, { status: 400 });
   }
 }

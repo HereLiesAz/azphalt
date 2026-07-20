@@ -34,6 +34,17 @@ export class NpmStore implements RegistryStore {
   // Local overlay for mock packages during tests
   private local = new InMemoryStore();
 
+  // Ids served purely from the local overlay (seeded example packages). For these, the npm proxy is
+  // bypassed entirely — including `registry.publish`'s pre-publish duplicate check, which would
+  // otherwise fire one npm lookup per seed for ids that were never on npm (seeding N packages ⇒ N
+  // network round-trips). Reserving up front, before the first publish, keeps seeding offline and fast.
+  private readonly localIds = new Set<string>();
+
+  /** Mark an id as local-only, so every read short-circuits the npm proxy. */
+  reserveLocal(id: string): void {
+    this.localIds.add(id);
+  }
+
   async allPackageIds(): Promise<string[]> {
     const remote = KNOWN_PACKAGES;
     const localIds = await this.local.allPackageIds();
@@ -43,6 +54,9 @@ export class NpmStore implements RegistryStore {
   async getVersions(id: string): Promise<PackageVersion[]> {
     const localVersions = await this.local.getVersions(id);
     if (localVersions.length > 0) return localVersions;
+
+    // A reserved local id is never on npm — don't probe for it.
+    if (this.localIds.has(id)) return [];
 
     if (this.versionsCache.has(id)) {
       return this.versionsCache.get(id)!;
@@ -122,6 +136,16 @@ export class NpmStore implements RegistryStore {
   }
 
   async getVersion(id: string, version: string): Promise<PackageVersion | undefined> {
+    // Local overlay first (as getVersions does): a locally-published package must resolve without a
+    // network hop. This is also what keeps `registry.publish`'s duplicate-check off the network —
+    // otherwise seeding N local packages fires N npm lookups for ids that aren't on npm.
+    const localVersion = await this.local.getVersion(id, version);
+    if (localVersion) return localVersion;
+
+    // A reserved local id is never on npm — don't probe for it (this is the path publish's
+    // duplicate-check takes for a not-yet-stored seed).
+    if (this.localIds.has(id)) return undefined;
+
     const cached = this.versionCache.get(`${id}@${version}`);
     if (cached) return cached;
 
@@ -151,6 +175,9 @@ export class NpmStore implements RegistryStore {
   async getBytes(id: string, version: string): Promise<Uint8Array | undefined> {
     const localBytes = await this.local.getBytes(id, version);
     if (localBytes) return localBytes;
+
+    // A reserved local id is served only from the overlay — never fetch a tarball for it.
+    if (this.localIds.has(id)) return undefined;
 
     // SSRF guard — the id/version are interpolated into the tarball URL below.
     if (!SAFE_PKG_ID.test(id) || !SAFE_VERSION.test(version)) return undefined;
@@ -220,6 +247,8 @@ export class NpmStore implements RegistryStore {
   }
 
   async putVersion(pkg: PackageVersion, bytes: Uint8Array): Promise<void> {
+    // A locally-published package is local-only henceforth — reads must never fall through to npm.
+    this.localIds.add(pkg.id);
     await this.local.putVersion(pkg, bytes);
   }
 

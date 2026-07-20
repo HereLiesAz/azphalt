@@ -5,13 +5,32 @@ The **azphalt consignment storefront** — a Next.js (App Router) app that sits 
 - **The registry lane** — free, open distribution. Browse, search, and download `.azp` packages. No payment rails, no fee. This is the layer other apps adopt, and it is self-hostable and neutral by construction.
 - **The consignment lane** — the paid overlay, and the _only_ place a fee exists. A creator consigns a package; the storefront handles checkout and shows the honest money split (gross → processor fee, platform fee → seller net). The fee never leaks into the registry.
 
-## Payments are stubbed (dev only)
+## Payments: stub by default, real Stripe Connect when configured
 
-This storefront wires the marketplace to `@azphalt/registry`'s bundled **`StubPaymentProvider`**, which records checkout sessions in memory and **never contacts a payment processor, holds funds, or moves money**. Every "purchase" is simulated and clearly labelled as such in the UI and the API responses (`"stub": true`). A production deployment swaps in a marketplace-capable, split-payout merchant-of-record. **Do not read anything here as a real payment.**
+Out of the box the storefront wires the marketplace to `@azphalt/registry`'s bundled
+**`StubPaymentProvider`**, which records checkout sessions but **never contacts a payment processor,
+holds funds, or moves money** — every "purchase" is simulated and labelled as such (`"stub": true`).
+Set `AZPHALT_STRIPE_SECRET_KEY` (plus the vars below) and it switches to the real, split-payout
+**Stripe Connect** provider (`@azphalt/registry`'s `StripePaymentProvider`): the buyer is charged the
+gross, the platform fee is retained as an `application_fee_amount`, and the remainder is transferred
+to the seller's connected account. The **real fulfilment** path — a signature-verified
+`checkout.session.completed` webhook that mints and **persists** a buy-once entitlement — is at
+`POST /api/webhooks/stripe`; the buyer retrieves the resulting license from `/checkout/success`.
 
-## No database, no network
+## Storage: ephemeral by default, durable (Neon + Blob) when configured
 
-The catalog lives entirely in an in-memory registry ([`lib/catalog.ts`](lib/catalog.ts)), seeded once at module load with a handful of real example `.azp` packages built via `@azphalt/azp`'s `writeAzp` — genuine registry data published through the same verify-and-index path a real upload takes. There are no external fonts, CDNs, analytics, or network calls at build or runtime.
+The catalog defaults to a process-local store ([`lib/catalog.ts`](lib/catalog.ts)), seeded once at
+module load with real example `.azp` packages built via `@azphalt/azp`'s `writeAzp` — genuine registry
+data published through the same verify-and-index path a real upload takes, needing no database or
+credentials. Set **both** `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN` and it switches to the durable
+[`@azphalt/registry-store-vercel`](../../packages/registry-store-vercel) backend (Neon Postgres +
+private Vercel Blob), so the catalog, listings, checkout sessions, and issued entitlements survive
+restarts and are shared across serverless instances. Seed a durable store out-of-band (seeding at
+module load would have every cold instance re-`publish` and throw):
+
+```sh
+DATABASE_URL=… BLOB_READ_WRITE_TOKEN=… pnpm --filter @azphalt/storefront seed
+```
 
 ## Pages & API
 
@@ -24,8 +43,10 @@ The catalog lives entirely in an in-memory registry ([`lib/catalog.ts`](lib/cata
 | `GET /api/download/[id]` | Serves the `.azp` bytes (`application/zip`), counting a download. Free packages are open; a **consigned** package is gated on a Bearer entitlement — `401` without a recognized token, `402` for a token that licenses something else. |
 | `GET /api/preview/[id]` | Serves a package's static store-card image (`manifest.preview.image`), no download counted. |
 | `POST /api/publish` | Publishes raw `.azp` bytes to the registry; returns the summary (or `400` with verification errors). |
-| `POST /api/checkout` | `{ packageId, buyerId }` → starts a (stubbed) consignment checkout; returns the session + price breakdown. |
+| `POST /api/checkout` | `{ packageId, buyerId }` → starts a consignment checkout; returns the session + price breakdown. On the real path the client redirects to `session.url`. |
 | `POST /api/checkout/complete` | **Dev only** (`404` unless opted in) — `{ sessionId }` → completes the stub session and returns a signed buy-once entitlement to use as `Authorization: Bearer <token>`. |
+| `GET /api/checkout/session/[id]` | The buyer's fulfilment retrieval: returns the entitlement token already issued for a settled session (`200`), or `202` while fulfilment is pending. Mints nothing. |
+| `POST /api/webhooks/stripe` | Real fulfilment: on a signature-verified `checkout.session.completed`, mints and persists the buyer's entitlement (idempotent on the session). |
 
 ## The paid lane's gate
 
@@ -38,9 +59,20 @@ the two can't drift apart. Two env vars control it:
 | `AZPHALT_SIGNING_KEY` | PEM Ed25519 private key the storefront signs entitlements with, and trusts on the way back in. **Unset (the default) ⇒ every paid download is `401`** and issuance is off — so `next dev` and the tests need no secrets. Generate with `openssl genpkey -algorithm ed25519`. |
 | `AZPHALT_ALLOW_STUB_FULFILMENT` | `1` exposes `POST /api/checkout/complete`. Anything else ⇒ `404`. |
 
-To exercise the paid lane locally: set both, `POST /api/checkout` to open a session, `POST
-/api/checkout/complete` with its `sessionId` to get a token, then send that token to
-`GET /api/download/[id]`.
+### Real payments & storage (all optional; unset ⇒ stub + ephemeral)
+
+| Variable | Effect |
+| --- | --- |
+| `AZPHALT_STRIPE_SECRET_KEY` | Switches checkout to the real Stripe Connect provider. Absent ⇒ the stub. |
+| `AZPHALT_STRIPE_WEBHOOK_SECRET` | Verifies `POST /api/webhooks/stripe` signatures. Required for real fulfilment. |
+| `AZPHALT_STRIPE_SUCCESS_URL` / `AZPHALT_STRIPE_CANCEL_URL` | Where Stripe returns the buyer. Point success at `…/checkout/success?session_id={CHECKOUT_SESSION_ID}`. |
+| `AZPHALT_STRIPE_CONNECTED_ACCOUNTS` | JSON `{"<sellerId>":"acct_…"}` mapping each marketplace seller to their Stripe connected account (the payout destination). A `sellerId` with no mapping is a hard error, not a misroute. |
+| `DATABASE_URL` + `BLOB_READ_WRITE_TOKEN` | **Both** present ⇒ the durable Neon + Blob store; otherwise the process-local store. |
+
+To exercise the **stub** paid lane locally: set `AZPHALT_SIGNING_KEY` + `AZPHALT_ALLOW_STUB_FULFILMENT=1`,
+`POST /api/checkout` to open a session, `POST /api/checkout/complete` with its `sessionId` to get a
+token, then send that token to `GET /api/download/[id]`. The **real** lane instead completes on Stripe
+and fulfils via the webhook; the buyer's token comes from `/checkout/success`.
 
 > **Stub fulfilment mints licenses for payments that never happened.** With
 > `AZPHALT_ALLOW_STUB_FULFILMENT=1`, anyone who can reach that route can license anything — the
