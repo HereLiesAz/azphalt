@@ -28,6 +28,7 @@ import {
   StubPaymentProvider,
   denyAllAuthorizer,
   issueEntitlement,
+  periodEnd,
   stripeConfigFromEnv,
   type CheckoutSession,
   type DownloadAuthorizer,
@@ -40,6 +41,7 @@ import {
   type RegistryStore,
   type SellerAccount,
   type SellerAccountStore,
+  type SubscriptionInterval,
 } from "@azphalt/registry";
 import type { Manifest } from "@azphalt/azdk";
 
@@ -100,6 +102,8 @@ interface Seed {
   listPriceCents?: number;
   /** The consigning creator's marketplace account id (only used when `listPriceCents` is set). */
   sellerId?: string;
+  /** When set (with `listPriceCents`), the listing is a **subscription** at that price per interval. */
+  listInterval?: SubscriptionInterval;
 }
 
 /**
@@ -337,6 +341,8 @@ const SEEDS: Seed[] = [
     ratings: [5, 4, 5, 5, 4, 4],
     listPriceCents: 1200,
     sellerId: "seller_studioaz",
+    // Consigned as a monthly subscription — fulfilment issues an expiring entitlement the gate honors.
+    listInterval: "month",
   },
   {
     // A free LUT pack — film emulation.
@@ -881,13 +887,23 @@ function encodeToken(token: EntitlementToken): string {
  * This never trusts a caller: the real Stripe path calls it only from a signature-verified
  * `checkout.session.completed` webhook, and the stub path only behind the dev opt-in.
  */
-export async function fulfil(sessionId: string, packageId: string, subject: string): Promise<string | null> {
+export async function fulfil(
+  sessionId: string,
+  packageId: string,
+  subject: string,
+  interval?: SubscriptionInterval,
+): Promise<string | null> {
   await getCatalog();
   const existing = await entitlements.getBySession(sessionId);
   if (existing) return encodeToken(existing.token);
   if (!signingKey) return null;
   const issuedAt = new Date().toISOString();
-  const token = issueEntitlement(signingKey, { kind: "perpetual", packageId, subject, issuedAt });
+  // A subscription grants an *expiring* entitlement for the current period (the download gate checks
+  // expiry via verifyEntitlement's `live`); a one-time sale grants a perpetual one.
+  const claims = interval
+    ? { kind: "subscription" as const, packageId, subject, issuedAt, expiresAt: periodEnd(issuedAt, interval) }
+    : { kind: "perpetual" as const, packageId, subject, issuedAt };
+  const token = issueEntitlement(signingKey, claims);
   await entitlements.put({ sessionId, packageId, subject, token, issuedAt });
   return encodeToken(token);
 }
@@ -927,12 +943,12 @@ export async function listPurchases(subject: string): Promise<Purchase[]> {
 /** The originating input for a **stub** checkout session (dev fulfilment). Undefined for the Stripe path. */
 export async function stubSessionInput(
   sessionId: string,
-): Promise<{ packageId: string; buyerId: string } | undefined> {
+): Promise<{ packageId: string; buyerId: string; interval?: SubscriptionInterval } | undefined> {
   if (!stub) return undefined;
   await getCatalog();
   const record = await sessions.get(sessionId);
   if (!record) return undefined;
-  return { packageId: record.input.packageId, buyerId: record.input.buyerId };
+  return { packageId: record.input.packageId, buyerId: record.input.buyerId, interval: record.input.interval };
 }
 
 /** Mark a stub session completed (dev fulfilment). A no-op when the real Stripe provider is active. */
@@ -992,7 +1008,12 @@ export async function seedCatalog(
 
     // Consign the packages flagged for sale onto the paid lane.
     if (s.listPriceCents != null && s.sellerId) {
-      await mkt.listForSale(s.manifest.id, s.sellerId, { amountCents: s.listPriceCents, currency: "USD" });
+      await mkt.listForSale(
+        s.manifest.id,
+        s.sellerId,
+        { amountCents: s.listPriceCents, currency: "USD" },
+        s.listInterval ? { interval: s.listInterval } : {},
+      );
     }
   }
 }

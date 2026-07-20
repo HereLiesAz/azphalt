@@ -36,9 +36,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  // Complete the simulated session, then mint (idempotently) and persist the entitlement.
+  // Complete the simulated session, then mint (idempotently) and persist the entitlement — an expiring
+  // one for a subscription (interval present), a perpetual one otherwise.
   await completeStubSession(sessionId);
-  const token = await fulfil(sessionId, input.packageId, input.buyerId);
+  const token = await fulfil(sessionId, input.packageId, input.buyerId, input.interval);
   if (!token) {
     return NextResponse.json(
       { error: "Storefront is not configured to issue entitlements (AZPHALT_SIGNING_KEY is missing)" },

@@ -44,6 +44,9 @@ export async function POST(req: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     const packageId = session.metadata?.packageId;
     const buyerId = session.metadata?.buyerId;
+    const interval = session.metadata?.interval === "month" || session.metadata?.interval === "year"
+      ? session.metadata.interval
+      : undefined;
 
     if (!packageId || !buyerId) {
       // A completed checkout with no azphalt metadata isn't ours to fulfil — ack so Stripe stops retrying.
@@ -51,7 +54,8 @@ export async function POST(req: Request) {
     }
 
     // Fulfil against the session id: mint once, persist, and let the buyer's return page read it back.
-    const token = await fulfil(session.id, packageId, buyerId);
+    // A subscription's first period is issued here; renewal (invoice.paid) re-issues — see the note below.
+    const token = await fulfil(session.id, packageId, buyerId, interval);
     if (!token) {
       // Signing is off (AZPHALT_SIGNING_KEY unset). 500 so Stripe retries once it's configured.
       return NextResponse.json(
