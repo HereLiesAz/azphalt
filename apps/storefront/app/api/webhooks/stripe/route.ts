@@ -11,7 +11,13 @@
  */
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { fulfil, refreshSellerAccount } from "../../../../lib/catalog";
+import { cancelSubscription, fulfil, recordSubscription, refreshSellerAccount, renewSubscription } from "../../../../lib/catalog";
+
+/** Coerce Stripe's `string | expandable-object | null` reference into a plain id, if present. */
+function idOf(ref: string | { id?: string } | null | undefined): string | undefined {
+  if (!ref) return undefined;
+  return typeof ref === "string" ? ref : ref.id;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +60,6 @@ export async function POST(req: Request) {
     }
 
     // Fulfil against the session id: mint once, persist, and let the buyer's return page read it back.
-    // A subscription's first period is issued here; renewal (invoice.paid) re-issues — see the note below.
     const token = await fulfil(session.id, packageId, buyerId, interval);
     if (!token) {
       // Signing is off (AZPHALT_SIGNING_KEY unset). 500 so Stripe retries once it's configured.
@@ -63,7 +68,31 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
+    // For a subscription, remember it so `invoice.paid` can renew access each period.
+    const subscriptionId = idOf(session.subscription);
+    if (interval && subscriptionId) {
+      await recordSubscription({ subscriptionId, packageId, subject: buyerId, interval });
+    }
     return NextResponse.json({ received: true, fulfilled: true });
+  }
+
+  if (event.type === "invoice.paid") {
+    // A subscription renewal (or the first invoice): issue a fresh period entitlement, idempotent on
+    // the invoice id. Unknown/cancelled subscriptions and issuance-off are quiet no-ops.
+    const invoice = event.data.object as Stripe.Invoice & { subscription?: string | { id?: string } | null };
+    const subscriptionId = idOf(invoice.subscription);
+    if (subscriptionId && invoice.id) {
+      const token = await renewSubscription(subscriptionId, invoice.id);
+      return NextResponse.json({ received: true, renewed: token != null });
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    // The subscription ended — stop renewing; the buyer's last entitlement expires on its own.
+    const sub = event.data.object as Stripe.Subscription;
+    if (sub.id) await cancelSubscription(sub.id);
+    return NextResponse.json({ received: true, cancelled: true });
   }
 
   if (event.type === "account.updated") {

@@ -20,6 +20,7 @@ import {
   InMemoryEntitlementStore,
   InMemoryPaymentSessionStore,
   InMemorySellerAccountStore,
+  InMemorySubscriptionStore,
   Marketplace,
   Registry,
   RegistryError,
@@ -44,6 +45,7 @@ import {
   type SellerAccount,
   type SellerAccountStore,
   type SubscriptionInterval,
+  type SubscriptionStore,
 } from "@azphalt/registry";
 import type { Manifest } from "@azphalt/azdk";
 
@@ -656,6 +658,8 @@ const sessions: PaymentSessionStore = vercel?.sessions ?? new InMemoryPaymentSes
 export const entitlements: EntitlementStore = vercel?.entitlements ?? new InMemoryEntitlementStore();
 /** Onboarded seller → Stripe connected-account mappings — durable, or process-local for dev/tests. */
 export const sellerAccounts: SellerAccountStore = vercel?.sellerAccounts ?? new InMemorySellerAccountStore();
+/** Active subscriptions (processor subscription id → grant), so a renewal invoice can re-issue access. */
+export const subscriptions: SubscriptionStore = vercel?.subscriptions ?? new InMemorySubscriptionStore();
 
 /**
  * The payment provider. `AZPHALT_STRIPE_SECRET_KEY` present ⇒ the real split-payout Stripe Connect
@@ -908,6 +912,41 @@ export async function fulfil(
   const token = issueEntitlement(signingKey, claims);
   await entitlements.put({ sessionId, packageId, subject, token, issuedAt });
   return encodeToken(token);
+}
+
+/* ─────────────────────────── Subscription renewal ─────────────────────────── */
+
+/**
+ * Remember an active subscription so a later renewal invoice can re-issue access. Called from the
+ * `checkout.session.completed` webhook for a subscription, once the first period is fulfilled.
+ */
+export async function recordSubscription(record: {
+  subscriptionId: string;
+  packageId: string;
+  subject: string;
+  interval: SubscriptionInterval;
+}): Promise<void> {
+  await getCatalog();
+  await subscriptions.put(record);
+}
+
+/**
+ * Renew a subscription's access: issue a **fresh** expiring entitlement for the new period, keyed by
+ * the renewal invoice id (idempotent — a re-delivered `invoice.paid` re-issues nothing). Returns the
+ * new Bearer token, `null` if issuance is off, or `undefined` if the subscription is unknown (already
+ * cancelled). The buyer picks up the new token via `/api/purchases` (their newest live license).
+ */
+export async function renewSubscription(subscriptionId: string, invoiceId: string): Promise<string | null | undefined> {
+  await getCatalog();
+  const record = await subscriptions.get(subscriptionId);
+  if (!record) return undefined;
+  return fulfil(invoiceId, record.packageId, record.subject, record.interval);
+}
+
+/** Drop a cancelled/ended subscription — future invoices won't renew it; the last entitlement expires. */
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  await getCatalog();
+  await subscriptions.delete(subscriptionId);
 }
 
 /** The Bearer token already issued for a settled checkout session, or `null` if none yet (e.g. webhook pending). */

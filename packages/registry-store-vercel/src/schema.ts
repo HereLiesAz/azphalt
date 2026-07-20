@@ -79,4 +79,10 @@ export async function migrate(sql: Sql): Promise<void> {
     record jsonb NOT NULL
   )`);
   await sql.query(`CREATE INDEX IF NOT EXISTS seller_accounts_account_idx ON seller_accounts (account_id)`);
+
+  // Active subscriptions, keyed by the processor subscription id — what a renewal invoice re-issues against.
+  await sql.query(`CREATE TABLE IF NOT EXISTS subscriptions (
+    subscription_id text PRIMARY KEY,
+    record jsonb NOT NULL
+  )`);
 }
