@@ -32,7 +32,36 @@ module load would have every cold instance re-`publish` and throw):
 DATABASE_URL=… BLOB_READ_WRITE_TOKEN=… pnpm --filter @azphalt/storefront seed
 ```
 
+## A conforming repository (the normative Repository API)
+
+Beyond its own UI-facing `/api/*` routes, the storefront **also serves the normative Repository API**
+(`spec/repository-api.md`) at its canonical paths, so `azphalt.store` is a repository any app can
+consume directly with [`@azphalt/repository-client`](../../packages/repository-client) — the same way a
+host talks to the reference [`@azphalt/repository-server`](../repository-server):
+
+```ts
+import { RepositoryClient } from "@azphalt/repository-client";
+const repo = new RepositoryClient({ url: "https://azphalt.store" });
+const { packages } = await repo.search({ q: "lut" });
+const bytes = await repo.download("com.foldlab.filmluts", "1.0.0"); // a free package
+```
+
+| Endpoint | What it does |
+| --- | --- |
+| `GET /.well-known/azphalt-repository.json` | The repository index: name, `supportedTypes` (from the live catalog), and — when signing is on — the Ed25519 `signingKeys` a host trusts to verify this store's entitlement tokens offline. |
+| `GET /packages` | Browse/search (`q`, `types`, `tags`, `app`, `capabilities`, `mediaDomains`, `sort`, `page`), paged, each summary carrying ranking/preview metadata and `priceStatus`. |
+| `GET /packages/{id}` | Full metadata + version history + the latest manifest. |
+| `GET /packages/{id}/versions/{version}/download` | The binary `.azp`. Free packages are open; a **consigned** one is gated on a Bearer entitlement — `401` without a token, `402` for a token licensing something else — the *same* authorizer the UI download route uses. |
+| `GET /revocations?since=` · `POST /updates` | The host-pollable revocation feed and batch update check. |
+
+This isn't a second implementation: the routes mount the reference server's transport-neutral
+`createRepositoryHandler` (`lib/repository.ts`) onto the storefront's own `registry` + `market` +
+`authorizer`, so the store and the spec **can't drift apart**. Next serves them via `beforeFiles`
+rewrites (`next.config.mjs`) onto the catch-all at `app/api/repository/[[...slug]]/route.ts`.
+
 ## Pages & API
+
+The storefront's own UI-facing routes (distinct from the normative Repository API above):
 
 | Route | What it does |
 | --- | --- |

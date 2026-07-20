@@ -120,6 +120,9 @@ importers:
       '@azphalt/registry-store-vercel':
         specifier: workspace:*
         version: link:../../packages/registry-store-vercel
+      '@azphalt/repository-server':
+        specifier: workspace:*
+        version: link:../repository-server
       '@stripe/stripe-js':
         specifier: ^9.10.0
         version: 9.10.0

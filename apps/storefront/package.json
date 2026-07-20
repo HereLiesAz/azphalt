@@ -21,6 +21,7 @@
     "@azphalt/azp": "workspace:*",
     "@azphalt/registry": "workspace:*",
     "@azphalt/registry-store-vercel": "workspace:*",
+    "@azphalt/repository-server": "workspace:*",
     "@stripe/stripe-js": "^9.10.0",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.24.0",

@@ -35,7 +35,7 @@ if (basePath) {
 
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@azphalt/registry", "@azphalt/azp", "@azphalt/azdk"],
+  transpilePackages: ["@azphalt/registry", "@azphalt/azp", "@azphalt/azdk", "@azphalt/repository-server"],
   // A self-contained server bundle, convenient for `node .next/standalone/.../server.js`.
   output: "standalone",
   // Deterministic standalone layout across machines (see `repoRoot` above).
@@ -44,6 +44,17 @@ const nextConfig = {
   ...(basePath ? { basePath } : {}),
   async rewrites() {
     return {
+      // The normative Repository API (spec/repository-api.md) at its canonical paths, so `azphalt.store`
+      // is a conforming repository any host can consume via `@azphalt/repository-client`. These run
+      // BEFORE the SPA fallback below, which would otherwise swallow them into the app shell. All map
+      // onto the shared handler at `/api/repository/*` (see `app/api/repository/[[...slug]]/route.ts`).
+      beforeFiles: [
+        { source: "/.well-known/azphalt-repository.json", destination: "/api/repository/.well-known/azphalt-repository.json" },
+        { source: "/packages", destination: "/api/repository/packages" },
+        { source: "/packages/:path*", destination: "/api/repository/packages/:path*" },
+        { source: "/revocations", destination: "/api/repository/revocations" },
+        { source: "/updates", destination: "/api/repository/updates" },
+      ],
       fallback: [
         {
           source: "/:path*",

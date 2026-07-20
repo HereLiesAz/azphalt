@@ -47,7 +47,7 @@ import {
   type SubscriptionInterval,
   type SubscriptionStore,
 } from "@azphalt/registry";
-import type { Manifest } from "@azphalt/azdk";
+import type { AssetType, Manifest, RepositoryIndex } from "@azphalt/azdk";
 
 
 
@@ -864,6 +864,33 @@ export async function priceStatus(id: string): Promise<"free" | "paid"> {
   await getCatalog();
   const listing = await market.getListing(id);
   return listing && listing.status === "active" ? "paid" : "free";
+}
+
+/**
+ * The `GET /.well-known/azphalt-repository.json` document a host reads on first contact. It advertises
+ * what the catalog serves (`supportedTypes`, derived from the live registry) and — when signing is
+ * configured — the Ed25519 public key(s) a host adds to its trust store so it can verify this store's
+ * buy-once entitlement tokens **offline** (spec `repository-api.md` § Trust bootstrap). Built from the
+ * seeded catalog, so it never claims types the store can't actually hand back.
+ */
+export async function buildRepositoryIndex(): Promise<RepositoryIndex> {
+  const { registry: reg } = await getCatalog();
+  const types = new Set<AssetType>();
+  for (const s of await reg.list({})) for (const t of s.assetTypes) types.add(t as AssetType);
+  const index: RepositoryIndex = {
+    name: "azphalt Store",
+    version: "0.1",
+    description:
+      "The azphalt consignment marketplace, served as a conforming Repository API — browse, search, " +
+      "and download portable .azp extensions from any host via @azphalt/repository-client.",
+    supportedTypes: [...types].sort(),
+  };
+  // Only advertise a signing key when issuance is actually on; otherwise a host would trust a key this
+  // store never signs with. Absent ⇒ the store serves only the free lane (paid downloads 401).
+  if (signingKey) {
+    index.signingKeys = [{ publicKey: publicKeyOf(signingKey), label: "azphalt store entitlement key" }];
+  }
+  return index;
 }
 
 /** Open a checkout session. The provider now records the session **and its input**, so fulfilment can
