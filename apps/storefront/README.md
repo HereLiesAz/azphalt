@@ -46,7 +46,9 @@ DATABASE_URL=… BLOB_READ_WRITE_TOKEN=… pnpm --filter @azphalt/storefront see
 | `POST /api/checkout` | `{ packageId, buyerId }` → starts a consignment checkout; returns the session + price breakdown. On the real path the client redirects to `session.url`. |
 | `POST /api/checkout/complete` | **Dev only** (`404` unless opted in) — `{ sessionId }` → completes the stub session and returns a signed buy-once entitlement to use as `Authorization: Bearer <token>`. |
 | `GET /api/checkout/session/[id]` | The buyer's fulfilment retrieval: returns the entitlement token already issued for a settled session (`200`), or `202` while fulfilment is pending. Mints nothing. |
-| `POST /api/webhooks/stripe` | Real fulfilment: on a signature-verified `checkout.session.completed`, mints and persists the buyer's entitlement (idempotent on the session). |
+| `POST /api/webhooks/stripe` | Real fulfilment: on a signature-verified `checkout.session.completed`, mints and persists the buyer's entitlement (idempotent on the session); on `account.updated`, refreshes a seller's Connect capability flags. |
+| `POST /api/connect/onboard` | Seller onboarding: `{ sellerId }` → creates the seller's Stripe **Express** connected account (once), persists the mapping, and returns a Stripe-hosted onboarding `url` to redirect to. `404` unless Stripe is configured. |
+| `GET /api/connect/status?sellerId=…` | A seller's onboarding status (`onboarded`, `chargesEnabled`, `payoutsEnabled`, `detailsSubmitted`); `refresh=1` re-reads live from Stripe. |
 
 ## The paid lane's gate
 
@@ -66,7 +68,7 @@ the two can't drift apart. Two env vars control it:
 | `AZPHALT_STRIPE_SECRET_KEY` | Switches checkout to the real Stripe Connect provider. Absent ⇒ the stub. |
 | `AZPHALT_STRIPE_WEBHOOK_SECRET` | Verifies `POST /api/webhooks/stripe` signatures. Required for real fulfilment. |
 | `AZPHALT_STRIPE_SUCCESS_URL` / `AZPHALT_STRIPE_CANCEL_URL` | Where Stripe returns the buyer. Point success at `…/checkout/success?session_id={CHECKOUT_SESSION_ID}`. |
-| `AZPHALT_STRIPE_CONNECTED_ACCOUNTS` | JSON `{"<sellerId>":"acct_…"}` mapping each marketplace seller to their Stripe connected account (the payout destination). A `sellerId` with no mapping is a hard error, not a misroute. |
+| `AZPHALT_STRIPE_CONNECTED_ACCOUNTS` | **Fallback** JSON `{"<sellerId>":"acct_…"}` for a fixed roster. Checkout prefers a seller's **onboarded** account (from `/connect/onboard`, persisted in the seller-account store) and only falls back to this map; a `sellerId` resolved by neither is a hard error, not a misroute. A seller who hasn't finished onboarding (charges not enabled) is refused at checkout. |
 | `DATABASE_URL` + `BLOB_READ_WRITE_TOKEN` | **Both** present ⇒ the durable Neon + Blob store; otherwise the process-local store. |
 
 To exercise the **stub** paid lane locally: set `AZPHALT_SIGNING_KEY` + `AZPHALT_ALLOW_STUB_FULFILMENT=1`,

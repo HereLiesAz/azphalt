@@ -36,6 +36,16 @@ export {
 } from "./consignment.js";
 export { StripePaymentProvider, stripeConfigFromEnv, type StripeConfig } from "./stripe.js";
 export {
+  StripeConnect,
+  type StripeConnectConfig,
+  type ConnectedAccountStatus,
+} from "./connect.js";
+export {
+  InMemorySellerAccountStore,
+  type SellerAccount,
+  type SellerAccountStore,
+} from "./seller-account-store.js";
+export {
   issueEntitlement,
   verifyEntitlement,
   canonicalClaims,

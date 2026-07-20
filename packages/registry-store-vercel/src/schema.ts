@@ -71,4 +71,12 @@ export async function migrate(sql: Sql): Promise<void> {
     reported_at timestamptz NOT NULL
   )`);
   await sql.query(`CREATE INDEX IF NOT EXISTS reports_package_idx ON reports (package_id, reported_at DESC)`);
+
+  // Seller → Stripe connected account mapping + live capability flags (Connect onboarding).
+  await sql.query(`CREATE TABLE IF NOT EXISTS seller_accounts (
+    seller_id text PRIMARY KEY,
+    account_id text NOT NULL,
+    record jsonb NOT NULL
+  )`);
+  await sql.query(`CREATE INDEX IF NOT EXISTS seller_accounts_account_idx ON seller_accounts (account_id)`);
 }
