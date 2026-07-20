@@ -4,6 +4,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -17,7 +18,7 @@ import androidx.compose.ui.unit.sp
  * amber) on a warm near-white surface, emphasized typography, and large friendly shapes — the
  * opposite of a sterile, uniform look. See https://m3.material.io/styles.
  */
-private val AzphaltColors = lightColorScheme(
+private val AzphaltLightColors = lightColorScheme(
     primary = Color(0xFF6C47FF),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFE7DEFF),
@@ -41,6 +42,33 @@ private val AzphaltColors = lightColorScheme(
     outlineVariant = Color(0xFFCAC4D0),
     error = Color(0xFFBA1A1A),
     onError = Color(0xFFFFFFFF),
+)
+
+/** The default: a vibrant expressive palette on a near-black canvas (matches the PWA theme color). */
+private val AzphaltDarkColors = darkColorScheme(
+    primary = Color(0xFFBBA6FF),
+    onPrimary = Color(0xFF25005B),
+    primaryContainer = Color(0xFF4A2DB5),
+    onPrimaryContainer = Color(0xFFE9DEFF),
+    secondary = Color(0xFFFF9CBE),
+    onSecondary = Color(0xFF5C0A2C),
+    secondaryContainer = Color(0xFF8E2A54),
+    onSecondaryContainer = Color(0xFFFFD9E2),
+    tertiary = Color(0xFFFFCB5C),
+    onTertiary = Color(0xFF3A2A00),
+    tertiaryContainer = Color(0xFF6E5200),
+    onTertiaryContainer = Color(0xFFFFDF9E),
+    background = Color(0xFF0C0C13),
+    onBackground = Color(0xFFE7E1EE),
+    surface = Color(0xFF12121B),
+    onSurface = Color(0xFFE7E1EE),
+    surfaceVariant = Color(0xFF48454F),
+    onSurfaceVariant = Color(0xFFCAC4D0),
+    surfaceContainerHighest = Color(0xFF25232D),
+    outline = Color(0xFF948F9C),
+    outlineVariant = Color(0xFF48454F),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
 )
 
 /** Emphasized type scale — bold, tight display sizes for an expressive voice. */
@@ -70,9 +98,9 @@ private val AzphaltShapes = Shapes(
 )
 
 @Composable
-fun AzphaltExpressiveTheme(content: @Composable () -> Unit) {
+fun AzphaltExpressiveTheme(dark: Boolean = true, content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = AzphaltColors,
+        colorScheme = if (dark) AzphaltDarkColors else AzphaltLightColors,
         typography = AzphaltType,
         shapes = AzphaltShapes,
         content = content,
