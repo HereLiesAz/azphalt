@@ -217,7 +217,7 @@ is introduced.
 
 - **Conformance** — *resolved.* `@azphalt/conformance` ships an `mcp` host-conformance profile,
   `runMcpConformance(host)` (mirroring the `companion` profile): it drives a fixture `kind:"mcp"`
-  package and asserts the host verifies the header, rejects a non-`kind:"mcp"` package, honours the
+  package and asserts the host verifies the header, rejects a non-`kind:"mcp"` package, honors the
   header-only rule (no bundled secrets; a bundled WASI module's integrity), prompts for `${input:…}`
   secrets rather than storing them, and selects a transport in on-device-first order. A conforming host
   declares an `"mcp"` profile for registry matching.
