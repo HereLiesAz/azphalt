@@ -132,9 +132,12 @@ export class RepositoryClient {
     const res = await fetch(`${this.baseUrl}/packages/${id}`, { headers: this.headers });
     if (!res.ok) throw new Error(`Get pack failed: ${res.status}`);
     const detail = (await res.json()) as PackageDetail;
-    const pack = detail.manifest?.pack ?? detail.pack;
-    if (detail.kind !== "pack" || !pack) throw new Error(`${id} is not an extension pack`);
-    return pack;
+    // The Repository API's detail carries `kind`/`pack` on the nested `manifest` (the spec's
+    // `GET /packages/{id}` → `manifest`), not at the top level — so read from there, falling back to a
+    // flat body for a repository that inlines the manifest fields.
+    const manifest = detail.manifest ?? detail;
+    if (manifest.kind !== "pack" || !manifest.pack) throw new Error(`${id} is not an extension pack`);
+    return manifest.pack;
   }
 
   /**
