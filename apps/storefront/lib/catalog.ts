@@ -19,9 +19,11 @@ import {
   EntitlementAuthorizer,
   InMemoryEntitlementStore,
   InMemoryPaymentSessionStore,
+  InMemorySellerAccountStore,
   Marketplace,
   Registry,
   RegistryError,
+  StripeConnect,
   StripePaymentProvider,
   StubPaymentProvider,
   denyAllAuthorizer,
@@ -36,6 +38,8 @@ import {
   type PriceBreakdown,
   type Listing,
   type RegistryStore,
+  type SellerAccount,
+  type SellerAccountStore,
 } from "@azphalt/registry";
 import type { Manifest } from "@azphalt/azdk";
 
@@ -642,6 +646,8 @@ const registry = new Registry(store);
 const sessions: PaymentSessionStore = vercel?.sessions ?? new InMemoryPaymentSessionStore();
 /** Fulfilled purchases, keyed by checkout session (the buyer's retrievable license). */
 export const entitlements: EntitlementStore = vercel?.entitlements ?? new InMemoryEntitlementStore();
+/** Onboarded seller → Stripe connected-account mappings — durable, or process-local for dev/tests. */
+export const sellerAccounts: SellerAccountStore = vercel?.sellerAccounts ?? new InMemorySellerAccountStore();
 
 /**
  * The payment provider. `AZPHALT_STRIPE_SECRET_KEY` present ⇒ the real split-payout Stripe Connect
@@ -651,25 +657,38 @@ export const entitlements: EntitlementStore = vercel?.entitlements ?? new InMemo
  */
 const usingStripe = Boolean(process.env.AZPHALT_STRIPE_SECRET_KEY);
 
+/** The Stripe Connect onboarding surface, when Stripe is configured; else undefined. */
+export const sellerConnect: StripeConnect | undefined = usingStripe
+  ? new StripeConnect({ secretKey: process.env.AZPHALT_STRIPE_SECRET_KEY! })
+  : undefined;
+
 /**
  * Resolve a marketplace `sellerId` to the seller's Stripe **connected account** (`acct_…`) the payout
- * routes to. The mapping is operator config — a JSON object in `AZPHALT_STRIPE_CONNECTED_ACCOUNTS`,
- * e.g. `{"seller_hereliesaz":"acct_123"}` — recorded when a seller onboards via Stripe Connect. A
- * `sellerId` with no mapping is a hard error, not a silent misroute (the previous bug passed the raw
- * `sellerId` as if it were a Stripe account id).
+ * routes to. Preference order: (1) the durable {@link sellerAccounts} store — where self-service
+ * onboarding records each seller's account — but only once Stripe reports the account can accept
+ * charges, so a buyer is never charged for a seller who can't yet receive it; (2) the operator config
+ * `AZPHALT_STRIPE_CONNECTED_ACCOUNTS` (`{"seller_x":"acct_…"}`) as a fallback for a fixed roster. A
+ * `sellerId` resolved by neither is a hard error, not a silent misroute.
  */
-let connectedAccounts: Record<string, string> | undefined;
-function connectedAccountFor(sellerId: string): string {
-  // Parsed once and cached — the mapping is deployment config that doesn't change at runtime.
-  if (connectedAccounts === undefined) {
+let connectedAccountsEnv: Record<string, string> | undefined;
+async function connectedAccountFor(sellerId: string): Promise<string> {
+  const onboarded = await sellerAccounts.get(sellerId);
+  if (onboarded) {
+    if (!onboarded.chargesEnabled) {
+      throw new RegistryError(`seller ${sellerId} has not finished Stripe onboarding (charges not enabled)`);
+    }
+    return onboarded.accountId;
+  }
+  // Parsed once and cached — the env mapping is deployment config that doesn't change at runtime.
+  if (connectedAccountsEnv === undefined) {
     try {
-      connectedAccounts = JSON.parse(process.env.AZPHALT_STRIPE_CONNECTED_ACCOUNTS ?? "{}") as Record<string, string>;
+      connectedAccountsEnv = JSON.parse(process.env.AZPHALT_STRIPE_CONNECTED_ACCOUNTS ?? "{}") as Record<string, string>;
     } catch (e) {
       throw new RegistryError(`AZPHALT_STRIPE_CONNECTED_ACCOUNTS is not valid JSON: ${(e as Error).message}`);
     }
   }
-  const account = connectedAccounts[sellerId];
-  if (!account) throw new RegistryError(`no Stripe connected account configured for seller: ${sellerId}`);
+  const account = connectedAccountsEnv[sellerId];
+  if (!account) throw new RegistryError(`no Stripe connected account for seller: ${sellerId} (not onboarded, no env mapping)`);
   return account;
 }
 
@@ -690,6 +709,67 @@ type RegistryStoreWithRatings = RegistryStore & {
   addRating?: (id: string, stars: number) => Promise<void> | void;
   reserveLocal?: (id: string) => void;
 };
+
+/* ─────────────────────────── Seller onboarding (Stripe Connect) ─────────────────────────── */
+
+/** Whether self-service Stripe Connect onboarding is available (Stripe configured). */
+export const onboardingEnabled = Boolean(sellerConnect);
+
+/**
+ * Begin (or resume) a seller's Stripe **Express** onboarding: create their connected account the first
+ * time and persist the mapping, then mint a fresh Stripe-hosted onboarding link to redirect them to.
+ * Idempotent on the seller — a repeat reuses the existing account and just issues a new link. Throws
+ * when Stripe isn't configured.
+ */
+export async function onboardSeller(
+  sellerId: string,
+  opts: { returnUrl: string; refreshUrl: string; email?: string; country?: string },
+): Promise<{ url: string; accountId: string }> {
+  if (!sellerConnect) throw new RegistryError("Stripe Connect is not configured (AZPHALT_STRIPE_SECRET_KEY unset)");
+  let record = await sellerAccounts.get(sellerId);
+  if (!record) {
+    const created = await sellerConnect.createExpressAccount({ email: opts.email, country: opts.country });
+    record = {
+      sellerId,
+      accountId: created.accountId,
+      chargesEnabled: created.chargesEnabled,
+      payoutsEnabled: created.payoutsEnabled,
+      detailsSubmitted: created.detailsSubmitted,
+      updatedAt: new Date().toISOString(),
+    };
+    await sellerAccounts.put(record);
+  }
+  const { url } = await sellerConnect.createAccountLink(record.accountId, {
+    returnUrl: opts.returnUrl,
+    refreshUrl: opts.refreshUrl,
+  });
+  return { url, accountId: record.accountId };
+}
+
+/** Refresh a connected account's capability flags from Stripe and persist them (for `account.updated`). */
+export async function refreshSellerAccount(accountId: string): Promise<SellerAccount | undefined> {
+  if (!sellerConnect) return undefined;
+  const existing = await sellerAccounts.getByAccountId(accountId);
+  if (!existing) return undefined;
+  const status = await sellerConnect.getAccount(accountId);
+  const updated: SellerAccount = {
+    ...existing,
+    chargesEnabled: status.chargesEnabled,
+    payoutsEnabled: status.payoutsEnabled,
+    detailsSubmitted: status.detailsSubmitted,
+    updatedAt: new Date().toISOString(),
+  };
+  await sellerAccounts.put(updated);
+  return updated;
+}
+
+/** A seller's onboarding record — optionally refreshed live from Stripe — or `undefined` if not onboarded. */
+export async function sellerStatus(sellerId: string, refresh = false): Promise<SellerAccount | undefined> {
+  const record = await sellerAccounts.get(sellerId);
+  if (!record) return undefined;
+  if (refresh && sellerConnect) return (await refreshSellerAccount(record.accountId)) ?? record;
+  return record;
+}
 
 /* ─────────────────────────── The paid lane's gate ─────────────────────────── */
 

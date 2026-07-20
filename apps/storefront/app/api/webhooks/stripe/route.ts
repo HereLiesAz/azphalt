@@ -11,7 +11,7 @@
  */
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { fulfil } from "../../../../lib/catalog";
+import { fulfil, refreshSellerAccount } from "../../../../lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +60,14 @@ export async function POST(req: Request) {
       );
     }
     return NextResponse.json({ received: true, fulfilled: true });
+  }
+
+  if (event.type === "account.updated") {
+    // A seller's Connect account changed (finished onboarding, capability enabled/disabled). Refresh
+    // its stored capability flags so checkout's payout gate reflects Stripe's current view.
+    const account = event.data.object as Stripe.Account;
+    if (account.id) await refreshSellerAccount(account.id);
+    return NextResponse.json({ received: true, refreshed: true });
   }
 
   return NextResponse.json({ received: true });
