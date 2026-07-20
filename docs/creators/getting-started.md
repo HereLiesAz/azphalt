@@ -59,5 +59,44 @@ Pick **Asset Pack** in the scaffolder for a workspace that bundles your files in
 - `@azphalt/importer-font`: Package typography
 - `@azphalt/importer-audio`: Package SFX and music stems
 
+## Publishing to azphalt.store
+
+Once you have a valid `.azp`, there are two ways to get it onto the **azphalt.store** marketplace so
+apps can discover and install it:
+
+1. **Submit as source (open lane).** Open a pull request adding your project under
+   `submissions/<your-id>/` (see the repo's `submissions/README.md` and the **code** / **asset** /
+   **model** templates). CI re-packages and validates it, then it lands in the free registry. Best for
+   free, open extensions that live in the open registry.
+2. **Upload the bytes.** A conforming repository exposes a publish endpoint that takes raw `.azp` bytes
+   and returns the indexed summary (or `400` with the exact verification errors). The store verifies the
+   container the same way it verifies a submission — no shortcut around the checks.
+
+Either path runs the **same** verify-and-index pipeline; a listing on the store is never a lower bar
+than an open submission.
+
+> **Building an MCP server?** An [MCP server](/specs/mcp-server) is packaged as its own package kind
+> (`kind: "mcp"`) and published exactly like any other extension — there is no separate MCP publish
+> protocol. The `.azp` is a signed header describing how a host reaches the server; the host runs it
+> under its own trust prompt.
+
+## Selling your extension (the consignment lane)
+
+The registry lane is free and fee-free by design. If you want to **charge** for an extension, you
+*consign* it onto the paid lane — the only place a fee exists:
+
+- You onboard once (Stripe Connect **Express**), and the store routes payouts to *your* account.
+- You set a one-time price or a subscription; a buyer's purchase mints a signed **entitlement token**
+  their host app presents to download (see [Use the Store](/hosts/getting-started) § paid packages).
+- The store shows the buyer an honest split — gross → processor fee, platform fee → **your net** — and
+  the fee never leaks into the open registry. See [Architecture](/ARCHITECTURE) § *The marketplace* and
+  [Marketplace Integrity](/specs/marketplace-integrity).
+
+Your extension's *bytes* and *manifest* are identical whether it's free or paid — consignment is an
+overlay on a normal package, not a different format. You can list a package for sale without changing a
+line of its code.
+
 ## What's Next?
 - Check out the [Manifest Schema](/specs/extension-manifest) to see how you can manually write a complex `manifest.json` for multi-asset packs.
+- See how apps will **consume** what you publish: [Use the Store from Your App](/hosts/getting-started).
+- Understand the trust and moderation model your package lives under: [Marketplace Integrity](/specs/marketplace-integrity).
