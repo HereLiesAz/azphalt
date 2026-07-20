@@ -670,7 +670,19 @@ export const sellerConnect: StripeConnect | undefined = usingStripe
  * `AZPHALT_STRIPE_CONNECTED_ACCOUNTS` (`{"seller_x":"acct_…"}`) as a fallback for a fixed roster. A
  * `sellerId` resolved by neither is a hard error, not a silent misroute.
  */
+/** The operator-configured `sellerId → acct_…` fallback map. Parsed once and cached. */
 let connectedAccountsEnv: Record<string, string> | undefined;
+function envConnectedAccounts(): Record<string, string> {
+  if (connectedAccountsEnv === undefined) {
+    try {
+      connectedAccountsEnv = JSON.parse(process.env.AZPHALT_STRIPE_CONNECTED_ACCOUNTS ?? "{}") as Record<string, string>;
+    } catch (e) {
+      throw new RegistryError(`AZPHALT_STRIPE_CONNECTED_ACCOUNTS is not valid JSON: ${(e as Error).message}`);
+    }
+  }
+  return connectedAccountsEnv;
+}
+
 async function connectedAccountFor(sellerId: string): Promise<string> {
   const onboarded = await sellerAccounts.get(sellerId);
   if (onboarded) {
@@ -679,17 +691,16 @@ async function connectedAccountFor(sellerId: string): Promise<string> {
     }
     return onboarded.accountId;
   }
-  // Parsed once and cached — the env mapping is deployment config that doesn't change at runtime.
-  if (connectedAccountsEnv === undefined) {
-    try {
-      connectedAccountsEnv = JSON.parse(process.env.AZPHALT_STRIPE_CONNECTED_ACCOUNTS ?? "{}") as Record<string, string>;
-    } catch (e) {
-      throw new RegistryError(`AZPHALT_STRIPE_CONNECTED_ACCOUNTS is not valid JSON: ${(e as Error).message}`);
-    }
-  }
-  const account = connectedAccountsEnv[sellerId];
+  // An operator-configured seller is never in the store (self-onboarding is refused for them, so an
+  // attacker can't insert a store record that overrides the operator's payout destination).
+  const account = envConnectedAccounts()[sellerId];
   if (!account) throw new RegistryError(`no Stripe connected account for seller: ${sellerId} (not onboarded, no env mapping)`);
   return account;
+}
+
+/** Whether a Stripe error means the referenced connected account no longer exists (deleted/rejected). */
+function isMissingAccountError(e: unknown): boolean {
+  return /no such account|resource_missing|does not exist/i.test((e as Error)?.message ?? "");
 }
 
 const payments: PaymentProvider = usingStripe
@@ -726,10 +737,16 @@ export async function onboardSeller(
   opts: { returnUrl: string; refreshUrl: string; email?: string; country?: string },
 ): Promise<{ url: string; accountId: string }> {
   if (!sellerConnect) throw new RegistryError("Stripe Connect is not configured (AZPHALT_STRIPE_SECRET_KEY unset)");
-  let record = await sellerAccounts.get(sellerId);
-  if (!record) {
-    const created = await sellerConnect.createExpressAccount({ email: opts.email, country: opts.country });
-    record = {
+  // An operator-configured seller (env map) must NOT be self-onboarded: doing so would insert a store
+  // record that overrides the operator's payout destination (a payout-hijack). They are managed via env.
+  if (envConnectedAccounts()[sellerId]) {
+    throw new RegistryError(`seller ${sellerId} is operator-configured and cannot be onboarded via self-service`);
+  }
+
+  const connect = sellerConnect; // narrowed for the closures below
+  const createAndStore = async (): Promise<SellerAccount> => {
+    const created = await connect.createExpressAccount({ email: opts.email, country: opts.country });
+    const record: SellerAccount = {
       sellerId,
       accountId: created.accountId,
       chargesEnabled: created.chargesEnabled,
@@ -738,12 +755,27 @@ export async function onboardSeller(
       updatedAt: new Date().toISOString(),
     };
     await sellerAccounts.put(record);
+    return record;
+  };
+
+  let record = (await sellerAccounts.get(sellerId)) ?? (await createAndStore());
+  try {
+    const { url } = await connect.createAccountLink(record.accountId, {
+      returnUrl: opts.returnUrl,
+      refreshUrl: opts.refreshUrl,
+    });
+    return { url, accountId: record.accountId };
+  } catch (e) {
+    // The stored account was deleted/closed on Stripe — recreate a fresh one and re-link, so a seller
+    // is never permanently stuck pointing at a dead account. Any other error propagates.
+    if (!isMissingAccountError(e)) throw e;
+    record = await createAndStore();
+    const { url } = await connect.createAccountLink(record.accountId, {
+      returnUrl: opts.returnUrl,
+      refreshUrl: opts.refreshUrl,
+    });
+    return { url, accountId: record.accountId };
   }
-  const { url } = await sellerConnect.createAccountLink(record.accountId, {
-    returnUrl: opts.returnUrl,
-    refreshUrl: opts.refreshUrl,
-  });
-  return { url, accountId: record.accountId };
 }
 
 /** Refresh a connected account's capability flags from Stripe and persist them (for `account.updated`). */
@@ -767,7 +799,15 @@ export async function refreshSellerAccount(accountId: string): Promise<SellerAcc
 export async function sellerStatus(sellerId: string, refresh = false): Promise<SellerAccount | undefined> {
   const record = await sellerAccounts.get(sellerId);
   if (!record) return undefined;
-  if (refresh && sellerConnect) return (await refreshSellerAccount(record.accountId)) ?? record;
+  if (refresh && sellerConnect) {
+    // A live refresh can throw (Stripe hiccup, rate limit, a deleted account). Serve the last-known
+    // stored view rather than failing the whole status check.
+    try {
+      return (await refreshSellerAccount(record.accountId)) ?? record;
+    } catch {
+      return record;
+    }
+  }
   return record;
 }
 

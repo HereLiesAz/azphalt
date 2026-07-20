@@ -66,7 +66,13 @@ export async function POST(req: Request) {
     // A seller's Connect account changed (finished onboarding, capability enabled/disabled). Refresh
     // its stored capability flags so checkout's payout gate reflects Stripe's current view.
     const account = event.data.object as Stripe.Account;
-    if (account.id) await refreshSellerAccount(account.id);
+    // Best-effort: a refresh failure (deleted account, Stripe hiccup) must not 500 the webhook and
+    // trigger pointless Stripe retries — the stored flags simply stay as they were.
+    try {
+      if (account.id) await refreshSellerAccount(account.id);
+    } catch {
+      /* keep the last-known flags */
+    }
     return NextResponse.json({ received: true, refreshed: true });
   }
 

@@ -17,17 +17,21 @@ export async function GET(req: Request) {
   if (!sellerId) return NextResponse.json({ error: "sellerId is required" }, { status: 400 });
   const refresh = url.searchParams.get("refresh") === "1";
 
-  const record = await sellerStatus(sellerId, refresh);
-  if (!record) return NextResponse.json({ onboarded: false }, { status: 200 });
+  try {
+    const record = await sellerStatus(sellerId, refresh);
+    if (!record) return NextResponse.json({ onboarded: false }, { status: 200 });
 
-  return NextResponse.json(
-    {
-      onboarded: true,
-      accountId: record.accountId,
-      chargesEnabled: record.chargesEnabled,
-      payoutsEnabled: record.payoutsEnabled,
-      detailsSubmitted: record.detailsSubmitted,
-    },
-    { status: 200 },
-  );
+    return NextResponse.json(
+      {
+        onboarded: true,
+        accountId: record.accountId,
+        chargesEnabled: record.chargesEnabled,
+        payoutsEnabled: record.payoutsEnabled,
+        detailsSubmitted: record.detailsSubmitted,
+      },
+      { status: 200 },
+    );
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 }
