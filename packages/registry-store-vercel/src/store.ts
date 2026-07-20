@@ -11,7 +11,7 @@
  * re-publish overwrites the same key. The residue is always garbage-collectable, never a dangling
  * reference — which is why the keys must not be random.
  */
-import { get, put } from "@vercel/blob";
+import { get, head, put } from "@vercel/blob";
 import { neon } from "@neondatabase/serverless";
 import type { Listing, PackageVersion, Report, RegistryStore, RevocationEntry } from "@azphalt/registry";
 import { migrate, type Sql } from "./schema.js";
@@ -130,6 +130,50 @@ export class VercelRegistryStore implements RegistryStore {
       return await drain(res.stream);
     } catch (e) {
       // A missing blob (BlobNotFoundError) is a torn write, not a crash: report absent, don't throw.
+      if (e && typeof e === "object" && (e as { name?: string }).name === "BlobNotFoundError") return undefined;
+      throw e;
+    }
+  }
+
+  async getByteSize(id: string, version: string): Promise<number | undefined> {
+    // Cheap metadata `head` — the total object size for a `Content-Range`, no bytes transferred.
+    const rows = (await this.sql.query(
+      `SELECT 1 FROM versions WHERE id = $1 AND version = $2`,
+      [id, version],
+    )) as unknown[];
+    if (rows.length === 0) return undefined;
+    const key = blobKey(this.blobPrefix, id, version);
+    try {
+      const meta = await head(key, { token: this.blobToken });
+      return meta.size;
+    } catch (e) {
+      if (e && typeof e === "object" && (e as { name?: string }).name === "BlobNotFoundError") return undefined;
+      throw e;
+    }
+  }
+
+  async getByteRange(id: string, version: string, start: number, end: number): Promise<Uint8Array | undefined> {
+    const rows = (await this.sql.query(
+      `SELECT 1 FROM versions WHERE id = $1 AND version = $2`,
+      [id, version],
+    )) as unknown[];
+    if (rows.length === 0) return undefined;
+    const key = blobKey(this.blobPrefix, id, version);
+    try {
+      // Ask Blob for just the window (HTTP Range) so a chunked/parallel download doesn't pull the whole
+      // object per chunk. `headers` is forwarded to the underlying fetch (@vercel/blob GetCommandOptions).
+      const res = await get(key, {
+        access: this.blobAccess,
+        token: this.blobToken,
+        headers: { Range: `bytes=${start}-${end}` },
+      });
+      if (!res || res.stream == null) return undefined;
+      const bytes = await drain(res.stream);
+      // If the origin honored the Range it returned exactly the window (a `Content-Range` header);
+      // otherwise it returned the whole object and we slice defensively so the result is always correct.
+      const honored = res.headers?.get?.("content-range") != null;
+      return honored ? bytes : bytes.slice(start, end + 1);
+    } catch (e) {
       if (e && typeof e === "object" && (e as { name?: string }).name === "BlobNotFoundError") return undefined;
       throw e;
     }
