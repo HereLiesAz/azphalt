@@ -79,7 +79,9 @@ export function importAbr(abrBytes: Uint8Array, licenseText: string, opts: AbrIm
 
 /** Filesystem-safe stem: lowercase, runs of non-alphanumerics to single hyphens. */
 function slug(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "") || "brush";
+  // The prior collapse leaves at most one leading/trailing hyphen, so trim a single one — `/^-+/`,
+  // `/-+$/` would backtrack polynomially on a crafted run (CodeQL js/polynomial-redos).
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-/, "").replace(/-$/, "") || "brush";
 }
 
 export { parseAbr, UnsupportedAbrError } from "./parse-abr.js";

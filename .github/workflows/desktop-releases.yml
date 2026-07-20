@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+# Least privilege by default; the release job below elevates to `contents: write` for the GH release.
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:

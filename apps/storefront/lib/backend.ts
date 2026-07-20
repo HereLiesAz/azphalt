@@ -9,6 +9,14 @@ const KNOWN_PACKAGES = [
 
 const NPM_REGISTRY = "https://registry.npmjs.org";
 
+// SSRF guard: `id` / `version` reach these methods from request params, and they are interpolated into
+// the npm registry URL. Allow only real npm-package-name / semver-ish shapes — no protocol, host,
+// `..`, slashes beyond a single scope separator, or control chars — so an attacker can't retarget the
+// fetch. Linear regexes (single quantifiers), no ReDoS. A value that fails the guard is treated as
+// "no such package" rather than fetched.
+const SAFE_PKG_ID = /^@?[a-z0-9][a-z0-9._-]*(\/[a-z0-9][a-z0-9._-]*)?$/i;
+const SAFE_VERSION = /^[a-z0-9][a-z0-9.+-]*$/i;
+
 import tar from "tar-stream";
 import zlib from "zlib";
 import { promisify } from "util";
@@ -39,7 +47,10 @@ export class NpmStore implements RegistryStore {
     if (this.versionsCache.has(id)) {
       return this.versionsCache.get(id)!;
     }
-    
+
+    // SSRF guard — never fetch an id that isn't a well-formed npm package name.
+    if (!SAFE_PKG_ID.test(id)) return [];
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
     
@@ -113,7 +124,10 @@ export class NpmStore implements RegistryStore {
   async getVersion(id: string, version: string): Promise<PackageVersion | undefined> {
     const cached = this.versionCache.get(`${id}@${version}`);
     if (cached) return cached;
-    
+
+    // SSRF guard — reject anything that isn't a well-formed npm id + version before fetching.
+    if (!SAFE_PKG_ID.test(id) || !SAFE_VERSION.test(version)) return undefined;
+
     try {
       const res = await fetch(`${NPM_REGISTRY}/${id}/${version}`);
       if (!res.ok) return undefined;
@@ -137,6 +151,9 @@ export class NpmStore implements RegistryStore {
   async getBytes(id: string, version: string): Promise<Uint8Array | undefined> {
     const localBytes = await this.local.getBytes(id, version);
     if (localBytes) return localBytes;
+
+    // SSRF guard — the id/version are interpolated into the tarball URL below.
+    if (!SAFE_PKG_ID.test(id) || !SAFE_VERSION.test(version)) return undefined;
 
     const meta = await this.getVersion(id, version);
     if (!meta) return undefined;

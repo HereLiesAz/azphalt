@@ -10,6 +10,9 @@ on:
         description: "Deployment id or url (blank = latest for the storefront project)"
         required: false
 
+permissions:
+  contents: read
+
 jobs:
   logs:
     runs-on: ubuntu-latest

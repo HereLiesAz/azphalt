@@ -91,7 +91,9 @@ export function importCube(cubeText: string, licenseText: string, opts: ImportOp
 
 /** Filesystem-safe stem: lowercase, runs of non-alphanumerics to single hyphens. */
 function slug(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "") || "lut";
+  // The prior collapse leaves at most one leading/trailing hyphen, so trim a single one — `/^-+/`,
+  // `/-+$/` would backtrack polynomially on a crafted run (CodeQL js/polynomial-redos).
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-/, "").replace(/-$/, "") || "lut";
 }
 
 export { parseCube } from "./parse-cube.js";
