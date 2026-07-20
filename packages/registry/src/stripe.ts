@@ -131,8 +131,7 @@ export class StripePaymentProvider implements PaymentProvider {
       this.config.idempotencyKey?.(input) ??
       `azp_${input.packageId}_${input.buyerId}_${input.amount.amountCents}`;
 
-    const body = form({
-      mode: "payment",
+    const fields: Record<string, string> = {
       success_url: this.config.successUrl,
       cancel_url: this.config.cancelUrl,
       client_reference_id: input.buyerId,
@@ -140,13 +139,27 @@ export class StripePaymentProvider implements PaymentProvider {
       "line_items[0][price_data][currency]": input.amount.currency.toLowerCase(),
       "line_items[0][price_data][unit_amount]": String(input.amount.amountCents),
       "line_items[0][price_data][product_data][name]": name,
-      // Destination charge: retain the platform fee, transfer the rest to the seller's account.
-      "payment_intent_data[application_fee_amount]": String(input.platformFee.amountCents),
-      "payment_intent_data[transfer_data][destination]": destination,
       "metadata[packageId]": input.packageId,
       "metadata[sellerId]": input.sellerId,
       "metadata[buyerId]": input.buyerId,
-    });
+    };
+
+    if (input.interval) {
+      // Subscription: a recurring price, and the Connect split expressed as a *percent* (subscription
+      // mode has no per-invoice application_fee_amount — the fee applies to every renewal invoice).
+      const feePercent = ((input.platformFee.amountCents / input.amount.amountCents) * 100).toFixed(4);
+      fields.mode = "subscription";
+      fields["line_items[0][price_data][recurring][interval]"] = input.interval;
+      fields["subscription_data[application_fee_percent]"] = feePercent;
+      fields["subscription_data[transfer_data][destination]"] = destination;
+      fields["metadata[interval]"] = input.interval;
+    } else {
+      // One-time: a destination charge — retain the platform fee, transfer the rest to the seller.
+      fields.mode = "payment";
+      fields["payment_intent_data[application_fee_amount]"] = String(input.platformFee.amountCents);
+      fields["payment_intent_data[transfer_data][destination]"] = destination;
+    }
+    const body = form(fields);
 
     let res: Response;
     try {

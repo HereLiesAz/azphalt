@@ -11,7 +11,7 @@ import { randomUUID } from "node:crypto";
 import type { Registry } from "./registry.js";
 import { RegistryError } from "./registry.js";
 import type { RegistryStore } from "./store.js";
-import type { ConsignmentTerms, Listing, Money, PriceBreakdown } from "./types.js";
+import type { ConsignmentTerms, Listing, Money, PriceBreakdown, SubscriptionInterval } from "./types.js";
 
 /**
  * Default consignment economics. The platform fee has to clear the processor's cut (~2.9% + 30¢) and
@@ -41,10 +41,20 @@ export interface CheckoutInput {
   packageId: string;
   sellerId: string;
   buyerId: string;
-  /** Total the buyer is charged. */
+  /** Amount the buyer is charged — once, or per {@link CheckoutInput.interval} for a subscription. */
   amount: Money;
   /** Platform's application fee (its consignment cut), routed to the platform on settlement. */
   platformFee: Money;
+  /** When set, a **recurring** charge at `amount` per interval (a subscription); absent = one-time. */
+  interval?: SubscriptionInterval;
+}
+
+/** The exclusive-end instant of the billing period that starts at `fromIso`, for a subscription. */
+export function periodEnd(fromIso: string, interval: SubscriptionInterval): string {
+  const d = new Date(fromIso);
+  if (interval === "year") d.setUTCFullYear(d.getUTCFullYear() + 1);
+  else d.setUTCMonth(d.getUTCMonth() + 1);
+  return d.toISOString();
 }
 
 export interface CheckoutSession {
@@ -181,15 +191,24 @@ export class Marketplace {
    * Consign a package for sale. The package must already be published to the registry (you can only
    * sell what exists in the open lane). Creating a listing on an already-listed package updates it.
    */
-  async listForSale(packageId: string, sellerId: string, price: Money): Promise<Listing> {
+  async listForSale(
+    packageId: string,
+    sellerId: string,
+    price: Money,
+    opts: { interval?: SubscriptionInterval } = {},
+  ): Promise<Listing> {
     const summary = await this.registry.getSummary(packageId);
     if (!summary) throw new RegistryError(`cannot list unknown package: ${packageId}`);
     if (!Number.isInteger(price.amountCents) || price.amountCents <= 0) {
       throw new RegistryError(`price must be a positive integer amount of minor units: ${price.amountCents}`);
     }
     if (!price.currency) throw new RegistryError("price.currency is required");
+    if (opts.interval !== undefined && opts.interval !== "month" && opts.interval !== "year") {
+      throw new RegistryError(`interval must be "month" or "year": ${opts.interval}`);
+    }
     // Reject a price so low the fees exceed it — the seller would net nothing and the platform would
-    // eat the shortfall (see `docs/ARCHITECTURE.md § "Very small" has a floor`).
+    // eat the shortfall (see `docs/ARCHITECTURE.md § "Very small" has a floor`). Applies per-period
+    // for a subscription too (each charge must clear the fees).
     if (quote(price, this.terms).sellerNet.amountCents <= 0) {
       throw new RegistryError(`price of ${price.amountCents} is too low to clear transaction fees`);
     }
@@ -201,6 +220,7 @@ export class Marketplace {
       sellerId,
       // Clone so a later mutation of the caller's object can't silently alter stored state.
       price: { ...price },
+      ...(opts.interval ? { interval: opts.interval } : {}),
       status: "active",
       createdAt: prior?.createdAt ?? now,
       updatedAt: now,
@@ -250,6 +270,7 @@ export class Marketplace {
       buyerId,
       amount: breakdown.gross,
       platformFee: breakdown.platformFee,
+      ...(listing.interval ? { interval: listing.interval } : {}),
     });
     return { session, breakdown, listing };
   }

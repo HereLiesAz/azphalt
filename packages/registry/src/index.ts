@@ -27,6 +27,7 @@ export {
   InMemoryPaymentSessionStore,
   DEFAULT_TERMS,
   quote,
+  periodEnd,
   type PaymentProvider,
   type PaymentSessionStore,
   type StubPaymentProviderOptions,
@@ -69,6 +70,7 @@ export {
 export type {
   Money,
   Listing,
+  SubscriptionInterval,
   ConsignmentTerms,
   PriceBreakdown,
   PackageSummary,
