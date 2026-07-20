@@ -20,6 +20,8 @@ export async function GET(req: Request) {
     const purchases = await listPurchases(subject);
     return NextResponse.json({ purchases }, { status: 200 });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    // Log the detail server-side; return a generic message so an unexpected error can't leak internals.
+    console.error("Failed to list purchases:", e);
+    return NextResponse.json({ error: "internal error listing purchases" }, { status: 500 });
   }
 }

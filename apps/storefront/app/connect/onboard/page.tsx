@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { PageNav } from '../../../components/PageNav';
 
 const ACCENT = '#BBA6FF';
 const BG = '#0C0C13';
@@ -93,8 +94,8 @@ function ConnectOnboard() {
   return (
     <main style={{ minHeight: '100vh', background: BG, color: ON, display: 'flex', justifyContent: 'center', padding: '48px 20px' }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
-        <a href="/" style={{ color: MUTED, textDecoration: 'none', fontSize: 14 }}>← Back to the store</a>
-        <h1 style={{ marginTop: 24, fontSize: 28, fontWeight: 700 }}>Become a seller</h1>
+        <PageNav current="sell" />
+        <h1 style={{ marginTop: 16, fontSize: 28, fontWeight: 700 }}>Become a seller</h1>
         <p style={{ color: MUTED, marginTop: 8 }}>
           Onboard with Stripe to sell consigned packages. Stripe hosts the sign-up and verification; your
           payouts route straight to your connected account. We never see your identity documents.

@@ -2,12 +2,14 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { PageNav } from '../../components/PageNav';
 
 const ACCENT = '#BBA6FF';
 const BG = '#0C0C13';
 const SURFACE = '#12121B';
 const ON = '#E7E1EE';
 const MUTED = '#A29CAD';
+const IDLE = '#2a2436';
 
 interface Purchase {
   packageId: string;
@@ -64,11 +66,41 @@ function Purchases() {
     }
   }, []);
 
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  // A real, authenticated download: a plain <a> click can't attach the Bearer token, so fetch the
+  // gated bytes with the token and save the returned blob.
+  const download = useCallback(async (packageId: string, token: string) => {
+    setDownloading(packageId);
+    try {
+      const res = await fetch(`/api/download/${encodeURIComponent(packageId)}`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        alert(`Download failed (${res.status})`);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${packageId}.azp`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setDownloading(null);
+    }
+  }, []);
+
   return (
     <main style={{ minHeight: '100vh', background: BG, color: ON, display: 'flex', justifyContent: 'center', padding: '48px 20px' }}>
       <div style={{ width: '100%', maxWidth: 720 }}>
-        <a href="/" style={{ color: MUTED, textDecoration: 'none', fontSize: 14 }}>← Back to the store</a>
-        <h1 style={{ marginTop: 24, fontSize: 28, fontWeight: 700 }}>Your purchases</h1>
+        <PageNav current="purchases" />
+        <h1 style={{ marginTop: 16, fontSize: 28, fontWeight: 700 }}>Your purchases</h1>
         <p style={{ color: MUTED, marginTop: 8 }}>
           Look up the licenses issued to your buyer id and recover a download token if you lost the one
           shown at checkout.
@@ -85,7 +117,7 @@ function Purchases() {
           <button
             onClick={() => load(subject.trim())}
             disabled={!subject.trim()}
-            style={{ padding: '10px 18px', background: ACCENT, color: '#161221', border: 'none', borderRadius: 10, fontWeight: 600, cursor: subject.trim() ? 'pointer' : 'default' }}
+            style={{ padding: '10px 18px', background: subject.trim() ? ACCENT : IDLE, color: subject.trim() ? '#161221' : MUTED, border: 'none', borderRadius: 10, fontWeight: 600, cursor: subject.trim() ? 'pointer' : 'default' }}
           >
             Look up
           </button>
@@ -109,18 +141,19 @@ function Purchases() {
                   <span style={{ color: MUTED, fontSize: 12 }}>{new Date(p.issuedAt).toLocaleDateString()}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                  <a
-                    href={`/api/download/${encodeURIComponent(p.packageId)}`}
-                    style={{ color: MUTED, fontSize: 13, alignSelf: 'center' }}
-                    title="Downloading a paid package needs the token below as an Authorization: Bearer header"
+                  <button
+                    onClick={() => download(p.packageId, p.token)}
+                    disabled={downloading === p.packageId}
+                    style={{ padding: '8px 14px', background: ACCENT, color: '#161221', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 13, opacity: downloading === p.packageId ? 0.6 : 1 }}
                   >
-                    {p.packageId}.azp
-                  </a>
+                    {downloading === p.packageId ? 'Downloading…' : 'Download .azp'}
+                  </button>
                   <button
                     onClick={() => copy(p.token, p.sessionId)}
-                    style={{ marginLeft: 'auto', padding: '8px 14px', background: 'transparent', color: ON, border: '1px solid #2a2436', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+                    style={{ marginLeft: 'auto', padding: '8px 14px', background: 'transparent', color: ON, border: `1px solid ${IDLE}`, borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+                    title="The Authorization: Bearer token, if you want to download via the API directly"
                   >
-                    {copied === p.sessionId ? 'Copied ✓' : 'Copy download token'}
+                    {copied === p.sessionId ? 'Copied ✓' : 'Copy token'}
                   </button>
                 </div>
               </div>
