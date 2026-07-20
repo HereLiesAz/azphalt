@@ -49,6 +49,9 @@ const nextConfig = {
       // BEFORE the SPA fallback below, which would otherwise swallow them into the app shell. All map
       // onto the shared handler at `/api/repository/*` (see `app/api/repository/[[...slug]]/route.ts`).
       beforeFiles: [
+        // NOTE: azphalt.org (the DOCS host) is mapped onto /_docs by `middleware.ts`, not here — a
+        // `beforeFiles` rewrite with `source: "/"` does not fire for the bare root, so the home page
+        // 404s. Middleware handles every path including `/`. The rules below are azphalt.store's.
         { source: "/.well-known/azphalt-repository.json", destination: "/api/repository/.well-known/azphalt-repository.json" },
         { source: "/packages", destination: "/api/repository/packages" },
         { source: "/packages/:path*", destination: "/api/repository/packages/:path*" },

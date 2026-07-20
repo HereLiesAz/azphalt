@@ -1,10 +1,11 @@
 name: Deploy Docs
 
-# Build the VitePress documentation site (docs/) and publish it to GitHub Pages, which is what
-# serves azphalt.org (see docs/public/CNAME). Runs on any push to main that touches the docs or this
-# workflow, and on demand. The DNS cutover — pointing azphalt.org at GitHub Pages and enabling Pages
-# for the repo (Settings → Pages → Source: GitHub Actions) — is a one-time manual step; until then this
-# builds and uploads the artifact without affecting the live domain.
+# Build the VitePress documentation site (docs/) and publish it to GitHub Pages — the STANDALONE
+# alternative for hosting azphalt.org. The PRIMARY hosting needs no DNS/dashboard step: the storefront's
+# own Vercel deployment already serves azphalt.org and maps that host onto the embedded docs (see
+# apps/storefront/middleware.ts + scripts/embed-docs.mjs). To switch to Pages instead, enable Pages
+# (Settings → Pages → Source: GitHub Actions) and point azphalt.org's DNS at GitHub Pages; until then
+# this just builds and uploads the artifact without affecting the live domain.
 on:
   push:
     branches: [main]

@@ -13,8 +13,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "bundle": "next build && node scripts/bundle.mjs",
+    "embed-docs": "node scripts/embed-docs.mjs",
     "seed": "tsx scripts/seed.ts",
-    "clean": "rm -rf .next dist-server"
+    "clean": "rm -rf .next dist-server public/_docs"
   },
   "dependencies": {
     "@azphalt/azdk": "workspace:*",

@@ -63,6 +63,11 @@ jobs:
       - name: Install workspace deps
         run: pnpm install --frozen-lockfile
 
+      - name: Build & embed the docs site (served at azphalt.org via host rewrites)
+        # Builds the VitePress docs into apps/storefront/public/_docs so the same deployment that
+        # serves azphalt.store also serves the docs at azphalt.org (see next.config.mjs host rewrites).
+        run: pnpm --filter @azphalt/storefront embed-docs
+
       - name: Resolve Vercel org & project ids
         run: |
           set -uo pipefail
