@@ -57,6 +57,15 @@ import {
   checkCompanionProfileDeclaration,
   type CompanionHost,
 } from "./companion-checks.js";
+import {
+  checkMcpRejectTampered,
+  checkMcpRejectUnsafePath,
+  checkMcpRejectNonMcp,
+  checkMcpSurfacesServer,
+  checkMcpCompat,
+  checkMcpProfileDeclaration,
+  type McpHost,
+} from "./mcp-checks.js";
 
 export interface ConformanceReport {
   /** True iff every check passed. */
@@ -147,6 +156,25 @@ export async function runCompanionConformance(host: CompanionHost): Promise<Conf
   return { ok: checks.every((c) => c.ok), checks };
 }
 
+/**
+ * Run the **MCP-server host** conformance battery against `host` — the profile an app implements to
+ * consume `kind:"mcp"` packages (`spec/mcp-server.md`). It certifies that the host verifies the header,
+ * runs none of the server's code (refusing tampered / unsafe / non-`mcp` / incompatible packages),
+ * surfaces the declared server, and declares an `mcp` profile a registry can match on. Connecting to
+ * and running the server (under user consent, outside the azphalt sandbox) is the host's own concern.
+ */
+export async function runMcpConformance(host: McpHost): Promise<ConformanceReport> {
+  const checks: CheckResult[] = [
+    await checkMcpRejectTampered(host),
+    await checkMcpRejectUnsafePath(host),
+    await checkMcpRejectNonMcp(host),
+    await checkMcpSurfacesServer(host),
+    await checkMcpCompat(host),
+    checkMcpProfileDeclaration(host),
+  ];
+  return { ok: checks.every((c) => c.ok), checks };
+}
+
 export { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 export { satisfiesCompat } from "./checks.js";
 export * as fixtures from "./fixtures.js";
@@ -165,6 +193,7 @@ export type {
   CompanionReturn,
   CompanionInvocation,
 } from "./companion-checks.js";
+export type { McpHost, McpLoadReport } from "./mcp-checks.js";
 export type {
   VideoAudioHost,
   HostProfile,

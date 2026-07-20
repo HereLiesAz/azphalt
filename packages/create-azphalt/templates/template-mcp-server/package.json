@@ -1,0 +1,12 @@
+{
+  "name": "my-azphalt-mcp-server",
+  "version": "0.1.1",
+  "description": "An MCP-server (kind:\"mcp\") package for azphalt — a header that declares how a host reaches your MCP server.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@azphalt/azp": "^0.1.0"
+  }
+}

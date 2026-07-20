@@ -188,17 +188,34 @@ Publishing is the existing path — the registry verifies (the rules above) and 
 consignment storefront or a PR submission gates on the same verification. No new distribution endpoint
 is introduced.
 
+## Resolved
+
+- **Android native launch descriptor** — *resolved.* `platforms.android` is `{ component, args? }`.
+  `component` is an opaque string the host resolves to a launchable on-device entry — an installed
+  Android component (`packageId/.ClassName`) or a host-runtime entry the host registers; a host that
+  can't resolve it falls through to the next transport in the selection order. `args` may carry
+  `${input:…}` references. (A richer descriptor — an intent action, a bundled `.aar` — is a compatible
+  future addition, since `component` is opaque.)
+- **Secret detection** — *resolved.* The rule is the conservative **credential-keyed** check: an
+  `env` / `headers` value whose **key** matches `key` / `token` / `secret` / `password` / `apikey` /
+  `auth` / `credential` / `bearer` (case-insensitive) MUST reference an `${input:…}`; a literal is a
+  verify-time rejection (`validateMcpManifest`). A value-shape heuristic (entropy / known prefixes like
+  `sk-`) is intentionally **out** of `0.1` — it trades false positives for coverage and can be layered
+  on later without a format change.
+- **`grants` vocabulary** — *resolved.* The blessed set is `fs:read`, `fs:write`, `net`, `env`, and
+  `exec`; the field stays an **open** vocabulary (a host ignores or prompts for a grant it doesn't
+  understand). A host maps `fs:*` to WASI preopened directories, `net` to socket permissions, `env` to
+  environment access, and `exec` to subprocess spawn — always **user-consented**, never an azphalt
+  editor capability.
+- **`offers` verification** — *resolved.* `offers` is **advisory**: it powers the store card and a
+  host's pre-connect "can I use this?" check. A host MAY reconcile it against the live MCP handshake on
+  connect and surface a drift warning, but MUST NOT block on a mismatch — the live handshake is
+  authoritative.
+
 ## Open questions
 
-- **Android native launch descriptor** — the precise `platforms.android` shape (a bundled component id
-  vs. a host-runtime entry vs. an intent). `0.1` carries an opaque `component` string the host
-  resolves.
-- **Secret detection** — the rule is a conservative **credential-keyed** check (a credential-shaped
-  key's value must reference an input). Whether to broaden it to a value-shape heuristic
-  (entropy / known prefixes like `sk-`) is deferred.
-- **`grants` vocabulary** — the blessed set (`fs:read` / `fs:write` / `net` / …) and how a host maps it
-  to WASI preopens / socket permissions.
-- **`offers` verification** — whether a host reconciles the declared `offers` against the live MCP
-  handshake on install, or leaves it purely advisory.
+- **Conformance** — an `mcp` host-conformance profile in `@azphalt/conformance`
+  (`runMcpConformance(host)`), mirroring the `companion` profile, tracks the runtime contract a host
+  must meet to consume MCP-server packages.
 - **Conformance** — an `mcp` host-conformance profile in `@azphalt/conformance`
   (`runMcpConformance(host)`), mirroring the `companion` profile, is deferred to a follow-on.

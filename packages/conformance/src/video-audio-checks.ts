@@ -22,7 +22,7 @@ import * as fx from "./fixtures.js";
  * blessed core is `image` (paint / asset host), `video-audio` (temporal host), and `companion`
  * (companion-app host — launches an external Android app or PWA over a handoff).
  */
-export type HostProfile = "image" | "video-audio" | "companion" | (string & {});
+export type HostProfile = "image" | "video-audio" | "companion" | "mcp" | (string & {});
 
 /** A PCM audio block — 32-bit float in `[-1, 1]`, **interleaved** (`samples[f * channels + c]`). */
 export interface ConformanceAudio {

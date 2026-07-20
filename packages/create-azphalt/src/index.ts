@@ -127,6 +127,11 @@ const TEMPLATES = [
     description: "A kind:\"app\" header that lets a host launch your Android app or PWA via a handoff."
   },
   {
+    title: "MCP Server (For Developers)",
+    value: "template-mcp-server",
+    description: "A kind:\"mcp\" header that declares how a host reaches your MCP server (local or remote)."
+  },
+  {
     title: "Asset Pack (For Creators)",
     value: "template-asset-pack",
     description: "Boilerplate workspace for bundling images, audio, or 3D assets."

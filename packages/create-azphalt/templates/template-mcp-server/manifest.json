@@ -1,0 +1,31 @@
+{
+  "azphalt": "0.1",
+  "id": "com.example.azphalt.my-mcp-server",
+  "name": "My MCP Server",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "mcp",
+  "mcp": {
+    "inputs": [
+      { "id": "apiKey", "type": "promptString", "description": "API key for the service", "password": true }
+    ],
+    "servers": [
+      {
+        "id": "my-server",
+        "local": {
+          "platforms": {
+            "desktop": {
+              "command": "npx",
+              "args": ["-y", "@example/my-mcp-server"],
+              "env": { "API_KEY": "${input:apiKey}" }
+            }
+          }
+        },
+        "remote": { "type": "http", "url": "https://mcp.example.com" }
+      }
+    ],
+    "offers": { "tools": ["do_thing"], "resources": false, "prompts": false }
+  }
+}
