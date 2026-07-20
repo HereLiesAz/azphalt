@@ -1,10 +1,14 @@
-# Marketplace integrity — RFC
+# Marketplace integrity
 
-*Status: **Proposed** (design RFC, not yet normative). Covers four interlocking subsystems that keep the
-open registry safe for **users** and fair to **developers** without breaking the open, self-hostable
-standard: a **security sweep** at publish/update, **reporting & moderation**, **private / proprietary
-hosting**, and **anti-clone / provenance**. Each builds on azphalt's existing trust primitives rather
-than inventing new cryptography.*
+*Status: **Normative**. Covers four interlocking subsystems that keep the open registry safe for
+**users** and fair to **developers** without breaking the open, self-hostable standard: a **security
+sweep** at publish/update, **reporting & moderation**, **private / proprietary hosting**, and
+**anti-clone / provenance**. Each builds on azphalt's existing trust primitives rather than inventing
+new cryptography. All three implementation phases are on `main` (`@azphalt/registry`'s `scanPackage`,
+the `visibility` field + ACL download gate, and the clone/provenance signals). The **shapes and wiring**
+here are normative; **enforcement policy** (exact thresholds, block-vs-flag staffing) is a deployment
+choice — the sign-off decisions below record the **flagship's** defaults, which a self-hosted registry
+overrides.*
 
 ## Principles
 
@@ -62,8 +66,9 @@ attaches to the version. Hosts read it like the revocation feed: `block` never r
 carries a badge a host shows before install. The sweep is a `@azphalt/registry` module (server-side,
 run in `publish`) plus a reference CI action authors can run pre-submit.
 
-*Sign-off:* the **block vs flag** line per check (proposed above), and whether the flagship
-auto-blocks on advisory obfuscation heuristics (proposed: no — flag only).
+*Decision:* the per-check **block vs flag** lines above are normative. Obfuscation / packing
+heuristics are **advisory flags only** — the flagship does **not** auto-block on them (a legitimate
+minifier or packer would be caught); a human reviews a flagged packing signal.
 
 ---
 
@@ -85,8 +90,11 @@ auto-blocks on advisory obfuscation heuristics (proposed: no — flag only).
   registry stays neutral: a self-hosted registry may auto-approve, human-moderate, or ignore — the
   standard only pins the report object and the revocation wiring.
 
-*Sign-off:* the trusted-report **threshold** and who qualifies as a trusted reporter; whether reports
-require an identity at all.
+*Decision:* reports do **not** require an identity — anyone may `POST /reports` (rate-limited by IP).
+A report is **trusted** when it is signed by a **counter-signed host** or a **verified account**; only
+trusted reports count toward auto-quarantine. The **threshold** is deployment-configured; the flagship
+default is **3 trusted reports** on a version (or a single security-sweep denylist hit) → auto-quarantine
+pending human review. Untrusted reports never trip the threshold — they queue for a human.
 
 ---
 
@@ -107,8 +115,11 @@ require an identity at all.
   packages to your org; the consignment overlay handles *paid* closed-source. No source ever leaves the
   publisher.
 
-*Sign-off:* is there a first-class **org/team** membership model, or only per-user access grants
-(buyer-style entitlements) in v1?
+*Decision:* v1 is **per-user access grants** (buyer-style entitlements) only — the download gate
+already understands them, so `private` reuses that check with no new primitive. **Org/team membership
+is deferred**: a deployment that needs it maps its own team model onto the same per-user grant at the
+gate, so nothing here forecloses it. A first-class team object may be added later without changing the
+`visibility` field or the gate's shape.
 
 ---
 
@@ -133,8 +144,12 @@ Goes beyond today's exact-version duplicate check (a re-publish of the same `id@
 - **User protection.** A surviving flag also surfaces to users — a host shows "possible clone of `X` by
   `Y`" so buyers aren't deceived.
 
-*Sign-off:* the similarity **thresholds** and the false-positive tolerance; whether a strong match
-against a *verified* original should **auto-block** (proposed: auto-*quarantine*, not block).
+*Decision:* a strong match against a **verified / counter-signed** original **auto-quarantines** the
+clone (never auto-*blocks* — a verbatim re-upload is restored on a successful appeal, a legitimate
+fork clears review). Everything weaker is human-reviewed. The similarity **thresholds** and
+false-positive tolerance are **deployment-tuned**: the standard fixes the *signals* (asset-content hash
+match, normalized code fingerprint, name/id fuzzy match) and the *evidence* a flag carries (which
+earlier package, which publisher key, the similarity score), never the numbers.
 
 ---
 
@@ -146,11 +161,18 @@ against a *verified* original should **auto-block** (proposed: auto-*quarantine*
 2. **Visibility + private download** — the `visibility` field + the ACL download gate.
 3. **Clone / provenance** — asset/code fingerprinting + the provenance-evidence moderation flow.
 
-## Open questions
+All three phases are implemented and on `main`.
 
-- The exact **code-fingerprint** algorithm (shingling window, hash, threshold) and its cost at publish.
-- **Reporter anti-abuse** — mass-report brigading; weighting by reporter trust.
-- Whether the **scan report** is a new signed artifact alongside the package or folded into the
-  repository-API version object.
-- **Verified publisher** — what confers "verified" (a counter-signature? an out-of-band identity
-  check?) and how much it elevates auto-actions.
+## Resolved
+
+- **Code-fingerprint algorithm** — the *signal* is normative (a normalized shingled fingerprint whose
+  similarity score rides in the clone flag's evidence); the exact shingling window / hash / threshold
+  and their publish-time cost are a **deployment choice**, not fixed by the standard.
+- **Reporter anti-abuse** — only **trusted** reports (counter-signed host / verified account) count
+  toward auto-quarantine, so mass-reporting by anonymous accounts can't trip it; untrusted reports
+  queue for a human, rate-limited by IP + reporter identity (§ 2).
+- **Scan report** — **folded into** the repository-API version object and **registry counter-signed**,
+  not a separate artifact; hosts read it like the revocation feed (§ 1).
+- **Verified publisher** — "verified" is conferred by a **registry counter-signature** (the registry
+  vouches for the key). A deployment MAY layer an additional out-of-band identity check to elevate
+  further, but the counter-signature is the standard's baseline for the auto-actions above.

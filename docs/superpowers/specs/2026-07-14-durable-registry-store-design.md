@@ -1,7 +1,7 @@
 # A durable RegistryStore (Neon Postgres + Vercel Blob)
 
 Date: 2026-07-14
-Status: Approved, pending implementation
+Status: Implemented (`@azphalt/registry-store-vercel`; `PaymentSessionStore` in `@azphalt/registry`)
 Affects: `packages/registry`, new `packages/registry-store-vercel`, `apps/storefront`
 Follows: `2026-07-14-storefront-paid-download-gate-design.md` (must land first — it decides
 private-vs-public Blob)

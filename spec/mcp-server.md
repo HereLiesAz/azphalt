@@ -1,11 +1,12 @@
-# MCP servers (`kind: "mcp"`) — RFC
+# MCP servers (`kind: "mcp"`)
 
-*Status: **Proposed** (design RFC, not yet normative). Extends the package model with a fourth kind —
-an **MCP server** ([Model Context Protocol](https://modelcontextprotocol.io)) a host's MCP client
-connects to. This document settles the design; the SDK `Kind`/manifest wiring, the `@azphalt/azp`
-verification rules, and the registry discovery profile land as it's accepted. Modeled on how VS Code
-treats a `.vsix` that contributes an MCP server: the package **declares** the server; the host runs it
-under a trust prompt.*
+*Status: **Normative**. Extends the package model with a fourth kind — an **MCP server**
+([Model Context Protocol](https://modelcontextprotocol.io)) a host's MCP client connects to. The SDK
+`Kind`/manifest wiring, the `@azphalt/azp` verification rules (`validateMcpManifest` folded into
+`verifyAzp`), the `create-azphalt` template, the registry discovery profile, and the `mcp`
+host-conformance profile (`runMcpConformance`) are all implemented and on `main`. Modeled on how VS
+Code treats a `.vsix` that contributes an MCP server: the package **declares** the server; the host
+runs it under a trust prompt.*
 
 ## Why this exists — and why it doesn't break the moat
 
@@ -212,10 +213,11 @@ is introduced.
   connect and surface a drift warning, but MUST NOT block on a mismatch — the live handshake is
   authoritative.
 
-## Open questions
+## Resolved
 
-- **Conformance** — an `mcp` host-conformance profile in `@azphalt/conformance`
-  (`runMcpConformance(host)`), mirroring the `companion` profile, tracks the runtime contract a host
-  must meet to consume MCP-server packages.
-- **Conformance** — an `mcp` host-conformance profile in `@azphalt/conformance`
-  (`runMcpConformance(host)`), mirroring the `companion` profile, is deferred to a follow-on.
+- **Conformance** — *resolved.* `@azphalt/conformance` ships an `mcp` host-conformance profile,
+  `runMcpConformance(host)` (mirroring the `companion` profile): it drives a fixture `kind:"mcp"`
+  package and asserts the host verifies the header, rejects a non-`kind:"mcp"` package, honours the
+  header-only rule (no bundled secrets; a bundled WASI module's integrity), prompts for `${input:…}`
+  secrets rather than storing them, and selects a transport in on-device-first order. A conforming host
+  declares an `"mcp"` profile for registry matching.
