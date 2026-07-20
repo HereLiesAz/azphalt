@@ -15,21 +15,27 @@
  */
 import { createPrivateKey, createPublicKey } from "node:crypto";
 import { readAzp, writeAzp } from "@azphalt/azp";
-import { StripePaymentProvider } from "./StripePaymentProvider";
 import {
   EntitlementAuthorizer,
-  InMemoryStore,
+  InMemoryEntitlementStore,
+  InMemoryPaymentSessionStore,
   Marketplace,
   Registry,
   RegistryError,
+  StripePaymentProvider,
   StubPaymentProvider,
   denyAllAuthorizer,
   issueEntitlement,
+  stripeConfigFromEnv,
   type CheckoutSession,
   type DownloadAuthorizer,
+  type EntitlementStore,
   type EntitlementToken,
+  type PaymentProvider,
+  type PaymentSessionStore,
   type PriceBreakdown,
   type Listing,
+  type RegistryStore,
 } from "@azphalt/registry";
 import type { Manifest } from "@azphalt/azdk";
 
@@ -613,15 +619,74 @@ const SEEDS: Seed[] = [
 ];
 
 import { NpmStore } from "./backend";
+import { createVercelStores } from "@azphalt/registry-store-vercel";
+
+/* ─────────────────────────── Store selection ───────────────────────────
+ * `DATABASE_URL` **and** `BLOB_READ_WRITE_TOKEN` both present ⇒ the durable Neon + Blob backend, so
+ * catalog, listings, checkout sessions and issued entitlements survive a restart and are shared across
+ * serverless instances. Otherwise the ephemeral `NpmStore` + in-memory sessions/entitlements with
+ * module-load seeding — so `next dev` and the tests run with no services and no credentials. */
+const DATABASE_URL = process.env.DATABASE_URL;
+const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+const durable = Boolean(DATABASE_URL && BLOB_READ_WRITE_TOKEN);
+
+const vercel = durable
+  ? createVercelStores({ connectionString: DATABASE_URL!, blobToken: BLOB_READ_WRITE_TOKEN! })
+  : undefined;
 
 /** The live registry + marketplace, wired to a single shared store as the marketplace requires. */
-const store = new NpmStore();
+const store = vercel?.store ?? new NpmStore();
 const registry = new Registry(store);
-// StubPaymentProvider is the default: it records sessions in memory and moves no money, so `next dev`
-// and the tests run with no secrets and no network. A deployment that sets STRIPE_SECRET_KEY opts in
-// to the real split-payout provider. See apps/storefront/README.md § "Payments are stubbed (dev only)".
-const payments = process.env.STRIPE_SECRET_KEY ? new StripePaymentProvider() : new StubPaymentProvider();
+
+/** Where checkout sessions and issued entitlements live — durable, or process-local for dev/tests. */
+const sessions: PaymentSessionStore = vercel?.sessions ?? new InMemoryPaymentSessionStore();
+/** Fulfilled purchases, keyed by checkout session (the buyer's retrievable license). */
+export const entitlements: EntitlementStore = vercel?.entitlements ?? new InMemoryEntitlementStore();
+
+/**
+ * The payment provider. `AZPHALT_STRIPE_SECRET_KEY` present ⇒ the real split-payout Stripe Connect
+ * provider (destination charges: platform fee retained, remainder transferred to the seller's
+ * connected account). Absent ⇒ the `StubPaymentProvider`, which records sessions but moves no money,
+ * so dev and tests need no secrets or network. See apps/storefront/README.md § payments.
+ */
+const usingStripe = Boolean(process.env.AZPHALT_STRIPE_SECRET_KEY);
+
+/**
+ * Resolve a marketplace `sellerId` to the seller's Stripe **connected account** (`acct_…`) the payout
+ * routes to. The mapping is operator config — a JSON object in `AZPHALT_STRIPE_CONNECTED_ACCOUNTS`,
+ * e.g. `{"seller_hereliesaz":"acct_123"}` — recorded when a seller onboards via Stripe Connect. A
+ * `sellerId` with no mapping is a hard error, not a silent misroute (the previous bug passed the raw
+ * `sellerId` as if it were a Stripe account id).
+ */
+function connectedAccountFor(sellerId: string): string {
+  let map: Record<string, string>;
+  try {
+    map = JSON.parse(process.env.AZPHALT_STRIPE_CONNECTED_ACCOUNTS ?? "{}") as Record<string, string>;
+  } catch {
+    throw new RegistryError("AZPHALT_STRIPE_CONNECTED_ACCOUNTS is not valid JSON");
+  }
+  const account = map[sellerId];
+  if (!account) throw new RegistryError(`no Stripe connected account configured for seller: ${sellerId}`);
+  return account;
+}
+
+const payments: PaymentProvider = usingStripe
+  ? new StripePaymentProvider(stripeConfigFromEnv(process.env, { connectedAccountFor }))
+  : new StubPaymentProvider({ sessions });
+
+/** The stub provider when in stub mode (its dev-only `simulate`/`getInput` fulfilment path), else undefined. */
+const stub = usingStripe ? undefined : (payments as StubPaymentProvider);
+
+/** `"stripe"` when real split-payout checkout is configured, else `"stub"` (moves no money). */
+export const paymentsMode: "stripe" | "stub" = usingStripe ? "stripe" : "stub";
+
 const market = new Marketplace(registry, store, { payments });
+
+/** A store that also records ratings and (for the npm proxy) can reserve local-only ids — both used by seeding. */
+type RegistryStoreWithRatings = RegistryStore & {
+  addRating?: (id: string, stars: number) => Promise<void> | void;
+  reserveLocal?: (id: string) => void;
+};
 
 /* ─────────────────────────── The paid lane's gate ─────────────────────────── */
 
@@ -666,71 +731,135 @@ export async function priceStatus(id: string): Promise<"free" | "paid"> {
   return listing && listing.status === "active" ? "paid" : "free";
 }
 
-/**
- * What each open checkout session was for: `sessionId → { packageId, buyerId }`. Fulfilment
- * (`POST /api/checkout/complete`) mints the entitlement from *this* record, never from its own
- * request body, so a caller cannot mint a license for a package it never checked out. In-memory and
- * process-local, matching the stand-in registry above — a real deployment persists this beside the
- * payment session.
- */
-export const sessionRecords = new Map<string, { packageId: string; buyerId: string }>();
-
-/** Open a checkout session and remember what it was for, so fulfilment can mint against it. */
+/** Open a checkout session. The provider now records the session **and its input**, so fulfilment can
+ * later resolve what the session was for from stored state — never from a request body. */
 export async function startCheckout(
   packageId: string,
   buyerId: string,
 ): Promise<{ session: CheckoutSession; breakdown: PriceBreakdown; listing: Listing }> {
   const { market: m } = await getCatalog();
-  const result = await m.checkout(packageId, buyerId);
-  sessionRecords.set(result.session.id, { packageId, buyerId });
-  return result;
+  return m.checkout(packageId, buyerId);
+}
+
+/* ─────────────────────────── Fulfilment ─────────────────────────── */
+
+/** The wire form of an entitlement — base64-encoded JSON — that the download gate decodes as a Bearer credential. */
+function encodeToken(token: EntitlementToken): string {
+  return Buffer.from(JSON.stringify(token), "utf8").toString("base64");
 }
 
 /**
- * Seed the catalog exactly once. Memoized as a promise so concurrent requests (and Next's parallel
- * route rendering) all await the same in-flight seeding rather than racing to double-publish.
+ * Turn a **settled** checkout into a durable, retrievable license: mint the entitlement (once) and
+ * store it keyed by the checkout session, returning the Bearer token. Idempotent on `sessionId` — a
+ * webhook retry, or the buyer's return page and the webhook racing, reuses the first-issued token
+ * rather than minting a second. Returns `null` when issuance is disabled (`AZPHALT_SIGNING_KEY`
+ * unset), so callers surface that instead of a broken token.
+ *
+ * This never trusts a caller: the real Stripe path calls it only from a signature-verified
+ * `checkout.session.completed` webhook, and the stub path only behind the dev opt-in.
  */
-let seeded: Promise<void> | undefined;
+export async function fulfil(sessionId: string, packageId: string, subject: string): Promise<string | null> {
+  await getCatalog();
+  const existing = await entitlements.getBySession(sessionId);
+  if (existing) return encodeToken(existing.token);
+  if (!signingKey) return null;
+  const issuedAt = new Date().toISOString();
+  const token = issueEntitlement(signingKey, { kind: "perpetual", packageId, subject, issuedAt });
+  await entitlements.put({ sessionId, packageId, subject, token, issuedAt });
+  return encodeToken(token);
+}
 
-async function seed(): Promise<void> {
+/** The Bearer token already issued for a settled checkout session, or `null` if none yet (e.g. webhook pending). */
+export async function issuedToken(sessionId: string): Promise<string | null> {
+  await getCatalog();
+  const record = await entitlements.getBySession(sessionId);
+  return record ? encodeToken(record.token) : null;
+}
+
+/** The originating input for a **stub** checkout session (dev fulfilment). Undefined for the Stripe path. */
+export async function stubSessionInput(
+  sessionId: string,
+): Promise<{ packageId: string; buyerId: string } | undefined> {
+  if (!stub) return undefined;
+  await getCatalog();
+  const record = await sessions.get(sessionId);
+  if (!record) return undefined;
+  return { packageId: record.input.packageId, buyerId: record.input.buyerId };
+}
+
+/** Mark a stub session completed (dev fulfilment). A no-op when the real Stripe provider is active. */
+export async function completeStubSession(sessionId: string): Promise<void> {
+  if (stub) await stub.simulate(sessionId, "completed");
+}
+
+/* ─────────────────────────── Seeding ─────────────────────────── */
+
+/**
+ * Publish the example catalog into `reg`/`mkt` over `str`. Shared by module-load dev seeding and the
+ * standalone `seed` script.
+ *
+ * `opts.idempotent` (the durable seed script) skips any version already present — publish, downloads,
+ * ratings, and listing — so re-running is safe against a persistent store where `registry.publish`
+ * rejects duplicates. It is **off** for the ephemeral module-load path: that store starts empty every
+ * process (so there is nothing to skip), and its `getVersion` is a network-backed npm proxy — probing
+ * it per seed would hang seeding on lookups for ids that aren't on npm.
+ */
+export async function seedCatalog(
+  reg: Registry,
+  mkt: Marketplace,
+  str: RegistryStoreWithRatings,
+  opts: { idempotent?: boolean } = {},
+): Promise<void> {
+  const { idempotent = false } = opts;
+
+  // Reserve every seed id as local-only up front (the npm-proxy store honours this), so
+  // `registry.publish`'s pre-publish duplicate check resolves offline instead of firing one npm
+  // lookup per seed. A durable store has no such method (its getVersion is a fast DB read).
+  str.reserveLocal?.(DITHER_OLD.id);
+  for (const s of SEEDS) str.reserveLocal?.(s.manifest.id);
+
   // Publish the older Dither Kit version first so the newer one supersedes it in `latest`.
-  const oldAzp = writeAzp({
-    manifest: DITHER_OLD,
-    payload: { "code/index.js": utf8("export const applyDither = (ctx) => {};\n") },
-    license: MIT_LICENSE,
-  });
-  await registry.publish(oldAzp.azp);
+  if (!idempotent || !(await str.getVersion(DITHER_OLD.id, DITHER_OLD.version))) {
+    const oldAzp = writeAzp({
+      manifest: DITHER_OLD,
+      payload: { "code/index.js": utf8("export const applyDither = (ctx) => {};\n") },
+      license: MIT_LICENSE,
+    });
+    await reg.publish(oldAzp.azp);
+  }
 
   for (const s of SEEDS) {
+    // Per-(id, version) idempotency: skip a version we already have, and everything that hangs off it.
+    if (idempotent && (await str.getVersion(s.manifest.id, s.manifest.version))) continue;
+
     const { azp } = writeAzp({ manifest: s.manifest, payload: s.payload, license: MIT_LICENSE });
-    await registry.publish(azp);
-  }
+    await reg.publish(azp);
 
-  // Simulate historical downloads so "popular" ordering is meaningful. `serve` counts a download.
-  for (const s of SEEDS) {
-    const n = s.simulatedDownloads ?? 0;
-    for (let i = 0; i < n; i++) await registry.serve(s.manifest.id);
-  }
+    // Simulate historical downloads in one atomic bump — O(1), not an N-round-trip `serve` loop
+    // (a durable store would otherwise make thousands of Blob fetches just to seed a counter).
+    if (s.simulatedDownloads) await str.incrementDownloads(s.manifest.id, s.manifest.version, s.simulatedDownloads);
 
-  // Seed a few star ratings so the "rating" sort and the rating badges have signal.
-  for (const s of SEEDS) {
-    for (const stars of s.ratings ?? []) store.addRating(s.manifest.id, stars);
-  }
+    // Seed star ratings so the "rating" sort and badges have signal.
+    for (const stars of s.ratings ?? []) await str.addRating?.(s.manifest.id, stars);
 
-  // Consign the packages flagged for sale onto the paid lane.
-  for (const s of SEEDS) {
+    // Consign the packages flagged for sale onto the paid lane.
     if (s.listPriceCents != null && s.sellerId) {
-      await market.listForSale(s.manifest.id, s.sellerId, {
-        amountCents: s.listPriceCents,
-        currency: "USD",
-      });
+      await mkt.listForSale(s.manifest.id, s.sellerId, { amountCents: s.listPriceCents, currency: "USD" });
     }
   }
 }
 
-/** Ensure the catalog is seeded, then hand back the shared registry + marketplace. */
+/**
+ * Ensure the catalog is ready, then hand back the shared registry + marketplace. The **durable** store
+ * is seeded out-of-band by the `seed` script (seeding at module load would have every cold serverless
+ * instance re-`publish` and throw on the duplicate), so here it is a no-op; the **ephemeral** store is
+ * seeded once, memoized so concurrent requests await one in-flight seeding rather than double-publishing.
+ */
+let seeded: Promise<void> | undefined;
+
 export async function getCatalog(): Promise<{ registry: Registry; market: Marketplace }> {
-  if (!seeded) seeded = seed();
+  if (durable) return { registry, market };
+  if (!seeded) seeded = seedCatalog(registry, market, store as RegistryStoreWithRatings);
   await seeded;
   return { registry, market };
 }
