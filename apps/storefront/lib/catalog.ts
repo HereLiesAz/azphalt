@@ -951,9 +951,9 @@ export async function fileReport(input: {
 export async function listAllReports(): Promise<Report[]> {
   await getCatalog();
   const ids = await store.allPackageIds();
-  const all: Report[] = [];
-  for (const id of ids) all.push(...(await registry.reports(id)));
-  return all.sort((a, b) => (a.reportedAt < b.reportedAt ? 1 : a.reportedAt > b.reportedAt ? -1 : 0));
+  // Fetch every package's reports concurrently rather than one-at-a-time.
+  const perPackage = await Promise.all(ids.map((id) => registry.reports(id)));
+  return perPackage.flat().sort((a, b) => (a.reportedAt < b.reportedAt ? 1 : a.reportedAt > b.reportedAt ? -1 : 0));
 }
 
 /** The originating input for a **stub** checkout session (dev fulfilment). Undefined for the Stripe path. */

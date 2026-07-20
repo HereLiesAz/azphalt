@@ -76,7 +76,7 @@ export default function ModerationPage() {
           {state.kind === 'loaded' && state.reports.length === 0 && <p style={{ color: MUTED }}>No reports filed.</p>}
           {state.kind === 'loaded' &&
             state.reports.map((r, i) => (
-              <div key={i} style={{ marginBottom: 12, padding: 16, background: SURFACE, borderRadius: 12, border: `1px solid ${IDLE}` }}>
+              <div key={`${r.packageId}-${r.reportedAt}-${i}`} style={{ marginBottom: 12, padding: 16, background: SURFACE, borderRadius: 12, border: `1px solid ${IDLE}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
                   <strong style={{ fontSize: 15 }}>{r.packageId}{r.version ? ` @ ${r.version}` : ''}</strong>
                   <span style={{ color: MUTED, fontSize: 12 }}>{new Date(r.reportedAt).toLocaleString()}</span>
