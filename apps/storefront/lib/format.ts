@@ -68,6 +68,8 @@ export function kindLabel(kind: string): string {
   if (kind === "asset") return "Asset pack";
   if (kind === "mixed") return "Code + assets";
   if (kind === "app") return "Companion app";
+  if (kind === "mcp") return "MCP server";
+  if (kind === "pack") return "Extension pack";
   return kind;
 }
 

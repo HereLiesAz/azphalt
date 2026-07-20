@@ -13,7 +13,7 @@
 export const FORMAT_VERSION = "0.1" as const;
 
 /* ───────────────────────────── Manifest ───────────────────────────── */
-export type Kind = "asset" | "code" | "mixed" | "app" | "mcp";
+export type Kind = "asset" | "code" | "mixed" | "app" | "mcp" | "pack";
 export type Runtime = "js" | "wasm";
 
 /** 
@@ -480,6 +480,15 @@ export interface Manifest {
   mcp?: McpManifest;
 
   /**
+   * For a `kind: "pack"` **extension pack** — a curated collection that *references* other packages by
+   * id (a recommended set, or an app's base set). Like {@link AppManifest} / {@link McpManifest} it is a
+   * header: no `/code` payload, no `capabilities`, no `assets`. Members may be authored by anyone; each
+   * is still resolved and free/paid-gated individually on install. See {@link PackManifest} and
+   * `spec/pack.md`.
+   */
+  pack?: PackManifest;
+
+  /**
    * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffitixr"]`).
    * A repository shows an app-scoped package only to a matching app; **absent or empty means the
    * package is global** (available to every app). Scoping is a discovery filter, not access control.
@@ -728,6 +737,39 @@ export interface McpOffers {
   resources?: string[] | boolean;
   /** Prompt names, or a presence flag. */
   prompts?: string[] | boolean;
+}
+
+/* ───────────────────────────── Pack (kind: "pack") ───────────────────────────── */
+
+/**
+ * An **extension pack** (`kind: "pack"`) — a curated collection that references other packages, e.g. a
+ * "recommended" set or an app's "base set". A pack carries **no payload of its own**: it is a signed
+ * manifest listing member packages by id (each possibly authored by someone else). A host resolves each
+ * member from a repository and installs it through the normal path, honoring the member's own free/paid
+ * gate. See `spec/pack.md`.
+ */
+export interface PackManifest {
+  /** The member packages, in the order a host should present them. At least one is required. */
+  entries: PackEntry[];
+}
+
+/** One member of a {@link PackManifest} — a reference to another package, not a copy of its bytes. */
+export interface PackEntry {
+  /** Reverse-DNS id of the member package (may belong to a different author). */
+  id: string;
+  /**
+   * Optional exact version to pin. Absent = resolve the member's **latest** at install time (the pack
+   * tracks the member as it evolves). Pin when the pack depends on a specific version's behavior.
+   */
+  version?: string;
+  /**
+   * `true` ⇒ part of the **base set**: a host installs it by default with the pack. `false` / absent ⇒
+   * **recommended**: surfaced for the user to opt into. Lets one pack express both "install these" and
+   * "you might also like these".
+   */
+  required?: boolean;
+  /** Optional short human note shown beside the member (why it's in the pack). */
+  note?: string;
 }
 
 /* ───────────────────────────── UI schema ───────────────────────────── */

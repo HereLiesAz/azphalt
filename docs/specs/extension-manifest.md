@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique — e.g. `com.hereliesaz.halftone`. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app`. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack`. |
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |

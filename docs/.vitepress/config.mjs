@@ -35,6 +35,7 @@ export default defineConfig({
             { text: 'UI Schema', link: '/specs/ui-schema' },
             { text: 'Marketplace Integrity', link: '/specs/marketplace-integrity' },
             { text: 'MCP Server', link: '/specs/mcp-server' },
+            { text: 'Extension Packs', link: '/specs/pack' },
             { text: 'Companion Apps (RFC)', link: '/specs/companion-app' }
           ]
         }
@@ -46,6 +47,7 @@ export default defineConfig({
             { text: 'Getting Started', link: '/creators/getting-started' },
             { text: 'Manifest Schema', link: '/specs/extension-manifest' },
             { text: 'Package Format', link: '/specs/package-format' },
+            { text: 'Extension Packs', link: '/specs/pack' },
             { text: 'MCP Servers', link: '/specs/mcp-server' }
           ]
         }

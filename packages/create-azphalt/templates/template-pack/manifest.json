@@ -1,0 +1,19 @@
+{
+  "azphalt": "0.1",
+  "id": "com.example.azphalt.my-pack",
+  "name": "My Starter Pack",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "pack",
+  "description": "A recommended starter set for my app — the base extensions users should install first.",
+  "targetApps": ["com.example.myapp"],
+  "pack": {
+    "entries": [
+      { "id": "com.foldlab.filmluts", "version": "1.0.0", "required": true, "note": "core LUTs" },
+      { "id": "com.brushery.inkbrushes", "required": true, "note": "default brushes (latest)" },
+      { "id": "com.hereliesaz.halftone", "required": false, "note": "optional paid add-on" }
+    ]
+  }
+}
