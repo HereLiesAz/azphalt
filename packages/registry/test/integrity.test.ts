@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { writeAzp, digest } from "@azphalt/azp";
+import { writeAzp, digest, generateSigningKey, signAzp } from "@azphalt/azp";
 import { Registry, InMemoryStore, RegistryError, scanPackage } from "../src/index";
 
 const license = "MIT License\n";
@@ -121,5 +121,40 @@ describe("visibility (private / unlisted hosting)", () => {
     // An owner/moderation view can widen to everything.
     const all = (await reg.list({ visibility: "all" })).map((s) => s.id);
     expect(all).toEqual(expect.arrayContaining(["com.acme.pub", "com.acme.unl", "com.acme.prv"]));
+  });
+});
+
+describe("clone / provenance", () => {
+  function brushAzp(id: string, name: string, bytes: Uint8Array) {
+    return writeAzp({
+      manifest: { ...base, id, name, kind: "asset" as const, assets: [{ type: "brush", path: "assets/b" }] },
+      payload: { "assets/b": bytes },
+      license,
+    }).azp;
+  }
+
+  it("flags a package whose assets clone another publisher's, and records the publisher key", async () => {
+    const reg = new Registry(new InMemoryStore());
+    const orig = generateSigningKey();
+    const thief = generateSigningKey();
+    const shared = enc("identical-brush-bytes");
+
+    await reg.publish(signAzp(brushAzp("com.orig.brush", "Original Brush", shared), { privateKey: orig.privateKey }));
+    const { version } = await reg.publish(signAzp(brushAzp("com.thief.brush", "Copied Brush", shared), { privateKey: thief.privateKey }));
+
+    expect(version.scan?.checks.find((c) => c.id === "clone-assets")?.verdict).toBe("flag");
+    expect(version.scan?.verdict).toBe("flag");
+    expect(version.publisherKey).toBe(thief.publicKey);
+  });
+
+  it("does not flag the same publisher reusing their own assets", async () => {
+    const reg = new Registry(new InMemoryStore());
+    const key = generateSigningKey();
+    const shared = enc("my-own-brush-bytes");
+
+    await reg.publish(signAzp(brushAzp("com.me.one", "Brush One", shared), { privateKey: key.privateKey }));
+    const { version } = await reg.publish(signAzp(brushAzp("com.me.two", "Brush Two", shared), { privateKey: key.privateKey }));
+
+    expect(version.scan?.checks.find((c) => c.id === "clone-assets")).toBeUndefined();
   });
 });

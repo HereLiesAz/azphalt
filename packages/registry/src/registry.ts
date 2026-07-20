@@ -7,7 +7,7 @@
 import { digest, readAzp, verifyAzp } from "@azphalt/azp";
 import type { AssetType, Capability, Manifest, MediaDomain } from "@azphalt/azdk";
 import { InMemoryStore, type RegistryStore } from "./store.js";
-import { scanPackage } from "./sweep.js";
+import { scanPackage, type ScanCheck } from "./sweep.js";
 import type {
   ListQuery,
   PackageSummary,
@@ -127,6 +127,32 @@ export function compareSemver(a: string, b: string): number {
   return 0;
 }
 
+/** The base64 SPKI publisher key from a `.azp`'s `signature.json`, or undefined if unsigned/malformed. */
+function extractPublisherKey(azpBytes: Uint8Array): string | undefined {
+  try {
+    const sig = readAzp(azpBytes).payload["signature.json"];
+    if (!sig) return undefined;
+    const parsed = JSON.parse(new TextDecoder().decode(sig)) as { publicKey?: string };
+    return typeof parsed.publicKey === "string" ? parsed.publicKey : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Normalized name for squatting comparison: lowercase, alphanumerics only. */
+function normalizeName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** Asset-content digests of a manifest (excludes the LICENSE and the detached signature). */
+function assetDigests(files: Record<string, string> | undefined): Set<string> {
+  const out = new Set<string>();
+  for (const [path, d] of Object.entries(files ?? {})) {
+    if (path !== "LICENSE" && path !== "signature.json") out.add(d);
+  }
+  return out;
+}
+
 export class Registry {
   constructor(
     private readonly store: RegistryStore = new InMemoryStore(),
@@ -173,6 +199,15 @@ export class Registry {
       );
     }
 
+    // Provenance / anti-clone (spec/marketplace-integrity.md § 4). Flags (never blocks) get folded
+    // into the scan report so a host badges them and moderation gets the evidence.
+    const publisherKey = extractPublisherKey(azpBytes);
+    const cloneChecks = await this.cloneCheck(manifest, publisherKey);
+    if (cloneChecks.length > 0) {
+      scan.checks.push(...cloneChecks);
+      if (scan.verdict === "pass") scan.verdict = "flag";
+    }
+
     const version: PackageVersion = {
       id: manifest.id,
       version: manifest.version,
@@ -181,6 +216,7 @@ export class Registry {
       digest: digest(azpBytes),
       publishedAt: this.clock(),
       scan,
+      publisherKey,
     };
     await this.store.putVersion(version, azpBytes);
 
@@ -365,6 +401,48 @@ export class Registry {
   /** Reports against a package (optionally a version), newest-first. Empty if the store lacks reporting. */
   async reports(packageId: string, version?: string): Promise<Report[]> {
     return this.store.getReports ? this.store.getReports(packageId, version) : [];
+  }
+
+  /**
+   * Cross-package clone / squatting detection (spec/marketplace-integrity.md § 4): compares a new
+   * package's asset digests and name against existing packages by a **different** publisher key and
+   * emits flags (never blocks — legitimate forks and CC-shared assets exist) carrying the provenance
+   * evidence for moderation.
+   */
+  private async cloneCheck(manifest: Manifest, publisherKey: string | undefined): Promise<ScanCheck[]> {
+    const checks: ScanCheck[] = [];
+    const mine = assetDigests(manifest.files);
+    const myName = normalizeName(manifest.name);
+    for (const id of await this.store.allPackageIds()) {
+      if (id === manifest.id) continue;
+      const others = await this.store.getVersions(id);
+      if (others.length === 0) continue;
+      const latest = [...others].sort((a, b) => compareSemver(b.version, a.version))[0];
+      // Same publisher ⇒ legitimately shared assets or a re-publish, not a clone.
+      if (publisherKey && latest.publisherKey && publisherKey === latest.publisherKey) continue;
+      if (mine.size > 0) {
+        const theirs = assetDigests(latest.manifest.files);
+        let shared = 0;
+        for (const d of mine) if (theirs.has(d)) shared++;
+        const overlap = shared / mine.size;
+        if (overlap >= 0.6) {
+          checks.push({
+            id: "clone-assets",
+            verdict: "flag",
+            detail: `${Math.round(overlap * 100)}% of assets match ${id} (different publisher)`,
+          });
+        }
+      }
+      const theirName = normalizeName(latest.manifest.name);
+      if (myName.length >= 4 && theirName.length >= 4 && (myName === theirName || myName.includes(theirName) || theirName.includes(myName))) {
+        checks.push({
+          id: "clone-name",
+          verdict: "flag",
+          detail: `name resembles ${id} ("${latest.manifest.name}") by a different publisher`,
+        });
+      }
+    }
+    return checks;
   }
 
   /** Browse the catalog with optional filters and sorting. One summary per package. */

@@ -28,6 +28,12 @@ export interface PackageVersion {
   yanked?: boolean;
   /** The security-sweep report attached at publish (see `spec/marketplace-integrity.md § 1`). */
   scan?: ScanReport;
+  /**
+   * The base64 SPKI Ed25519 **publisher key** this version was signed with (from `signature.json`), or
+   * absent if unsigned. It is the developer's identity for provenance / anti-clone
+   * (`spec/marketplace-integrity.md § 4`).
+   */
+  publisherKey?: string;
 }
 
 /** Why a package version was reported (see `spec/marketplace-integrity.md § 2`). */
