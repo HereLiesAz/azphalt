@@ -48,7 +48,7 @@ const bytes = await repo.download("com.foldlab.filmluts", "1.0.0"); // a free pa
 
 | Endpoint | What it does |
 | --- | --- |
-| `GET /.well-known/azphalt-repository.json` | The repository index: name, `supportedTypes` (from the live catalog), and — when signing is on — the Ed25519 `signingKeys` a host trusts to verify this store's entitlement tokens offline. |
+| `GET /.well-known/azphalt-repository.json` | The repository index: name/version and — when signing is on — the Ed25519 `signingKeys` a host trusts to verify this store's entitlement tokens offline. Kept cheap/static (no catalog scan); a host learns the catalog's types from `GET /packages?types=`. |
 | `GET /packages` | Browse/search (`q`, `types`, `tags`, `app`, `capabilities`, `mediaDomains`, `sort`, `page`), paged, each summary carrying ranking/preview metadata and `priceStatus`. |
 | `GET /packages/{id}` | Full metadata + version history + the latest manifest. |
 | `GET /packages/{id}/versions/{version}/download` | The binary `.azp`. Free packages are open; a **consigned** one is gated on a Bearer entitlement — `401` without a token, `402` for a token licensing something else — the *same* authorizer the UI download route uses. |

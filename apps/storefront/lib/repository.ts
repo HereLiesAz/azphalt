@@ -24,15 +24,22 @@ let handler: Promise<RepositoryHandler> | undefined;
 function getHandler(): Promise<RepositoryHandler> {
   if (!handler) {
     handler = (async () => {
-      const { registry, market } = await getCatalog();
-      return createRepositoryHandler({
-        registry,
-        marketplace: market,
-        // The same authorizer the storefront's own download route gates on, so a Bearer entitlement
-        // this store issued unlocks the same bytes on either surface (401 unauth, 402 unlicensed).
-        authorizer,
-        index: await buildRepositoryIndex(),
-      });
+      try {
+        const { registry, market } = await getCatalog();
+        return createRepositoryHandler({
+          registry,
+          marketplace: market,
+          // The same authorizer the storefront's own download route gates on, so a Bearer entitlement
+          // this store issued unlocks the same bytes on either surface (401 unauth, 402 unlicensed).
+          authorizer,
+          index: buildRepositoryIndex(),
+        });
+      } catch (err) {
+        // Don't cache a rejected promise: a transient failure (e.g. a cold durable store timing out in
+        // getCatalog) would otherwise poison every later request. Clear it so the next call retries.
+        handler = undefined;
+        throw err;
+      }
     })();
   }
   return handler;
@@ -53,8 +60,9 @@ function headerMap(req: Request): Record<string, string | undefined> {
  * own `decodeURIComponent` round-trip it back to the original id/version. Maps the handler's
  * transport-neutral response — JSON string **or** raw `.azp` bytes — onto a `fetch` `Response`.
  */
-export async function serveRepository(req: Request, slug: string[]): Promise<Response> {
+export async function serveRepository(req: Request, slug: string[] = []): Promise<Response> {
   const handle = await getHandler();
+  // `slug` is `undefined` for the bare `/api/repository` match on an optional catch-all; default it.
   const path = "/" + slug.map(encodeURIComponent).join("/");
   const repoReq: RepoRequest = {
     method: req.method,

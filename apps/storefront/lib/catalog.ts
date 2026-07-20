@@ -47,7 +47,7 @@ import {
   type SubscriptionInterval,
   type SubscriptionStore,
 } from "@azphalt/registry";
-import type { AssetType, Manifest, RepositoryIndex } from "@azphalt/azdk";
+import type { Manifest, RepositoryIndex } from "@azphalt/azdk";
 
 
 
@@ -867,23 +867,22 @@ export async function priceStatus(id: string): Promise<"free" | "paid"> {
 }
 
 /**
- * The `GET /.well-known/azphalt-repository.json` document a host reads on first contact. It advertises
- * what the catalog serves (`supportedTypes`, derived from the live registry) and — when signing is
- * configured — the Ed25519 public key(s) a host adds to its trust store so it can verify this store's
- * buy-once entitlement tokens **offline** (spec `repository-api.md` § Trust bootstrap). Built from the
- * seeded catalog, so it never claims types the store can't actually hand back.
+ * The `GET /.well-known/azphalt-repository.json` document a host reads on first contact. Deliberately
+ * **cheap and static** — it is built once when the Repository API handler is constructed (which every
+ * endpoint's first call triggers), so it must never scan the catalog: doing so would make a cold
+ * `download` pay to load every package summary just to fill in a discovery hint. Its most important
+ * job is the trust bootstrap — when signing is configured it advertises the Ed25519 public key(s) a
+ * host adds to its trust store to verify this store's buy-once entitlement tokens **offline** (spec
+ * `repository-api.md` § Trust bootstrap). `supportedTypes` is intentionally omitted (spec-legal:
+ * "Absent = unspecified" — a host learns the catalog's types from `GET /packages?types=`).
  */
-export async function buildRepositoryIndex(): Promise<RepositoryIndex> {
-  const { registry: reg } = await getCatalog();
-  const types = new Set<AssetType>();
-  for (const s of await reg.list({})) for (const t of s.assetTypes) types.add(t as AssetType);
+export function buildRepositoryIndex(): RepositoryIndex {
   const index: RepositoryIndex = {
     name: "azphalt Store",
     version: "0.1",
     description:
       "The azphalt consignment marketplace, served as a conforming Repository API — browse, search, " +
       "and download portable .azp extensions from any host via @azphalt/repository-client.",
-    supportedTypes: [...types].sort(),
   };
   // Only advertise a signing key when issuance is actually on; otherwise a host would trust a key this
   // store never signs with. Absent ⇒ the store serves only the free lane (paid downloads 401).

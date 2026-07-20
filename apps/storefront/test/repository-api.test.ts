@@ -24,14 +24,14 @@ function call(slug: string[], init?: { query?: string; token?: string }) {
 }
 
 describe("normative Repository API", () => {
-  it("serves the .well-known index with supported types and the signing key", async () => {
+  it("serves the .well-known index with the trust-bootstrap signing key", async () => {
     const res = await call([".well-known", "azphalt-repository.json"]);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.name).toBeTruthy();
-    expect(Array.isArray(body.supportedTypes)).toBe(true);
-    expect(body.supportedTypes.length).toBeGreaterThan(0);
-    // Signing is on in this test, so the trust-bootstrap key must be advertised.
+    expect(body.version).toBeTruthy();
+    // Signing is on in this test, so the trust-bootstrap key must be advertised so a host can verify
+    // this store's entitlement tokens offline.
     expect(body.signingKeys?.[0]?.publicKey).toBeTruthy();
   });
 
