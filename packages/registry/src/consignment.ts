@@ -7,6 +7,7 @@
  * merchant-of-record (Stripe Connect and the like); the bundled {@link StubPaymentProvider} moves no
  * money and exists only for local dev and tests.
  */
+import { randomUUID } from "node:crypto";
 import type { Registry } from "./registry.js";
 import { RegistryError } from "./registry.js";
 import type { RegistryStore } from "./store.js";
@@ -63,35 +64,94 @@ export interface PaymentProvider {
 }
 
 /**
- * A NON-FUNCTIONAL payment provider for local dev and tests. It records sessions in memory and never
- * contacts a processor, holds funds, or moves money — every "payment" is simulated. Do not deploy it.
+ * Persistence seam for checkout sessions. A {@link CheckoutInput} carries `{packageId, sellerId,
+ * buyerId, amount, platformFee}`, but a {@link CheckoutSession} keeps only `{id, url, status, amount}`
+ * and discards the rest — which is why fulfilment can't tell what a session was *for* without this.
+ * Storing the session **and its originating input** lets fulfilment read the package and buyer from
+ * the stored input (never the request body) and lets sessions survive a restart / another serverless
+ * instance. The default {@link InMemoryPaymentSessionStore} keeps process behavior unchanged; a durable
+ * deployment supplies a database-backed store (see `@azphalt/registry-store-vercel`'s
+ * `PostgresSessionStore`).
+ */
+export interface PaymentSessionStore {
+  /** Persist a session and the input it was created from. */
+  put(session: CheckoutSession, input: CheckoutInput): Promise<void>;
+  /** A session and its originating input, or `undefined`. */
+  get(id: string): Promise<{ session: CheckoutSession; input: CheckoutInput } | undefined>;
+  /** Replace a session's status (fulfilment / cancellation); returns the updated session, or `undefined`. */
+  setStatus(id: string, status: CheckoutSession["status"]): Promise<CheckoutSession | undefined>;
+}
+
+/** In-process {@link PaymentSessionStore} — the default, used by tests and single-process dev. */
+export class InMemoryPaymentSessionStore implements PaymentSessionStore {
+  private readonly sessions = new Map<string, { session: CheckoutSession; input: CheckoutInput }>();
+
+  async put(session: CheckoutSession, input: CheckoutInput): Promise<void> {
+    this.sessions.set(session.id, { session, input });
+  }
+
+  async get(id: string): Promise<{ session: CheckoutSession; input: CheckoutInput } | undefined> {
+    return this.sessions.get(id);
+  }
+
+  async setStatus(id: string, status: CheckoutSession["status"]): Promise<CheckoutSession | undefined> {
+    const rec = this.sessions.get(id);
+    if (!rec) return undefined;
+    const session = { ...rec.session, status };
+    this.sessions.set(id, { session, input: rec.input });
+    return session;
+  }
+}
+
+/** Options for {@link StubPaymentProvider}. */
+export interface StubPaymentProviderOptions {
+  /** Where sessions are stored. Defaults to a fresh {@link InMemoryPaymentSessionStore}. */
+  sessions?: PaymentSessionStore;
+}
+
+/**
+ * A NON-FUNCTIONAL payment provider for local dev and tests. It records sessions in a
+ * {@link PaymentSessionStore} and never contacts a processor, holds funds, or moves money — every
+ * "payment" is simulated. Do not deploy it.
+ *
+ * Session ids are `crypto.randomUUID()`, not a per-process counter: a counter collides across
+ * serverless instances, and a collision across buyers would hand one buyer another's entitlement.
  */
 export class StubPaymentProvider implements PaymentProvider {
-  private seq = 0;
-  private readonly sessions = new Map<string, CheckoutSession>();
+  private readonly sessions: PaymentSessionStore;
+
+  constructor(opts: StubPaymentProviderOptions = {}) {
+    this.sessions = opts.sessions ?? new InMemoryPaymentSessionStore();
+  }
 
   async createCheckout(input: CheckoutInput): Promise<CheckoutSession> {
-    const id = `stub_cs_${++this.seq}`;
+    const id = randomUUID();
     const session: CheckoutSession = {
       id,
       url: `stub://checkout/${id}`,
       status: "pending",
       amount: input.amount,
     };
-    this.sessions.set(id, session);
+    await this.sessions.put(session, input);
     return session;
   }
 
   async getSession(id: string): Promise<CheckoutSession | undefined> {
-    return this.sessions.get(id);
+    return (await this.sessions.get(id))?.session;
+  }
+
+  /**
+   * The originating {@link CheckoutInput} for a session (what it was *for*), or `undefined`.
+   * Fulfilment mints an entitlement from this, so it never has to trust a request body.
+   */
+  async getInput(id: string): Promise<CheckoutInput | undefined> {
+    return (await this.sessions.get(id))?.input;
   }
 
   /** Test/dev only: mark a simulated session completed (or canceled). Real providers use webhooks. */
   async simulate(id: string, status: "completed" | "canceled"): Promise<CheckoutSession> {
-    const s = this.sessions.get(id);
-    if (!s) throw new RegistryError(`unknown stub session: ${id}`);
-    const next = { ...s, status };
-    this.sessions.set(id, next);
+    const next = await this.sessions.setStatus(id, status);
+    if (!next) throw new RegistryError(`unknown stub session: ${id}`);
     return next;
   }
 }
