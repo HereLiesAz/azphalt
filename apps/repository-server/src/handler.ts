@@ -20,7 +20,7 @@
  * and served unconditionally. That is the same lane separation the rest of the standard keeps — money
  * lives only on listings, never in the open registry.
  */
-import { RegistryError, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
+import { RangeNotSatisfiableError, RegistryError, type ByteRangeSpec, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
 import type { PackageSearchResponse, PackageSummary, RepositoryErrorCode, RepositoryIndex } from "@azphalt/azdk";
 import { denyAllAuthorizer, type DownloadAuthorizer } from "@azphalt/registry";
 
@@ -92,6 +92,26 @@ const fail = (status: number, message: string, code?: RepositoryErrorCode): Repo
 function bearer(header: string | undefined): string | undefined {
   const m = /^Bearer\s+(.+)$/i.exec(header ?? "");
   return m ? m[1].trim() : undefined;
+}
+
+/**
+ * Parse a single-range `Range: bytes=…` header into a {@link ByteRangeSpec}, or `null` to serve the
+ * whole resource (`200`). We deliberately don't support multi-range (`bytes=0-1,4-5`) — a server MAY
+ * ignore it and return the full body — so anything but one well-formed `start-end` / `start-` / `-suffix`
+ * degrades to a normal full download rather than erroring.
+ */
+function parseRange(header: string | undefined): ByteRangeSpec | null {
+  if (!header) return null;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!m) return null;
+  const [, s, e] = m;
+  if (s === "" && e === "") return null;
+  if (s === "") return { suffix: Number(e) };
+  if (e === "") return { start: Number(s) };
+  const start = Number(s);
+  const end = Number(e);
+  if (end < start) return null; // an inverted range is malformed → serve the whole thing
+  return { start, end };
 }
 
 export function createRepositoryHandler(opts: RepositoryHandlerOptions): RepositoryHandler {
@@ -240,10 +260,39 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
       if (!decision.licensed) return fail(402, "payment required: no license for this package");
     }
 
+    // A `Range` request (resumable/parallel download) is served as `206 Partial Content`. The paid gate
+    // above runs first, so a ranged request for paid bytes still needs the entitlement. A ranged read
+    // does NOT count a download (the host counts the transfer); a full `200` below does.
+    const range = parseRange(req.headers.range);
+    if (range) {
+      try {
+        const { bytes, start, end, totalSize } = await registry.serveRange(id, version, range);
+        return {
+          status: 206,
+          headers: {
+            "content-type": "application/x-azphalt",
+            "content-length": String(bytes.length),
+            "content-range": `bytes ${start}-${end}/${totalSize}`,
+            "accept-ranges": "bytes",
+          },
+          body: bytes,
+        };
+      } catch (e) {
+        if (e instanceof RangeNotSatisfiableError) {
+          return {
+            status: 416,
+            headers: { ...JSON_HEADERS, "content-range": `bytes */${e.totalSize}`, "accept-ranges": "bytes" },
+            body: JSON.stringify({ error: { code: "bad_request", message: "requested range not satisfiable" } }),
+          };
+        }
+        throw e;
+      }
+    }
+
     const { bytes } = await registry.serve(id, version);
     return {
       status: 200,
-      headers: { "content-type": "application/x-azphalt", "content-length": String(bytes.length) },
+      headers: { "content-type": "application/x-azphalt", "content-length": String(bytes.length), "accept-ranges": "bytes" },
       body: bytes,
     };
   }

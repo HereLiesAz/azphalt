@@ -12,7 +12,7 @@
  * `lib/catalog.ts`), and send it as `Authorization: Bearer <token>`.
  */
 import { NextResponse } from "next/server";
-import { RegistryError } from "@azphalt/registry";
+import { RangeNotSatisfiableError, RegistryError, type ByteRangeSpec } from "@azphalt/registry";
 import { authorizer, getCatalog, priceStatus } from "../../../../lib/catalog";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +22,21 @@ function bearer(header: string | null): string | undefined {
   if (!header) return undefined;
   const m = /^Bearer[ ]+(.+)$/i.exec(header.trim());
   return m ? m[1].trim() : undefined;
+}
+
+/** Parse a single-range `Range: bytes=…` header, or `null` to serve the whole file (see the handler). */
+function parseRange(header: string | null): ByteRangeSpec | null {
+  if (!header) return null;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!m) return null;
+  const [, s, e] = m;
+  if (s === "" && e === "") return null;
+  if (s === "") return { suffix: Number(e) };
+  if (e === "") return { start: Number(s) };
+  const start = Number(s);
+  const end = Number(e);
+  if (end < start) return null;
+  return { start, end };
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -51,6 +66,34 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       }
     }
 
+    // A `Range` request → `206 Partial Content` (resumable/parallel download). Gated first (above), so a
+    // paid ranged request still needs the entitlement; a ranged read doesn't count a download.
+    const range = parseRange(req.headers.get("range"));
+    if (range) {
+      try {
+        const { start, end, totalSize, bytes } = await registry.serveRange(id, latest.version, range);
+        return new NextResponse(bytes.slice().buffer, {
+          status: 206,
+          headers: {
+            "content-type": "application/zip",
+            "content-length": String(bytes.length),
+            "content-range": `bytes ${start}-${end}/${totalSize}`,
+            "accept-ranges": "bytes",
+            "content-disposition": `attachment; filename="${id}-${latest.version}.azp"`,
+            "cache-control": "no-store",
+          },
+        });
+      } catch (e) {
+        if (e instanceof RangeNotSatisfiableError) {
+          return new NextResponse(null, {
+            status: 416,
+            headers: { "content-range": `bytes */${e.totalSize}`, "accept-ranges": "bytes" },
+          });
+        }
+        throw e;
+      }
+    }
+
     const { version, bytes } = await registry.serve(id);
     // Copy into a fresh ArrayBuffer so the Response body is a standalone, correctly sized buffer.
     const body = bytes.slice().buffer;
@@ -59,6 +102,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       headers: {
         "content-type": "application/zip",
         "content-length": String(bytes.length),
+        "accept-ranges": "bytes",
         "content-disposition": `attachment; filename="${id}-${version.version}.azp"`,
         "cache-control": "no-store",
       },

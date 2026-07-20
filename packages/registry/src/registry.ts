@@ -81,6 +81,25 @@ export class RegistryError extends Error {
   }
 }
 
+/**
+ * A `Range` request that cannot be satisfied (start past the end of the resource). Carries the total
+ * size so a caller can answer HTTP `416` with the required `Content-Range: bytes *​/{totalSize}`.
+ */
+export class RangeNotSatisfiableError extends RegistryError {
+  constructor(readonly totalSize: number) {
+    super(`range not satisfiable (resource is ${totalSize} bytes)`);
+    this.name = "RangeNotSatisfiableError";
+  }
+}
+
+/** A requested byte range. `start`/`end` are inclusive; `suffix` (last-N bytes) is an alternative form. */
+export interface ByteRangeSpec {
+  start?: number;
+  end?: number;
+  /** Last-N-bytes form (`Range: bytes=-N`); mutually exclusive with `start`/`end`. */
+  suffix?: number;
+}
+
 const ID_RE = /^[a-z0-9]+(\.[a-z0-9-]+)+$/i; // reverse-DNS, at least two dot-separated labels
 // Official SemVer 2.0.0 grammar (https://semver.org): no leading zeroes in numeric identifiers, no
 // empty prerelease/build identifiers. Capture groups: 1=major, 2=minor, 3=patch, 4=prerelease, 5=build.
@@ -325,6 +344,59 @@ export class Registry {
     if (!bytes) throw new RegistryError(`bytes missing: ${resolved.id}@${resolved.version}`);
     await this.store.incrementDownloads(resolved.id, resolved.version);
     return { version: resolved, bytes };
+  }
+
+  /**
+   * Serve a **byte range** of a version's `.azp` (default: {@link latest}) for a resumable/parallel
+   * download. Returns the requested slice plus `start` / `end` (inclusive) and the resource's
+   * `totalSize`, so a transport can answer HTTP `206 Partial Content` with `Content-Range`.
+   *
+   * Unlike {@link serve}, a ranged read **does not count a download** — one logical transfer is many
+   * range requests (chunks, retries, resumes), and counting each would wildly inflate the tally. A host
+   * counts the download itself, or a single full `200` does. Throws {@link RangeNotSatisfiableError}
+   * (→ `416`) when `start` is past the end, and {@link RegistryError} when the version is unknown.
+   */
+  async serveRange(
+    id: string,
+    version: string | undefined,
+    range: ByteRangeSpec,
+  ): Promise<{ version: PackageVersion; bytes: Uint8Array; start: number; end: number; totalSize: number }> {
+    const resolved = version ? await this.getVersion(id, version) : await this.latest(id);
+    if (!resolved) throw new RegistryError(`not found: ${id}${version ? `@${version}` : ""}`);
+
+    // Prefer a cheap size stat + ranged read; fall back to a single full read the fallback path reuses.
+    const canRange = typeof this.store.getByteSize === "function" && typeof this.store.getByteRange === "function";
+    let full: Uint8Array | undefined;
+    let totalSize: number | undefined;
+    if (canRange) {
+      totalSize = await this.store.getByteSize!(resolved.id, resolved.version);
+    } else {
+      full = await this.store.getBytes(resolved.id, resolved.version);
+      totalSize = full?.length;
+    }
+    if (totalSize === undefined) throw new RegistryError(`bytes missing: ${resolved.id}@${resolved.version}`);
+
+    // Resolve the concrete inclusive window from the spec against the known size.
+    let start: number;
+    let end: number;
+    if (range.suffix !== undefined) {
+      // Last-N bytes; a suffix ≥ size means "the whole thing".
+      start = Math.max(0, totalSize - range.suffix);
+      end = totalSize - 1;
+    } else {
+      start = range.start ?? 0;
+      end = range.end === undefined ? totalSize - 1 : Math.min(range.end, totalSize - 1);
+    }
+    // An empty resource has no satisfiable range; a start at/after the end is unsatisfiable (→ 416).
+    if (totalSize === 0 || start >= totalSize || start > end || start < 0) {
+      throw new RangeNotSatisfiableError(totalSize);
+    }
+
+    const bytes = canRange
+      ? await this.store.getByteRange!(resolved.id, resolved.version, start, end)
+      : full!.slice(start, end + 1);
+    if (!bytes) throw new RegistryError(`bytes missing: ${resolved.id}@${resolved.version}`);
+    return { version: resolved, bytes, start, end, totalSize };
   }
 
   /**

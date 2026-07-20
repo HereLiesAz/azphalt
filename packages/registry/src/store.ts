@@ -14,6 +14,19 @@ export interface RegistryStore {
   getVersions(id: string): Promise<PackageVersion[]>;
   /** The `.azp` bytes for an exact version, or `undefined`. */
   getBytes(id: string, version: string): Promise<Uint8Array | undefined>;
+  /**
+   * **Optional** cheap byte-length of a version's `.azp`, without reading the bytes. Enables ranged
+   * serving to answer `Content-Range` / a `416` without a full read. A store that omits it falls back
+   * to reading the whole object; a store over object storage should implement it (a metadata `head`).
+   */
+  getByteSize?(id: string, version: string): Promise<number | undefined>;
+  /**
+   * **Optional** ranged read: the `.azp` bytes for the **inclusive** window `[start, end]`, or
+   * `undefined` if the version is unknown. Enables resumable/parallel downloads without pulling the
+   * whole object per chunk. A store that omits it falls back to `getBytes` + slice (correct, but reads
+   * the whole object each time). `start`/`end` are pre-clamped by the caller to `[0, size)`.
+   */
+  getByteRange?(id: string, version: string, start: number, end: number): Promise<Uint8Array | undefined>;
   /** All known package ids. */
   allPackageIds(): Promise<string[]>;
   /** Add [by] (default 1) to a version's download tally. */
@@ -80,6 +93,16 @@ export class InMemoryStore implements RegistryStore {
 
   async getBytes(id: string, version: string): Promise<Uint8Array | undefined> {
     return this.bytes.get(this.key(id, version));
+  }
+
+  async getByteSize(id: string, version: string): Promise<number | undefined> {
+    return this.bytes.get(this.key(id, version))?.length;
+  }
+
+  async getByteRange(id: string, version: string, start: number, end: number): Promise<Uint8Array | undefined> {
+    const b = this.bytes.get(this.key(id, version));
+    // `slice` end is exclusive; the range is inclusive — hence `end + 1`.
+    return b ? b.slice(start, end + 1) : undefined;
   }
 
   async allPackageIds(): Promise<string[]> {
