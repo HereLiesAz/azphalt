@@ -131,7 +131,12 @@ fun PackageCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top,
                 ) {
-                    Pill(pkg.kind.uppercase(), onContainer.copy(alpha = 0.16f), onContainer)
+                    // For a pack, the kind pill also shows how many extensions it bundles.
+                    Pill(
+                        text = pkg.pack?.let { "PACK · ${it.entries.size}" } ?: pkg.kind.uppercase(),
+                        container = onContainer.copy(alpha = 0.16f),
+                        content = onContainer,
+                    )
                     Pill(
                         text = priceLabel(pkg),
                         container = if (paid) cs.primary else onContainer.copy(alpha = 0.16f),
