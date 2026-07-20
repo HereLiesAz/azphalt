@@ -104,6 +104,7 @@ describe("repository handler — spec/repository-api.md", () => {
     const body = JSON.parse(res.body as string);
     expect(body.id).toBe("com.demo.paid");
     expect(body.priceStatus).toBe("paid");
+    expect(body.kind).toBe("asset"); // top-level kind mirrors the summary (a host needn't reach into manifest)
     expect(body.manifest.id).toBe("com.demo.paid");
     expect(body.versions).toEqual([expect.objectContaining({ version: "1.0.0", yanked: false })]);
   });
