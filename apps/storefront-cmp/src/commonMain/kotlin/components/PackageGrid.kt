@@ -64,8 +64,20 @@ internal fun priceLabel(pkg: PackageSummary): String =
 
 internal fun isPaid(pkg: PackageSummary): Boolean = pkg.price != null || pkg.priceStatus == "paid"
 
+/**
+ * A single outlined Metro tile for one package: a live procedural preview, kind/price tags, and a
+ * title/description block. Sized by [modifier] so the same card serves both the full-width results
+ * layout and the fixed-width cards inside a [HeroCarousel]. All AzNavRail motion (turnstile entrance,
+ * tilt-on-press, hover scale, animated border) is applied on top of whatever [modifier] sets.
+ */
 @Composable
-fun PackageBentoCard(pkg: PackageSummary, phase: Float, index: Int, onOpen: (PackageSummary) -> Unit) {
+fun PackageCard(
+    pkg: PackageSummary,
+    phase: Float,
+    index: Int,
+    onOpen: (PackageSummary) -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth().height(272.dp),
+) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     val pressed by interaction.collectIsPressedAsState()
@@ -91,11 +103,9 @@ fun PackageBentoCard(pkg: PackageSummary, phase: Float, index: Int, onOpen: (Pac
 
     OutlinedCard(
         onClick = { onOpen(pkg) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(272.dp)
+        modifier = modifier
             // Additive WP7 turnstile: the tile pivots in around its left edge, cascaded across the
-            // grid. Capped so a card scrolled in far down the list doesn't wait a full cascade.
+            // row. Capped so a card scrolled in far down the list doesn't wait a full cascade.
             .azTurnstileEntrance(index = index.coerceAtMost(6))
             .azTiltOnPress()
             .scale(scale),
