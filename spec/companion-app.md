@@ -1,9 +1,13 @@
-# Companion apps (`kind: "app"`) — RFC
+# Companion apps (`kind: "app"`)
 
-*Status: **Proposed** (design RFC, not yet normative). Extends the package model with a third kind — a
-**companion app** (an Android app or PWA) a host launches to perform a function and hand a result back.
-This document settles the design; the SDK `Kind`/manifest wiring and a reference host handoff land once
-it's accepted.*
+*Status: **Normative**. Extends the package model with a third kind — a **companion app** (an Android
+app or PWA) a host launches to perform a function and hand a result back. The SDK `Kind`/manifest
+wiring, `verifyAzp` acceptance of an `app` package, the `create-azphalt` companion template, the
+`companion` host-conformance profile (`runCompanionConformance`), and registry discovery are all
+implemented and on `main`; every design question below is resolved. Reference host handoffs (the
+Android Intent round-trip, the PWA popup/`postMessage` return) live in conforming hosts
+([GraffitiXR](https://github.com/HereLiesAz/GraffitiXR), [Guillotine](https://github.com/HereLiesAz/Guillotine)),
+outside this standards repo.*
 
 ## Why this exists — and why it doesn't break the moat
 

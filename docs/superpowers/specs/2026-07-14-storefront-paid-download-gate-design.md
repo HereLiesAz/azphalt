@@ -1,7 +1,7 @@
 # Storefront: gate paid downloads, issue entitlements on checkout
 
 Date: 2026-07-14
-Status: Approved, pending implementation
+Status: Implemented (`@azphalt/registry` authorizers + `apps/storefront` download gate & fulfilment)
 Affects: `packages/registry`, `apps/repository-server`, `apps/storefront`
 
 ## Problem
