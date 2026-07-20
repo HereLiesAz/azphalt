@@ -238,6 +238,7 @@ export class Registry {
       assetTypes,
       capabilities,
       targetApps: [...new Set(m.targetApps ?? [])],
+      visibility: m.visibility ?? "public",
       contributes,
       publishedAt: times[0],
       updatedAt: times[times.length - 1],
@@ -384,6 +385,10 @@ export class Registry {
     // App scoping: a global package (no targetApps) shows everywhere; an app-scoped one shows only to
     // an app it targets. With no `app` set, everything is returned (no filter).
     if (query.app) out = out.filter((s) => s.targetApps.length === 0 || s.targetApps.includes(query.app!));
+    // Visibility: browse defaults to public-only; an explicit value (or "all") widens it for an owner
+    // or moderation view. Direct-by-id resolution (getSummary/getPackage) is unaffected.
+    if (query.visibility === undefined) out = out.filter((s) => s.visibility === "public");
+    else if (query.visibility !== "all") out = out.filter((s) => s.visibility === query.visibility);
 
     const sort = query.sort ?? "downloads";
     out.sort((a, b) => {

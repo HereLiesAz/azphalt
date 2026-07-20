@@ -77,6 +77,8 @@ export interface PackageSummary {
   capabilities: Capability[];
   /** Host apps this package is scoped to (reverse-DNS ids). Empty = global (shown to every app). */
   targetApps: string[];
+  /** Discovery/access visibility (`public` default; `unlisted`/`private` hidden from browse). */
+  visibility: "public" | "unlisted" | "private";
   /** Counts of executable contributions, for at-a-glance "what does it do". */
   contributes: { filters: number; tools: number; commands: number };
   /** First-publish and latest-publish instants (ISO-8601). */
@@ -143,6 +145,12 @@ export interface ListQuery {
    * unset, no app filter is applied (every package, including app-scoped ones, is returned).
    */
   app?: string;
+  /**
+   * Visibility filter (`spec/marketplace-integrity.md § 3`). **Absent ⇒ browse shows only `public`**
+   * (hiding `unlisted`/`private`). Set to a specific value for an owner/moderation view, or `"all"` to
+   * include every visibility. Direct-by-id resolution (`getSummary`/`getPackage`) ignores this.
+   */
+  visibility?: "public" | "unlisted" | "private" | "all";
   /** Default `"downloads"`. `"rating"` orders by average rating (unrated packages last). */
   sort?: "downloads" | "updated" | "name" | "rating";
   limit?: number;

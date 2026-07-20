@@ -490,6 +490,17 @@ export interface Manifest {
   /** A static preview for the store card (see {@link PreviewRef}), surfaced in search responses. */
   preview?: PreviewRef;
 
+  /**
+   * Discovery/access visibility (see `spec/marketplace-integrity.md § 3`). Absent ⇒ `public`.
+   * - `public` — listed in browse/search (the default).
+   * - `unlisted` — resolvable by exact id, hidden from browse/search.
+   * - `private` — hidden from browse **and** access-gated at download (needs an entitlement/grant).
+   *
+   * Like `targetApps`, this is a discovery filter; the download **gate** for `private` is enforced by
+   * the repository's authorizer, not by the presence of this field.
+   */
+  visibility?: "public" | "unlisted" | "private";
+
   /** Payload path → SHA-256 digest (integrity; see `spec/package-format.md`). */
   files: Record<string, string>;
 }

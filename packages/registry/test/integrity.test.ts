@@ -94,3 +94,32 @@ describe("publish + reporting", () => {
     expect((await reg.reports("com.acme.rep2")).length).toBe(5);
   });
 });
+
+describe("visibility (private / unlisted hosting)", () => {
+  function visAzp(id: string, visibility: "public" | "unlisted" | "private") {
+    return writeAzp({
+      manifest: { ...base, id, name: id, kind: "asset" as const, visibility, assets: [{ type: "brush", path: "assets/b" }] },
+      payload: { "assets/b": enc("x") },
+      license,
+    }).azp;
+  }
+
+  it("hides unlisted and private packages from browse but keeps them resolvable by id", async () => {
+    const reg = new Registry(new InMemoryStore());
+    await reg.publish(visAzp("com.acme.pub", "public"));
+    await reg.publish(visAzp("com.acme.unl", "unlisted"));
+    await reg.publish(visAzp("com.acme.prv", "private"));
+
+    const browse = (await reg.list()).map((s) => s.id);
+    expect(browse).toContain("com.acme.pub");
+    expect(browse).not.toContain("com.acme.unl");
+    expect(browse).not.toContain("com.acme.prv");
+
+    // Unlisted stays resolvable by exact id.
+    expect((await reg.getSummary("com.acme.unl"))?.visibility).toBe("unlisted");
+
+    // An owner/moderation view can widen to everything.
+    const all = (await reg.list({ visibility: "all" })).map((s) => s.id);
+    expect(all).toEqual(expect.arrayContaining(["com.acme.pub", "com.acme.unl", "com.acme.prv"]));
+  });
+});
