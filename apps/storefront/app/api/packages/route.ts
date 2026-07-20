@@ -25,6 +25,7 @@ export async function GET() {
       targetApps: p.targetApps,
       mediaDomains: p.mediaDomains,
       types: p.assetTypes,
+      maturity: p.maturity,
       price: priceById.get(p.id) || null,
     };
     // A pack (kind:"pack") carries its member references in the manifest, not the summary — surface them

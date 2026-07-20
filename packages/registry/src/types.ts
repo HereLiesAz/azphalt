@@ -7,7 +7,7 @@
  * package can live in the registry forever with no listing, and the money model never leaks into the
  * open lane.
  */
-import type { AssetType, Capability, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/azdk";
+import type { AssetType, Capability, ContentMaturity, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/azdk";
 import type { ScanReport } from "./sweep.js";
 
 /** One published, immutable version of a package. */
@@ -36,10 +36,16 @@ export interface PackageVersion {
   publisherKey?: string;
 }
 
-/** Why a package version was reported (see `spec/marketplace-integrity.md § 2`). */
-export type ReportReason = "malware" | "clone" | "deceptive" | "secret-leak" | "broken" | "other";
+/**
+ * Why a package version was reported (see `spec/marketplace-integrity.md § 2`). Most are user abuse/
+ * quality flags; `ip-claim` is a **developer/rights-holder** intellectual-property claim against a
+ * package (a signed claim from a publisher who owns the allegedly-infringed work is trusted; a plain
+ * DMCA-style claim from anyone else queues untrusted for human review). `clone` remains the anonymous
+ * "this looks copied" user flag.
+ */
+export type ReportReason = "malware" | "clone" | "deceptive" | "secret-leak" | "broken" | "ip-claim" | "other";
 
-/** One abuse/quality report against a package version. */
+/** One abuse/quality report — or developer IP claim — against a package version. */
 export interface Report {
   packageId: string;
   /** The specific version reported, or absent for the package as a whole. */
@@ -49,11 +55,22 @@ export interface Report {
   /** ISO-8601 instant. */
   reportedAt: string;
   /**
-   * Whether this report counts toward auto-quarantine — a report from a counter-signed host or a
-   * verified account is *trusted* (`spec/marketplace-integrity.md § 2`). Untrusted reports still queue
-   * for human review but don't trip the automatic threshold.
+   * Whether this report counts toward auto-quarantine — a report from a counter-signed host, a verified
+   * account, or a **signature-proven IP claimant** is *trusted* (`spec/marketplace-integrity.md § 2`).
+   * Untrusted reports still queue for human review but don't trip the automatic threshold.
    */
   trusted?: boolean;
+  /**
+   * Opaque reporter/claimant identity, when the surface has one (e.g. a signed IP claim carries the
+   * claimant's publisher-key fingerprint or account). Absent for anonymous web reports.
+   */
+  reporter?: string;
+  /**
+   * For an `ip-claim`, the reverse-DNS id of the claimant's **own** package whose work is allegedly
+   * infringed by {@link Report.packageId} — the provenance anchor a moderator (and the signed-claim
+   * check) uses to establish the claimant is the original author.
+   */
+  originalPackageId?: string;
 }
 
 /** Result of filing a {@link Report}: the stored report and whether it auto-quarantined the version. */
@@ -85,6 +102,8 @@ export interface PackageSummary {
   targetApps: string[];
   /** Discovery/access visibility (`public` default; `unlisted`/`private` hidden from browse). */
   visibility: "public" | "unlisted" | "private";
+  /** The developer's content-maturity self-attestation (`general` default; `mature` = 18+, gated). */
+  maturity: ContentMaturity;
   /** Counts of executable contributions, for at-a-glance "what does it do". */
   contributes: { filters: number; tools: number; commands: number };
   /** First-publish and latest-publish instants (ISO-8601). */

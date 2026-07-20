@@ -166,4 +166,36 @@ describe("clone / provenance", () => {
 
     expect(version.scan?.checks.find((c) => c.id === "clone-assets")).toBeUndefined();
   });
+
+  it("flags a reimplemented clone that copied NO bytes (clone-shape), not just exact copies", async () => {
+    const reg = new Registry(new InMemoryStore());
+    const orig = generateSigningKey();
+    const cloner = generateSigningKey();
+
+    // Same shape (asset/brush) and a near-identical pitch, but different names and different bytes.
+    function shapeAzp(id: string, name: string, desc: string, bytes: Uint8Array) {
+      return writeAzp({
+        manifest: {
+          ...base,
+          id,
+          name,
+          kind: "asset" as const,
+          description: desc,
+          assets: [{ type: "brush", path: "assets/b" }],
+        },
+        payload: { "assets/b": bytes },
+        license,
+      }).azp;
+    }
+    const pitch = "halftone dot screen brush pack for comic shading and manga inking";
+    await reg.publish(signAzp(shapeAzp("com.orig.tone", "Comic Screentone", pitch, enc("original-bytes")), { privateKey: orig.privateKey }));
+    const { version } = await reg.publish(
+      signAzp(shapeAzp("com.clone.tone", "Manga Dot Shader", `${pitch} effects`, enc("totally-different-bytes")), { privateKey: cloner.privateKey }),
+    );
+
+    const checks = version.scan?.checks ?? [];
+    expect(checks.find((c) => c.id === "clone-shape")?.verdict).toBe("flag");
+    expect(checks.find((c) => c.id === "clone-assets")).toBeUndefined(); // no bytes were copied
+    expect(version.scan?.verdict).toBe("flag");
+  });
 });

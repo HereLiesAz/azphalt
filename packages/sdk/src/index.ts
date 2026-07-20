@@ -430,6 +430,14 @@ export interface PreviewRef {
   clip?: string;
 }
 
+/**
+ * Content-maturity rating a developer declares for their extension (a self-attestation, like a game's
+ * age rating). `general` (the default when absent) is shown to everyone; `mature` marks 18+ content a
+ * store puts behind an age-confirmation gate. Like {@link Manifest.visibility} this is a discovery/UX
+ * signal a store surfaces and gates on — it is not access control, and a store MAY enforce it further.
+ */
+export type ContentMaturity = "general" | "mature";
+
 /** The root `manifest.json` of a `.azp`. See `spec/extension-manifest.md`. */
 export interface Manifest {
   /** Format version, e.g. `"0.1"`. */
@@ -509,6 +517,13 @@ export interface Manifest {
    * the repository's authorizer, not by the presence of this field.
    */
   visibility?: "public" | "unlisted" | "private";
+
+  /**
+   * The developer's content-maturity self-attestation (see {@link ContentMaturity}). Absent ⇒
+   * `general`. `mature` marks 18+ content that a store gates behind an age confirmation before the
+   * card/detail is revealed. It rides in the manifest so it travels with the package and is developer-set.
+   */
+  maturity?: ContentMaturity;
 
   /** Payload path → SHA-256 digest (integrity; see `spec/package-format.md`). */
   files: Record<string, string>;
@@ -1155,6 +1170,11 @@ export interface PackageSummary {
   kind?: Kind;
   types: string[];
   priceStatus?: "free" | "paid";
+  /**
+   * The developer's content-maturity self-attestation (see {@link ContentMaturity}). Absent ⇒
+   * `general`; `mature` tells a gallery to gate the card behind an age confirmation.
+   */
+  maturity?: ContentMaturity;
   /**
    * Host apps this package is scoped to (reverse-DNS ids). Empty/absent = global (shown to every
    * app). A repository filters browse/search by the requesting app's id — see `spec/repository-api.md`

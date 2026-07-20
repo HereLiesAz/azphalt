@@ -7,6 +7,7 @@
 import { digest, readAzp, verifyAzp } from "@azphalt/azp";
 import type { AssetType, Capability, Manifest, MediaDomain } from "@azphalt/azdk";
 import { InMemoryStore, type RegistryStore } from "./store.js";
+import { nameContains, packageSimilarity } from "./similarity.js";
 import { scanPackage, type ScanCheck } from "./sweep.js";
 import type {
   ListQuery,
@@ -158,20 +159,6 @@ function extractPublisherKey(azpBytes: Uint8Array): string | undefined {
   }
 }
 
-/** Normalized name for squatting comparison: lowercase, alphanumerics only. */
-function normalizeName(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-/** Asset-content digests of a manifest (excludes the LICENSE and the detached signature). */
-function assetDigests(files: Record<string, string> | undefined): Set<string> {
-  const out = new Set<string>();
-  for (const [path, d] of Object.entries(files ?? {})) {
-    if (path !== "LICENSE" && path !== "signature.json") out.add(d);
-  }
-  return out;
-}
-
 export class Registry {
   constructor(
     private readonly store: RegistryStore = new InMemoryStore(),
@@ -294,6 +281,7 @@ export class Registry {
       capabilities,
       targetApps: [...new Set(m.targetApps ?? [])],
       visibility: m.visibility ?? "public",
+      maturity: m.maturity ?? "general",
       contributes,
       publishedAt: times[0],
       updatedAt: times[times.length - 1],
@@ -441,6 +429,8 @@ export class Registry {
     reason: ReportReason;
     detail?: string;
     trusted?: boolean;
+    reporter?: string;
+    originalPackageId?: string;
   }): Promise<ReportResult> {
     if (!this.store.putReport || !this.store.getReports) {
       throw new RegistryError("this registry store does not support reporting");
@@ -451,6 +441,8 @@ export class Registry {
       reason: input.reason,
       detail: input.detail,
       trusted: input.trusted,
+      reporter: input.reporter,
+      originalPackageId: input.originalPackageId,
       reportedAt: this.clock(),
     };
     await this.store.putReport(report);
@@ -476,15 +468,35 @@ export class Registry {
   }
 
   /**
+   * Record one user rating (1–5 stars) for a package and return the new aggregate. Ratings are a
+   * backend concern (`spec/marketplace-integrity.md`): the store must opt in by implementing
+   * {@link RegistryStore.addRating}; otherwise this throws. The package must exist. `stars` is clamped
+   * to a whole 1–5.
+   */
+  async rate(id: string, stars: number): Promise<{ rating?: number; ratingCount: number }> {
+    if (!this.store.addRating) throw new RegistryError("this registry store does not support ratings");
+    if (!Number.isFinite(stars)) throw new RegistryError("rating must be a number 1–5");
+    const whole = Math.round(stars);
+    if (whole < 1 || whole > 5) throw new RegistryError("rating must be 1–5");
+    if ((await this.versions(id)).length === 0) throw new RegistryError(`not found: ${id}`);
+    await this.store.addRating(id, whole);
+    return this.store.getRating(id);
+  }
+
+  /**
    * Cross-package clone / squatting detection (spec/marketplace-integrity.md § 4): compares a new
-   * package's asset digests and name against existing packages by a **different** publisher key and
-   * emits flags (never blocks — legitimate forks and CC-shared assets exist) carrying the provenance
-   * evidence for moderation.
+   * package against every existing package by a **different** publisher key and emits flags (never
+   * blocks — legitimate forks and CC-shared assets exist) carrying the provenance evidence for
+   * moderation.
+   *
+   * We flag more than exact copies. Beyond byte-identical assets (`clone-assets`) and a resembling name
+   * (`clone-name`, now fuzzy — trigram similarity, not just substrings), a `clone-shape` flag catches a
+   * **reimplemented** clone: one that shares no asset bytes but has the same kind + asset-type palette +
+   * capability set and a resembling name or description — the case a digest-only check misses. See
+   * {@link packageSimilarity}.
    */
   private async cloneCheck(manifest: Manifest, publisherKey: string | undefined): Promise<ScanCheck[]> {
     const checks: ScanCheck[] = [];
-    const mine = assetDigests(manifest.files);
-    const myName = normalizeName(manifest.name);
     for (const id of await this.store.allPackageIds()) {
       if (id === manifest.id) continue;
       const others = await this.store.getVersions(id);
@@ -492,25 +504,30 @@ export class Registry {
       const latest = [...others].sort((a, b) => compareSemver(b.version, a.version))[0];
       // Same publisher ⇒ legitimately shared assets or a re-publish, not a clone.
       if (publisherKey && latest.publisherKey && publisherKey === latest.publisherKey) continue;
-      if (mine.size > 0) {
-        const theirs = assetDigests(latest.manifest.files);
-        let shared = 0;
-        for (const d of mine) if (theirs.has(d)) shared++;
-        const overlap = shared / mine.size;
-        if (overlap >= 0.6) {
-          checks.push({
-            id: "clone-assets",
-            verdict: "flag",
-            detail: `${Math.round(overlap * 100)}% of assets match ${id} (different publisher)`,
-          });
-        }
+
+      // Asymmetric: "is the new package a clone of this existing one?" (existing = a, new = b).
+      const sim = packageSimilarity(latest.manifest, manifest);
+
+      if (sim.assetOverlap >= 0.6) {
+        checks.push({
+          id: "clone-assets",
+          verdict: "flag",
+          detail: `${Math.round(sim.assetOverlap * 100)}% of assets match ${id} (different publisher)`,
+        });
       }
-      const theirName = normalizeName(latest.manifest.name);
-      if (myName.length >= 4 && theirName.length >= 4 && (myName === theirName || myName.includes(theirName) || theirName.includes(myName))) {
+      if (sim.nameSimilarity >= 0.7 || nameContains(manifest.name, latest.manifest.name)) {
         checks.push({
           id: "clone-name",
           verdict: "flag",
           detail: `name resembles ${id} ("${latest.manifest.name}") by a different publisher`,
+        });
+      }
+      // A byte-different clone: little/no shared assets, but the same shape plus a name/description tell.
+      if (sim.assetOverlap < 0.6 && sim.structureMatch && (sim.nameSimilarity >= 0.4 || sim.descriptionSimilarity >= 0.5)) {
+        checks.push({
+          id: "clone-shape",
+          verdict: "flag",
+          detail: `resembles ${id} without copying assets — ${sim.signals.join("; ")} (different publisher)`,
         });
       }
     }

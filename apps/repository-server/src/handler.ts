@@ -133,6 +133,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     kind: s.kind,
     types: s.assetTypes,
     priceStatus: await priceStatus(s.id),
+    maturity: s.maturity,
     targetApps: s.targetApps,
     downloads: s.downloads,
     rating: s.rating,

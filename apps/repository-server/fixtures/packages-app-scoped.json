@@ -14,6 +14,7 @@
           "lut"
         ],
         "priceStatus": "free",
+        "maturity": "general",
         "targetApps": [],
         "downloads": 0,
         "ratingCount": 0,
@@ -35,6 +36,7 @@
           "lut"
         ],
         "priceStatus": "paid",
+        "maturity": "general",
         "targetApps": [],
         "downloads": 0,
         "ratingCount": 0,
@@ -54,6 +56,7 @@
         "kind": "app",
         "types": [],
         "priceStatus": "free",
+        "maturity": "general",
         "targetApps": [
           "com.hereliesaz.graffitixr"
         ],

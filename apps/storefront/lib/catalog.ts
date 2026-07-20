@@ -13,7 +13,7 @@
  * rest live only in the free registry. The fee — and money in general — exists only on the listings,
  * never in the registry itself.
  */
-import { createPrivateKey, createPublicKey } from "node:crypto";
+import { createPrivateKey, createPublicKey, verify as cryptoVerify } from "node:crypto";
 import { readAzp, writeAzp } from "@azphalt/azp";
 import {
   EntitlementAuthorizer,
@@ -24,6 +24,7 @@ import {
   Marketplace,
   Registry,
   RegistryError,
+  packageSimilarity,
   StripeConnect,
   StripePaymentProvider,
   StubPaymentProvider,
@@ -349,7 +350,9 @@ const SEEDS: Seed[] = [
     listInterval: "month",
   },
   {
-    // A free LUT pack — film emulation.
+    // A free LUT pack — film emulation. Flagged `maturity: "mature"` to exercise the developer-set
+    // age gate (the storefront hides its card/detail behind an 18+ confirmation); also carries ratings
+    // so the rating display has a free package to show.
     manifest: {
       azphalt: "0.1",
       id: "com.foldlab.filmluts",
@@ -362,6 +365,7 @@ const SEEDS: Seed[] = [
         "Free, MIT-licensed film-stock emulation LUTs. Reach without a fee — published to the open " +
         "registry lane; grade in any conforming app.",
       author: "Fold Lab",
+      maturity: "mature",
       capabilities: ["assets", "bitmap"],
       assets: [
         { type: "lut", path: "assets/portra.cube" },
@@ -373,6 +377,7 @@ const SEEDS: Seed[] = [
       "assets/tri-x.cube": cubeLut("Tri-X"),
     },
     simulatedDownloads: 980,
+    ratings: [4, 5, 3, 4, 5],
   },
   {
     // A brush pack — consigned would be plausible, but kept free to show a paid/free mix per type.
@@ -1050,6 +1055,78 @@ export async function fileReport(input: {
   const { registry } = await getCatalog();
   const result = await registry.report({ ...input, trusted: false });
   return { quarantined: result.quarantined };
+}
+
+/** Canonical message a developer signs to prove an IP claim — binds the claim to both package ids. */
+export function ipClaimMessage(packageId: string, originalPackageId: string): string {
+  return `azphalt-ip-claim:v1:${packageId}:${originalPackageId}`;
+}
+
+/**
+ * File a developer / rights-holder **IP claim** against [packageId], asserting it infringes the
+ * claimant's own [originalPackageId] (spec/marketplace-integrity.md § 4). Two lanes:
+ *
+ * - **Signed** — the claimant signs {@link ipClaimMessage} with the Ed25519 **publisher key** that
+ *   signed `originalPackageId`. A valid signature proves they hold that package's provenance key, so
+ *   the claim is stored **trusted** — it counts toward auto-quarantine and is flagged prominently for
+ *   moderation.
+ * - **Plain** — no/invalid signature: stored **untrusted**, a DMCA-style claim a human moderator
+ *   reviews. Never auto-acts.
+ *
+ * A single trusted claim does not by itself yank the target (that still needs the trusted-report
+ * threshold), so no lone publisher can weaponize this to take down a rival — it escalates to a human.
+ */
+export async function fileIpClaim(input: {
+  packageId: string;
+  originalPackageId: string;
+  detail?: string;
+  claimant?: string;
+  signature?: string;
+}): Promise<{ trusted: boolean; quarantined: boolean }> {
+  const { registry } = await getCatalog();
+  const { packageId, originalPackageId, detail, claimant, signature } = input;
+
+  const original = await registry.latest(originalPackageId);
+
+  let trusted = false;
+  if (signature && original?.publisherKey) {
+    try {
+      const pub = createPublicKey({ key: Buffer.from(original.publisherKey, "base64"), format: "der", type: "spki" });
+      trusted =
+        pub.asymmetricKeyType === "ed25519" &&
+        cryptoVerify(null, Buffer.from(ipClaimMessage(packageId, originalPackageId)), pub, Buffer.from(signature, "base64"));
+    } catch {
+      trusted = false;
+    }
+  }
+
+  // Attach clone-similarity evidence so moderation sees *why* it's a clone even when no bytes were
+  // copied (a reimplemented clone shares no digests). This catches more than exact copies.
+  const target = await registry.latest(packageId);
+  let evidence = detail;
+  if (original && target) {
+    const sim = packageSimilarity(original.manifest, target.manifest);
+    if (sim.signals.length) {
+      const line = `similarity ${Math.round(sim.score * 100)}% vs ${originalPackageId} — ${sim.signals.join("; ")}`;
+      evidence = detail ? `${detail}\n\n${line}` : line;
+    }
+  }
+
+  const result = await registry.report({
+    packageId,
+    reason: "ip-claim",
+    detail: evidence,
+    trusted,
+    reporter: claimant,
+    originalPackageId,
+  });
+  return { trusted, quarantined: result.quarantined };
+}
+
+/** Record one 1–5 star user rating for [id] and return the package's new aggregate rating. */
+export async function ratePackage(id: string, stars: number): Promise<{ rating?: number; ratingCount: number }> {
+  const { registry } = await getCatalog();
+  return registry.rate(id, stars);
 }
 
 /**

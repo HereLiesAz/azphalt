@@ -29,6 +29,8 @@ export {
 export { InMemoryStore, type RegistryStore } from "./store.js";
 export { scanPackage } from "./sweep.js";
 export type { ScanReport, ScanCheck, ScanVerdict, ScanOptions } from "./sweep.js";
+export { packageSimilarity, nameContains, normalizeName, assetDigests } from "./similarity.js";
+export type { SimilarityEvidence } from "./similarity.js";
 export {
   Marketplace,
   StubPaymentProvider,
