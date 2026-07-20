@@ -50,6 +50,8 @@ DATABASE_URL=… BLOB_READ_WRITE_TOKEN=… pnpm --filter @azphalt/storefront see
 | `POST /api/webhooks/stripe` | Real fulfilment: on a signature-verified `checkout.session.completed`, mints and persists the buyer's entitlement (idempotent on the session); on `account.updated`, refreshes a seller's Connect capability flags. |
 | `POST /api/connect/onboard` | Seller onboarding: `{ sellerId }` → creates the seller's Stripe **Express** connected account (once), persists the mapping, and returns a Stripe-hosted onboarding `url` to redirect to. `404` unless Stripe is configured. |
 | `GET /api/connect/status?sellerId=…` | A seller's onboarding status (`onboarded`, `chargesEnabled`, `payoutsEnabled`, `detailsSubmitted`); `refresh=1` re-reads live from Stripe. |
+| `POST /api/reports` | File an abuse/quality report `{ packageId, version?, reason, detail? }` (marketplace-integrity § 2). A web report is **untrusted** — queues for review, never auto-quarantines alone. Surfaced at `/report`. |
+| `GET /api/reports` | The moderation queue — every report, newest-first. No moderator auth in this reference app (the spec's `GET /reports` is authenticated). Surfaced at `/moderation`. |
 
 ## The paid lane's gate
 
