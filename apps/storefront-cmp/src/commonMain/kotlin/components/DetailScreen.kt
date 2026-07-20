@@ -7,15 +7,15 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,13 +26,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import models.CheckoutResponse
 import models.PackageSummary
 import network.startCheckout
+import theme.azTurnstileEntrance
 
 /** A full-screen detail view for one package: a big animated hero, metadata, and an install action. */
 @Composable
@@ -61,17 +62,22 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
                 .align(Alignment.CenterHorizontally)
                 .padding(24.dp),
         ) {
-            FilledTonalButton(onClick = onBack) { Text("←  Back") }
+            OutlinedButton(
+                onClick = onBack,
+                shape = RectangleShape,
+                modifier = Modifier.azTurnstileEntrance(index = 0),
+            ) { Text("←  Back") }
 
             Spacer(Modifier.height(20.dp))
 
-            // Big animated hero of the plugin's behavior.
+            // Big animated hero of the plugin's behavior — an outlined sharp Metro panel.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(container),
+                    .azTurnstileEntrance(index = 1)
+                    .background(container.copy(alpha = 0.14f))
+                    .border(1.dp, onContainer.copy(alpha = 0.55f), RectangleShape),
             ) {
                 PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
                 Row(
@@ -84,7 +90,12 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(28.dp))
-            Text(pkg.name, style = MaterialTheme.typography.displaySmall, color = cs.onBackground)
+            Text(
+                pkg.name,
+                style = MaterialTheme.typography.displaySmall,
+                color = cs.onBackground,
+                modifier = Modifier.azTurnstileEntrance(index = 2),
+            )
             pkg.author?.let {
                 Spacer(Modifier.height(6.dp))
                 Text("by $it", style = MaterialTheme.typography.titleMedium, color = cs.onSurfaceVariant)
@@ -109,6 +120,8 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
             Spacer(Modifier.height(32.dp))
             Button(
                 enabled = !busy,
+                shape = RectangleShape,
+                modifier = Modifier.azTurnstileEntrance(index = 3),
                 onClick = {
                     if (isPaid(pkg)) {
                         scope.launch {
@@ -143,7 +156,7 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
     dialogText?.let { message ->
         AlertDialog(
             onDismissRequest = { dialogText = null },
-            confirmButton = { TextButton(onClick = { dialogText = null }) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { dialogText = null }, shape = RectangleShape) { Text("OK") } },
             title = { Text(if (isPaid(pkg)) "Checkout" else "Install") },
             text = { Text(message) },
         )

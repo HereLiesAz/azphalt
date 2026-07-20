@@ -8,14 +8,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
+import theme.azTurnstileEntrance
 
 /** Sort orders for the catalog. */
 enum class SortMode(val label: String) {
@@ -42,13 +43,13 @@ fun StorefrontControls(
     app: String?,
     onApp: (String?) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).azTurnstileEntrance(index = 0)) {
         OutlinedTextField(
             value = query,
             onValueChange = onQuery,
             placeholder = { Text("Search extensions…") },
             singleLine = true,
-            shape = RoundedCornerShape(18.dp),
+            shape = RectangleShape,
             modifier = Modifier.fillMaxWidth(),
         )
 

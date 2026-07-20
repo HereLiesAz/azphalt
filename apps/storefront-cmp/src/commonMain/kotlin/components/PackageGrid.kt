@@ -3,38 +3,45 @@ package components
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import models.PackageSummary
+import theme.azTiltOnPress
+import theme.azTurnstileEntrance
 
-/** A small pill-shaped indicator (kind, price, capability). */
+/**
+ * A small outlined tag (kind, price, capability) — a sharp Metro rectangle with a hairline border in
+ * the content color over a faint [container] fill, replacing the old 50%-rounded pill.
+ */
 @Composable
 internal fun Pill(text: String, container: Color, content: Color) {
-    Surface(
-        color = container,
-        contentColor = content,
-        shape = RoundedCornerShape(percent = 50),
+    Box(
+        modifier = Modifier
+            .background(container)
+            .border(1.dp, content.copy(alpha = 0.55f), RectangleShape)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            color = content,
         )
     }
 }
@@ -58,18 +65,23 @@ internal fun priceLabel(pkg: PackageSummary): String =
 internal fun isPaid(pkg: PackageSummary): Boolean = pkg.price != null || pkg.priceStatus == "paid"
 
 @Composable
-fun PackageBentoCard(pkg: PackageSummary, phase: Float, onOpen: (PackageSummary) -> Unit) {
+fun PackageBentoCard(pkg: PackageSummary, phase: Float, index: Int, onOpen: (PackageSummary) -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     val pressed by interaction.collectIsPressedAsState()
 
-    // Bouncy, physics-driven scale + elevation on hover/press.
+    // Bouncy, physics-driven scale on hover/press (kept). The old elevation lift becomes a border
+    // that brightens and thickens on hover, so the flat Metro tile still answers the pointer.
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.96f else if (hovered) 1.03f else 1f,
         animationSpec = spring(dampingRatio = 0.5f, stiffness = 520f),
     )
-    val elevation by animateDpAsState(
-        targetValue = if (hovered) 12.dp else 2.dp,
+    val borderWidth by animateDpAsState(
+        targetValue = if (hovered) 2.dp else 1.dp,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
+    )
+    val borderAlpha by animateFloatAsState(
+        targetValue = if (hovered) 0.95f else 0.5f,
         animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
     )
 
@@ -77,15 +89,22 @@ fun PackageBentoCard(pkg: PackageSummary, phase: Float, onOpen: (PackageSummary)
     val (container, onContainer) = paletteFor(pkg.id)
     val paid = isPaid(pkg)
 
-    ElevatedCard(
+    OutlinedCard(
         onClick = { onOpen(pkg) },
         modifier = Modifier
             .fillMaxWidth()
             .height(272.dp)
+            // Additive WP7 turnstile: the tile pivots in around its left edge, cascaded across the
+            // grid. Capped so a card scrolled in far down the list doesn't wait a full cascade.
+            .azTurnstileEntrance(index = index.coerceAtMost(6))
+            .azTiltOnPress()
             .scale(scale),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = container, contentColor = onContainer),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = elevation),
+        shape = RectangleShape,
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = container.copy(alpha = 0.14f),
+            contentColor = onContainer,
+        ),
+        border = BorderStroke(borderWidth, onContainer.copy(alpha = borderAlpha)),
         interactionSource = interaction,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {

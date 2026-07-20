@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import components.DetailScreen
@@ -109,6 +110,7 @@ fun StorefrontApp() {
                     onClick = { println("publish") },
                     containerColor = MaterialTheme.colorScheme.tertiary,
                     contentColor = MaterialTheme.colorScheme.onTertiary,
+                    shape = RectangleShape,
                 ) {
                     Text("Publish  +", fontWeight = FontWeight.Bold)
                 }
@@ -153,6 +155,7 @@ fun StorefrontApp() {
                         PackageBentoCard(
                             pkg = pkg,
                             phase = if (index == active) clock else STILL_FRAME,
+                            index = index,
                             onOpen = { selected = it },
                         )
                     }
