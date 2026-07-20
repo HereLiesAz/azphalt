@@ -13,7 +13,8 @@
 import type { Manifest } from "@azphalt/azdk";
 
 /** env/header keys whose value must be an `${input:…}` reference, never a literal secret. */
-const CREDENTIAL_KEY_RE = /(key|token|secret|password|passwd|api[-_]?key|auth|credential|bearer)/i;
+// `authorization` (not bare `auth`) so a normal `author` field never false-matches.
+const CREDENTIAL_KEY_RE = /(key|token|secret|password|passwd|api[-_]?key|authorization|credential|bearer)/i;
 // Bounded quantifier ({1,128}, not +): an input id is short, and an unbounded `[^}]+` before `\}`
 // backtracks O(n) per `${input:` start — polynomial on a crafted value (CodeQL js/polynomial-redos).
 const INPUT_REF_RE = /\$\{input:([^}]{1,128})\}/g;

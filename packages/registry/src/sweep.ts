@@ -38,7 +38,8 @@ export interface ScanOptions {
 }
 
 // A manifest value whose KEY looks like a credential must be an `${input:…}` reference, never a literal.
-const CREDENTIAL_KEY_RE = /(key|token|secret|password|passwd|api[-_]?key|auth|credential|bearer)/i;
+// NB: `authorization` (not bare `auth`) so it doesn't false-match the very common `author` field.
+const CREDENTIAL_KEY_RE = /(key|token|secret|password|passwd|api[-_]?key|authorization|credential|bearer)/i;
 const INPUT_REF_RE = /\$\{input:[^}]{1,128}\}/;
 
 const RANK: Record<ScanVerdict, number> = { pass: 0, flag: 1, block: 2 };

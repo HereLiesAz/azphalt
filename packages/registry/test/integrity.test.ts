@@ -45,6 +45,15 @@ describe("security sweep", () => {
     const bytes = assetAzp();
     expect(scanPackage(bytes, { denylistDigests: [digest(bytes)] }).verdict).toBe("block");
   });
+
+  it("does not false-block a normal `author` field (the 'auth' substring trap)", () => {
+    const bytes = writeAzp({
+      manifest: { ...base, id: "com.acme.authored", name: "Authored", kind: "asset", author: "SFX Studio", assets: [{ type: "brush", path: "assets/b" }] },
+      payload: { "assets/b": enc("x") },
+      license,
+    }).azp;
+    expect(scanPackage(bytes).verdict).toBe("pass");
+  });
 });
 
 describe("publish + reporting", () => {
