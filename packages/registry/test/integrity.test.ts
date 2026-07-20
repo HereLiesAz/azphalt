@@ -54,6 +54,15 @@ describe("security sweep", () => {
     }).azp;
     expect(scanPackage(bytes).verdict).toBe("pass");
   });
+
+  it("does not false-block a file path containing a credential substring (assets/tokens.txt)", () => {
+    const bytes = writeAzp({
+      manifest: { ...base, id: "com.acme.asr", name: "ASR", kind: "asset", assets: [{ type: "model", path: "assets/tokens.txt" }] },
+      payload: { "assets/tokens.txt": enc("hello world") },
+      license,
+    }).azp;
+    expect(scanPackage(bytes).verdict).toBe("pass");
+  });
 });
 
 describe("publish + reporting", () => {

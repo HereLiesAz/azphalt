@@ -58,7 +58,12 @@ function secretScan(manifest: Manifest): ScanCheck {
     }
     if (typeof node === "object") {
       for (const [k, v] of Object.entries(node)) {
-        if (typeof v === "string" && CREDENTIAL_KEY_RE.test(k) && v.length >= 8 && !INPUT_REF_RE.test(v)) {
+        // The `files` digest map is keyed by file PATHS (which may contain substrings like "tokens/")
+        // and its values are integrity digests, never secrets — skip it entirely.
+        if (k === "files") continue;
+        // A value that is a content digest (`sha256-…`) is never a credential, whatever its key.
+        const isDigest = typeof v === "string" && /^sha256-/i.test(v);
+        if (typeof v === "string" && !isDigest && CREDENTIAL_KEY_RE.test(k) && v.length >= 8 && !INPUT_REF_RE.test(v)) {
           hits.push(`${path}.${k}`);
         }
         walk(v, `${path}.${k}`);
