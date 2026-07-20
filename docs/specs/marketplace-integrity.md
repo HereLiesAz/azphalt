@@ -51,8 +51,10 @@ Every `publish` and every new version runs an automated battery; each check yiel
   **flagged** ("requests `layers`,`audio` but contributes one `filter`"). A declaration touching the
   never-list is **blocked**.
 - **Secret scan** — generalize the `kind:"mcp"` credential-keyed rule (`validateMcpManifest`) to every
-  kind: a credential-shaped value anywhere in the manifest (or a high-entropy blob in a text asset)
-  that isn't an `${input:…}` reference is a leaked secret ⇒ **block**.
+  kind: a credential-**keyed** value anywhere in the manifest that isn't an `${input:…}` reference is a
+  leaked secret ⇒ **block**. (0.1 scans the **manifest** only, by key; scanning non-manifest text-asset
+  payloads and value-shape/entropy heuristics are a planned future phase — the same coverage/false-
+  positive trade-off deferred in `mcp-server.md § Secret detection`.)
 - **Payload static analysis** — for `code`, confirm the module's host-function imports are a **subset**
   of the granted capabilities (the runtime already fails instantiation otherwise; the sweep surfaces
   the mismatch *before* install and **flags** an import of an undeclared capability). Obfuscation /

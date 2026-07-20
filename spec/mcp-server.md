@@ -166,7 +166,7 @@ signature checks every package gets). Reference: `@azphalt/azp`'s `validateMcpMa
 - A `remote` has a `url` and a `type` of `http` or `sse`.
 - Every `${input:…}` reference (in `args` / `env` / `headers`) resolves to a declared `inputs[].id`.
 - **No literal secrets**: a credential-keyed `env` / `headers` value (key matching
-  `key` / `token` / `secret` / `password` / `apikey` / `auth` / `credential` / `bearer`) MUST reference
+  `key` / `token` / `secret` / `password` / `apikey` / `authorization` / `credential` / `bearer`) MUST reference
   an input.
 
 Signing (`verifyTrust`), registry counter-signing, and the `/revocations` feed apply unchanged
@@ -199,7 +199,7 @@ is introduced.
   future addition, since `component` is opaque.)
 - **Secret detection** — *resolved.* The rule is the conservative **credential-keyed** check: an
   `env` / `headers` value whose **key** matches `key` / `token` / `secret` / `password` / `apikey` /
-  `auth` / `credential` / `bearer` (case-insensitive) MUST reference an `${input:…}`; a literal is a
+  `authorization` / `credential` / `bearer` (case-insensitive) MUST reference an `${input:…}`; a literal is a
   verify-time rejection (`validateMcpManifest`). A value-shape heuristic (entropy / known prefixes like
   `sk-`) is intentionally **out** of `0.1` — it trades false positives for coverage and can be layered
   on later without a format change.
@@ -213,7 +213,7 @@ is introduced.
   connect and surface a drift warning, but MUST NOT block on a mismatch — the live handshake is
   authoritative.
 
-## Resolved
+## Conformance
 
 - **Conformance** — *resolved.* `@azphalt/conformance` ships an `mcp` host-conformance profile,
   `runMcpConformance(host)` (mirroring the `companion` profile): it drives a fixture `kind:"mcp"`
