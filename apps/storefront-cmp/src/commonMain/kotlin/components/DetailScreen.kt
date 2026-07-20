@@ -11,19 +11,28 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import models.CheckoutResponse
 import models.PackageSummary
+import network.startCheckout
 
 /** A full-screen detail view for one package: a big animated hero, metadata, and an install action. */
 @Composable
@@ -37,6 +46,9 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
         animationSpec = infiniteRepeatable(tween(durationMillis = 5200, easing = LinearEasing), RepeatMode.Restart),
         label = "phase",
     )
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    var dialogText by remember { mutableStateOf<String?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,15 +108,44 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
 
             Spacer(Modifier.height(32.dp))
             Button(
-                onClick = { println("install ${pkg.id}") },
+                enabled = !busy,
+                onClick = {
+                    if (isPaid(pkg)) {
+                        scope.launch {
+                            busy = true
+                            val result = try {
+                                startCheckout(pkg.id)
+                            } catch (e: Exception) {
+                                CheckoutResponse(error = e.message ?: "Checkout failed")
+                            }
+                            dialogText = result.error ?: result.message ?: "Checkout started."
+                            busy = false
+                        }
+                    } else {
+                        dialogText = "“${pkg.name}” is free — install it from any Azphalt-conforming host."
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
             ) {
                 Text(
-                    text = if (isPaid(pkg)) "Get  ·  ${priceLabel(pkg)}" else "Install  ·  Free",
+                    text = when {
+                        busy -> "Working…"
+                        isPaid(pkg) -> "Get  ·  ${priceLabel(pkg)}"
+                        else -> "Install  ·  Free"
+                    },
                     fontWeight = FontWeight.Bold,
                 )
             }
             Spacer(Modifier.height(48.dp))
         }
+    }
+
+    dialogText?.let { message ->
+        AlertDialog(
+            onDismissRequest = { dialogText = null },
+            confirmButton = { TextButton(onClick = { dialogText = null }) { Text("OK") } },
+            title = { Text(if (isPaid(pkg)) "Checkout" else "Install") },
+            text = { Text(message) },
+        )
     }
 }

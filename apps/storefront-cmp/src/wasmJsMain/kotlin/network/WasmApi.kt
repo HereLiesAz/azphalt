@@ -1,9 +1,12 @@
 package network
 
 import kotlin.js.JsString
+import kotlin.js.toJsString
 import kotlinx.browser.window
 import kotlinx.coroutines.await
+import models.CheckoutResponse
 import models.PackageSummary
+import org.w3c.fetch.RequestInit
 import org.w3c.fetch.Response
 
 actual suspend fun fetchRegistryList(): List<PackageSummary> {
@@ -12,4 +15,14 @@ actual suspend fun fetchRegistryList(): List<PackageSummary> {
     val response: Response = window.fetch("/api/packages").await()
     val body: JsString = response.text().await()
     return json.decodeFromString<List<PackageSummary>>(body.toString())
+}
+
+actual suspend fun startCheckout(packageId: String): CheckoutResponse {
+    val payload = "{\"packageId\":\"$packageId\",\"buyerId\":\"buyer_web\"}"
+    val response: Response = window.fetch(
+        "/api/checkout",
+        RequestInit(method = "POST", body = payload.toJsString()),
+    ).await()
+    val body: JsString = response.text().await()
+    return json.decodeFromString<CheckoutResponse>(body.toString())
 }
