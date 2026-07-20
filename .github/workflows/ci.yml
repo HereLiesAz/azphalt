@@ -34,3 +34,19 @@ jobs:
             echo "::error::conformance/fixtures is out of date — run 'pnpm fixtures' and commit the result." >&2
             exit 1
           fi
+
+  # Compile the Compose/Kotlin-Wasm storefront on every PR. Previously the Kotlin only built at deploy
+  # time (deploy-storefront.yml, on push to main), so a Kotlin error would merge green and break the
+  # production deploy. This gates it here. Uses the same task the deploy build runs.
+  storefront-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Java (for the Kotlin/Wasm Gradle build)
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+      - name: Build the Compose/Wasm storefront (compiles commonMain + wasmJs)
+        working-directory: apps/storefront-cmp
+        run: ./gradlew wasmJsBrowserDistribution --no-daemon --stacktrace
