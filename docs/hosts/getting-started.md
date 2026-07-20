@@ -59,6 +59,24 @@ const { manifest, payload } = readAzp(bytes);
 // payload["assets/portra.cube"] is the LUT, ready to load into your engine.
 ```
 
+**Big files? Downloads are resumable and parallel.** When the repository supports byte ranges (it
+advertises `Accept-Ranges`), `download` fetches the file in chunks — retrying any chunk that drops (so a
+flaky connection resumes the exact bytes it lost instead of restarting) and running several in parallel.
+This matters most for large model packs. Tune it and track progress:
+
+```typescript
+const bytes = await store.download("com.azphalt.model.sherpa-onnx", "1.0.0", {
+  concurrency: 6,          // parallel range requests (default 4; 1 = sequential)
+  chunkSize: 16 * 1024 * 1024,
+  retries: 5,              // per-chunk retries — this is the "resume"
+  signal: abortController.signal,
+  onProgress: (received, total) => setProgress(received / total),
+});
+```
+
+If the repository doesn't support ranges, `download` transparently falls back to a single request — same
+call, same result.
+
 ## 4. Paid packages: the entitlement token
 
 A **consigned** (paid) package's bytes are gated. The store issues a signed, offline-verifiable
