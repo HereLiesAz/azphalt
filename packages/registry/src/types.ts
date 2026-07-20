@@ -8,6 +8,7 @@
  * open lane.
  */
 import type { AssetType, Capability, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/azdk";
+import type { ScanReport } from "./sweep.js";
 
 /** One published, immutable version of a package. */
 export interface PackageVersion {
@@ -25,6 +26,35 @@ export interface PackageVersion {
   publishedAt: string;
   /** A pulled version stays resolvable by exact `version` but is hidden from `latest`/search. */
   yanked?: boolean;
+  /** The security-sweep report attached at publish (see `spec/marketplace-integrity.md § 1`). */
+  scan?: ScanReport;
+}
+
+/** Why a package version was reported (see `spec/marketplace-integrity.md § 2`). */
+export type ReportReason = "malware" | "clone" | "deceptive" | "secret-leak" | "broken" | "other";
+
+/** One abuse/quality report against a package version. */
+export interface Report {
+  packageId: string;
+  /** The specific version reported, or absent for the package as a whole. */
+  version?: string;
+  reason: ReportReason;
+  detail?: string;
+  /** ISO-8601 instant. */
+  reportedAt: string;
+  /**
+   * Whether this report counts toward auto-quarantine — a report from a counter-signed host or a
+   * verified account is *trusted* (`spec/marketplace-integrity.md § 2`). Untrusted reports still queue
+   * for human review but don't trip the automatic threshold.
+   */
+  trusted?: boolean;
+}
+
+/** Result of filing a {@link Report}: the stored report and whether it auto-quarantined the version. */
+export interface ReportResult {
+  report: Report;
+  /** True when this report tripped the trusted-report threshold and the version was yanked pending review. */
+  quarantined: boolean;
 }
 
 /** The aggregate view of a package across all its versions — what browse/search returns. */

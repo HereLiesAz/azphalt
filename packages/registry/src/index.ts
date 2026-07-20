@@ -17,8 +17,10 @@
  * const { session, breakdown } = await market.checkout("com.you.thing", "buyer_1");
  * ```
  */
-export { Registry, RegistryError, compareSemver, mediaDomainsForManifest } from "./registry.js";
+export { Registry, RegistryError, compareSemver, mediaDomainsForManifest, type RegistryOptions } from "./registry.js";
 export { InMemoryStore, type RegistryStore } from "./store.js";
+export { scanPackage } from "./sweep.js";
+export type { ScanReport, ScanCheck, ScanVerdict, ScanOptions } from "./sweep.js";
 export {
   Marketplace,
   StubPaymentProvider,
@@ -58,4 +60,7 @@ export type {
   SearchResult,
   PublishResult,
   ListQuery,
+  Report,
+  ReportReason,
+  ReportResult,
 } from "./types.js";

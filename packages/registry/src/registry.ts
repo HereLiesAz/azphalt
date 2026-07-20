@@ -7,15 +7,31 @@
 import { digest, readAzp, verifyAzp } from "@azphalt/azp";
 import type { AssetType, Capability, Manifest, MediaDomain } from "@azphalt/azdk";
 import { InMemoryStore, type RegistryStore } from "./store.js";
+import { scanPackage } from "./sweep.js";
 import type {
   ListQuery,
   PackageSummary,
   PackageVersion,
   PublishResult,
   RegistryPackage,
+  Report,
+  ReportReason,
+  ReportResult,
   RevocationEntry,
   SearchResult,
 } from "./types.js";
+
+/** Deployment-policy knobs for a {@link Registry} — the security sweep denylist and moderation threshold. */
+export interface RegistryOptions {
+  /** Known-bad container digests (`sha256-…`) — a publish whose bytes match is blocked. */
+  denylistDigests?: readonly string[];
+  /** Revoked publisher public keys (base64 SPKI) — a publish signed by one is blocked. */
+  denylistKeys?: readonly string[];
+  /** Trusted reports against a version needed to auto-quarantine it (default 3). */
+  quarantineThreshold?: number;
+  /** Injected ISO-8601 clock for deterministic tests. */
+  now?: () => string;
+}
 
 /**
  * Which media domain(s) each asset type belongs to. A type can span domains — a LUT and a shader
@@ -112,7 +128,14 @@ export function compareSemver(a: string, b: string): number {
 }
 
 export class Registry {
-  constructor(private readonly store: RegistryStore = new InMemoryStore()) {}
+  constructor(
+    private readonly store: RegistryStore = new InMemoryStore(),
+    private readonly options: RegistryOptions = {},
+  ) {}
+
+  private clock(): string {
+    return this.options.now?.() ?? new Date().toISOString();
+  }
 
   /**
    * Verify and index a `.azp`. Rejects a tampered/invalid container, a malformed id/version, or a
@@ -136,13 +159,28 @@ export class Registry {
       throw new RegistryError(`version already published: ${manifest.id}@${manifest.version}`);
     }
 
+    // Security sweep (spec/marketplace-integrity.md § 1). `block` refuses indexing; the report is
+    // attached to the version either way so a `flag` can surface a badge to hosts.
+    const scan = scanPackage(azpBytes, {
+      denylistDigests: this.options.denylistDigests,
+      denylistKeys: this.options.denylistKeys,
+      now: this.clock(),
+    });
+    if (scan.verdict === "block") {
+      throw new RegistryError(
+        "blocked by security sweep",
+        scan.checks.filter((c) => c.verdict === "block").map((c) => `${c.id}: ${c.detail ?? ""}`),
+      );
+    }
+
     const version: PackageVersion = {
       id: manifest.id,
       version: manifest.version,
       manifest,
       size: azpBytes.length,
       digest: digest(azpBytes),
-      publishedAt: new Date().toISOString(),
+      publishedAt: this.clock(),
+      scan,
     };
     await this.store.putVersion(version, azpBytes);
 
@@ -279,6 +317,53 @@ export class Registry {
    */
   async revocations(since?: string): Promise<RevocationEntry[]> {
     return this.store.getRevocations(since);
+  }
+
+  /**
+   * File an abuse/quality report against a package (spec/marketplace-integrity.md § 2). The report is
+   * stored, and when a version accumulates enough **trusted** reports (default 3) it is auto-quarantined
+   * — yanked pending review, which appends to the revocation feed so installed hosts learn on their next
+   * poll. Untrusted reports still queue (for human review) but never trip the automatic threshold.
+   * Throws if the store does not support reporting.
+   */
+  async report(input: {
+    packageId: string;
+    version?: string;
+    reason: ReportReason;
+    detail?: string;
+    trusted?: boolean;
+  }): Promise<ReportResult> {
+    if (!this.store.putReport || !this.store.getReports) {
+      throw new RegistryError("this registry store does not support reporting");
+    }
+    const report: Report = {
+      packageId: input.packageId,
+      version: input.version,
+      reason: input.reason,
+      detail: input.detail,
+      trusted: input.trusted,
+      reportedAt: this.clock(),
+    };
+    await this.store.putReport(report);
+
+    let quarantined = false;
+    if (input.version) {
+      const threshold = this.options.quarantineThreshold ?? 3;
+      const trusted = (await this.store.getReports(input.packageId, input.version)).filter((r) => r.trusted).length;
+      if (trusted >= threshold) {
+        const v = await this.store.getVersion(input.packageId, input.version);
+        if (v && !v.yanked) {
+          await this.yank(input.packageId, input.version, true, `reported: ${input.reason}`);
+          quarantined = true;
+        }
+      }
+    }
+    return { report, quarantined };
+  }
+
+  /** Reports against a package (optionally a version), newest-first. Empty if the store lacks reporting. */
+  async reports(packageId: string, version?: string): Promise<Report[]> {
+    return this.store.getReports ? this.store.getReports(packageId, version) : [];
   }
 
   /** Browse the catalog with optional filters and sorting. One summary per package. */

@@ -1,5 +1,5 @@
 import { writeAzp, type AzpInput } from "@azphalt/azp";
-import { type Listing, type PackageVersion, type RevocationEntry, type RegistryStore, InMemoryStore } from "@azphalt/registry";
+import { type Listing, type PackageVersion, type Report, type RevocationEntry, type RegistryStore, InMemoryStore } from "@azphalt/registry";
 
 // Known packages since NPM search takes hours to index new packages.
 // In a full production proxy, this would hit /v1/search dynamically.
@@ -255,6 +255,12 @@ export class NpmStore implements RegistryStore {
 
   async putRevocation(): Promise<void> {}
   async getRevocations(): Promise<RevocationEntry[]> { return []; }
+
+  // Reports live in the local overlay (an InMemoryStore), which implements them.
+  async putReport(report: Report): Promise<void> { await this.local.putReport!(report); }
+  async getReports(packageId: string, version?: string): Promise<Report[]> {
+    return this.local.getReports!(packageId, version);
+  }
 
   async putListing(listing: Listing): Promise<void> {
     this.listings.set(listing.packageId, listing);

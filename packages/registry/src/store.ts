@@ -3,7 +3,7 @@
  * (used by tests and the reference server); a production deployment implements {@link RegistryStore}
  * over a database + object store without touching the {@link Registry}/{@link Marketplace} logic.
  */
-import type { Listing, PackageVersion, RevocationEntry } from "./types.js";
+import type { Listing, PackageVersion, Report, RevocationEntry } from "./types.js";
 
 export interface RegistryStore {
   /** Persist a version's metadata and its `.azp` bytes together. */
@@ -37,6 +37,14 @@ export interface RegistryStore {
   getListing(packageId: string): Promise<Listing | undefined>;
   /** Every listing (any status). */
   allListings(): Promise<Listing[]>;
+
+  /**
+   * Append an abuse/quality report (see `spec/marketplace-integrity.md § 2`). **Optional** — a store
+   * that doesn't support reporting omits it, and {@link Registry.report} surfaces that clearly.
+   */
+  putReport?(report: Report): Promise<void>;
+  /** Reports against a package (optionally a specific version), newest-first. Pairs with {@link putReport}. */
+  getReports?(packageId: string, version?: string): Promise<Report[]>;
 }
 
 /** Non-persistent {@link RegistryStore} — process memory only. */
@@ -47,6 +55,7 @@ export class InMemoryStore implements RegistryStore {
   private readonly ratings = new Map<string, { sum: number; count: number }>(); // packageId
   private readonly revocations: RevocationEntry[] = []; // append-only log
   private readonly listings = new Map<string, Listing>(); // packageId
+  private readonly reports: Report[] = []; // append-only log
 
   private key(id: string, version: string): string {
     return `${id}@${version}`;
@@ -121,5 +130,15 @@ export class InMemoryStore implements RegistryStore {
 
   async allListings(): Promise<Listing[]> {
     return [...this.listings.values()];
+  }
+
+  async putReport(report: Report): Promise<void> {
+    this.reports.push(report);
+  }
+
+  async getReports(packageId: string, version?: string): Promise<Report[]> {
+    return this.reports
+      .filter((r) => r.packageId === packageId && (version === undefined || r.version === version))
+      .sort((a, b) => (a.reportedAt < b.reportedAt ? 1 : a.reportedAt > b.reportedAt ? -1 : 0));
   }
 }
