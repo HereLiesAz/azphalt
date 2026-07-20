@@ -22,6 +22,7 @@ export { VercelRegistryStore, type VercelRegistryStoreConfig, type BlobAccess } 
 export { PostgresSessionStore, type PostgresSessionStoreConfig } from "./sessions.js";
 export { PostgresEntitlementStore, type PostgresEntitlementStoreConfig } from "./entitlements.js";
 export { PostgresSellerAccountStore, type PostgresSellerAccountStoreConfig } from "./seller-accounts.js";
+export { PostgresSubscriptionStore, type PostgresSubscriptionStoreConfig } from "./subscription-records.js";
 export { migrate, type Sql } from "./schema.js";
 
 import { neon } from "@neondatabase/serverless";
@@ -29,6 +30,7 @@ import { VercelRegistryStore, type BlobAccess } from "./store.js";
 import { PostgresSessionStore } from "./sessions.js";
 import { PostgresEntitlementStore } from "./entitlements.js";
 import { PostgresSellerAccountStore } from "./seller-accounts.js";
+import { PostgresSubscriptionStore } from "./subscription-records.js";
 import { migrate as runMigrate } from "./schema.js";
 
 export interface VercelStoresConfig {
@@ -51,12 +53,14 @@ export function createVercelStores(config: VercelStoresConfig): {
   sessions: PostgresSessionStore;
   entitlements: PostgresEntitlementStore;
   sellerAccounts: PostgresSellerAccountStore;
+  subscriptions: PostgresSubscriptionStore;
   migrate: () => Promise<void>;
 } {
   const store = new VercelRegistryStore(config);
   const sessions = new PostgresSessionStore({ connectionString: config.connectionString });
   const entitlements = new PostgresEntitlementStore({ connectionString: config.connectionString });
   const sellerAccounts = new PostgresSellerAccountStore({ connectionString: config.connectionString });
+  const subscriptions = new PostgresSubscriptionStore({ connectionString: config.connectionString });
   const sql = neon(config.connectionString);
-  return { store, sessions, entitlements, sellerAccounts, migrate: () => runMigrate(sql) };
+  return { store, sessions, entitlements, sellerAccounts, subscriptions, migrate: () => runMigrate(sql) };
 }

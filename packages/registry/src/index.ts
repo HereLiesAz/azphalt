@@ -60,6 +60,11 @@ export {
   type IssuedEntitlement,
 } from "./entitlement-store.js";
 export {
+  InMemorySubscriptionStore,
+  type SubscriptionStore,
+  type SubscriptionRecord,
+} from "./subscription-store.js";
+export {
   InMemoryAuthorizer,
   EntitlementAuthorizer,
   denyAllAuthorizer,
