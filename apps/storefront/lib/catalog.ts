@@ -899,6 +899,31 @@ export async function issuedToken(sessionId: string): Promise<string | null> {
   return record ? encodeToken(record.token) : null;
 }
 
+/** One recovered purchase — the package, when it was licensed, and the Bearer token to download it. */
+export interface Purchase {
+  packageId: string;
+  sessionId: string;
+  issuedAt: string;
+  token: string;
+}
+
+/**
+ * Every entitlement issued to a buyer, newest-first — the buyer's "my purchases" recovery view. Each
+ * carries its Bearer `token`, so a buyer who lost the one shown on `/checkout/success` can get it back
+ * and download again. (Like the rest of this reference storefront it has no buyer authentication; a
+ * production deployment gates this behind the buyer's session.)
+ */
+export async function listPurchases(subject: string): Promise<Purchase[]> {
+  await getCatalog();
+  const records = await entitlements.listBySubject(subject);
+  return records.map((r) => ({
+    packageId: r.packageId,
+    sessionId: r.sessionId,
+    issuedAt: r.issuedAt,
+    token: encodeToken(r.token),
+  }));
+}
+
 /** The originating input for a **stub** checkout session (dev fulfilment). Undefined for the Stripe path. */
 export async function stubSessionInput(
   sessionId: string,

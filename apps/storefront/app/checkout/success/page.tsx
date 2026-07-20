@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { PageNav } from '../../../components/PageNav';
 
 const ACCENT = '#BBA6FF';
 const BG = '#0C0C13';
@@ -81,8 +82,8 @@ function CheckoutSuccess() {
   return (
     <main style={{ minHeight: '100vh', background: BG, color: ON, display: 'flex', justifyContent: 'center', padding: '48px 20px' }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
-        <a href="/" style={{ color: MUTED, textDecoration: 'none', fontSize: 14 }}>← Back to the store</a>
-        <h1 style={{ marginTop: 24, fontSize: 28, fontWeight: 700 }}>Thanks for your purchase</h1>
+        <PageNav current="purchases" />
+        <h1 style={{ marginTop: 16, fontSize: 28, fontWeight: 700 }}>Thanks for your purchase</h1>
 
         {(state.kind === 'loading' || state.kind === 'pending') && (
           <p style={{ color: MUTED, marginTop: 16 }}>
