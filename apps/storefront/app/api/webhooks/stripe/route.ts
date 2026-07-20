@@ -77,9 +77,17 @@ export async function POST(req: Request) {
   }
 
   if (event.type === "invoice.paid") {
-    // A subscription renewal (or the first invoice): issue a fresh period entitlement, idempotent on
-    // the invoice id. Unknown/cancelled subscriptions and issuance-off are quiet no-ops.
-    const invoice = event.data.object as Stripe.Invoice & { subscription?: string | { id?: string } | null };
+    // A subscription **renewal**: issue a fresh period entitlement, idempotent on the invoice id.
+    // Skip the *initial* invoice (`subscription_create`) — `checkout.session.completed` already issues
+    // the first period (keyed by the session id); handling it here would mint a duplicate, and it also
+    // sidesteps the race where invoice.paid arrives before the subscription is recorded.
+    const invoice = event.data.object as Stripe.Invoice & {
+      subscription?: string | { id?: string } | null;
+      billing_reason?: string | null;
+    };
+    if (invoice.billing_reason === "subscription_create") {
+      return NextResponse.json({ received: true, renewed: false });
+    }
     const subscriptionId = idOf(invoice.subscription);
     if (subscriptionId && invoice.id) {
       const token = await renewSubscription(subscriptionId, invoice.id);
