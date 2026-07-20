@@ -658,14 +658,17 @@ const usingStripe = Boolean(process.env.AZPHALT_STRIPE_SECRET_KEY);
  * `sellerId` with no mapping is a hard error, not a silent misroute (the previous bug passed the raw
  * `sellerId` as if it were a Stripe account id).
  */
+let connectedAccounts: Record<string, string> | undefined;
 function connectedAccountFor(sellerId: string): string {
-  let map: Record<string, string>;
-  try {
-    map = JSON.parse(process.env.AZPHALT_STRIPE_CONNECTED_ACCOUNTS ?? "{}") as Record<string, string>;
-  } catch {
-    throw new RegistryError("AZPHALT_STRIPE_CONNECTED_ACCOUNTS is not valid JSON");
+  // Parsed once and cached — the mapping is deployment config that doesn't change at runtime.
+  if (connectedAccounts === undefined) {
+    try {
+      connectedAccounts = JSON.parse(process.env.AZPHALT_STRIPE_CONNECTED_ACCOUNTS ?? "{}") as Record<string, string>;
+    } catch (e) {
+      throw new RegistryError(`AZPHALT_STRIPE_CONNECTED_ACCOUNTS is not valid JSON: ${(e as Error).message}`);
+    }
   }
-  const account = map[sellerId];
+  const account = connectedAccounts[sellerId];
   if (!account) throw new RegistryError(`no Stripe connected account configured for seller: ${sellerId}`);
   return account;
 }
