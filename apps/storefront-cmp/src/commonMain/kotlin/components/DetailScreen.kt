@@ -117,6 +117,46 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
                 }
             }
 
+            // A pack (kind:"pack") lists the packages it bundles — each installed and licensed on its own.
+            pkg.pack?.let { pack ->
+                Spacer(Modifier.height(24.dp))
+                Text("What's inside", style = MaterialTheme.typography.labelLarge, color = cs.onBackground)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "This pack bundles other extensions by reference — each is installed and licensed on its own.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = cs.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(12.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    pack.entries.forEach { entry ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, cs.outline.copy(alpha = 0.4f), RectangleShape)
+                                .padding(12.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(entry.id, style = MaterialTheme.typography.bodyMedium, color = cs.onBackground)
+                                if (entry.required) {
+                                    Pill("BASE", cs.primary.copy(alpha = 0.16f), cs.primary)
+                                } else {
+                                    Pill("OPTIONAL", cs.secondaryContainer, cs.onSecondaryContainer)
+                                }
+                            }
+                            entry.note?.let {
+                                Spacer(Modifier.height(4.dp))
+                                Text(it, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(Modifier.height(32.dp))
             Button(
                 enabled = !busy,
@@ -134,6 +174,8 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
                             dialogText = result.error ?: result.message ?: "Checkout started."
                             busy = false
                         }
+                    } else if (pkg.pack != null) {
+                        dialogText = "“${pkg.name}” bundles ${pkg.pack.entries.size} extensions — a host installs each from any Azphalt-conforming repository (paid members need their own purchase)."
                     } else {
                         dialogText = "“${pkg.name}” is free — install it from any Azphalt-conforming host."
                     }
@@ -143,6 +185,7 @@ fun DetailScreen(pkg: PackageSummary, onBack: () -> Unit) {
                 Text(
                     text = when {
                         busy -> "Working…"
+                        pkg.pack != null -> "Install pack  ·  ${pkg.pack.entries.size} items"
                         isPaid(pkg) -> "Get  ·  ${priceLabel(pkg)}"
                         else -> "Install  ·  Free"
                     },
