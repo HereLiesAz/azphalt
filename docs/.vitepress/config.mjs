@@ -1,14 +1,19 @@
 import { defineConfig } from 'vitepress'
 
-// The site is served from azphalt.org (GitHub Pages; see docs/public/CNAME + the deploy-docs workflow),
-// so it lives at the domain root — base stays '/'. azphalt.store is the live storefront/registry the
-// docs teach apps to consume.
+// Served at azphalt.org, at the domain root — base stays '/'. Primary hosting is the storefront's own
+// Vercel deployment (azphalt.org and azphalt.store share it; the storefront maps the org host onto the
+// docs it embeds — see apps/storefront/middleware.ts + scripts/embed-docs.mjs). GitHub Pages
+// (docs/public/CNAME + the deploy-docs workflow) is the standalone alternative. azphalt.store is the
+// live storefront/registry the docs teach apps to consume.
 export default defineConfig({
   title: "azphalt",
   description: "The open standard for portable digital-art, motion-graphics, and video extensions — and the marketplace at azphalt.store.",
   appearance: 'dark',
   lastUpdated: true,
-  cleanUrls: true,
+  // Extensionless URLs when served by a host that maps `/x` → `/x.html` (GitHub Pages). For the
+  // storefront-embedded build (AZPHALT_DOCS_EMBED — served at azphalt.org via next.config host rewrites
+  // onto static files under /_docs), disable it so page links are `.html` and map 1:1 to files.
+  cleanUrls: !process.env.AZPHALT_DOCS_EMBED,
   sitemap: { hostname: 'https://azphalt.org' },
   head: [
     ['meta', { name: 'og:title', content: 'azphalt — the open extension standard' }],

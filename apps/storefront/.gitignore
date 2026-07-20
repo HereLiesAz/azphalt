@@ -16,3 +16,6 @@ dist-server
 /public/storefront-cmp.js.LICENSE.txt
 /public/skiko.*
 /public/META-INF/
+
+# Embedded docs site (scripts/embed-docs.mjs output), served at azphalt.org via next.config rewrites.
+/public/_docs/
