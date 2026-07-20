@@ -173,12 +173,23 @@ export interface Money {
   currency: string;
 }
 
+/** Recurring-billing period for a subscription listing. */
+export type SubscriptionInterval = "month" | "year";
+
 /** A consignment listing: the sell-through record layered on a registry package. */
 export interface Listing {
   packageId: string;
   /** The consigning creator (a marketplace-side account id; the registry stays identity-agnostic). */
   sellerId: string;
+  /** The amount charged: once for a one-time listing, or per {@link Listing.interval} for a subscription. */
   price: Money;
+  /**
+   * When set, this is a **subscription** at `price` per interval — fulfilment issues an *expiring*
+   * `kind:"subscription"` entitlement (re-issued each period). Absent, it is a one-time buy-once
+   * purchase (a perpetual entitlement). The download gate checks the entitlement's expiry either way
+   * (see `entitlement.ts` `verifyEntitlement` → `live`).
+   */
+  interval?: SubscriptionInterval;
   /** `active` = purchasable; `unlisted` = withdrawn but retained. */
   status: "active" | "unlisted";
   createdAt: string;
