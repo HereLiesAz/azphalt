@@ -8,6 +8,8 @@ describe("format helpers", () => {
     expect(kindLabel("code")).toBe("Code extension");
     expect(kindLabel("asset")).toBe("Asset pack");
     expect(kindLabel("mixed")).toBe("Code + assets");
+    expect(kindLabel("mcp")).toBe("MCP server");
+    expect(kindLabel("pack")).toBe("Extension pack");
   });
 
   it("summarizes a handoff IO, marking optional params", () => {
@@ -70,6 +72,17 @@ describe("catalog", () => {
     const { registry } = await getCatalog();
     expect((await registry.getPackage("com.hereliesaz.halftone"))?.summary.kind).toBe("code");
     expect((await registry.getPackage("com.studioaz.cinelut"))?.summary.kind).toBe("asset");
+  });
+
+  it('seeds a kind:"pack" extension pack that references other authors\' packages', async () => {
+    const { registry } = await getCatalog();
+    const pkg = await registry.getPackage("com.hereliesaz.paint-starter");
+    expect(pkg?.summary.kind).toBe("pack");
+    const entries = (await registry.latest("com.hereliesaz.paint-starter"))?.manifest.pack?.entries ?? [];
+    expect(entries.map((e) => e.id)).toContain("com.foldlab.filmluts"); // a different author
+    // Base set (required) vs. recommended (optional) both expressed in one pack.
+    expect(entries.some((e) => e.required)).toBe(true);
+    expect(entries.some((e) => !e.required)).toBe(true);
   });
 
   it("seeds ratings so the rating badge and sort have signal", async () => {

@@ -20,11 +20,13 @@ README.md         optional
 Every package MUST contain `manifest.json` and `LICENSE`. `assets/` and/or `code/` are present per `kind`.
 
 ## Package kind
-Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app`.
+Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app` | `mcp` | `pack`.
 - `asset` — data only (brushes, LUTs, patterns). No executable code; a host MAY load it with no runtime. This is what importers produce.
 - `code` — one or more extensions on the sandbox (JS on QuickJS-in-WASM, or raw WASM).
 - `mixed` — both (e.g. a filter shipping its own LUTs).
 - `app` — a **companion app** (an Android app or PWA the host launches via a declared handoff). Carries **no** `/code` payload and **no** `capabilities` — just an `app` header (see extension-manifest.md § app and companion-app.md). The tree is `manifest.json` + `LICENSE` (+ optional `preview`).
+- `mcp` — an **MCP server** a host's MCP client connects to. A header (an `mcp` block) that declares how to reach the server; no `/code`, no `capabilities` (see extension-manifest.md § mcp and mcp-server.md).
+- `pack` — an **extension pack**: a curated set that **references** other packages by id (a recommended bundle or an app's base set). A header (a `pack` block); no `/code`, no `capabilities`, no assets. Each member is resolved and free/paid-gated individually (see extension-manifest.md § pack and pack.md).
 
 ## Assets
 - Assets are **normalized, host-neutral data** — never a host-proprietary blob. Per-asset parameters (and a shader's or transition's declared inputs) live in the manifest.

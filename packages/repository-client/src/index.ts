@@ -1,9 +1,31 @@
-import type { 
-  RepositoryIndex, 
-  PackageSearchResponse, 
-  Manifest, 
-  AssetType 
+import type {
+  RepositoryIndex,
+  PackageSearchResponse,
+  Manifest,
+  AssetType,
+  PackManifest,
+  PackEntry,
 } from "@azphalt/azdk";
+
+/** A `GET /packages/{id}` detail body — the fields this client reads (a superset of the manifest). */
+interface PackageDetail extends Manifest {
+  /** Newest installable version, when the repository reports one (alongside `version`). */
+  latest?: string;
+  /** Free/paid status of the package. */
+  priceStatus?: "free" | "paid";
+  /** The latest version's full manifest (where a pack's `pack` block lives). */
+  manifest?: Manifest;
+}
+
+/** A {@link PackEntry} with its version resolved and a little display metadata, ready to `download`. */
+export interface ResolvedPackEntry extends PackEntry {
+  /** The concrete version to install (the pinned `version`, or the member's latest). */
+  version: string;
+  /** The member's display name, if the repository returned it. */
+  name?: string;
+  /** The member's free/paid status — a `paid` member still needs its own entitlement to download. */
+  priceStatus?: "free" | "paid";
+}
 
 export interface ClientOptions {
   url: string;
@@ -60,7 +82,7 @@ export class RepositoryClient {
     this.token = opts.token;
     this.app = opts.app;
   }
-  
+
   public setToken(token: string) {
     this.token = token;
   }
@@ -100,6 +122,41 @@ export class RepositoryClient {
     const res = await fetch(`${this.baseUrl}/packages/${id}`, { headers: this.headers });
     if (!res.ok) throw new Error(`Get package failed: ${res.status}`);
     return res.json();
+  }
+
+  /**
+   * The member list of a `kind: "pack"` **extension pack** (its latest {@link PackManifest}). Throws if
+   * `id` isn't a pack. See {@link resolvePack} for a ready-to-install form with versions filled in.
+   */
+  public async getPack(id: string): Promise<PackManifest> {
+    const res = await fetch(`${this.baseUrl}/packages/${id}`, { headers: this.headers });
+    if (!res.ok) throw new Error(`Get pack failed: ${res.status}`);
+    const detail = (await res.json()) as PackageDetail;
+    const pack = detail.manifest?.pack ?? detail.pack;
+    if (detail.kind !== "pack" || !pack) throw new Error(`${id} is not an extension pack`);
+    return pack;
+  }
+
+  /**
+   * Resolve a pack into a ready-to-install list: each member with a concrete `version` (its pinned one,
+   * or the member's latest looked up from the repository) plus its name and free/paid status. A host
+   * installs `required` members by default and offers the rest, calling {@link download} per member —
+   * each still gated on its own license. Members are resolved concurrently.
+   */
+  public async resolvePack(id: string): Promise<{ entries: ResolvedPackEntry[] }> {
+    const pack = await this.getPack(id);
+    const entries = await Promise.all(
+      pack.entries.map(async (e): Promise<ResolvedPackEntry> => {
+        if (e.version) return { ...e, version: e.version };
+        const res = await fetch(`${this.baseUrl}/packages/${e.id}`, { headers: this.headers });
+        if (!res.ok) throw new Error(`Resolve pack member ${e.id} failed: ${res.status}`);
+        const d = (await res.json()) as PackageDetail;
+        const version = d.latest ?? d.version;
+        if (!version) throw new Error(`Pack member ${e.id} has no resolvable version`);
+        return { ...e, version, name: d.name, priceStatus: d.priceStatus };
+      }),
+    );
+    return { entries };
   }
 
   /**

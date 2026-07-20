@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp`. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack`. |
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
@@ -262,6 +262,9 @@ The moat holds because azphalt grants the companion nothing — the OS governs i
 
 ## `mcp`
 For a `kind: "mcp"` **MCP server** (a server a host's MCP client connects to), the manifest carries an `mcp` block instead of `assets`/`entry`/`capabilities`/`app`. Like `app`, it is a *header*: it declares how to reach the server (on-device `local` — a portable `wasi` module and/or a per-platform native launch — and/or a `remote` http/sse url), the `inputs` the host prompts for at connect time (`${input:…}`, never stored), and a descriptive `offers` of its tools/resources/prompts. It grants **no** azphalt capabilities and ships **no** `/code` sandbox payload; the host's MCP client runs/connects it under user consent, in the OS's / a WASI runtime's own sandbox. Secrets are never bundled — a credential-shaped `env`/`headers` value MUST be an `${input:…}` reference, enforced at verify time. The full contract (transports, host selection order, the two sandboxes, verification, discovery) is normative in **mcp-server.md**.
+
+## `pack`
+For a `kind: "pack"` **extension pack** (a curated set — a recommended bundle or an app's base set), the manifest carries a `pack` block instead of `assets`/`entry`/`capabilities`/`app`/`mcp`. Like `app` and `mcp`, it is a *header*: it **references** other packages by id rather than containing them. `pack.entries[]` (≥ 1) each carry an `id` (a member package, possibly another author's), an optional `version` (absent = the member's latest at install time), an optional `required` flag (`true` = base set installed by default; else recommended/opt-in), and an optional `note`. A pack grants **no** capabilities and ships **no** `/code` or assets; each member is resolved and free/paid-gated **individually** on install, so a free pack MAY recommend a paid member. The full contract (verification, resolution/installation, offline pre-install) is normative in **pack.md**.
 
 ## Example
 ~~~

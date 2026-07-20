@@ -1,0 +1,12 @@
+{
+  "name": "my-azphalt-pack",
+  "version": "0.1.1",
+  "description": "An extension-pack (kind:\"pack\") package for azphalt — a curated set of packages your users should install.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@azphalt/azp": "^0.1.0"
+  }
+}

@@ -629,6 +629,35 @@ const SEEDS: Seed[] = [
       assets: [{ type: "model", path: "assets/gemma-3n.task" }]
     },
     payload: { "assets/gemma-3n.task": utf8("MOCK_TASK_BYTES_GEMMA") }, simulatedDownloads: 5100
+  },
+  {
+    // An extension pack (kind:"pack") — a curated "starter set" that *references* other packages, two of
+    // them by other authors, plus a paid one. It carries no payload; a host resolves + installs each
+    // member individually (the paid one still needs its own entitlement). Demonstrates the pack model.
+    manifest: {
+      azphalt: "0.1",
+      id: "com.hereliesaz.paint-starter",
+      name: "Paint Starter Pack",
+      version: "1.0.0",
+      kind: "pack",
+      license: "MIT",
+      compat: ">=0.1",
+      description:
+        "A recommended starter set for a paint host: free film LUTs and ink brushes (the base set), plus " +
+        "the Halftone filter as an optional paid add-on. A pack references other creators' packages — it " +
+        "doesn't re-bundle them.",
+      author: "Az",
+      homepage: "https://hereliesaz.com",
+      pack: {
+        entries: [
+          { id: "com.foldlab.filmluts", required: true, note: "free film-stock LUTs" },
+          { id: "com.brushery.inkbrushes", required: true, note: "ink & sumi brushes" },
+          { id: "com.hereliesaz.halftone", required: false, note: "premium halftone filter (paid)" },
+        ],
+      },
+    },
+    payload: {},
+    simulatedDownloads: 320,
   }
 ];
 

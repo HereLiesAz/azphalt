@@ -96,6 +96,39 @@ Your extension's *bytes* and *manifest* are identical whether it's free or paid 
 overlay on a normal package, not a different format. You can list a package for sale without changing a
 line of its code.
 
+## Bundling an extension pack
+
+An **extension pack** (`kind: "pack"`) is a curated set of packages published as one — a **recommended**
+bundle, or a **base set** your app installs for a new user. Scaffold one with `npm create azphalt@latest`
+→ **Extension Pack**, and edit the `pack.entries` in its `manifest.json`:
+
+```jsonc
+{
+  "kind": "pack",
+  "targetApps": ["com.example.myapp"],   // scope it to your app (omit for a global pack)
+  "pack": {
+    "entries": [
+      { "id": "com.foldlab.filmluts", "required": true,  "note": "core LUTs" },
+      { "id": "com.other.author.brushes", "required": true },       // someone else's package — fine
+      { "id": "com.hereliesaz.halftone", "required": false }        // recommended paid add-on
+    ]
+  }
+}
+```
+
+- A pack **references** packages by id — it never re-bundles them, so it can include **other creators'**
+  extensions, and a paid member still needs its own purchase to install.
+- `required: true` is the **base set** (installed with the pack); omit it for **recommended** members.
+- Omit an entry's `version` to always track that member's latest; pin it for reproducibility.
+
+Publish it like any package. A host installs it with `@azphalt/repository-client`'s `resolvePack(id)`,
+then downloads each member.
+
+**Ship it pre-installed, too.** Since an `.azp` is just a signed archive, you can bundle the members'
+bytes in your app and load them at startup with `readAzp` — no network — using the pack as the "what to
+include" list. Pack = the *which extensions*; your app picks bundle-now vs. fetch-on-first-run. See the
+[pack spec](/specs/pack).
+
 ## What's Next?
 - Check out the [Manifest Schema](/specs/extension-manifest) to see how you can manually write a complex `manifest.json` for multi-asset packs.
 - See how apps will **consume** what you publish: [Use the Store from Your App](/hosts/getting-started).
