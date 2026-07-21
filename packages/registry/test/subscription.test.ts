@@ -71,7 +71,7 @@ describe("StripePaymentProvider — subscription mode", () => {
     sellerId: "seller_1",
     buyerId: "buyer_1",
     amount: USD(1000),
-    platformFee: USD(150),
+    applicationFee: USD(150),
     interval: "month",
   };
 
