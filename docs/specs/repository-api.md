@@ -194,4 +194,4 @@ Every non-2xx response carries a normative JSON **error envelope** so a host can
 
 ## Reference implementation
 
-A working reference server ships as [`@azphalt/repository-server`](../apps/repository-server) — a thin facade over [`@azphalt/registry`](../packages/registry) that implements every endpoint above (discovery, search, detail, and the `401`/`402`-gated download). It is tested end-to-end against [`@azphalt/repository-client`](../packages/repository-client), so the two sides of the standard are known to agree.
+A working reference server ships as [`@azphalt/repository-server`](https://github.com/HereLiesAz/azphalt/tree/main/apps/repository-server) — a thin facade over [`@azphalt/registry`](https://github.com/HereLiesAz/azphalt/tree/main/packages/registry) that implements every endpoint above (discovery, search, detail, and the `401`/`402`-gated download). It is tested end-to-end against [`@azphalt/repository-client`](https://github.com/HereLiesAz/azphalt/tree/main/packages/repository-client), so the two sides of the standard are known to agree.
