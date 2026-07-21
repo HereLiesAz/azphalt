@@ -1,16 +1,16 @@
 package components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import models.PackageSummary
@@ -78,14 +79,20 @@ fun buildSections(packages: List<PackageSummary>): List<CatalogSection> {
 }
 
 /**
- * A titled, horizontally-scrolling row of hero cards. The header swings in as an AzNavRail turnstile,
- * and — as in the old grid — exactly one card animates its live preview at a time, cycling across the
- * row on a shared [clock]. Off-screen rows aren't composed, so the animation cost stays bounded.
+ * A titled section rendered as a **Material 3 Expressive hero carousel** — a
+ * [HorizontalMultiBrowseCarousel] that keeps one large focused card with smaller items peeking beside
+ * it and masks/resizes them as they scroll. The header swings in as an AzNavRail turnstile, and — as in
+ * the old grid — exactly one card animates its live preview at a time, cycling across the row on a
+ * shared [clock]. Mature cards stay behind the [ageConfirmed] gate. Off-screen rows aren't composed, so
+ * the animation cost stays bounded.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HeroCarousel(
     section: CatalogSection,
     clock: Float,
+    ageConfirmed: Boolean,
+    onConfirmAge: () -> Unit,
     onOpen: (PackageSummary) -> Unit,
 ) {
     var activeIndex by remember(section.title) { mutableStateOf(0) }
@@ -118,20 +125,25 @@ fun HeroCarousel(
             }
         }
 
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
+        val carouselState = rememberCarouselState(itemCount = { section.items.size })
+        HorizontalMultiBrowseCarousel(
+            state = carouselState,
+            modifier = Modifier.fillMaxWidth().height(CARD_HEIGHT.dp),
+            preferredItemWidth = CARD_WIDTH.dp,
+            itemSpacing = 20.dp,
             contentPadding = PaddingValues(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            itemsIndexed(section.items, key = { _, pkg -> pkg.id }) { index, pkg ->
-                PackageCard(
-                    pkg = pkg,
-                    phase = if (index == active) clock else STILL_FRAME,
-                    index = index,
-                    onOpen = onOpen,
-                    modifier = Modifier.width(CARD_WIDTH.dp).height(CARD_HEIGHT.dp),
-                )
-            }
+        ) { index ->
+            val pkg = section.items[index]
+            PackageCard(
+                pkg = pkg,
+                phase = if (index == active) clock else STILL_FRAME,
+                index = index,
+                onOpen = onOpen,
+                // Sharp Metro mask so the carousel clips/resizes items as they scroll (the hero effect).
+                modifier = Modifier.width(CARD_WIDTH.dp).height(CARD_HEIGHT.dp).maskClip(RectangleShape),
+                ageConfirmed = ageConfirmed,
+                onConfirmAge = onConfirmAge,
+            )
         }
     }
 }

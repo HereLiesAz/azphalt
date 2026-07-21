@@ -32,3 +32,12 @@ actual suspend fun startCheckout(packageId: String): CheckoutResponse = withCont
     val response = HttpClient.newBuilder().build().send(request, HttpResponse.BodyHandlers.ofString())
     json.decodeFromString<CheckoutResponse>(response.body())
 }
+
+actual suspend fun httpPostJson(path: String, body: String): String = withContext(Dispatchers.IO) {
+    val request = HttpRequest.newBuilder()
+        .uri(URI.create("$API_BASE$path"))
+        .header("Content-Type", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build()
+    HttpClient.newBuilder().build().send(request, HttpResponse.BodyHandlers.ofString()).body()
+}

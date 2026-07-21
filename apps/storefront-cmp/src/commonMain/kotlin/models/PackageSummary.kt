@@ -36,5 +36,10 @@ data class PackageSummary(
     val targetApps: List<String> = emptyList(),
     val mediaDomains: List<String> = emptyList(),
     val types: List<String> = emptyList(),
+    /** Developer content-maturity self-attestation: "general" (default) or "mature" (18+, age-gated). */
+    val maturity: String = "general",
     val pack: PackDto? = null
-)
+) {
+    /** True when the developer flagged this as 18+ content the store should put behind an age gate. */
+    val isMature: Boolean get() = maturity == "mature"
+}

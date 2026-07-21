@@ -20,11 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import models.PackageSummary
 import theme.azTiltOnPress
 import theme.azTurnstileEntrance
+import util.formatCount
+import util.formatRating
 
 /**
  * A small outlined tag (kind, price, capability) — a sharp Metro rectangle with a hairline border in
@@ -77,7 +80,12 @@ fun PackageCard(
     index: Int,
     onOpen: (PackageSummary) -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth().height(272.dp),
+    ageConfirmed: Boolean = true,
+    onConfirmAge: () -> Unit = {},
 ) {
+    // A developer-flagged 18+ package stays behind an age gate until the viewer confirms: the preview
+    // art is hidden and a tap confirms age instead of opening the detail.
+    val gated = pkg.isMature && !ageConfirmed
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     val pressed by interaction.collectIsPressedAsState()
@@ -102,7 +110,7 @@ fun PackageCard(
     val paid = isPaid(pkg)
 
     OutlinedCard(
-        onClick = { onOpen(pkg) },
+        onClick = { if (gated) onConfirmAge() else onOpen(pkg) },
         modifier = modifier
             // Additive WP7 turnstile: the tile pivots in around its left edge, cascaded across the
             // row. Capped so a card scrolled in far down the list doesn't wait a full cascade.
@@ -124,29 +132,51 @@ fun PackageCard(
                     .fillMaxWidth()
                     .weight(1f)
                     .background(onContainer.copy(alpha = 0.05f)),
+                contentAlignment = Alignment.Center,
             ) {
-                PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    // For a pack, the kind pill also shows how many extensions it bundles.
-                    Pill(
-                        text = pkg.pack?.let { "PACK · ${it.entries.size}" } ?: pkg.kind.uppercase(),
-                        container = onContainer.copy(alpha = 0.16f),
-                        content = onContainer,
-                    )
-                    Pill(
-                        text = priceLabel(pkg),
-                        container = if (paid) cs.primary else onContainer.copy(alpha = 0.16f),
-                        content = if (paid) cs.onPrimary else onContainer,
-                    )
+                if (gated) {
+                    // Age gate: hide the visual behind a scrim until the viewer confirms they're 18+.
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxSize().background(cs.surface).padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Pill("18+", cs.secondary, cs.onSecondary)
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "Mature content — tap to confirm you're 18 or older",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = cs.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                } else {
+                    PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            // For a pack, the kind pill also shows how many extensions it bundles.
+                            Pill(
+                                text = pkg.pack?.let { "PACK · ${it.entries.size}" } ?: pkg.kind.uppercase(),
+                                container = onContainer.copy(alpha = 0.16f),
+                                content = onContainer,
+                            )
+                            if (pkg.isMature) Pill("18+", cs.secondary, cs.onSecondary)
+                        }
+                        Pill(
+                            text = priceLabel(pkg),
+                            container = if (paid) cs.primary else onContainer.copy(alpha = 0.16f),
+                            content = if (paid) cs.onPrimary else onContainer,
+                        )
+                    }
                 }
             }
 
-            // Title + description block.
-            Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 18.dp)) {
+            // Title + description block, then a downloads / rating footer.
+            Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 16.dp)) {
                 Text(
                     text = pkg.name,
                     style = MaterialTheme.typography.titleLarge,
@@ -162,6 +192,22 @@ fun PackageCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    formatRating(pkg.rating, pkg.ratingCount)?.let {
+                        Text(it, style = MaterialTheme.typography.labelMedium, color = onContainer)
+                    }
+                    if (pkg.downloads > 0) {
+                        Text(
+                            "${formatCount(pkg.downloads)} installs",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = onContainer.copy(alpha = 0.7f),
+                        )
+                    }
+                }
             }
         }
     }
