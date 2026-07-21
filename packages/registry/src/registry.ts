@@ -186,6 +186,10 @@ export class Registry {
       throw new RegistryError(`invalid version (want semver): ${JSON.stringify(manifest.version)}`);
     }
 
+    if (manifest.kind === "pack" && (!manifest.pack?.entries || manifest.pack.entries.length === 0)) {
+      throw new RegistryError("invalid pack package: must have at least one entry");
+    }
+
     const existing = await this.store.getVersion(manifest.id, manifest.version);
     if (existing) {
       throw new RegistryError(`version already published: ${manifest.id}@${manifest.version}`);
