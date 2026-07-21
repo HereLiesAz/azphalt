@@ -77,7 +77,7 @@ to fail in, and it is why the keys must not be random.
 
 ### 4. Sessions: give the provider a storage seam
 
-`CheckoutInput` carries `{packageId, sellerId, buyerId, amount, platformFee}`, but
+`CheckoutInput` carries `{packageId, sellerId, buyerId, amount, applicationFee}`, but
 `StubPaymentProvider.createCheckout` keeps only `{id, url, status, amount}` and **discards the
 rest**. That discard is the root of two problems: sessions cannot survive a restart, and fulfilment
 cannot tell what a session was for — which is why the gate PR had to add a `sessionSubjects` map in

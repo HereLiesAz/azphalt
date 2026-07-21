@@ -27,7 +27,7 @@ const input: CheckoutInput = {
   sellerId: "seller_1",
   buyerId: "buyer_1",
   amount: { amountCents: 600, currency: "USD" },
-  platformFee: { amountCents: 90, currency: "USD" },
+  applicationFee: { amountCents: 90, currency: "USD" },
 };
 
 const baseConfig = {
@@ -124,7 +124,7 @@ describe("StripePaymentProvider", () => {
     expect(() => new StripePaymentProvider({ ...baseConfig, successUrl: "" })).toThrow(/successUrl and cancelUrl/);
   });
 
-  it("drives a Marketplace.checkout end-to-end (application fee equals the platform cut)", async () => {
+  it("drives a Marketplace.checkout end-to-end (application fee = platform cut + processor fee, so the seller nets sellerNet)", async () => {
     const store = new InMemoryStore();
     const registry = new Registry(store);
     await registry.publish(makeAzp("com.you.thing", "1.0.0"));
@@ -138,8 +138,13 @@ describe("StripePaymentProvider", () => {
 
     expect(session.id).toBe("cs_e2e");
     expect(session.status).toBe("pending");
-    // The fee sent to Stripe must equal the quoted platform cut — the money model and the charge agree.
-    expect(calls[0].fields.get("payment_intent_data[application_fee_amount]")).toBe(String(breakdown.platformFee.amountCents));
+    // The application fee withheld in the destination charge must be platformFee + processorFee: the
+    // platform fronts Stripe's processing cost, so it comes out of the fee, leaving the seller with the
+    // quoted `sellerNet` (= gross − processor − platform) exactly — the money model and the charge agree.
+    const expectedFee = breakdown.platformFee.amountCents + breakdown.processorFee.amountCents;
+    expect(calls[0].fields.get("payment_intent_data[application_fee_amount]")).toBe(String(expectedFee));
+    // gross − applicationFee = sellerNet — the seller is made whole against the quote.
+    expect(breakdown.gross.amountCents - expectedFee).toBe(breakdown.sellerNet.amountCents);
   });
 });
 

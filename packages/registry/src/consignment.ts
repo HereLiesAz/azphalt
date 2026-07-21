@@ -43,8 +43,13 @@ export interface CheckoutInput {
   buyerId: string;
   /** Amount the buyer is charged — once, or per {@link CheckoutInput.interval} for a subscription. */
   amount: Money;
-  /** Platform's application fee (its consignment cut), routed to the platform on settlement. */
-  platformFee: Money;
+  /**
+   * The application fee withheld from the seller's payout — the platform's consignment cut **plus** the
+   * processor's cut the platform fronts. In a destination charge the processor's fee is drawn from this
+   * application fee, so withholding `platformFee + processorFee` leaves the seller with exactly the
+   * quoted {@link PriceBreakdown.sellerNet} and the platform with ≈ its `platformFee`.
+   */
+  applicationFee: Money;
   /** When set, a **recurring** charge at `amount` per interval (a subscription); absent = one-time. */
   interval?: SubscriptionInterval;
 }
@@ -79,7 +84,7 @@ export interface PaymentProvider {
 
 /**
  * Persistence seam for checkout sessions. A {@link CheckoutInput} carries `{packageId, sellerId,
- * buyerId, amount, platformFee}`, but a {@link CheckoutSession} keeps only `{id, url, status, amount}`
+ * buyerId, amount, applicationFee}`, but a {@link CheckoutSession} keeps only `{id, url, status, amount}`
  * and discards the rest — which is why fulfilment can't tell what a session was *for* without this.
  * Storing the session **and its originating input** lets fulfilment read the package and buyer from
  * the stored input (never the request body) and lets sessions survive a restart / another serverless
@@ -268,12 +273,19 @@ export class Marketplace {
       throw new RegistryError(`not for sale: ${packageId}`);
     }
     const breakdown = quote(listing.price, this.terms);
+    // Withhold the platform cut AND the processor cut from the seller — the processor fee comes out of
+    // the application fee in a destination charge, so this is what makes the seller net the quoted
+    // `sellerNet` (= gross − processor − platform) rather than gross − platform.
+    const applicationFee: Money = {
+      amountCents: breakdown.platformFee.amountCents + breakdown.processorFee.amountCents,
+      currency: breakdown.gross.currency,
+    };
     const session = await this.payments.createCheckout({
       packageId,
       sellerId: listing.sellerId,
       buyerId,
       amount: breakdown.gross,
-      platformFee: breakdown.platformFee,
+      applicationFee,
       ...(listing.interval ? { interval: listing.interval } : {}),
     });
     return { session, breakdown, listing };

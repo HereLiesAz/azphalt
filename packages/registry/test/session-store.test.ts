@@ -10,7 +10,7 @@ import {
 const USD = (amountCents: number) => ({ amountCents, currency: "USD" });
 
 function input(buyerId: string, packageId = "com.test.pkg"): CheckoutInput {
-  return { packageId, sellerId: "seller_1", buyerId, amount: USD(1000), platformFee: USD(150) };
+  return { packageId, sellerId: "seller_1", buyerId, amount: USD(1000), applicationFee: USD(150) };
 }
 
 describe("StubPaymentProvider — durable-safe sessions", () => {
