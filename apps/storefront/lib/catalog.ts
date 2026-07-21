@@ -62,7 +62,7 @@ const DITHER_OLD: Omit<Manifest, "files"> = {
   license: "MIT",
   compat: ">=0.1",
   description: "Ordered dithering only.",
-  author: "Az",
+  author: "HereLiesAz",
   runtime: "js",
   entry: "code/index.js",
   capabilities: ["bitmap", "params"],
@@ -128,7 +128,7 @@ const SEEDS: Seed[] = [
       license: "Apache-2.0",
       compat: ">=0.1",
       description: "Efficient image labeling and ID embedding model.",
-      author: "Azphalt Core",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       assets: [
         { path: "assets/mobilenetv3.tflite", type: "tflite", role: "labeling" },
@@ -151,7 +151,7 @@ const SEEDS: Seed[] = [
       license: "Apache-2.0",
       compat: ">=0.1",
       description: "Audio event detection model.",
-      author: "Azphalt Core",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       assets: [
         { path: "assets/yamnet.tflite", type: "tflite", role: "audio-event" },
@@ -174,7 +174,7 @@ const SEEDS: Seed[] = [
       license: "Apache-2.0",
       compat: ">=0.1",
       description: "Lightweight face detection model.",
-      author: "Azphalt Core",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       assets: [
         { path: "assets/version-RFB-320.onnx", type: "onnx", role: "face-detect" }
@@ -195,7 +195,7 @@ const SEEDS: Seed[] = [
       license: "Apache-2.0",
       compat: ">=0.1",
       description: "Subject segmentation model.",
-      author: "Azphalt Core",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       assets: [
         { path: "assets/selfie_segmentation.tflite", type: "tflite", role: "segmentation" },
@@ -218,7 +218,7 @@ const SEEDS: Seed[] = [
       license: "Apache-2.0",
       compat: ">=0.1",
       description: "Face embedding model for ID matching.",
-      author: "Azphalt Core",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       assets: [
         { path: "assets/face-embed.tflite", type: "tflite", role: "face-embedding" }
@@ -239,7 +239,7 @@ const SEEDS: Seed[] = [
       license: "Apache-2.0",
       compat: ">=0.1",
       description: "TFLite face detection for mobile.",
-      author: "Azphalt Core",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       assets: [
         { path: "assets/face-detect.tflite", type: "tflite", role: "face-detect" }
@@ -264,7 +264,7 @@ const SEEDS: Seed[] = [
       description:
         "A configurable halftone filter — dot, line, and cross-hatch screens with adjustable cell " +
         "size and angle. Runs on-device against the bitmap, no host engine required.",
-      author: "Az",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       runtime: "js",
       entry: "code/index.js",
@@ -326,7 +326,7 @@ const SEEDS: Seed[] = [
       description:
         "Twelve cinematic 3D LUTs — teal-and-orange, bleach bypass, and moody night grades — as " +
         "portable `.cube` files any azphalt host can apply.",
-      author: "Studio Az",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       capabilities: ["assets", "bitmap"],
       preview: { image: "preview/card.svg" },
@@ -364,8 +364,12 @@ const SEEDS: Seed[] = [
       description:
         "Free, MIT-licensed film-stock emulation LUTs. Reach without a fee — published to the open " +
         "registry lane; grade in any conforming app.",
+<<<<<<< Updated upstream
       author: "Fold Lab",
       maturity: "mature",
+=======
+      author: "HereLiesAz",
+>>>>>>> Stashed changes
       capabilities: ["assets", "bitmap"],
       assets: [
         { type: "lut", path: "assets/portra.cube" },
@@ -392,7 +396,7 @@ const SEEDS: Seed[] = [
       description:
         "Twenty ink and sumi-e brushes with host-neutral spacing and angle parameters — normalized " +
         "from `.abr`/`.brushset` into portable `.azp`.",
-      author: "Brushery",
+      author: "HereLiesAz",
       capabilities: ["assets"],
       assets: [
         { type: "brush", path: "assets/sumi-round.brush", params: { spacing: 0.08, angle: 0, roundness: 0.9 } },
@@ -419,7 +423,7 @@ const SEEDS: Seed[] = [
       description:
         "Seamless geometric tiles — isometric grids, herringbone, and hex — as tileable pattern " +
         "assets for fills and backgrounds.",
-      author: "Pattern Smith",
+      author: "HereLiesAz",
       capabilities: ["assets"],
       assets: [
         { type: "pattern", path: "assets/herringbone.pattern" },
@@ -448,7 +452,7 @@ const SEEDS: Seed[] = [
         "Capture a wall stencil in AR and hand it straight back to your editor. A companion app: it " +
         "runs in the OS's own sandbox with its own camera permission — azphalt only standardizes the " +
         "handoff, so the moat holds.",
-      author: "Acme AR",
+      author: "HereLiesAz",
       homepage: "https://arstencil.acme.com",
       preview: { image: "preview/card.svg" },
       targetApps: ["com.hereliesaz.graffitixr"],
@@ -514,7 +518,7 @@ const SEEDS: Seed[] = [
       description:
         "Ordered and error-diffusion dithering (Bayer, Floyd–Steinberg, Atkinson) with a palette " +
         "picker. Free on the open lane.",
-      author: "Az",
+      author: "HereLiesAz",
       homepage: "https://hereliesaz.com",
       runtime: "js",
       entry: "code/index.js",
@@ -565,7 +569,7 @@ const SEEDS: Seed[] = [
       license: "MIT",
       compat: ">=0.1",
       description: "Local Whisper Base model for Sherpa-ONNX transcription. Downloaded by Guillotine for precise offline transcription.",
-      author: "Azphalt Models",
+      author: "HereLiesAz",
       capabilities: ["assets"],
       assets: [
         { type: "model", path: "assets/whisper-base.onnx" },
@@ -590,7 +594,7 @@ const SEEDS: Seed[] = [
       license: "MIT",
       compat: ">=0.1",
       description: "Monocular depth estimation model for generative object removal and background blur.",
-      author: "Azphalt Models",
+      author: "HereLiesAz",
       capabilities: ["assets"],
       assets: [
         { type: "model", path: "assets/depth-anything-v2.onnx" }
@@ -605,7 +609,7 @@ const SEEDS: Seed[] = [
   {
     manifest: {
       azphalt: "0.1", id: "com.azphalt.model.vosk", name: "Vosk Transcription", version: "0.22.0", kind: "asset", license: "MIT", compat: ">=0.1",
-      description: "Offline speech-to-text model for clip transcription.", author: "Azphalt Models", capabilities: ["assets"],
+      description: "Offline speech-to-text model for clip transcription.", author: "HereLiesAz", capabilities: ["assets"],
       assets: [{ type: "model", path: "assets/vosk-model" }]
     },
     payload: { "assets/vosk-model": utf8("MOCK_VOSK_BYTES") }, simulatedDownloads: 6200
@@ -613,7 +617,7 @@ const SEEDS: Seed[] = [
   {
     manifest: {
       azphalt: "0.1", id: "com.azphalt.model.spleeter", name: "Spleeter Stem Separation", version: "2.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
-      description: "Separate vocals and accompaniment via ONNX Spleeter.", author: "Azphalt Models", capabilities: ["assets"],
+      description: "Separate vocals and accompaniment via ONNX Spleeter.", author: "HereLiesAz", capabilities: ["assets"],
       assets: [{ type: "model", path: "assets/spleeter.onnx" }]
     },
     payload: { "assets/spleeter.onnx": utf8("MOCK_ONNX_BYTES_SPLEETER") }, simulatedDownloads: 7100
@@ -622,7 +626,7 @@ const SEEDS: Seed[] = [
   {
     manifest: {
       azphalt: "0.1", id: "com.azphalt.model.image-effects", name: "Image Effects Pack", version: "1.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
-      description: "TFLite models for super resolution and style transfer.", author: "Azphalt Models", capabilities: ["assets"],
+      description: "TFLite models for super resolution and style transfer.", author: "HereLiesAz", capabilities: ["assets"],
       assets: [{ type: "model", path: "assets/effects.tflite" }]
     },
     payload: { "assets/effects.tflite": utf8("MOCK_TFLITE_BYTES_EFFECTS") }, simulatedDownloads: 4800
@@ -630,7 +634,7 @@ const SEEDS: Seed[] = [
   {
     manifest: {
       azphalt: "0.1", id: "com.azphalt.model.vlm-gemma", name: "Gemma VLM", version: "3.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
-      description: "Multimodal VLM .task for rich frame captioning.", author: "Azphalt Models", capabilities: ["assets"],
+      description: "Multimodal VLM .task for rich frame captioning.", author: "HereLiesAz", capabilities: ["assets"],
       assets: [{ type: "model", path: "assets/gemma-3n.task" }]
     },
     payload: { "assets/gemma-3n.task": utf8("MOCK_TASK_BYTES_GEMMA") }, simulatedDownloads: 5100
