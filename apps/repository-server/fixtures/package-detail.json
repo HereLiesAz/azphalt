@@ -8,6 +8,7 @@
     "author": "Az",
     "version": "1.1.0",
     "latest": "1.1.0",
+    "kind": "asset",
     "types": [
       "lut"
     ],

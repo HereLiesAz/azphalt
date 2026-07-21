@@ -9,6 +9,7 @@
     "description": "Capture a wall stencil in AR and hand it back",
     "version": "1.0.0",
     "latest": "1.0.0",
+    "kind": "app",
     "types": [],
     "targetApps": [
       "com.hereliesaz.graffitixr"

@@ -209,6 +209,9 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
       version: pkg.summary.version,
       // The newest installable version — an explicit "update to this" pointer alongside `versions[]`.
       latest: latest?.version,
+      // Mirror the summary's `kind` at the top level so a consumer needn't reach into `manifest` to tell
+      // an `asset` / `code` / `app` / `mcp` / `pack` package apart (consistent with `GET /packages`).
+      kind: pkg.summary.kind,
       types: pkg.summary.assetTypes,
       targetApps: pkg.summary.targetApps,
       priceStatus: await priceStatus(id),
