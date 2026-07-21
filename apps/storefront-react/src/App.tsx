@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   fetchPackages,
   formatCount,
@@ -20,11 +20,40 @@ const SORTS: Array<[Sort, string]> = [
 ];
 const STILL = 0.32;
 
-// Hero-carousel card geometry. The card is a fixed size; the surrounding mask (see .carousel-item)
-// clips it narrower as it scrolls away from the focus point — the M3 multi-browse effect.
-const CARD_W = 340;
-const CARD_H = 300;
-const MASK_MIN = 152;
+// Hero-carousel card geometry. The card is drawn at HERO width; a per-item mask (see .carousel-item)
+// clips it down toward the edges, so a row reads thin · small · medium · HERO · medium · small · thin ·
+// thin… symmetric around a centered focus keyline (the M3 Expressive hero layout).
+// The top hero carousel's masked tiers.
+const HERO = 360;
+const MEDIUM = 244;
+const SMALL = 156;
+const THIN = 84;
+const HERO_H = 392; // the hero row's cards are taller than the plain rows below
+
+// The plain rows below the hero carousel: uniform cards (the design we had before the carousels).
+const ROW_W = 320;
+const ROW_H = 300;
+
+// The hero sits at the 2nd slot at rest (index 1), so a row reads small · HERO · medium · small ·
+// thin · thin …, and shifts one slot per SLOT pixels of scroll.
+const HERO_SLOT = 1;
+const SLOT = 244; // scroll distance that advances the focus by one card
+
+/**
+ * Mask width for a card `d` slots from the focus (0 = the hero; negative = to its left). Asymmetric:
+ * a single small peek on the left, and a medium → small → thin falloff on the right — so a row reads
+ * small · HERO · medium · small · thin · thin … with the hero as the 2nd card at rest.
+ */
+function slotWidth(d: number): number {
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  if (d <= -2) return THIN; // scrolled-past cards on the left collapse to thin
+  if (d <= -1) return lerp(THIN, SMALL, d + 2); // [-2,-1]: thin → small (the left peek)
+  if (d <= 0) return lerp(SMALL, HERO, d + 1); //  [-1, 0]: small → hero
+  if (d <= 1) return lerp(HERO, MEDIUM, d); //      [ 0, 1]: hero → medium
+  if (d <= 2) return lerp(MEDIUM, SMALL, d - 1); // [ 1, 2]: medium → small
+  if (d <= 3) return lerp(SMALL, THIN, d - 2); //   [ 2, 3]: small → thin
+  return THIN; // anything further right stays thin
+}
 
 /* ─────────────── shared bits ─────────────── */
 
@@ -102,7 +131,19 @@ function ChipRow<T>({ items, value, onSelect, label }: { items: Array<[T, string
 
 /* ─────────────── card + hero carousel ─────────────── */
 
-function PackageCard({ pkg, active, onOpen }: { pkg: PackageSummary; active: boolean; onOpen: (p: PackageSummary) => void }) {
+function PackageCard({
+  pkg,
+  active,
+  onOpen,
+  width = ROW_W,
+  height = ROW_H,
+}: {
+  pkg: PackageSummary;
+  active: boolean;
+  onOpen: (p: PackageSummary) => void;
+  width?: number;
+  height?: number;
+}) {
   const [container, on] = paletteFor(pkg.id);
   const [hover, setHover] = useState(false);
   const paid = isPaid(pkg);
@@ -114,8 +155,8 @@ function PackageCard({ pkg, active, onOpen }: { pkg: PackageSummary; active: boo
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        width: CARD_W,
-        height: CARD_H,
+        width,
+        height,
         background: rgba(container, 0.14),
         color: on,
         border: `${hover ? 2 : 1}px solid ${rgba(on, hover ? 0.95 : 0.5)}`,
@@ -180,10 +221,11 @@ function buildSections(packages: PackageSummary[]): CatalogSection[] {
 }
 
 /**
- * A section rendered as an M3 Expressive multi-browse hero carousel: a scroll-snapping strip where the
- * focused card is full-width and neighbours peek smaller. As you scroll, a per-item mask width is
- * recomputed from the item's distance to the strip's leading edge, clipping (not squishing) each card.
- * Exactly one card animates its live preview at a time, cycling across the row.
+ * The single top **M3 Expressive hero carousel**. A scroll strip whose cards are masked by width around
+ * a fixed keyline that sits just left of centre, so a row reads thin · small · medium · HERO · medium ·
+ * small · thin · thin …, symmetric around the hero (the 4th item at rest). Each item's mask width comes
+ * from its centre's distance to the keyline (see slotWidth); the card is clipped, never squished. Its
+ * cards are taller than the plain rows below. One live preview animates at a time.
  */
 function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p: PackageSummary) => void }) {
   const scroller = useRef<HTMLDivElement>(null);
@@ -195,32 +237,62 @@ function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p
     return () => clearInterval(t);
   }, [section.items.length]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = scroller.current;
     if (!el) return;
     let raf = 0;
     const update = () => {
-      const focus = el.getBoundingClientRect().left + 24; // account for the strip's content padding
-      el.querySelectorAll<HTMLElement>(".carousel-item").forEach((mask) => {
-        const dist = Math.abs(mask.getBoundingClientRect().left - focus);
-        const t = Math.min(dist / (CARD_W * 1.25), 1);
-        mask.style.width = `${CARD_W - (CARD_W - MASK_MIN) * t}px`;
+      // Index-based keylines (like M3's carousel): a card's mask width is a function of how many slots
+      // it is from the focus, which advances continuously with scroll. This tracks the arrangement
+      // exactly (item HERO_SLOT is the hero at rest) without the width↔position circularity of measuring.
+      const items = Array.from(el.querySelectorAll<HTMLElement>(".carousel-item"));
+      const focus = HERO_SLOT + el.scrollLeft / SLOT;
+      items.forEach((m, i) => {
+        m.style.width = `${Math.round(slotWidth(i - focus))}px`;
       });
     };
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(update);
     };
-    const first = requestAnimationFrame(update);
+    update(); // size before first paint
     el.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
       cancelAnimationFrame(raf);
-      cancelAnimationFrame(first);
       el.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
   }, [section.items]);
+
+  return (
+    <section style={{ marginBottom: 34 }}>
+      <div style={{ padding: "0 24px 16px" }}>
+        <h2 style={{ fontSize: 26, fontWeight: 760, margin: 0 }}>{section.title}</h2>
+        {section.subtitle && <div style={{ fontSize: 15, color: "var(--on-surface-variant)", marginTop: 2 }}>{section.subtitle}</div>}
+      </div>
+      <div ref={scroller} className="carousel">
+        {section.items.map((pkg, i) => (
+          <div key={pkg.id} className="carousel-item" style={{ width: HERO, height: HERO_H }}>
+            <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} width={HERO} height={HERO_H} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * A plain browse row: uniform cards in a horizontal scroll strip (the design from before the carousel
+ * work). Used for every section below the top hero carousel. One live preview animates at a time.
+ */
+function CardRow({ section, onOpen }: { section: CatalogSection; onOpen: (p: PackageSummary) => void }) {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    if (section.items.length === 0) return;
+    const t = setInterval(() => setActive((i) => (i + 1) % section.items.length), 2600);
+    return () => clearInterval(t);
+  }, [section.items.length]);
 
   return (
     <section style={{ marginBottom: 30 }}>
@@ -228,10 +300,10 @@ function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p
         <h2 style={{ fontSize: 22, fontWeight: 720, margin: 0 }}>{section.title}</h2>
         {section.subtitle && <div style={{ fontSize: 14, color: "var(--on-surface-variant)", marginTop: 2 }}>{section.subtitle}</div>}
       </div>
-      <div ref={scroller} className="carousel">
+      <div className="card-row">
         {section.items.map((pkg, i) => (
-          <div key={pkg.id} className="carousel-item" style={{ width: CARD_W }}>
-            <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} />
+          <div key={pkg.id} className="row-item" style={{ width: ROW_W }}>
+            <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} width={ROW_W} height={ROW_H} />
           </div>
         ))}
       </div>
@@ -406,10 +478,16 @@ export function App() {
         shown.length === 0 ? (
           <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>No extensions match your search.</div>
         ) : (
-          <HeroCarousel section={{ title: "Results", subtitle: `${shown.length} matching`, items: shown }} onOpen={open} />
+          // A search collapses to one plain results row (the hero carousel is reserved for the top of browse).
+          <CardRow section={{ title: "Results", subtitle: `${shown.length} matching`, items: shown }} onOpen={open} />
         )
       ) : (
-        sections.map((s) => <HeroCarousel key={s.title} section={s} onOpen={open} />)
+        <>
+          {sections[0] && <HeroCarousel section={sections[0]} onOpen={open} />}
+          {sections.slice(1).map((s) => (
+            <CardRow key={s.title} section={s} onOpen={open} />
+          ))}
+        </>
       )}
 
       {selected && (
