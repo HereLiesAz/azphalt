@@ -82,7 +82,7 @@ button {
   display: flex;
   gap: 12px;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
   padding: 0 24px;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -96,6 +96,25 @@ button {
   scroll-snap-align: start;
   overflow: hidden; /* the mask */
   height: 300px;
+}
+
+/* Plain browse rows below the hero carousel: uniform cards, horizontal scroll, no mask. */
+.card-row {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 0 24px 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+}
+.card-row::-webkit-scrollbar {
+  display: none;
+}
+.row-item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
 }
 
 /* Sharp, outlined Metro tile — mirrors the AzNavRail aesthetic of the Compose storefront. */
