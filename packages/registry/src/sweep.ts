@@ -76,6 +76,39 @@ function secretScan(manifest: Manifest): ScanCheck {
     : { id: "secret-scan", verdict: "pass" };
 }
 
+// The complete capability model (`spec/capability-model.md`; the SDK `Capability` union is the source
+// of truth). A declared capability outside this set is off-contract: it has no SDK surface, and the
+// "never-list" (camera, microphone, network, filesystem, sensors, a host's proprietary engine …) is
+// exactly the set of things that are NOT here — so anything outside this set is a never-list request.
+const KNOWN_CAPABILITIES: ReadonlySet<string> = new Set<string>([
+  "canvas",
+  "layers",
+  "bitmap",
+  "selection",
+  "color",
+  "params",
+  "assets",
+  "time",
+  "audio",
+  "storage",
+]);
+
+/**
+ * Block a manifest declaring any capability outside the capability model (`spec/marketplace-integrity.md`
+ * § 1: "A declaration touching the never-list is blocked."). Unknown/never-list capabilities have no API
+ * to grant, so a package requesting one is either a typo or an attempt to signal intent it can't have.
+ */
+function capabilityScope(manifest: Manifest): ScanCheck {
+  const off = (manifest.capabilities ?? []).filter((c) => !KNOWN_CAPABILITIES.has(c as string));
+  return off.length > 0
+    ? {
+        id: "capability-scope",
+        verdict: "block",
+        detail: `capabilit${off.length === 1 ? "y" : "ies"} outside the capability model (never-list / no API): ${off.join(", ")}`,
+      }
+    : { id: "capability-scope", verdict: "pass" };
+}
+
 /** Flag a `code`/`mixed` package that declares capabilities but contributes no executable extension point. */
 function capabilityAudit(manifest: Manifest): ScanCheck {
   if (manifest.kind !== "code" && manifest.kind !== "mixed") return { id: "capability-audit", verdict: "pass" };
@@ -119,6 +152,7 @@ export function scanPackage(azpBytes: Uint8Array, opts: ScanOptions = {}): ScanR
 
   if (manifest) {
     checks.push(secretScan(manifest));
+    checks.push(capabilityScope(manifest));
     checks.push(capabilityAudit(manifest));
   }
 

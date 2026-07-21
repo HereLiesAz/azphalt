@@ -34,7 +34,7 @@
 ## `assets`
 Each entry requires a `type`, which determines the format of the asset. The supported primitives are:
 - **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector` | `template` | `overlay`
-- **AI Models**: `tflite` | `litert` | `onnx` | `sherpa-bundle`
+- **AI Models**: `tflite` | `litert` | `onnx` | `sherpa-bundle` | `model` | `task` | `vosk-bundle` (`model` = a generic/other on-device model; `task` = a TFLite Task-Library bundle; `vosk-bundle` = a Vosk speech model directory — all multi-file bundles like `sherpa-bundle`)
 
 The SDK `AssetType` union (`packages/sdk/src/index.ts`) is the single source of truth for this list; the registry's media-domain map is kept total over it. The **wire format** each `type` delivers (SVG for `vector`, glTF for `mesh`, the `palette` JSON schema, …) is pinned in `package-format.md § Assets`.
 

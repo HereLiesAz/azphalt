@@ -55,10 +55,13 @@ Every `publish` and every new version runs an automated battery; each check yiel
   leaked secret ⇒ **block**. (0.1 scans the **manifest** only, by key; scanning non-manifest text-asset
   payloads and value-shape/entropy heuristics are a planned future phase — the same coverage/false-
   positive trade-off deferred in `mcp-server.md § Secret detection`.)
-- **Payload static analysis** — for `code`, confirm the module's host-function imports are a **subset**
-  of the granted capabilities (the runtime already fails instantiation otherwise; the sweep surfaces
-  the mismatch *before* install and **flags** an import of an undeclared capability). Obfuscation /
-  packing heuristics are **advisory flags** only.
+- **Capability scope** — a declared capability outside the capability model (`capability-model.md`) — a
+  never-list request (camera, microphone, network, filesystem, sensors, a host's proprietary engine …)
+  or an unknown value — has no API to grant, so it ⇒ **block** (`sweep.ts` `capability-scope`).
+- **Payload static analysis** *(planned)* — for `code`, confirm the module's host-function imports are a
+  **subset** of the granted capabilities and **flag** an import of an undeclared capability *before*
+  install (the runtime already fails instantiation at load, so this is a pre-install convenience). Not
+  yet implemented; obfuscation / packing heuristics would likewise be **advisory flags** only.
 - **Denylist** — known-bad container digests and **revoked publisher keys** (fed by moderation
   outcomes, § 2) ⇒ **block**, and a re-scan of already-indexed versions on denylist update ⇒
   revocation.

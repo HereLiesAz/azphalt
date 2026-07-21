@@ -31,7 +31,7 @@ Provides global metadata about the repository, its supported API versions, and i
 
 **Supported types and profiles.** Two optional fields let a host decide whether a repository is worth talking to **before** it browses:
 - `supportedTypes` — the `assets[].type`s this repository serves (a subset of the SDK `AssetType` union). The discovery-time analog of the `GET /packages?types=` filter: a paint host seeing only `["audio","transition"]` knows there's nothing for it here.
-- `profiles` — the conformance **host profiles** the catalog targets (the same vocabulary a host declares via `@azphalt/conformance` — the blessed set is `"image"`, `"video-audio"`, and `"companion"`). A host reads it to confirm the registry's packages match a profile it implements (azphalt #27 items 5 & 7 — the registry side of package↔host compatibility). A registry that carries `kind:"app"` **companion** packages (`companion-app.md`) advertises `"companion"` so only a host that implements the handoff runtime browses for them; companions are almost always **app-scoped** (below), so a host also passes its own `app` id.
+- `profiles` — the conformance **host profiles** the catalog targets (the same vocabulary a host declares via `@azphalt/conformance` — the blessed set is `"image"`, `"video-audio"`, `"companion"`, and `"mcp"`). A host reads it to confirm the registry's packages match a profile it implements (azphalt #27 items 5 & 7 — the registry side of package↔host compatibility). A registry that carries `kind:"app"` **companion** packages (`companion-app.md`) advertises `"companion"` so only a host that implements the handoff runtime browses for them; companions are almost always **app-scoped** (below), so a host also passes its own `app` id. A registry that carries `kind:"mcp"` **MCP-server** packages (`mcp-server.md`) advertises `"mcp"` so only a host that implements an MCP client browses for them.
 
 Both are advisory hints; absent means "unspecified — query to learn". They never replace verifying an individual `.azp` before use.
 
@@ -83,7 +83,7 @@ Queries the repository for available packages. Host applications should use quer
 
 The ranking/preview fields (`downloads`, `rating`, `ratingCount`, `updatedAt`, `byteSize`, `mediaDomains`, `preview`) let a gallery **rank, sort, and preview without downloading or executing** a package. `rating`/`ratingCount` are present only when the repository tracks ratings; everything else is always computed. A repository MAY omit any optional field it does not track.
 
-**Kind.** Each summary carries `kind` (`"asset"` · `"code"` · `"mixed"` · `"app"`), so a host tells package classes apart straight from the browse list. A companion host filtering an app-scoped catalog (below) to the `companion` profile keeps the `kind:"app"` entries — no per-package detail round-trip to learn a package is a **companion** (`companion-app.md`). The `app` block (platforms + handoffs) itself is not in the summary; a host reads it from the package's detail (`GET /packages/{id}` → `manifest.app`) before offering a handoff.
+**Kind.** Each summary carries `kind` (`"asset"` · `"code"` · `"mixed"` · `"app"` · `"mcp"`), so a host tells package classes apart straight from the browse list. A companion host filtering an app-scoped catalog (below) to the `companion` profile keeps the `kind:"app"` entries — no per-package detail round-trip to learn a package is a **companion** (`companion-app.md`). The `app` block (platforms + handoffs) itself is not in the summary; a host reads it from the package's detail (`GET /packages/{id}` → `manifest.app`) before offering a handoff.
 
 **App scoping.** A package MAY declare `targetApps` in its manifest (a list of reverse-DNS host-app ids). A package with an empty/absent `targetApps` is **global** — visible to every app. A package with a non-empty `targetApps` is **app-scoped** — a repository MUST show it in browse/search **only** when the request's `app` matches one of its `targetApps`. When `app` is omitted, no scoping filter is applied (every package is returned). This lets a host app publish store entries meant only for its own users while the same registry serves other apps. Scoping is a **discovery** filter, not access control: a caller that already knows a package's `id` MAY still fetch its details and bytes. Companion (`kind:"app"`) packages are almost always app-scoped — a `capture-stencil` companion belongs to its host's store, not everyone's.
 
@@ -91,7 +91,7 @@ The ranking/preview fields (`downloads`, `rating`, `ratingCount`, `updatedAt`, `
 
 **Static previews.** A package MAY set a top-level `preview` in its manifest — `{ "image"?, "clip"? }`, each an in-package path or an `https:` URL. `image` is a still for the store card (a LUT swatch, brush stroke, shader still); `clip` is an optional short motion preview for time-based packages (`transition` / `motion` / `video`). The repository surfaces `preview` in the search response so a host can render a browse grid **without downloading or executing** the package. Previews are advisory metadata, never a substitute for verifying the `.azp` before use.
 
-**Localized strings.** The flat `name` / `description` are single-language and **always present** (the fallback). A package MAY additionally carry `nameLocalized` / `descriptionLocalized` — a **BCP-47 language-tag → string** map (sourced from the same-named optional manifest fields) — and the repository surfaces them on each summary and on the detail object. A localized host picks the entry matching the user's locale (with sensible fallback, e.g. `es-MX` → `es` → the flat field). Absent means "only the flat string is available". This is the registry surface of the localization open question in extension-manifest.md / ui-schema.md.
+**Localized strings.** The flat `name` / `description` are single-language and **always present** (the fallback). A package MAY additionally carry `nameLocalized` / `descriptionLocalized` — a **BCP-47 language-tag → string** map (sourced from the same-named optional manifest fields) — and the repository surfaces them on each summary and on the detail object. A localized host picks the entry matching the user's locale (with sensible fallback, e.g. `es-MX` → `es` → the flat field). Absent means "only the flat string is available". This is the registry surface of the localization open question in `extension-manifest.md` / `ui-schema.md`.
 
 **`latest`.** Each summary carries `latest` — the **newest installable version's** semver — so a host doesn't re-implement version precedence over `versions[]`. In a summary it equals `version`; it is also surfaced on the detail object (below), where the full history is present.
 
@@ -133,13 +133,15 @@ several parallel chunks:
 - A `Range: bytes=start-end` (also `bytes=start-` and the suffix form `bytes=-N`) request returns
   `206 Partial Content` with `Content-Range: bytes start-end/total` and only the requested bytes. The
   **paid gate runs first** — a ranged request for a `paid` package still requires the entitlement
-  (`401`/`402`), so ranges never bypass licensing.
-- An unsatisfiable range returns `416 Range Not Satisfiable` with `Content-Range: bytes */total`.
-- **Ranged requests MUST NOT count as downloads** — one logical transfer is many range requests; only
-  a full `200` (or the host's own accounting) increments the tally.
+  (`401`/`402` as above), so ranges never bypass licensing.
+- An unsatisfiable range (start at/after the end) returns `416 Range Not Satisfiable` with
+  `Content-Range: bytes */total`.
+- A server MAY ignore a malformed or multi-range header and return the full `200` instead.
+- **Ranged requests MUST NOT count as downloads.** One logical transfer is many range requests
+  (chunks, retries, resumes); only a full `200` (or the host's own accounting) increments the tally.
 
-A server that cannot serve ranges omits `Accept-Ranges` and always returns `200`; `@azphalt/repository-client`
-detects this and downloads in a single request.
+A server that cannot serve ranges simply omits `Accept-Ranges` and always returns `200`; a conforming
+client (e.g. `@azphalt/repository-client`) detects this and downloads in a single request.
 
 ### 5. Revocations Feed
 `GET /revocations`
@@ -192,4 +194,4 @@ Every non-2xx response carries a normative JSON **error envelope** so a host can
 
 ## Reference implementation
 
-A working reference server ships as `@azphalt/repository-server` — a thin facade over `@azphalt/registry` that implements every endpoint above (discovery, search, detail, and the `401`/`402`-gated download). It is tested end-to-end against `@azphalt/repository-client`, so the two sides of the standard are known to agree.
+A working reference server ships as [`@azphalt/repository-server`](../apps/repository-server) — a thin facade over [`@azphalt/registry`](../packages/registry) that implements every endpoint above (discovery, search, detail, and the `401`/`402`-gated download). It is tested end-to-end against [`@azphalt/repository-client`](../packages/repository-client), so the two sides of the standard are known to agree.

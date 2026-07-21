@@ -50,7 +50,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const latest = await registry.latest(id);
     if (!latest) return NextResponse.json({ error: `not found: ${id}` }, { status: 404 });
 
-    if ((await priceStatus(id)) === "paid") {
+    // Access gate (spec/marketplace-integrity.md § 3): a *paid* package needs an entitlement, and a
+    // `private` package needs an access grant even when free. Both run through the same authorizer.
+    const paid = (await priceStatus(id)) === "paid";
+    const isPrivate = latest.manifest.visibility === "private";
+    if (paid || isPrivate) {
       const decision = await authorizer.authorize({
         token: bearer(req.headers.get("authorization")),
         packageId: id,
@@ -59,10 +63,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       // Gate BEFORE `registry.serve`, which counts a download: a denied request must not move the
       // tally. Otherwise the count is wrong, and the counter itself leaks what was attempted.
       if (!decision.authenticated) {
-        return NextResponse.json({ error: "authentication required to download a paid package" }, { status: 401 });
+        const kind = isPrivate && !paid ? "private" : "paid";
+        return NextResponse.json({ error: `authentication required to download a ${kind} package` }, { status: 401 });
       }
       if (!decision.licensed) {
-        return NextResponse.json({ error: "payment required: no license for this package" }, { status: 402 });
+        const message = isPrivate && !paid ? "access grant required for this private package" : "payment required: no license for this package";
+        return NextResponse.json({ error: message }, { status: 402 });
       }
     }
 

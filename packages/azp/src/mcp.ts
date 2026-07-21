@@ -8,7 +8,7 @@
  * listed in `manifest.files`, a remote one (`module: ""`) carries `remoteUrl` + `checksum`; every
  * `${input:…}` reference resolves to a declared input; and no credential-keyed `env`/`headers` value is a
  * literal secret (it must reference an input). An `mcp` package is a header — no editor `capabilities`,
- * `entry`/`runtime`, `assets`, or `app` block.
+ * `entry`/`runtime`, `assets`, `app`, or `pack` block.
  */
 import type { Manifest } from "@azphalt/azdk";
 
@@ -33,11 +33,12 @@ export function validateMcpManifest(manifest: Manifest): string[] {
     return errors;
   }
 
-  // Header-only — an mcp package declares no sandbox surface.
+  // Header-only — an mcp package declares no sandbox surface, and it is not another kind's header.
   if (manifest.entry || manifest.runtime) errors.push("mcp: an mcp package must not declare entry/runtime");
   if (manifest.capabilities && manifest.capabilities.length > 0) errors.push("mcp: an mcp package must not declare capabilities");
   if (manifest.assets && manifest.assets.length > 0) errors.push("mcp: an mcp package must not declare assets");
   if (manifest.app) errors.push("mcp: an mcp package must not declare an app block");
+  if (manifest.pack) errors.push("mcp: an mcp package must not declare a pack block");
 
   if (!Array.isArray(mcp.servers) || mcp.servers.length === 0) {
     errors.push("mcp: at least one server is required");

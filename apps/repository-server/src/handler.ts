@@ -257,11 +257,19 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     const resolved = await registry.getVersion(id, version);
     if (!resolved) return fail(404, `not found: ${id}@${version}`);
 
-    if ((await priceStatus(id)) === "paid") {
+    // Access gate (spec/marketplace-integrity.md § 3): a *paid* package needs an entitlement, and a
+    // `private` package needs an access grant even when free — both run through the same authorizer and
+    // return the same 401/402 envelope. `unlisted`/`public` are not access-gated (only hidden from browse).
+    const paid = (await priceStatus(id)) === "paid";
+    const isPrivate = resolved.manifest.visibility === "private";
+    if (paid || isPrivate) {
       const token = bearer(req.headers.authorization);
       const decision = await authorizer.authorize({ token, packageId: id, version });
-      if (!decision.authenticated) return fail(401, "authentication required to download a paid package");
-      if (!decision.licensed) return fail(402, "payment required: no license for this package");
+      const kind = isPrivate && !paid ? "private" : "paid";
+      if (!decision.authenticated) return fail(401, `authentication required to download a ${kind} package`);
+      if (!decision.licensed) {
+        return fail(402, isPrivate && !paid ? "access grant required for this private package" : "payment required: no license for this package");
+      }
     }
 
     // A `Range` request (resumable/parallel download) is served as `206 Partial Content`. The paid gate
