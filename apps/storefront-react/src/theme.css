@@ -73,3 +73,66 @@ button {
 .chip:active {
   transform: scale(0.96);
 }
+
+/* ── M3 Expressive hero carousel ──
+   A horizontal, scroll-snapping strip. Each item is a fixed-width card inside a mask whose width is
+   driven by scroll position (see App.tsx): the focused card is full width, neighbours peek smaller —
+   the multi-browse "hero" layout. The mask clips (never squishes) the card. */
+.carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 0 24px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+}
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+.carousel-item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  overflow: hidden; /* the mask */
+  height: 300px;
+}
+
+/* Sharp, outlined Metro tile — mirrors the AzNavRail aesthetic of the Compose storefront. */
+.pkg-card {
+  position: relative;
+  text-align: left;
+  border-radius: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  transition: transform 180ms cubic-bezier(.2, 1.2, .3, 1), border-color 180ms, box-shadow 180ms;
+}
+.pkg-card:active {
+  transform: scale(0.97);
+}
+
+/* Selected-item expansion: the detail grows in (scale + fade + settle) and collapses back on Back.
+   The transform curve is the Compose ExpressiveMotion default-spatial easing. */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  background: var(--background);
+  opacity: 0;
+  transform: scale(0.92) translateY(14px);
+  transition: opacity 260ms cubic-bezier(.34, .8, .34, 1), transform 420ms cubic-bezier(.38, 1.21, .22, 1);
+  will-change: opacity, transform;
+}
+.detail-overlay[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-overlay {
+    transition-duration: 1ms;
+  }
+}

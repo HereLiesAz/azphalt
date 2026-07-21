@@ -16,10 +16,13 @@ export interface PackageSummary {
   capabilities?: string[];
   downloads?: number;
   rating?: number | null;
+  ratingCount?: number;
   updatedAt?: string;
   targetApps?: string[];
   mediaDomains?: string[];
   types?: string[];
+  /** Developer content-maturity self-attestation: "general" (default) or "mature" (18+). */
+  maturity?: string;
 }
 
 export interface CheckoutResponse {
@@ -54,4 +57,19 @@ export function priceLabel(p: PackageSummary): string {
 
 export function isPaid(p: PackageSummary): boolean {
   return p.price != null || p.priceStatus === "paid";
+}
+
+export function isMature(p: PackageSummary): boolean {
+  return p.maturity === "mature";
+}
+
+/** Group a tally with thousands separators, e.g. 8900 → "8,900". */
+export function formatCount(n: number): string {
+  return new Intl.NumberFormat("en-US").format(n);
+}
+
+/** Render a rating as "★ 4.7 (88)", or null when there are no ratings (so callers can omit it). */
+export function formatRating(rating?: number | null, count?: number): string | null {
+  if (rating == null || !count) return null;
+  return `★ ${rating.toFixed(1)} (${formatCount(count)})`;
 }
