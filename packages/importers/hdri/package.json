@@ -1,23 +1,36 @@
 {
   "name": "@azphalt/importer-hdri",
-  "version": "0.1.1",
-  "publishConfig": { "access": "public" },
+  "version": "0.1.2",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Import hdri into .azp asset packages.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": { "azphalt-import-hdri": "./dist/cli.js" },
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "files": ["dist"],
+  "bin": {
+    "azphalt-import-hdri": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": { "@azphalt/azp": "workspace:*", "@azphalt/azdk": "workspace:*" },
+  "dependencies": {
+    "@azphalt/azp": "workspace:*",
+    "@azphalt/azdk": "workspace:*"
+  },
   "sideEffects": false
 }
-

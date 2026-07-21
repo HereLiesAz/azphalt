@@ -1,7 +1,9 @@
 {
   "name": "@azphalt/sdk",
-  "version": "0.1.1",
-  "publishConfig": { "access": "public" },
+  "version": "0.1.2",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Convenience alias for @azphalt/azdk.",
   "license": "MIT",
   "author": "Az (https://hereliesaz.com)",
@@ -14,7 +16,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist"
@@ -24,4 +28,3 @@
   },
   "sideEffects": false
 }
-

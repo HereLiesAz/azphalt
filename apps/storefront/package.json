@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/storefront",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "The azphalt consignment marketplace storefront — a Next.js app on the open standard.",
   "license": "MIT",
