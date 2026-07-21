@@ -25,15 +25,15 @@ Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app` | `mcp` |
 - `code` — one or more extensions on the sandbox (JS on QuickJS-in-WASM, or raw WASM).
 - `mixed` — both (e.g. a filter shipping its own LUTs).
 - `app` — a **companion app** (an Android app or PWA the host launches via a declared handoff). Carries **no** `/code` payload and **no** `capabilities` — just an `app` header (see extension-manifest.md § app and companion-app.md). The tree is `manifest.json` + `LICENSE` (+ optional `preview`).
-- `mcp` — an **MCP server** a host's MCP client connects to. A header (an `mcp` block); no `/code`, no `capabilities` (see mcp-server.md).
-- `pack` — an **extension pack**: a curated set that **references** other packages by id (a recommended bundle or an app's base set). A header (a `pack` block); no `/code`, no `capabilities`, no assets (see pack.md).
+- `mcp` — an **MCP server** a host's MCP client connects to. A header (an `mcp` block) that declares how to reach the server; no `/code`, no `capabilities` (see extension-manifest.md § mcp and mcp-server.md).
+- `pack` — an **extension pack**: a curated set that **references** other packages by id (a recommended bundle or an app's base set). A header (a `pack` block); no `/code`, no `capabilities`, no assets. Each member is resolved and free/paid-gated individually (see extension-manifest.md § pack and pack.md).
 
 ## Assets
 - Assets are **normalized, host-neutral data** — never a host-proprietary blob. Per-asset parameters (and a shader's or transition's declared inputs) live in the manifest.
 - Importers MUST emit this normalized form — an imported `.abr` becomes `assets/*.png` plus manifest params, not a repackaged `.abr`.
 
 ### Wire formats
-Each asset `type` (defined in extension-manifest.md § assets) pins the byte format its `path` (or `remoteUrl`) delivers, so any conforming host consumes identical bytes identically. Where a row lists several formats, a host MUST support the **bold** one (the interoperability floor) and MAY support the others; an importer SHOULD emit the bold one unless an asset requires otherwise.
+Each asset `type` (defined in `extension-manifest.md § assets`) pins the byte format its `path` (or `remoteUrl`) delivers, so any conforming host consumes identical bytes identically. Where a row lists several formats, a host MUST support the **bold** one (the interoperability floor) and MAY support the others; an importer SHOULD emit the bold one unless an asset requires otherwise.
 
 | `type` | Wire format |
 |---|---|
@@ -48,15 +48,15 @@ Each asset `type` (defined in extension-manifest.md § assets) pins the byte for
 | `hdri` | **Radiance `.hdr`**, or OpenEXR `.exr` |
 | `audio` | **WAV / PCM** (the uncompressed floor), or Ogg/Opus, FLAC, MP3 |
 | `video` | **MP4** (H.264 + AAC), or WebM (VP9 + Opus) |
-| `motion` | **JSON** keyframe/animation preset — host-neutral, keys per extension-manifest.md `params` conventions |
+| `motion` | **JSON** keyframe/animation preset — host-neutral, keys per `extension-manifest.md` `params` conventions |
 | `palette` | **JSON** — see [§ Palette format](#palette-format) |
 | `overlay` | **PNG** (or APNG / animated WebP) |
 | `template` | **JSON** layout referencing bundled `image`/`vector` assets, with fillable slots under `params` |
-| `tflite`, `litert`, `onnx`, `sherpa-bundle` | the model's **native** file(s) (`.tflite` / `.onnx` / …); large or multi-part models use the remote-asset / multi-file patterns in extension-manifest.md § assets |
+| `tflite`, `litert`, `onnx`, `sherpa-bundle` | the model's **native** file(s) (`.tflite` / `.onnx` / …); large or multi-part models use the remote-asset / multi-file patterns in `extension-manifest.md § assets` |
 
 **Static SVG profile (`vector`).** A `vector` asset is a self-contained SVG document: **no** `<script>`, **no** active/interactive elements (`<foreignObject>`, `<iframe>`, `<embed>`, `<object>` — `<foreignObject>` in particular can embed arbitrary HTML/XHTML that slips past a naive `<script>` filter), **no** event-handler attributes (`onload`, `on*`), **no** external or remote references (`<image href="http…">`, external `<use>`, CSS `@import`, web-font URLs) — any raster it embeds MUST be a `data:` URI. A host MUST render it as inert graphics and MUST NOT execute script or fetch anything it references.
 
-**Self-containment (the moat).** No asset's bytes may make a host fetch from the network or read outside the package. The **only** sanctioned remote path is the manifest's explicit `remoteUrl` large-file pattern, which is checksum-gated (extension-manifest.md § assets). A host MUST ignore — never fetch — any external reference embedded inside asset bytes.
+**Self-containment (the moat).** No asset's bytes may make a host fetch from the network or read outside the package. The **only** sanctioned remote path is the manifest's explicit `remoteUrl` large-file pattern, which is checksum-gated (`extension-manifest.md § assets`). A host MUST ignore — never fetch — any external reference embedded inside asset bytes.
 
 ### Palette format
 A `palette` asset (`type: "palette"`) is a UTF-8 **JSON** file under `/assets`. It is an **ordered** list of named sRGB colors — order is significant (swatch order in a picker). Shape:
@@ -77,49 +77,6 @@ A `palette` asset (`type: "palette"`) is a UTF-8 **JSON** file under `/assets`. 
 
 This lets the ecosystem distribute brand-accurate color sets (Montana, MTN, …) as portable `.azp` packages a host can match against real colorants.
 
-### Motion format
-A `motion` asset (`type: "motion"`) in the `az-motion` format is a UTF-8 **JSON** file describing keyframe tracks for temporal properties, often used for kinetic typography. Shape:
-
-~~~json
-{
-  "tracks": {
-    "opacity": [
-      { "time": 0.0, "value": 0.0, "easing": "linear" },
-      { "time": 0.2, "value": 1.0, "easing": "ease-out" },
-      { "time": 1.0, "value": 1.0 }
-    ],
-    "scale": [
-      { "time": 0.0, "value": [0.5, 0.5] },
-      { "time": 0.2, "value": [1.0, 1.0], "easing": "spring" }
-    ],
-    "position": [],
-    "rotation": [],
-    "blur": []
-  }
-}
-~~~
-
-- `tracks` — REQUIRED. Map of animatable properties to either a list of keyframes OR a data binding object. Supported keys:
-  - **Basic**: `opacity`, `scale` (2D/3D array), `position` (3D array), `rotation` (3D array), `blur` (scalar), `color` (hex string), `skew` (2D array), `strokeColor` (hex string), `strokeWidth` (scalar), `shadow` (array `[offsetX, offsetY, blur, hexColor]`).
-  - **Advanced Layer / 3D Effects**:
-    - `camera`: object `{ position: [x,y,z], aim: [x,y,z], aperture: scalar }`.
-    - `motionBlur`: scalar amount.
-    - `extrusion`: object `{ depth: scalar, color: hex }` for 3D protrusion.
-    - `spotlights`: array of objects `{ position: [x,y,z], target: [x,y,z], color: hex, angle: scalar, distance: scalar }`.
-    - `reflection`: object `{ opacity: scalar, distance: scalar }` for floor mirrors.
-    - `bend`: object `{ angle: scalar, radius: scalar }` for page curls/cylindrical bending.
-    - `warp`: object `{ intensity: scalar, direction: [x,y] }` for localized distortion.
-- A track can be a **keyframe array**. A keyframe has:
-  - `time` — REQUIRED, normalized `0.0` to `1.0` progression of the clip/preset.
-  - `value` — REQUIRED, the property value at that time.
-  - `easing` — OPTIONAL, curve to the **next** keyframe (`linear`, `ease-in`, `ease-out`, `ease-in-out`, `spring`; defaults to `linear`).
-- Alternatively, a track can be a **MotionBinding** object (for dynamic AI features):
-  - `bind` — REQUIRED, the AI data stream to track (e.g. `audio.rms`, `speech.wps`, `face.bottom`, `speaker.color`, `depth.occlusion`, `scene.lightVector`, `inpaint.backgroundTexture`, `depth.collision`, `scene.floorMask`, `scene.motionVectors`).
-  - `mapIn` — OPTIONAL array `[min, max]` of the expected input range.
-  - `mapOut` — OPTIONAL array `[min, max]` (or colors) to map the input to.
-
-For text (kinetic typography), the host applies these tracks per-character, per-word, or per-line based on `manifest.params.staggerMode` and delays the start time by `stagger`.
-
 ### LUT application
 A `.cube` file carries only a table plus `DOMAIN_MIN`/`DOMAIN_MAX`; it says nothing about *how* to sample it, so two hosts can produce a visibly different grade from identical bytes. To make a LUT a portable **look**, a host applying a `lut` asset MUST:
 
@@ -129,7 +86,7 @@ A `.cube` file carries only a table plus `DOMAIN_MIN`/`DOMAIN_MAX`; it says noth
 - **Leave alpha untouched.** A LUT transforms RGB only; the alpha channel passes through unchanged.
 - Sample at **≥ 8-bit** precision (higher is fine); coarse LUTs (`LUT_3D_SIZE ≤ 17`) especially depend on the interpolation floor to agree across hosts.
 
-**`strength` blend.** After sampling, a host applies the `lut` asset's `params.strength` (number `0..1`, default `1`) as a per-channel dry/wet blend with the original RGB — `out = lerp(original, graded, strength)` — **blended in the same encoded domain the LUT is sampled in** (sRGB-gamma by default, or the declared `inputTransfer` domain), **not** the host's own working/compositor space. Pinning the blend domain is what makes a fractional `strength` reproduce the same partial-grade on every host (a `lerp` in linear space gives a visibly different result). See [extension-manifest.md § Per-type `params`](./extension-manifest.md#per-type-params-conventions). A host renders the control from the asset's canonical `ui` panel (a single `strength` slider) when present.
+**`strength` blend.** After sampling, a host applies the `lut` asset's `params.strength` (number `0..1`, default `1`) as a per-channel dry/wet blend with the original RGB — `out = lerp(original, graded, strength)` — **blended in the same encoded domain the LUT is sampled in** (sRGB-gamma by default, or the declared `inputTransfer` domain), **not** the host's own working/compositor space. Pinning the blend domain is what makes a fractional `strength` reproduce the same partial-grade on every host (a `lerp` in linear space gives a visibly different result). See [extension-manifest.md § Per-type `params`](extension-manifest.md#per-type-params-conventions). A host renders the control from the asset's canonical `ui` panel (a single `strength` slider) when present.
 
 ## Code
 - Entry module(s) declared in the manifest (`entry`, `runtime`). `runtime: js` → an ES module on QuickJS-in-WASM; `runtime: wasm` → a WASM module against the host ABI.
@@ -146,6 +103,15 @@ Signing is **implemented**: `@azphalt/azp` produces `signature.json` (`signAzp` 
 2. For a signed package, verify the signature (`verifyAzp` folds this into `ok`), and — where provenance matters — check the signer against a trust store via `verifyTrust`.
 3. Treat an unsigned or untrusted-but-valid package as having integrity but no established provenance, and warn accordingly (e.g., "not from a trusted signer; install only from sources you trust").
 4. For any **remote asset** — an `assets[]` entry (or `files[]` member) delivered by `remoteUrl` rather than bundled — verify the downloaded bytes against its `checksum` (`sha256-<hex>`) **before use, and reject on mismatch**. These bytes aren't in the `files` map, so `verifyAzp` can't cover them; the check happens lazily at fetch time (see extension-manifest.md § assets). The signed manifest makes the `checksum` value itself trustworthy.
+
+### Publisher continuity (updates)
+Integrity and a valid signature say a package is internally consistent and names its signer; they do **not**, on their own, say an *update* comes from the same party as the version already installed — a package `id` is just a string, and anyone can put `com.acme.azphalt.thing` in a manifest. To stop a third party from replacing an installed extension via a same-`id` package, a host that supports updating an installed extension MUST enforce **publisher continuity**:
+
+- On first install of an `id`, record ("pin") the signer's SPKI public key (trust-on-first-use). An unsigned first install pins nothing.
+- On any later install/update of the same `id`, the new package's signer MUST equal the pinned key. A different key — or a signed→unsigned regression — MUST be rejected as a *publisher change* rather than silently applied. The rejection is distinct from the generic "untrusted signer" warning: it means "not the party you installed from."
+- A host MAY allow the user to **approve** a publisher change (a legitimate key rotation) explicitly, after which it re-pins to the new key. A registry `countersignature` chaining the new key to the old (or to a trusted registry) MAY be accepted automatically in place of a manual prompt.
+
+Because only the holder of the pinned private key can produce a package whose signature verifies against the pinned public key, this makes "only the original publisher can push an accepted update" enforceable **offline**, without a central authority. Publishers SHOULD therefore **sign at package-creation time** (keep one signing key per publisher; store the PKCS8 PEM private key as a CI secret and sign the built `.azp` with `signAzp` before publishing) so the very first release a user installs establishes the pin. *Reference host implementation:* Guillotine's `AzpPublisherPins` + `AzpModelInstall`.
 
 ## Versioning
 - `azphalt` (format version) gates compatibility. The package's own `version` is semver.

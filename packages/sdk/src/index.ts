@@ -832,7 +832,7 @@ export interface ColorControl {
   type: "color";
   key: string;
   label: string;
-  /** `#RRGGBB`. */
+  /** `#RRGGBB`, or `#RRGGBBAA` when {@link ColorControl.alpha} is set (an 8-digit hex carries alpha). */
   default: string;
   alpha?: boolean;
 }

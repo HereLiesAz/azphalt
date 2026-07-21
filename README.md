@@ -24,7 +24,9 @@ Anyone can implement azphalt and run their own store. Ours is just the flagship.
 ~~~
 /spec/          normative, language-neutral (capabilities, package format, manifest, UI schema, repository API)
 /packages/      the standard's libraries (see below)
-/apps/          storefront (the marketplace) · repository-server (reference backend)
+/apps/          storefront (the marketplace, a Next.js host for the Compose/Wasm UI in storefront-cmp) ·
+                storefront-react (a React sibling on the same API) · repository-server (reference backend) ·
+                marketplace + mock-backend (demo client + template server)
 /examples/      sample extensions
 /docs/          the docs site + design/adoption guides (ARCHITECTURE · RATIONALE · ADOPTION · GOVERNANCE)
 LICENSE         MIT
@@ -35,8 +37,10 @@ LICENSE         MIT
 | Package | What it is |
 |---|---|
 | [`@azphalt/azdk`](packages/sdk) | The typed surface an extension is written against. |
+| [`@azphalt/sdk`](packages/sdk-compat) | A thin compatibility alias that re-exports `@azphalt/azdk` (published; note the naming inversion — `packages/sdk` ships as `@azphalt/azdk`). |
+| [`@azphalt/submit-check`](packages/submit-check) | Internal validator (CI + local) for `submissions/` PRs; not published. |
 | [`@azphalt/azp`](packages/azp) | Read / write / verify / **sign** `.azp` containers (Ed25519 + trust store). |
-| [`@azphalt/importer-*`](packages/importers) | Normalize `.abr`, `.cube`, ISF, gl-transitions, glTF, ML models … **into** `.azp`. |
+| [`@azphalt/importer-*`](packages/importers) | 18 format importers that normalize source assets **into** `.azp`. **Assets:** [`abr`](packages/importers/abr) (Photoshop brushes) · [`cube`](packages/importers/cube) (`.cube` LUTs) · [`isf`](packages/importers/isf) (ISF shaders) · [`transition`](packages/importers/transition) (gl-transitions) · [`gltf`](packages/importers/gltf) (meshes) · [`hdri`](packages/importers/hdri) · [`material`](packages/importers/material) · [`motion`](packages/importers/motion) · [`image`](packages/importers/image) · [`vector`](packages/importers/vector) · [`video`](packages/importers/video) · [`audio`](packages/importers/audio) · [`font`](packages/importers/font) · [`palette`](packages/importers/palette) (`.ase` / JSON). **Models:** [`onnx`](packages/importers/importer-onnx) · [`tflite`](packages/importers/importer-tflite) · [`litert`](packages/importers/importer-litert) · [`sherpa`](packages/importers/importer-sherpa). |
 | [`@azphalt/runtime-reference`](packages/runtime-reference) | In-process host that proves the capability contract. |
 | [`@azphalt/runtime-wasm`](packages/runtime-wasm) | The real sandbox — QuickJS-in-WASM (`js`) and raw WebAssembly (`wasm`). |
 | [`@azphalt/conformance`](packages/conformance) | Executable pass/fail battery for code hosts and asset hosts. |

@@ -55,10 +55,13 @@ Every `publish` and every new version runs an automated battery; each check yiel
   leaked secret ⇒ **block**. (0.1 scans the **manifest** only, by key; scanning non-manifest text-asset
   payloads and value-shape/entropy heuristics are a planned future phase — the same coverage/false-
   positive trade-off deferred in `mcp-server.md § Secret detection`.)
-- **Payload static analysis** — for `code`, confirm the module's host-function imports are a **subset**
-  of the granted capabilities (the runtime already fails instantiation otherwise; the sweep surfaces
-  the mismatch *before* install and **flags** an import of an undeclared capability). Obfuscation /
-  packing heuristics are **advisory flags** only.
+- **Capability scope** — a declared capability outside the capability model (`capability-model.md`) — a
+  never-list request (camera, microphone, network, filesystem, sensors, a host's proprietary engine …)
+  or an unknown value — has no API to grant, so it ⇒ **block** (`sweep.ts` `capability-scope`).
+- **Payload static analysis** *(planned)* — for `code`, confirm the module's host-function imports are a
+  **subset** of the granted capabilities and **flag** an import of an undeclared capability *before*
+  install (the runtime already fails instantiation at load, so this is a pre-install convenience). Not
+  yet implemented; obfuscation / packing heuristics would likewise be **advisory flags** only.
 - **Denylist** — known-bad container digests and **revoked publisher keys** (fed by moderation
   outcomes, § 2) ⇒ **block**, and a re-scan of already-indexed versions on denylist update ⇒
   revocation.
@@ -77,8 +80,16 @@ minifier or packer would be caught); a human reviews a flagged packing signal.
 ## 2. Reporting & moderation
 
 - **`POST /reports`** — anyone reports `{ packageId, version?, reason, detail? }`. `reason` ∈
-  `malware · clone · deceptive · secret-leak · broken · other`. Rate-limited by IP + optional reporter
-  identity (a signed report from a **counter-signed host** or a verified account counts as *trusted*).
+  `malware · clone · deceptive · secret-leak · broken · ip-claim · other`. Rate-limited by IP + optional
+  reporter identity (a signed report from a **counter-signed host** or a verified account counts as
+  *trusted*).
+- **Developer IP claim (`reason: "ip-claim"`).** A rights-holder claims a package infringes their own
+  work, adding `{ originalPackageId, claimant?, signature? }`. Two lanes: a **signed** claim — the
+  claimant signs the canonical message `azphalt-ip-claim:v1:<packageId>:<originalPackageId>` with the
+  **publisher key that signed `originalPackageId`**, proving provenance ownership → stored **trusted**;
+  and a **plain** DMCA-style claim (no/invalid signature) → stored **untrusted** for human review. The
+  claim carries clone-**similarity evidence** (below) so a moderator sees *why* it's a clone even when no
+  bytes were copied. A single trusted claim never auto-yanks on its own — it escalates to a human.
 - **Queue & triage.** Reports accumulate on a version. **Auto-quarantine** (yank pending review) fires
   on either (a) a security-sweep **denylist** hit, or (b) a threshold of **trusted** reports; everything
   else waits for **human review**. Quarantine ≠ deletion — the version stays resolvable by exact id so
@@ -125,6 +136,22 @@ gate, so nothing here forecloses it. A first-class team object may be added late
 
 ---
 
+## 3a. Content maturity (age-gating)
+
+- **Manifest field** — `maturity ∈ general | mature` (default `general`), a developer self-attestation
+  that rides in the manifest (extension-manifest.md) and projects onto the registry/wire `PackageSummary`
+  exactly as `visibility` does. `mature` marks 18+ content.
+- **Store gate** — a store puts a `mature` listing behind an **age-confirmation** before its card/detail
+  is revealed or opened; the confirmation is remembered for the session. Like `visibility`, `maturity` is
+  a **discovery/UX** signal a store surfaces and gates on — it is developer-set, not identity-verified age
+  assurance, and a deployment MAY layer stronger enforcement (e.g. an ACL download gate) on top.
+
+*Decision:* v1 is a **manifest flag + client-side confirmation gate** — the smallest thing that lets a
+developer responsibly list 18+ work and keeps it out of an unsuspecting browse grid. Verified age
+assurance is explicitly out of scope and left to the deployment.
+
+---
+
 ## 4. Anti-clone & provenance
 
 Goes beyond today's exact-version duplicate check (a re-publish of the same `id@version` is refused).
@@ -133,12 +160,16 @@ Goes beyond today's exact-version duplicate check (a re-publish of the same `id@
   claim; publisher-continuity already stops a hijacked *update*. This section extends it **across
   packages**.
 - **Clone signals at publish** (each a **flag**, never an auto-block — legitimate forks, CC-shared
-  assets, and templates create false positives):
-  - **Asset-content hashing** — a new package whose asset bytes largely match an existing package
-    under a **different** publisher key.
-  - **Code near-duplicate** — a normalized fingerprint (shingled hashes of the WASM/JS) whose
-    similarity to another publisher's package exceeds a threshold.
-  - **Name / id squatting** — a fuzzy match of `name`/`id` to an established package by a different key.
+  assets, and templates create false positives). These catch **more than exact copies**: a
+  reimplemented clone that shares no bytes still surfaces via shape + name/description resemblance
+  (`packageSimilarity`, `clone-shape`):
+  - **Asset-content hashing** (`clone-assets`) — a new package whose asset bytes largely match an
+    existing package under a **different** publisher key.
+  - **Reimplemented shape** (`clone-shape`) — little/no shared bytes, but the **same kind + asset-type
+    palette + capability set** and a resembling name or description. This is the byte-different clone an
+    asset-digest check alone misses.
+  - **Name / id squatting** (`clone-name`) — a **fuzzy** (trigram) match of `name`/`id` to an established
+    package by a different key, not just a substring.
 - **Developer protection.** A clone flag carries the **provenance evidence** (which earlier package,
   which publisher key, similarity score) to moderation. If the *original* is **registry-counter-signed**
   or from a **verified** publisher, a strong match **auto-quarantines** the clone; otherwise it's

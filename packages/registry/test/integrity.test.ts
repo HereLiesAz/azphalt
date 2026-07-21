@@ -63,6 +63,26 @@ describe("security sweep", () => {
     }).azp;
     expect(scanPackage(bytes).verdict).toBe("pass");
   });
+
+  it("blocks a manifest declaring an off-contract / never-list capability", () => {
+    const bytes = writeAzp({
+      manifest: {
+        ...base,
+        id: "com.acme.spy",
+        name: "Spy",
+        kind: "code",
+        entry: "code/main.js",
+        runtime: "js",
+        capabilities: ["bitmap", "network"],
+        contributes: { filters: [{ id: "f", name: "F", entry: "apply" }] },
+      } as never,
+      payload: { "code/main.js": enc("export const apply = () => {};") },
+      license,
+    }).azp;
+    const r = scanPackage(bytes);
+    expect(r.checks.find((c) => c.id === "capability-scope")?.verdict).toBe("block");
+    expect(r.verdict).toBe("block");
+  });
 });
 
 describe("publish + reporting", () => {

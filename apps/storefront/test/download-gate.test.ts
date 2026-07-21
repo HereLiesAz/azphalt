@@ -8,6 +8,7 @@
  * with dynamic `import()` below — that is the whole reason this file is shaped this way.
  */
 import { generateKeyPairSync } from "node:crypto";
+import { writeAzp } from "@azphalt/azp";
 import { describe, expect, it } from "vitest";
 
 const { privateKey } = generateKeyPairSync("ed25519");
@@ -103,5 +104,42 @@ describe("GET /api/download/[id] — the paid lane is gated", () => {
     expect((await get(PAID)).status).toBe(401);
     expect((await get(PAID, await buy(OTHER_PAID))).status).toBe(402);
     expect(await downloads(PAID)).toBe(before);
+  });
+});
+
+describe("GET /api/download/[id] — a free but PRIVATE package still needs an access grant", () => {
+  // marketplace-integrity § 3: `private` is not just hidden from browse — its download is gated even
+  // when it carries no price. Without this, anyone who knows the id+version could pull a private package.
+  const PRIVATE = "com.test.privatepack";
+
+  async function publishPrivate(): Promise<void> {
+    const { registry } = await getCatalog();
+    if (await registry.getVersion(PRIVATE, "1.0.0")) return;
+    const azp = writeAzp({
+      manifest: {
+        azphalt: "0.1",
+        id: PRIVATE,
+        name: "Private Pack",
+        version: "1.0.0",
+        kind: "asset",
+        license: "MIT",
+        compat: ">=0.1",
+        visibility: "private",
+        assets: [{ type: "brush", path: "assets/b" }],
+      },
+      payload: { "assets/b": new TextEncoder().encode("x") },
+      license: "MIT License\n",
+    }).azp;
+    await registry.publish(azp);
+  }
+
+  it("401s a private package with no token, even though it is free (no listing)", async () => {
+    await publishPrivate();
+    expect((await get(PRIVATE)).status).toBe(401);
+  });
+
+  it("402s a valid token that does not grant access to this private package", async () => {
+    await publishPrivate();
+    expect((await get(PRIVATE, await buy(OTHER_PAID))).status).toBe(402);
   });
 });

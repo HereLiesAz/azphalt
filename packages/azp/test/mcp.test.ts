@@ -44,6 +44,12 @@ describe("validateMcpManifest", () => {
     expect(validateMcpManifest(m).some((e) => e.includes("at least one server"))).toBe(true);
   });
 
+  it("rejects an mcp package that also carries a pack block (header-only)", () => {
+    const m = clone();
+    (m as { pack?: unknown }).pack = { entries: [{ id: "com.other.thing" }] };
+    expect(validateMcpManifest(m).some((e) => e.includes("must not declare a pack block"))).toBe(true);
+  });
+
   it("requires each server to declare local or remote", () => {
     const m = clone();
     m.mcp!.servers[0] = { id: "bare" };

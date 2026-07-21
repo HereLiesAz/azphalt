@@ -109,29 +109,12 @@ export class NpmStore implements RegistryStore {
       return out;
     } catch (e) {
       clearTimeout(timeout);
-      console.warn(`Failed to fetch versions for ${id}, using mock data. NPM might be rate limiting.`);
-      // Fallback mock to ensure UI loads even if NPM blocks
-      const mock: PackageVersion = {
-        id,
-        version: "1.0.0",
-        manifest: {
-          azphalt: "0.1",
-          id,
-          version: "1.0.0",
-          name: id.replace("@azphalt/", "Azphalt "),
-          kind: "code",
-          compat: ">=0.1",
-          author: "Azphalt Proxy",
-          description: "High performance skeuomorphic module.",
-        } as any,
-        size: 1024,
-        digest: "mock-sha",
-        publishedAt: new Date().toISOString()
-      };
-      const out = [mock];
-      this.versionsCache.set(id, out);
-      this.versionCache.set(`${id}@1.0.0`, mock);
-      return out;
+      // Do NOT fabricate a package. The previous fallback returned a made-up version with a fake
+      // "mock-sha" digest, which then flowed into the UI as if it were real registry data — a trust
+      // hazard. An unreachable/failed npm lookup means "no such package here": return empty, and don't
+      // cache it, so a transient failure can recover on the next request.
+      console.warn(`Failed to fetch versions for ${id} from npm (${(e as Error).message}); treating as unknown.`);
+      return [];
     }
   }
 

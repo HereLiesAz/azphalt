@@ -6,7 +6,7 @@
 | Field | Req | Notes |
 |---|---|---|
 | `azphalt` | ✔ | Format version, e.g. `"0.1"`. Marks the file as an azphalt manifest. |
-| `id` | ✔ | Reverse-DNS, globally unique — e.g. `com.hereliesaz.halftone`. |
+| `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
 | `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack`. |
@@ -15,6 +15,7 @@
 | `description`, `author`, `homepage` | — | Metadata. |
 | `targetApps` | — | Reverse-DNS host-app ids this package is scoped to (e.g. `["com.hereliesaz.graffitixr"]`). Empty/absent = **global** (every app). A repository shows an app-scoped package only to a matching app — see repository-api.md § App scoping. Discovery filter, not access control. |
 | `preview` | — | Static store-card preview `{ image?, clip? }` — each an in-package path or `https:` URL. `image` is a still (LUT swatch, brush stroke, shader still); `clip` an optional short motion preview for time-based packages. Surfaced in search so a host renders a browse grid without downloading/executing — see repository-api.md § Static previews. |
+| `maturity` | — | Developer content-maturity self-attestation: `general` (default when absent) \| `mature` (18+). A store surfaces it and puts a `mature` listing behind an age-confirmation gate before revealing its card/detail. Like `targetApps`/`visibility` it travels in the manifest and is a discovery/UX signal, not access control — see marketplace-integrity.md § Content maturity. |
 | `assets` | asset/mixed | Contributed assets (below). |
 | `entry`, `runtime` | code/mixed | Code entry module and `js` \| `wasm`. |
 | `capabilities` | code/mixed | Declared capabilities (see capability-model.md). |
@@ -33,7 +34,7 @@
 ## `assets`
 Each entry requires a `type`, which determines the format of the asset. The supported primitives are:
 - **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector` | `template` | `overlay`
-- **AI Models**: `tflite` | `litert` | `onnx` | `sherpa-bundle`
+- **AI Models**: `tflite` | `litert` | `onnx` | `sherpa-bundle` | `model` | `task` | `vosk-bundle` (`model` = a generic/other on-device model; `task` = a TFLite Task-Library bundle; `vosk-bundle` = a Vosk speech model directory — all multi-file bundles like `sherpa-bundle`)
 
 The SDK `AssetType` union (`packages/sdk/src/index.ts`) is the single source of truth for this list; the registry's media-domain map is kept total over it. The **wire format** each `type` delivers (SVG for `vector`, glTF for `mesh`, the `palette` JSON schema, …) is pinned in `package-format.md § Assets`.
 
@@ -113,11 +114,8 @@ An asset-only host MUST select assets where `standalone !== false` and skip the 
 | `brush` | `spacing` / `angle` / `roundness` | numbers (engine-defined ranges) | user |
 | `overlay` | `opacity` / `anchor` / `scale` | `0..1` (`1`) / `top-left`…`center`…`bottom-right` / number | user |
 | `template` | `fields` / `safeArea` | named text slots / inset rect | user / author |
-| `motion` | `format` | `az-motion` (default) | author |
-| `motion` | `stagger` | number `0..1` (`0`) — text-stagger overlap | user |
-| `motion` | `staggerMode` | `character` (default) \| `word` \| `line` | user |
 
-The LUT application semantics behind `strength` / `inputTransfer` (interpolation floor, input-transfer conversion, clamp, alpha) are pinned in [package-format.md § LUT application](./package-format.md#lut-application).
+The LUT application semantics behind `strength` / `inputTransfer` (interpolation floor, input-transfer conversion, clamp, alpha) are pinned in [package-format.md § LUT application](package-format.md#lut-application).
 
 **Canonical `lut` panel.** The conventional control for `strength` is a single `slider` bound to the `strength` key, so every host renders the same dry/wet control:
 
@@ -262,6 +260,12 @@ For a `kind: "app"` **companion app** (an Android app or PWA a host launches to 
 - `handoffs[]` — the functions the companion offers, each with an `id`, an `action` (the host hook), a declared `input` / `output` (azphalt **assets** and/or structured **params**), and a per-platform `transport` (Android `Intent` + result, or PWA share-target + `postMessage` return).
 
 The moat holds because azphalt grants the companion nothing — the OS governs its permissions, the host never runs its code and **validates** the returned assets/params before use, and the user consents before each handoff. The full contract (transports, return semantics, security, discovery) is normative in **companion-app.md**.
+
+## `mcp`
+For a `kind: "mcp"` **MCP server** (a server a host's MCP client connects to), the manifest carries an `mcp` block instead of `assets`/`entry`/`capabilities`/`app`. Like `app`, it is a *header*: it declares how to reach the server (on-device `local` — a portable `wasi` module and/or a per-platform native launch — and/or a `remote` http/sse url), the `inputs` the host prompts for at connect time (`${input:…}`, never stored), and a descriptive `offers` of its tools/resources/prompts. It grants **no** azphalt capabilities and ships **no** `/code` sandbox payload; the host's MCP client runs/connects it under user consent, in the OS's / a WASI runtime's own sandbox. Secrets are never bundled — a credential-shaped `env`/`headers` value MUST be an `${input:…}` reference, enforced at verify time. The full contract (transports, host selection order, the two sandboxes, verification, discovery) is normative in **mcp-server.md**.
+
+## `pack`
+For a `kind: "pack"` **extension pack** (a curated set — a recommended bundle or an app's base set), the manifest carries a `pack` block instead of `assets`/`entry`/`capabilities`/`app`/`mcp`. Like `app` and `mcp`, it is a *header*: it **references** other packages by id rather than containing them. `pack.entries[]` (≥ 1) each carry an `id` (a member package, possibly another author's), an optional `version` (absent = the member's latest at install time), an optional `required` flag (`true` = base set installed by default; else recommended/opt-in), and an optional `note`. A pack grants **no** capabilities and ships **no** `/code` or assets; each member is resolved and free/paid-gated **individually** on install, so a free pack MAY recommend a paid member. The full contract (verification, resolution/installation, offline pre-install) is normative in **pack.md**.
 
 ## Example
 ~~~

@@ -52,8 +52,12 @@ export interface CheckoutInput {
 /** The exclusive-end instant of the billing period that starts at `fromIso`, for a subscription. */
 export function periodEnd(fromIso: string, interval: SubscriptionInterval): string {
   const d = new Date(fromIso);
+  const day = d.getUTCDate();
   if (interval === "year") d.setUTCFullYear(d.getUTCFullYear() + 1);
   else d.setUTCMonth(d.getUTCMonth() + 1);
+  // `setUTCMonth(+1)` on a day the next month doesn't have (Jan 31 → "Mar 3") rolls forward and
+  // over-grants the period. Detect that overshoot and clamp back to the target month's last day.
+  if (d.getUTCDate() !== day) d.setUTCDate(0);
   return d.toISOString();
 }
 
