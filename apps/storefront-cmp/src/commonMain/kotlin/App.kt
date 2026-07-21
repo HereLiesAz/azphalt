@@ -91,6 +91,10 @@ fun StorefrontApp() {
         // item and coming back.
         val listState = rememberLazyListState()
 
+        // One session-wide age confirmation: once the viewer confirms 18+, mature cards reveal for the
+        // rest of the session (developer-set maturity gate, not verified age assurance).
+        var ageConfirmed by remember { mutableStateOf(false) }
+
         // One shared clock; within each carousel a single card animates at a time.
         val clockTransition = rememberInfiniteTransition(label = "clock")
         val clock by clockTransition.animateFloat(
@@ -120,7 +124,12 @@ fun StorefrontApp() {
             label = "catalog-detail",
         ) { target ->
             if (target != null) {
-                DetailScreen(target, onBack = { selected = null })
+                DetailScreen(
+                    pkg = target,
+                    ageConfirmed = ageConfirmed,
+                    onConfirmAge = { ageConfirmed = true },
+                    onBack = { selected = null },
+                )
             } else {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -176,11 +185,19 @@ fun StorefrontApp() {
                                 HeroCarousel(
                                     section = CatalogSection("Results", "${shown.size} matching", shown),
                                     clock = clock,
+                                    ageConfirmed = ageConfirmed,
+                                    onConfirmAge = { ageConfirmed = true },
                                     onOpen = { selected = it },
                                 )
                             }
                             else -> items(sections, key = { it.title }) { section ->
-                                HeroCarousel(section = section, clock = clock, onOpen = { selected = it })
+                                HeroCarousel(
+                                    section = section,
+                                    clock = clock,
+                                    ageConfirmed = ageConfirmed,
+                                    onConfirmAge = { ageConfirmed = true },
+                                    onOpen = { selected = it },
+                                )
                             }
                         }
                     }

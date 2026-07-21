@@ -38,6 +38,12 @@ export interface RegistryStore {
    * registry need not); the default store tracks none and returns `{ ratingCount: 0 }`.
    */
   getRating(id: string): Promise<{ rating?: number; ratingCount: number }>;
+  /**
+   * Record one 1–5 star rating for a package, folding it into the aggregate {@link getRating} returns.
+   * **Optional** — a store that doesn't collect ratings omits it, and {@link Registry.rate} surfaces
+   * that clearly. Returns `void` or a `Promise<void>` (the in-memory store is synchronous).
+   */
+  addRating?(id: string, stars: number): void | Promise<void>;
 
   /** Append a revocation record (a version pulled post-publish). */
   putRevocation(entry: RevocationEntry): Promise<void>;
@@ -122,7 +128,7 @@ export class InMemoryStore implements RegistryStore {
     return total;
   }
 
-  /** Record one rating (0–5) for a package — a test/backend hook; not part of {@link RegistryStore}. */
+  /** Record one 1–5 star rating for a package, folded into the aggregate (see {@link RegistryStore.addRating}). */
   addRating(id: string, stars: number): void {
     const r = this.ratings.get(id) ?? { sum: 0, count: 0 };
     this.ratings.set(id, { sum: r.sum + stars, count: r.count + 1 });

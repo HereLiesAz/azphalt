@@ -26,3 +26,12 @@ actual suspend fun startCheckout(packageId: String): CheckoutResponse {
     val body: JsString = response.text().await()
     return json.decodeFromString<CheckoutResponse>(body.toString())
 }
+
+actual suspend fun httpPostJson(path: String, body: String): String {
+    val response: Response = window.fetch(
+        path,
+        RequestInit(method = "POST", body = body.toJsString()),
+    ).await()
+    val text: JsString = response.text().await()
+    return text.toString()
+}
