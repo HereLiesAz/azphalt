@@ -364,12 +364,8 @@ const SEEDS: Seed[] = [
       description:
         "Free, MIT-licensed film-stock emulation LUTs. Reach without a fee — published to the open " +
         "registry lane; grade in any conforming app.",
-<<<<<<< Updated upstream
       author: "Fold Lab",
       maturity: "mature",
-=======
-      author: "HereLiesAz",
->>>>>>> Stashed changes
       capabilities: ["assets", "bitmap"],
       assets: [
         { type: "lut", path: "assets/portra.cube" },
