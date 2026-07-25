@@ -59,7 +59,10 @@ async function publishOne(dir: string): Promise<"published" | "already-published
   const res = await fetch(`${baseUrl}/api/publish`, {
     method: "POST",
     headers: { "content-type": "application/octet-stream" },
-    body: azp,
+    // Node's fetch (undici) BodyInit typing doesn't accept a raw Uint8Array<ArrayBufferLike> under
+    // this lib config; Buffer.from copies into a real Node Buffer, which it does accept — same
+    // bytes on the wire either way.
+    body: Buffer.from(azp),
   });
   if (res.status === 201) {
     console.log(`publish-submissions: published ${id}`);
