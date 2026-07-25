@@ -678,6 +678,25 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const durable = Boolean(DATABASE_URL && BLOB_READ_WRITE_TOKEN);
 
+/**
+ * Whether writes survive. `false` ⇒ every serverless instance holds its own `NpmStore`, re-seeded at
+ * module load, so a publish lives only in the instance that served it and is lost when that instance
+ * recycles — reads still look healthy the whole time, because the seed catalog is rebuilt on each
+ * cold start.
+ *
+ * Exported so a write route can refuse rather than report success it cannot honour: the registry
+ * rejects a duplicate version forever, so a publish that silently evaporates is indistinguishable
+ * from one that never happened, and a caller re-publishing the same version gets `201` again.
+ */
+export const storageIsDurable = durable;
+
+/**
+ * True when this process is a Vercel deployment (Vercel sets `VERCEL=1` at build and runtime).
+ * Locally and in tests the ephemeral store is the intended, documented setup — the point is only to
+ * stop a *deployed* store from accepting writes it will drop.
+ */
+export const isDeployed = process.env.VERCEL === "1";
+
 const vercel = durable
   ? createVercelStores({ connectionString: DATABASE_URL!, blobToken: BLOB_READ_WRITE_TOKEN! })
   : undefined;

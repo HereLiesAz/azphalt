@@ -32,6 +32,27 @@ module load would have every cold instance re-`publish` and throw):
 DATABASE_URL=… BLOB_READ_WRITE_TOKEN=… pnpm --filter @azphalt/storefront seed
 ```
 
+### A deployment without durable storage refuses to publish
+
+The ephemeral store is right for `next dev` and the tests, and wrong for a deployment: each
+serverless instance keeps its own copy, re-seeded on every cold start, so a publish survives only
+until the instance that served it recycles. Reads keep looking healthy the entire time — the seed
+catalog is always there — which makes the failure very hard to spot.
+
+It is also self-concealing. `Registry.publish` rejects a duplicate version permanently, so a package
+that was "published" and then vanished can be published *again* at the same version and return `201`
+a second time. That second success is itself the proof the first write was lost.
+
+So when `VERCEL=1` and either `DATABASE_URL` or `BLOB_READ_WRITE_TOKEN` is missing,
+`POST /api/publish` answers **`503`** naming the unset variables instead of `201`. Reads and
+downloads are untouched. Set `AZPHALT_ALLOW_EPHEMERAL_PUBLISH=1` to opt a throwaway preview back
+into accepting writes it will drop.
+
+To make a Vercel deployment durable, provision the two stores and set both variables on the project
+(`vercel env add …`, or the dashboard's Storage tab), redeploy so the build picks them up, then seed
+once with the command above. Until both are set, publishing to that deployment cannot persist —
+there is no filesystem to fall back on.
+
 ## A conforming repository (the normative Repository API)
 
 Beyond its own UI-facing `/api/*` routes, the storefront **also serves the normative Repository API**
