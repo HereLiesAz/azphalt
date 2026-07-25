@@ -15,6 +15,7 @@
     "bundle": "next build && node scripts/bundle.mjs",
     "embed-docs": "node scripts/embed-docs.mjs",
     "seed": "tsx scripts/seed.ts",
+    "publish-submissions": "tsx scripts/publish-submissions.ts",
     "clean": "rm -rf .next dist-server public/_docs"
   },
   "dependencies": {

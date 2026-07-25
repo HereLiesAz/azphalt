@@ -1,0 +1,35 @@
+name: Publish submissions
+
+# Complete the promise submissions/README.md already makes ("on merge it's indexed"): once a
+# submission PR merges to main, actually publish it to the live registry — previously nothing did
+# this, so a merged submissions/<id>/ folder just sat there, invisible to GET /api/packages.
+#
+# Goes over the public POST /api/publish endpoint (see apps/storefront/app/api/publish/route.ts) —
+# the same unauthenticated, self-serve route any third-party uploader uses — rather than connecting
+# to the store directly, so this needs no DATABASE_URL/BLOB_READ_WRITE_TOKEN secrets at all.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "submissions/**"
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: publish-submissions
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      # Build @azphalt/azp + @azphalt/azdk, which the publish script packages submissions with.
+      - run: pnpm --filter @azphalt/azp --filter @azphalt/azdk build
+      - run: pnpm --filter @azphalt/storefront publish-submissions
