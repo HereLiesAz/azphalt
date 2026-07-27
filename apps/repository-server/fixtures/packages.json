@@ -29,6 +29,7 @@
       {
         "id": "com.demo.paid",
         "name": "Cinematic Pack",
+        "description": "premium grades",
         "author": "SFX Studio",
         "version": "1.0.0",
         "kind": "asset",
@@ -51,6 +52,7 @@
       {
         "id": "com.demo.companion",
         "name": "AR Stencil Capture",
+        "description": "Capture a wall stencil in AR and hand it back",
         "author": "Acme AR",
         "version": "1.0.0",
         "kind": "app",

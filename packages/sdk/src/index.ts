@@ -1159,6 +1159,12 @@ export type MediaDomain = "image" | "video" | "audio" | "3d" | "model" | "font";
 export interface PackageSummary {
   id: string;
   name: string;
+  /**
+   * Single-language fallback description (see `spec/repository-api.md` § Localized strings — the
+   * spec calls this "always present" on both summary and detail). A package MAY additionally carry
+   * {@link descriptionLocalized}.
+   */
+  description?: string;
   author?: string;
   version: string;
   /**

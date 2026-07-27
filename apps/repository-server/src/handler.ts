@@ -128,6 +128,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
   const toSdkSummary = async (s: RegistrySummary): Promise<PackageSummary> => ({
     id: s.id,
     name: s.name,
+    description: s.description,
     author: s.author,
     version: s.version,
     kind: s.kind,
