@@ -1,0 +1,50 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.glitch-and-damage",
+  "name": "Glitch & Damage",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Break the image on purpose — digital corruption, chromatic tearing, neon bleed and analogue film decay.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.action-glitch",
+        "required": true,
+        "note": "impact-triggered tearing"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.glitch-decode",
+        "required": true,
+        "note": "corrupted-decode artefacts"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.film-damage",
+        "required": true,
+        "note": "flicker, dust and sepia decay"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.cyber-glitch",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.neon-pulse",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.motion-wind-warp",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.warpflow",
+        "required": false,
+        "note": "pull the viewer into the next scene"
+      }
+    ]
+  }
+}

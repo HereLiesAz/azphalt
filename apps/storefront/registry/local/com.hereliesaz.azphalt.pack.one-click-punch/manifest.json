@@ -1,0 +1,33 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.one-click-punch",
+  "name": "One-Click: Punch",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Instant high-energy social edit. Caption pop, impact shake and volume-driven emphasis, tuned to hit hard.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.hormozi-pop",
+        "required": true,
+        "note": "the caption style"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.beast-shake",
+        "required": true,
+        "note": "impact shake"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.yell-shake",
+        "required": true,
+        "note": "reacts to shouted audio"
+      }
+    ]
+  }
+}

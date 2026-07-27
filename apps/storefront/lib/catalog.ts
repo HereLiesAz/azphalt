@@ -667,29 +667,34 @@ const SEEDS: Seed[] = [
 ];
 
 import { NpmStore } from "./backend";
-import { loadBaked } from "./baked";
+import { loadBaked, loadPreviewIndex } from "./baked";
 import { createVercelStores } from "@azphalt/registry-store-vercel";
 
 /**
  * Whether to also seed the fabricated demo examples (Halftone Studio, the mock model packages, …).
  *
- * On locally so `next dev` and the tests keep a catalog that exercises every `kind` and both lanes;
- * **off in a deployment**, because their payloads are placeholder bytes like `MOCK_ONNX_BYTES_DEPTH`
- * and serving them beside real extensions offers users installable packages that cannot work.
+ * On in development and tests, where they give the catalog every `kind` and both lanes with no
+ * network and no services; **off in any production build**.
  *
- * Keyed off `VERCEL`, which the platform sets in the **serverless runtime**, rather than left to a
- * variable the deploy workflow exports. `seedCatalog` runs at module load inside the deployed
- * function, so an env var set on the CI step that builds and uploads the bundle is simply not
- * present when this is read — configuring it there looks right, does nothing, and the fabricated
- * packages ship anyway.
+ * Two separate reasons they must not reach real users. Their payloads are placeholder bytes like
+ * `MOCK_ONNX_BYTES_DEPTH`, so they install cleanly and then do nothing. And they carry **fabricated
+ * engagement** — `simulatedDownloads` and seeded `ratings`, together some 45,000 invented installs
+ * and 32 invented reviews — which is fake social proof, not just inert filler.
+ *
+ * Keyed off `NODE_ENV`, deliberately, rather than off a hosting provider's variable. An earlier
+ * version tested `VERCEL !== "1"`, which is wrong for the case this project exists to support:
+ * azphalt is self-hostable, so somebody running `next start` on their own box has no `VERCEL` set
+ * and would have served the invented numbers from their real storefront. `NODE_ENV` is set to
+ * `production` by `next build`/`next start` wherever it runs, and to `development`/`test` by
+ * `next dev` and vitest — which is exactly the distinction that matters here.
  *
  * `AZPHALT_DEMO_SEEDS` still overrides explicitly in either direction (`1` forces them on, `0` off),
- * which is what a preview deployment demoing both lanes wants.
+ * for a throwaway preview that genuinely wants to demo both lanes.
  */
 const demoSeedsEnabled =
   process.env.AZPHALT_DEMO_SEEDS === "1" ? true
   : process.env.AZPHALT_DEMO_SEEDS === "0" ? false
-  : process.env.VERCEL !== "1";
+  : process.env.NODE_ENV !== "production";
 
 /* ─────────────────────────── Store selection ───────────────────────────
  * `DATABASE_URL` **and** `BLOB_READ_WRITE_TOKEN` both present ⇒ the durable Neon + Blob backend, so
@@ -1255,12 +1260,32 @@ async function seedBaked(
 
   for (const { meta } of baked.packages) str.reserveLocal?.(meta.id);
 
+  // Store-side preview overlay.
+  //
+  // `scripts/build-previews.ts` renders a card for each package by *running* it, and writes the
+  // index to `registry/previews.json`. Those are attached here rather than written into the
+  // manifests, because a manifest lives inside a signed `.azp` — embedding a preview reference would
+  // mean re-signing every package to change a picture. `preview.image` is allowed to be an absolute
+  // URL precisely so a repository can serve its own artwork for packages it did not author.
+  //
+  // Only packages that got a preview are touched. Most deliberately have none (see build-previews):
+  // absent is what a host should see for something with no truthful preview.
+  const previews = loadPreviewIndex();
+
   let published = 0;
   for (const { meta, bytes } of baked.packages) {
     if (opts.idempotent && (await str.getVersion(meta.id, meta.version))) continue;
     try {
       await reg.publish(bytes);
       published++;
+      const preview = previews?.[meta.id];
+      if (preview) {
+        // The stored manifest is what `registry.getSummary` reads `preview` from, so attaching it
+        // here is what puts the card into every `GET /packages` response. Mutating the stored
+        // version rather than the package bytes is the point: signatures stay valid.
+        const stored = await str.getVersion(meta.id, meta.version);
+        if (stored) (stored.manifest as { preview?: unknown }).preview = { image: preview.image };
+      }
     } catch (e) {
       // One bad package must not take the whole store down with it — the other 50 are fine and a
       // storefront that 500s on boot is worse than one missing a card. It is still loud.

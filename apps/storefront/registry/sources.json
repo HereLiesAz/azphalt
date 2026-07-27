@@ -289,9 +289,9 @@
     {
       "id": "com.hereliesaz.azphalt.grid-guide",
       "repo": "HereLiesAz/azphalt-grid-guide",
-      "ref": "da3d09f712b61badac3c8397c251ffdb250a25c9",
+      "ref": "8f285b55ffc051119f7a769afac9672dcd8b8a9f",
       "version": "1.0.0",
-      "integrity": "sha256-zeaUhB/Yb9RCZyTwhoHRQPCe3eWlzFNeXDaiiyxkbDk="
+      "integrity": "sha256-+tfG+3OZ4eFlnMwGAoyCOGYwaiGRIOZQlbhAZQCYeJw="
     },
     {
       "id": "com.hereliesaz.azphalt.gtcrn",
@@ -303,9 +303,9 @@
     {
       "id": "com.hereliesaz.azphalt.halftone",
       "repo": "HereLiesAz/azphalt-halftone",
-      "ref": "1ada5d96ecb6e3d3641f7b41e8798047f067c335",
+      "ref": "6db9fea56adf61f11f7f499659e23f0a874421b2",
       "version": "1.0.0",
-      "integrity": "sha256-eKLsO8BNMcbdw1FlL8cnH0DBav077HbABvqzUKRuBSQ="
+      "integrity": "sha256-ihY4ZEeUd8Zb0ihUXp/zoqPeuULyPx/agIc5SMpn3/Y="
     },
     {
       "id": "com.hereliesaz.azphalt.hop-in",

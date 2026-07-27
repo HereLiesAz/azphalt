@@ -1,0 +1,55 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.light-and-atmosphere",
+  "name": "Light & Atmosphere",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Put the shot in a place: practical lights and flares, volumetric haze, cast shadows, reflective floors and wet ground.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.spotlights",
+        "required": true,
+        "note": "practical light sources"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.atmospheric-fog",
+        "required": true,
+        "note": "volumetric depth haze"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.scene-lit-shadow",
+        "required": true,
+        "note": "cast shadow matched to the scene"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.lensflare",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.glass-refraction",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.floor-reflection",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.environment-bleed",
+        "required": false,
+        "note": "spill from the surrounding scene"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.terrain-puddle",
+        "required": false,
+        "note": "wet-ground reflection"
+      }
+    ]
+  }
+}

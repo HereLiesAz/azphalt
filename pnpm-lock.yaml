@@ -126,6 +126,9 @@ importers:
       '@azphalt/repository-server':
         specifier: workspace:*
         version: link:../repository-server
+      '@azphalt/runtime-reference':
+        specifier: workspace:*
+        version: link:../../packages/runtime-reference
       '@stripe/stripe-js':
         specifier: ^9.10.0
         version: 9.10.0

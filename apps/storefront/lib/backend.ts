@@ -1,11 +1,22 @@
 import { writeAzp, type AzpInput } from "@azphalt/azp";
 import { type Listing, type PackageVersion, type Report, type RevocationEntry, type RegistryStore, InMemoryStore } from "@azphalt/registry";
 
-// Known packages since NPM search takes hours to index new packages.
-// In a full production proxy, this would hit /v1/search dynamically.
-const KNOWN_PACKAGES = [
-  "@azphalt/3d-word-flip"
-];
+/**
+ * Ids the proxy advertises in `allPackageIds()` on top of whatever is stored locally.
+ *
+ * Empty on purpose. This used to hard-code `@azphalt/3d-word-flip`, which put a card in the store's
+ * browse list that its own detail route then answered `404` for — a listing you could see and click
+ * and get nothing from. The package is real on npm; the store simply could not serve it.
+ *
+ * The catalog is no longer discovered at runtime anyway: it is built from the commit-pinned sources
+ * in `registry/sources.json` and committed as bytes (see `lib/baked.ts`), so what the store lists is
+ * exactly what it can hand over. Advertising an id from a hand-maintained list reintroduces the one
+ * failure that design removes — a name in the index with nothing behind it.
+ *
+ * The proxy still resolves any well-formed id against npm on demand (see `getVersion`); this list
+ * only controls what is *enumerated* without being asked for.
+ */
+const KNOWN_PACKAGES: string[] = [];
 
 const NPM_REGISTRY = "https://registry.npmjs.org";
 

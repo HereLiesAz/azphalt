@@ -1,0 +1,58 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.transitions-and-physics",
+  "name": "Transitions & Physics",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Entrances, exits and shot changes with weight — springs, collisions, shatters and page turns.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.bounce",
+        "required": true,
+        "note": "the workhorse spring"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.elastic-drop",
+        "required": true,
+        "note": "overshoot settle"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.blur-reveal",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.breathe-scale",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.rotate-snap",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.collision-dodge",
+        "required": false,
+        "note": "react to another element"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.page-curl",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.particle-shatter",
+        "required": false,
+        "note": "break apart on exit"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.particles",
+        "required": false
+      }
+    ]
+  }
+}

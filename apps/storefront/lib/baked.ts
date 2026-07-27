@@ -110,3 +110,33 @@ export function loadBaked(): Baked | undefined {
   cached = { signed: index.signed, packages };
   return cached;
 }
+
+/** One generated store-card preview, as written by `scripts/build-previews.ts`. */
+export interface PreviewEntry {
+  /** Absolute or root-relative URL of the rendered card. */
+  image: string;
+}
+
+let previewCache: Record<string, PreviewEntry> | undefined | null = null;
+
+/**
+ * The generated preview index (`registry/previews.json`), or `undefined` when previews have not been
+ * built.
+ *
+ * Kept separate from the packages themselves on purpose: a manifest lives inside a signed `.azp`, so
+ * writing a preview reference into one would mean re-signing every package to change a picture.
+ * `preview.image` is permitted to be an absolute URL exactly so a repository can serve artwork for
+ * packages it did not author.
+ */
+export function loadPreviewIndex(): Record<string, PreviewEntry> | undefined {
+  if (previewCache !== null) return previewCache;
+  const dir = findRegistryDir();
+  const path = dir ? join(dir, "previews.json") : undefined;
+  if (!path || !existsSync(path)) {
+    previewCache = undefined;
+    return undefined;
+  }
+  const parsed = JSON.parse(readFileSync(path, "utf8")) as { previews?: Record<string, PreviewEntry> };
+  previewCache = parsed.previews ?? {};
+  return previewCache;
+}
