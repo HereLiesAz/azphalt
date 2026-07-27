@@ -139,6 +139,10 @@ describe("repository handler — spec/repository-api.md", () => {
     expect(detail.latest).toBe("1.2.0"); // newest installable, not re-derived by the host
     const summary = (await req("/packages")).packages[0];
     expect(summary.latest).toBe("1.2.0");
+    // The flat `description` is the always-present fallback (spec § Localized strings) — regression
+    // test for a bug where `toSdkSummary` copied `descriptionLocalized` but forgot the flat field,
+    // so every browse-list card fell back to a generic placeholder despite every package having one.
+    expect(summary.description).toBe("boom");
     expect(summary.nameLocalized).toEqual({ en: "Explosions", es: "Explosiones" });
     expect(summary.descriptionLocalized.es).toBe("auge");
   });
