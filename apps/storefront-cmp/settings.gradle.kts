@@ -56,3 +56,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "storefront-cmp"
+
+include(":azp")

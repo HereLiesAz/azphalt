@@ -50,3 +50,20 @@ jobs:
       - name: Build the Compose/Wasm storefront (compiles commonMain + wasmJs)
         working-directory: apps/storefront-cmp
         run: ./gradlew wasmJsBrowserDistribution --no-daemon --stacktrace
+
+      - name: Assemble the Android store app
+        # The store app other developers link to instead of building their own storefront
+        # (spec/store-app.md). Assembling rather than only compiling, because the parts most likely to
+        # break are the ones the Kotlin compiler never sees: the BROWSE intent filter, the FileProvider
+        # authority, and resource merging.
+        working-directory: apps/storefront-cmp
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Test the Kotlin .azp verifier
+        # Separate from the wasm task above, which does not touch this subproject — without this the
+        # verifier would have no CI coverage at all. It is a security boundary (integrity digests and
+        # Ed25519 signatures for every Android host), and its tests are what pin it to the TypeScript
+        # reference via the shared vector in packages/azp/test/vectors/. An untested divergence there
+        # means a host accepting packages the reference implementation rejects.
+        working-directory: apps/storefront-cmp
+        run: ./gradlew :azp:test --no-daemon --stacktrace

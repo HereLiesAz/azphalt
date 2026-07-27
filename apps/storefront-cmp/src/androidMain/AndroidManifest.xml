@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Play Billing. Required for the paid lane (spec/store-app.md § Paid packages). -->
+    <uses-permission android:name="com.android.vending.BILLING" />
+
+    <application
+        android:label="Azphalt"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.Azphalt"
+        android:allowBackup="false"
+        android:supportsRtl="true">
+
+        <!-- The store, opened by a person. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="Azphalt"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- The link form from spec/store-app.md: opens the store, returns nothing. For contexts
+                 that cannot start an activity for result — a web page, a notification. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="azphalt" android:host="browse" />
+            </intent-filter>
+        </activity>
+
+        <!-- The store, opened by another app to acquire something on its behalf.
+             Separate from MainActivity on purpose: this one always finishes with a result, and
+             `excludeFromRecents` + `noHistory` keep a host's acquisition trip out of the user's
+             recents as a stray "Azphalt" task after they have returned to the host app. -->
+        <activity
+            android:name=".BrowseForResultActivity"
+            android:exported="true"
+            android:label="Add an extension"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode">
+            <intent-filter>
+                <action android:name="store.azphalt.action.BROWSE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Serves the verified .azp back to the calling app. A FileProvider rather than a file:// URI
+             because the host is a different process: the grant is per-URI, per-caller, and revocable,
+             which is what makes handing over bytes safe. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.packages"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>
