@@ -180,7 +180,37 @@ Checks a whole installed library for updates in **one** request, instead of one 
 { "updates": [ { "id": "com.sfx.explosions-pack", "latest": "1.2.0" } ] }
 ```
 
-Only ids with something newer appear; an id that is current, ahead, or unknown is silently omitted (a host treats "absent" as "up to date"). `latest` uses the same newest-non-yanked resolution as everywhere else. A malformed body (not a JSON array of `{ id: string, version: string }`) returns `400` with the error envelope below. This is the only non-`GET` endpoint in the API; it is read-only despite the verb (a `POST` because the request carries a body).
+Only ids with something newer appear; an id that is current, ahead, or unknown is silently omitted (a host treats "absent" as "up to date"). `latest` uses the same newest-non-yanked resolution as everywhere else. A malformed body (not a JSON array of `{ id: string, version: string }`) returns `400` with the error envelope below. It is read-only despite the verb (a `POST` because the request carries a body).
+
+### 7. Play purchase exchange
+`POST /entitlements/play`
+
+Trades a verified Google Play purchase for the same registry-signed entitlement a web payment would produce. **Optional** — a repository that does not sell through Google Play answers `501`.
+
+This exists because a store app distributed on Google Play cannot send the user to a web checkout for digital goods; it must use Play Billing (see [`store-app.md`](store-app.md) § Paid packages). Without this exchange the Play lane would dead-end: the buyer pays Google, and the repository has no way to recognise it.
+
+**Request:**
+```json
+{ "packageId": "com.acme.filter", "productId": "com.acme.filter", "purchaseToken": "<opaque token from Play>" }
+```
+
+**Response (200 OK):**
+```json
+{ "entitlement": "<base64 of the EntitlementToken JSON>" }
+```
+
+The returned value is exactly what the download endpoint accepts as a Bearer token (§ 4), so a client can present it unchanged.
+
+The exchange MUST happen server-side. Only the repository can verify a purchase token with Google, and only the repository holds the entitlement signing key — a client that minted its own entitlement would be defeated by anyone willing to patch the client. This is precisely why a host verifies the entitlement's **signature** rather than trusting whoever presents it.
+
+Failure modes are distinguished on purpose:
+
+- `402` — Google does not recognise the purchase, or it does not cover this package.
+- `502` — the repository could not reach Google. This is **not** `402`: telling a paying customer they did not pay is a worse failure than asking them to retry.
+- `501` — this repository has no Play integration configured.
+- `400` — a malformed body, or fields beyond their length bounds (a purchase token is capped before it is forwarded upstream).
+
+`subject` — the identity the entitlement is issued to — is chosen by the repository's Play verifier and SHOULD be stable for the buyer across devices, or a reinstall will not restore their purchase.
 
 ## Error responses
 

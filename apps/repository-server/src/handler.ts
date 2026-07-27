@@ -22,7 +22,7 @@
  */
 import { RangeNotSatisfiableError, RegistryError, type ByteRangeSpec, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
 import type { PackageSearchResponse, PackageSummary, RepositoryErrorCode, RepositoryIndex } from "@azphalt/azdk";
-import { denyAllAuthorizer, type DownloadAuthorizer } from "@azphalt/registry";
+import { denyAllAuthorizer, issueEntitlement, type DownloadAuthorizer } from "@azphalt/registry";
 
 /** Map the HTTP `sort` vocabulary (`popular`/`recent`/`rating`/`name`) onto registry summaries. */
 function applySort(list: RegistrySummary[], sort: string | null): RegistrySummary[] {
@@ -65,6 +65,37 @@ export interface RepositoryHandlerOptions {
   authorizer?: DownloadAuthorizer;
   /** Page size for `GET /packages`. Default 20. */
   pageSize?: number;
+  /**
+   * Turns a Google Play purchase into an entitlement, for `POST /entitlements/play`.
+   *
+   * Pluggable for the same reason {@link DownloadAuthorizer} is: verifying a purchase token means
+   * calling the Play Developer API with a service account this repository has no business assuming
+   * exists. Without it the route answers 501 rather than pretending — a store app can then tell the
+   * user the paid lane is not configured, instead of failing somewhere less legible.
+   *
+   * An implementation MUST verify the token with Google before returning. Returning claims for an
+   * unverified token would let anyone mint entitlements by posting a made-up string.
+   */
+  playPurchases?: PlayPurchaseVerifier;
+}
+
+/** Verifies a Play purchase and says who it entitles. See {@link RepositoryHandlerOptions.playPurchases}. */
+export interface PlayPurchaseVerifier {
+  /**
+   * Resolve a Play purchase to the identity it licenses, or null when the purchase is not valid for
+   * this package.
+   *
+   * `subject` is the marketplace-side user id the entitlement is issued to. The registry stays
+   * identity-agnostic (`entitlement.ts`), so what that id *means* is the deployment's business — but
+   * it should be stable for the buyer, or a reinstall will not restore their purchase.
+   */
+  verify(input: {
+    packageId: string;
+    productId: string;
+    purchaseToken: string;
+  }): Promise<{ subject: string; kind?: "perpetual" | "subscription"; expiresAt?: string } | null>;
+  /** PKCS8 PEM Ed25519 key the issued entitlement is signed with. */
+  signingKey: string;
 }
 
 /** A ready-to-serve handler: `handle(req)` → response. */
@@ -310,10 +341,68 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     };
   }
 
+  /**
+   * `POST /entitlements/play` — trade a verified Google Play purchase for a signed entitlement.
+   *
+   * The exchange has to be server-side. Only the registry can verify the purchase token with Google,
+   * and only the registry holds the signing key; a store app that minted its own entitlement would be
+   * defeated by anyone willing to patch the app. This is why a host is told to verify the
+   * entitlement's *signature* rather than trust whoever hands it over.
+   *
+   * A Play-distributed store app has no alternative route: selling digital goods there requires Play
+   * Billing, not a web checkout (`spec/store-app.md` § Paid packages).
+   */
+  async function playEntitlement(req: RepoRequest): Promise<RepoResponse> {
+    const verifier = opts.playPurchases;
+    if (!verifier) return fail(501, "Play purchases are not configured on this repository");
+
+    let body: { packageId?: unknown; productId?: unknown; purchaseToken?: unknown };
+    try {
+      body = JSON.parse(req.body ?? "");
+    } catch {
+      return fail(400, "body must be JSON");
+    }
+    if (!body || typeof body !== "object") return fail(400, "body must be a JSON object");
+
+    const { packageId, productId, purchaseToken } = body;
+    if (typeof packageId !== "string" || typeof productId !== "string" || typeof purchaseToken !== "string") {
+      return fail(400, "packageId, productId and purchaseToken are required");
+    }
+    // The token is an opaque Google receipt, but it still arrives from the network — bound it before
+    // it reaches an HTTP client, so an oversized body cannot be forwarded upstream.
+    if (purchaseToken.length > 4096 || packageId.length > 256 || productId.length > 256) {
+      return fail(400, "request fields exceed their maximum length");
+    }
+
+    let resolved: Awaited<ReturnType<PlayPurchaseVerifier["verify"]>>;
+    try {
+      resolved = await verifier.verify({ packageId, productId, purchaseToken });
+    } catch (e) {
+      // Google being unreachable is not the buyer's fault and not a permanent refusal, so this is a
+      // 502 rather than a 402 — the store app retries instead of telling the user they did not pay.
+      return fail(502, `could not verify the purchase with Google: ${(e as Error).message}`);
+    }
+    if (!resolved) return fail(402, "that purchase does not entitle this package");
+
+    const token = issueEntitlement(verifier.signingKey, {
+      packageId,
+      subject: resolved.subject,
+      kind: resolved.kind ?? "perpetual",
+      issuedAt: new Date().toISOString(),
+      ...(resolved.expiresAt ? { expiresAt: resolved.expiresAt } : {}),
+    });
+
+    // Base64 of the token JSON — the encoding `EntitlementAuthorizer` expects back as a Bearer.
+    return json(200, { entitlement: Buffer.from(JSON.stringify(token), "utf8").toString("base64") });
+  }
+
   return async function handle(req: RepoRequest): Promise<RepoResponse> {
     // The one write-shaped endpoint: a batch update check over a POSTed installed-library body.
     if (req.path === "/updates") {
       return req.method === "POST" ? await updates(req) : fail(405, `method not allowed: ${req.method}`);
+    }
+    if (req.path === "/entitlements/play") {
+      return req.method === "POST" ? await playEntitlement(req) : fail(405, `method not allowed: ${req.method}`);
     }
     if (req.method !== "GET") return fail(405, `method not allowed: ${req.method}`);
     if (req.path === "/.well-known/azphalt-repository.json") return json(200, index);
