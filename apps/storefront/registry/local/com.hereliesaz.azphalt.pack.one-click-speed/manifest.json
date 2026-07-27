@@ -1,0 +1,32 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.one-click-speed",
+  "name": "One-Click: Speed",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Instant velocity. Directional streaks, per-frame motion blur and eased time ramps, applied as one look.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.speed-blur",
+        "required": true,
+        "note": "directional streak"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.motion-blur",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.optical-timeramp",
+        "required": true,
+        "note": "smooth Bezier speed ramp"
+      }
+    ]
+  }
+}

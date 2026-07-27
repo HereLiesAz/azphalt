@@ -1,0 +1,33 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.one-click-cleanup",
+  "name": "One-Click: Cleanup",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Instant salvage for a rough source. Stabilise the shot, denoise the speech, and restore a dark or noisy image.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.stabilizer",
+        "required": true,
+        "note": "smooth the camera"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.gtcrn",
+        "required": true,
+        "note": "speech denoise"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.mirnet",
+        "required": true,
+        "note": "low-light + image denoise"
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.one-click-neon",
+  "name": "One-Click: Neon",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Instant night-glow. Subject isolation, electric edges and a lens flare, applied together.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.isolate-glow",
+        "required": true,
+        "note": "pop the subject off the background"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.neon-pulse",
+        "required": true,
+        "note": "electric edge glow"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.lensflare",
+        "required": true
+      }
+    ]
+  }
+}

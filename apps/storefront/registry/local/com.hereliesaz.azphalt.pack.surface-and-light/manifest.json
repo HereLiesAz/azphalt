@@ -1,0 +1,53 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.surface-and-light",
+  "name": "Surface & Light",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Make a projected piece sit on the real wall — matched lighting and shadow, haze, flare, and reflections off wet ground.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.scene-lit-shadow",
+        "required": true,
+        "note": "shadow matched to the scene's own light"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.spotlights",
+        "required": true,
+        "note": "practical lights"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.lensflare",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.atmospheric-fog",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.glass-refraction",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.floor-reflection",
+        "required": false,
+        "note": "reflection on the ground in front of the wall"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.terrain-puddle",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.environment-bleed",
+        "required": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.auto-kinetic-typography",
+  "name": "Auto Kinetic Typography",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Captions that write and time themselves. Transcribe the audio, split it by speaker, and drive word-synced type off the result — no keyframing.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.whisper",
+        "required": true,
+        "note": "the transcript everything else keys off"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.karaoke-sweep",
+        "required": true,
+        "note": "highlight each word as it is spoken"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.auto-stagger",
+        "required": true,
+        "note": "derives its own timing rather than hand-set delays"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.pyannote-segmentation",
+        "required": false,
+        "note": "who spoke when, so speakers can be styled apart"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.word-stagger",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.character-stagger",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.rsvp-delivery",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.typewriter",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.typewriter-cursor",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.emphasis-stroke",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.hormozi-pop",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.diarization-box",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.diarization-flip",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.sentiment-hue",
+        "required": false,
+        "note": "colour follows the tone of what was said"
+      }
+    ]
+  }
+}
