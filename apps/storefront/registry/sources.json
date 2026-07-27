@@ -133,6 +133,13 @@
       "integrity": "sha256-whMGYkS/pF4CL+zPGRq4lhGaKmHX2URD/hGCjHapbig="
     },
     {
+      "id": "com.hereliesaz.azphalt.chromatic-pulse",
+      "repo": "HereLiesAz/azphalt-chromatic-pulse",
+      "ref": "563d3169afedc89872f3db347da1747daf140dae",
+      "version": "1.0.0",
+      "integrity": "sha256-tU6dqqQ/WmXcTpS24VQ2Iuhw+CSDnBBkOY+hf/yRlVU="
+    },
+    {
       "id": "com.hereliesaz.azphalt.cinematic-pan",
       "repo": "HereLiesAz/azphalt-cinematic-pan",
       "ref": "17bd6550de6238ddb5a24a24e0fd1c64ee71efcb",
@@ -278,6 +285,13 @@
       "ref": "97456c598dc6f8e05f81e4e51681ae08c854fc59",
       "version": "1.2.0",
       "integrity": "sha256-HazpfuOFllzPTDfMPCNVDT4QU8S5yElWYCto0dX+siU="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.glitch-slice",
+      "repo": "HereLiesAz/azphalt-glitch-slice",
+      "ref": "70a0427abe325851f0be61298b242b081ba2c1c1",
+      "version": "1.0.0",
+      "integrity": "sha256-PlmFzmHYeMmkuSYevOWLMwgr7r5D4TYDNBBrFByENUc="
     },
     {
       "id": "com.hereliesaz.azphalt.gradients",
@@ -516,6 +530,13 @@
       "ref": "ea9ba156291e4138c29a2aed22933fe8737cc7bc",
       "version": "1.2.0",
       "integrity": "sha256-RlB6sxHP7VE+t28xXslcLCF+3Kt/YYeHr6FUOuYdXU4="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.prism-flare",
+      "repo": "HereLiesAz/azphalt-prism-flare",
+      "ref": "f5c08f335250f5ef526b37a50f5563da8ff3a6b0",
+      "version": "1.0.0",
+      "integrity": "sha256-cXLOI0oYgud0UXvHP5yScYeaxZKkZHBWPbRBLeHAs4g="
     },
     {
       "id": "com.hereliesaz.azphalt.pyannote-segmentation",
