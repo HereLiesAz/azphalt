@@ -17,41 +17,64 @@ to the seller's connected account. The **real fulfilment** path — a signature-
 `checkout.session.completed` webhook that mints and **persists** a buy-once entitlement — is at
 `POST /api/webhooks/stripe`; the buyer retrieves the resulting license from `/checkout/success`.
 
-## Storage: ephemeral by default, durable (Neon + Blob) when configured
+## The catalog comes from git, not a database
 
-The catalog defaults to a process-local store ([`lib/catalog.ts`](lib/catalog.ts)), seeded once at
-module load with real example `.azp` packages built via `@azphalt/azp`'s `writeAzp` — genuine registry
-data published through the same verify-and-index path a real upload takes, needing no database or
-credentials. Set **both** `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN` and it switches to the durable
-[`@azphalt/registry-store-vercel`](../../packages/registry-store-vercel) backend (Neon Postgres +
-private Vercel Blob), so the catalog, listings, checkout sessions, and issued entitlements survive
-restarts and are shared across serverless instances. Seed a durable store out-of-band (seeding at
-module load would have every cold instance re-`publish` and throw):
+The store serves the `.azp` packages committed under [`registry/packages/`](registry), built from the
+commit-pinned sources in [`registry/sources.json`](registry/sources.json). Every serverless instance
+reads the same bytes at cold start and reconstructs an identical catalog.
 
 ```sh
-DATABASE_URL=… BLOB_READ_WRITE_TOKEN=… pnpm --filter @azphalt/storefront seed
+pnpm --filter @azphalt/storefront build-catalog            # build + verify against the lockfile
+pnpm --filter @azphalt/storefront build-catalog --update   # re-pin integrity deliberately
 ```
 
-### A deployment without durable storage refuses to publish
+**The registry needs no durable storage, because nothing is written at runtime.** Publishing used to
+happen over `POST /api/publish` — one HTTP request, landing in one serverless instance's memory. That
+is the only thing a database was ever required for, and it is why an unbacked deployment silently lost
+every package it accepted: reads kept working off the re-seeded catalog, so the loss was invisible
+until the instance recycled.
 
-The ephemeral store is right for `next dev` and the tests, and wrong for a deployment: each
-serverless instance keeps its own copy, re-seeded on every cold start, so a publish survives only
-until the instance that served it recycles. Reads keep looking healthy the entire time — the seed
-catalog is always there — which makes the failure very hard to spot.
+Publishing at **build time** removes the requirement rather than satisfying it. There is no write to
+lose and nothing for instances to disagree about, and durability comes from git — a stronger guarantee
+than a database offers, because the store's contents are a reviewable diff, reproducible from source,
+and cannot change without a commit.
 
-It is also self-concealing. `Registry.publish` rejects a duplicate version permanently, so a package
-that was "published" and then vanished can be published *again* at the same version and return `201`
-a second time. That second success is itself the proof the first write was lost.
+`integrity` in the lockfile is the sha256 of the **unsigned** `.azp` (a signature is a detached
+addition, so it does not perturb the digest). `build-catalog` fails on mismatch, and
+`deploy-storefront` re-derives the committed bytes from their pinned commits before shipping, refusing
+a catalog that differs from the one that was reviewed.
 
-So when `VERCEL=1` and either `DATABASE_URL` or `BLOB_READ_WRITE_TOKEN` is missing,
-`POST /api/publish` answers **`503`** naming the unset variables instead of `201`. Reads and
-downloads are untouched. Set `AZPHALT_ALLOW_EPHEMERAL_PUBLISH=1` to opt a throwaway preview back
-into accepting writes it will drop.
+### Changing what the store serves is a merged PR
 
-To make a Vercel deployment durable, provision the two stores and set both variables on the project
-(`vercel env add …`, or the dashboard's Storage tab), redeploy so the build picks them up, then seed
-once with the command above. Until both are set, publishing to that deployment cannot persist —
-there is no filesystem to fall back on.
+[`registry-sync.yml`](../../.github/workflows/registry-sync.yml) re-pins each source to its
+default-branch head — on `repository_dispatch` from an extension repo, daily, or on demand — rebuilds
+the packages, and opens a PR when anything moved. **Merging that PR is the publish step**;
+`deploy-storefront` then takes it live. The gate on a plugin update is a GitHub review, not an API
+call.
+
+### What still needs a database
+
+The **paid lane** does: checkout sessions, issued entitlements, seller accounts, and subscriptions are
+genuinely runtime state. Set both `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN` and those switch to the
+durable [`@azphalt/registry-store-vercel`](../../packages/registry-store-vercel) backend (Neon Postgres
++ private Vercel Blob). Without them the paid lane keeps its state in process memory, which is correct
+for `next dev` and the tests and wrong for a deployment that sells anything.
+
+Download tallies, ratings, and abuse reports are in the same position: process-local, reset on
+redeploy. They are counters, not catalog — giving them a database is a separate decision from making
+the store's *contents* durable.
+
+`POST /api/publish` still answers **`503`** on a deployment with neither store configured, rather than
+reporting a write it cannot keep. `AZPHALT_ALLOW_EPHEMERAL_PUBLISH=1` opts a throwaway preview back
+in. The baked catalog is unaffected either way — it is read from disk, not from a store.
+
+### Demo examples
+
+`lib/catalog.ts` also carries fabricated examples (Halftone Studio, the mock model packages) covering
+every `kind` and both lanes, so `next dev` and the tests have a full catalog with no network and no
+services. Their payloads are placeholder bytes like `MOCK_ONNX_BYTES_DEPTH`, so serving them beside
+real extensions would offer users installable packages that cannot work: production sets
+`AZPHALT_DEMO_SEEDS=0`.
 
 ## A conforming repository (the normative Repository API)
 
@@ -122,7 +145,9 @@ the two can't drift apart. Two env vars control it:
 | `AZPHALT_STRIPE_WEBHOOK_SECRET` | Verifies `POST /api/webhooks/stripe` signatures. Required for real fulfilment. |
 | `AZPHALT_STRIPE_SUCCESS_URL` / `AZPHALT_STRIPE_CANCEL_URL` | Where Stripe returns the buyer. Point success at `…/checkout/success?session_id={CHECKOUT_SESSION_ID}`. |
 | `AZPHALT_STRIPE_CONNECTED_ACCOUNTS` | **Fallback** JSON `{"<sellerId>":"acct_…"}` for a fixed roster. Checkout prefers a seller's **onboarded** account (from `/connect/onboard`, persisted in the seller-account store) and only falls back to this map; a `sellerId` resolved by neither is a hard error, not a misroute. A seller who hasn't finished onboarding (charges not enabled) is refused at checkout. |
-| `DATABASE_URL` + `BLOB_READ_WRITE_TOKEN` | **Both** present ⇒ the durable Neon + Blob store; otherwise the process-local store. |
+| `DATABASE_URL` + `BLOB_READ_WRITE_TOKEN` | **Both** present ⇒ the durable Neon + Blob store for the **paid lane's** runtime state (checkout sessions, entitlements, seller accounts, subscriptions); otherwise process-local. The catalog does not depend on this — it is read from the committed `registry/` bytes either way. |
+| `AZPHALT_DEMO_SEEDS` | `0` disables the fabricated demo examples, leaving only the baked catalog. Set on production deploys — the demo payloads are placeholder bytes, so serving them beside real extensions offers users packages that cannot work. |
+| `AZPHALT_PACKAGE_SIGNING_KEY` | PKCS#8 PEM Ed25519 key `build-catalog` signs every package with. Unset ⇒ the catalog builds unsigned: still integrity-verified, but pinning no publisher key, so hosts cannot enforce publisher continuity on updates. Deliberately **not** `AZPHALT_SIGNING_KEY` — that one issues entitlements, a different trust role. |
 
 To exercise the **stub** paid lane locally: set `AZPHALT_SIGNING_KEY` + `AZPHALT_ALLOW_STUB_FULFILMENT=1`,
 `POST /api/checkout` to open a session, `POST /api/checkout/complete` with its `sessionId` to get a
