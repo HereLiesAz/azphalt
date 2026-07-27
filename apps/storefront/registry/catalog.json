@@ -432,6 +432,17 @@
       "bytes": 13871
     },
     {
+      "id": "com.hereliesaz.azphalt.graffitixr",
+      "version": "1.0.0",
+      "name": "GraffitiXR",
+      "kind": "app",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-vij9TJDx6APe9AfBPNqsepWod5GJoJKvvRtb3KkIVdk=",
+      "file": "com.hereliesaz.azphalt.graffitixr-1.0.0.azp",
+      "bytes": 900
+    },
+    {
       "id": "com.hereliesaz.azphalt.grid-guide",
       "version": "1.0.0",
       "name": "Grid Guide",
@@ -551,6 +562,17 @@
       "integrity": "sha256-kTiBZKg+68OePIBsHssE5FBTvHsQrUyG0BgzFezoai0=",
       "file": "com.hereliesaz.azphalt.loudness-color-2.0.0.azp",
       "bytes": 1007
+    },
+    {
+      "id": "com.hereliesaz.azphalt.mcpserved",
+      "version": "1.0.0",
+      "name": "mcpserved",
+      "kind": "mcp",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-VFTwYL2UEJCYPc1SjvgMiyRvdmTxIcxvWLQqLXOqjg0=",
+      "file": "com.hereliesaz.azphalt.mcpserved-1.0.0.azp",
+      "bytes": 842
     },
     {
       "id": "com.hereliesaz.azphalt.midas",
@@ -683,6 +705,105 @@
       "integrity": "sha256-JDYASlYPK0BBkoTaKEF6KanQLoZ0m0j/XlWswkll7E4=",
       "file": "com.hereliesaz.azphalt.optical-timeramp-1.0.0.azp",
       "bytes": 1097
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.audio-reactive",
+      "version": "1.0.0",
+      "name": "Audio-Reactive",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-6ymAhtU90poIcp910PoynpaJ+y6Go2okdXtfiepmV9M=",
+      "file": "com.hereliesaz.azphalt.pack.audio-reactive-1.0.0.azp",
+      "bytes": 987
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.broadcast-toolkit",
+      "version": "1.0.0",
+      "name": "Broadcast Toolkit",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-5/nPNKFreGX0ToV0q4vrwnvcIOrkAbi0tXjMehgL/p0=",
+      "file": "com.hereliesaz.azphalt.pack.broadcast-toolkit-1.0.0.azp",
+      "bytes": 878
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.camera-and-stabilization",
+      "version": "1.0.0",
+      "name": "Camera & Stabilization",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-xNarldfQFRxYOMucAiXzLfOnkg7PfoW2N3lh0YQAccw=",
+      "file": "com.hereliesaz.azphalt.pack.camera-and-stabilization-1.0.0.azp",
+      "bytes": 968
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.kinetic-type",
+      "version": "1.0.0",
+      "name": "Kinetic Type",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-tIgjfStxC1nes+q0P+J8aOWV5g1ChZpFbmOSQrTnnYc=",
+      "file": "com.hereliesaz.azphalt.pack.kinetic-type-1.0.0.azp",
+      "bytes": 936
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.restore-and-upscale",
+      "version": "1.0.0",
+      "name": "Restore & Upscale",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-AigiqHGGwXHvToWqgiMouTMDWhvR+Iw5w13uft+08ow=",
+      "file": "com.hereliesaz.azphalt.pack.restore-and-upscale-1.0.0.azp",
+      "bytes": 837
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.speech-and-captions",
+      "version": "1.0.0",
+      "name": "Speech & Captions",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-VgjozWM2AeqItOLV9sLqVAGmCOyPYFgSpOnTreHdSq8=",
+      "file": "com.hereliesaz.azphalt.pack.speech-and-captions-1.0.0.azp",
+      "bytes": 956
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.stencil-studio",
+      "version": "1.0.0",
+      "name": "Stencil Studio",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-F7n+pZBgkE7dyNr/djvKG73jlxbaT47OCGP5DYqIemQ=",
+      "file": "com.hereliesaz.azphalt.pack.stencil-studio-1.0.0.azp",
+      "bytes": 926
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.subject-and-depth",
+      "version": "1.0.0",
+      "name": "Subject & Depth",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-gfcjChU7OM6V9t19IJtn3d0ZbEgHuouHoZ/uR6IJ0xM=",
+      "file": "com.hereliesaz.azphalt.pack.subject-and-depth-1.0.0.azp",
+      "bytes": 942
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pack.vision-and-masking",
+      "version": "1.0.0",
+      "name": "Vision & Masking",
+      "kind": "pack",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-S32BGk2H774EeFSKzdGOUEc0IMes6ot5bu7hGShM7j0=",
+      "file": "com.hereliesaz.azphalt.pack.vision-and-masking-1.0.0.azp",
+      "bytes": 937
     },
     {
       "id": "com.hereliesaz.azphalt.page-curl",

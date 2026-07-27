@@ -1,0 +1,62 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.camera-and-stabilization",
+  "name": "Camera & Stabilization",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Fix the shot, then move it deliberately. Three stabilization strengths plus camera moves, speed ramps and motion blur.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.stabilizer",
+        "required": true,
+        "note": "general smoothing"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.tripod-stabilizer",
+        "required": true,
+        "note": "lock it down hard"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.camera-controller",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.stabilize-actioncam",
+        "required": false,
+        "note": "aggressive, for helmet/gimbal footage"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.cinematic-pan",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.cinematic-rise",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.motion-blur",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.speed-blur",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.auto-reframe",
+        "required": false,
+        "note": "keep the action centred when going vertical"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.optical-timeramp",
+        "required": false
+      }
+    ]
+  }
+}

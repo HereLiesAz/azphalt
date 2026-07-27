@@ -36,7 +36,7 @@
  */
 import { createHash, createPrivateKey } from "node:crypto";
 import { createGunzip } from "node:zlib";
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Readable } from "node:stream";
@@ -48,6 +48,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const registryDir = resolve(__dirname, "..", "registry");
 const packagesDir = join(registryDir, "packages");
 const lockPath = join(registryDir, "sources.json");
+
+/**
+ * First-party packages authored in this repo rather than pulled from an extension repo.
+ *
+ * Packs, companion-app headers and MCP headers are all *header-only* — a manifest, a LICENSE, and no
+ * payload — so giving each one its own GitHub repo to be pinned from would be ceremony around a
+ * single JSON file. They live here instead, and are built into the same catalog by the same code
+ * path, so they get the same verification and land in the same reviewable diff.
+ *
+ * Each is `local/<package-id>/` containing `manifest.json` + `LICENSE` (+ optional `assets/`).
+ */
+const localDir = join(registryDir, "local");
 
 /**
  * The only directories whose contents become package payload.
@@ -244,6 +256,51 @@ async function build(source: Source): Promise<Built> {
   return { source, bytes, integrity, manifest, signed: Boolean(signingKey), file: `${source.id}-${source.version}.azp` };
 }
 
+/** Every file under `dir`, as `/`-separated paths relative to it. */
+function walk(dir: string, prefix = ""): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...walk(join(dir, entry.name), rel));
+    else if (entry.isFile()) out.push(rel);
+  }
+  return out;
+}
+
+/** Pack one `local/<id>/` folder — same output shape as a pinned source, so both feed one catalog. */
+function buildLocal(id: string): Built {
+  const dir = join(localDir, id);
+  const manifest = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8")) as Manifest;
+  if (manifest.id !== id) {
+    throw new Error(`local/${id}: manifest id "${manifest.id}" ≠ folder name — the folder must be the package id`);
+  }
+  const licensePath = join(dir, "LICENSE");
+  if (!existsSync(licensePath)) throw new Error(`local/${id}: no LICENSE file`);
+
+  const payload: Record<string, Uint8Array> = {};
+  for (const rel of walk(dir)) {
+    if (rel === "manifest.json" || rel === "LICENSE") continue;
+    payload[rel] = new Uint8Array(readFileSync(join(dir, rel)));
+  }
+
+  const { files: _drop, ...clean } = manifest as Manifest & { files?: unknown };
+  const { azp } = writeAzp({ manifest: clean, payload, license: readFileSync(licensePath, "utf8") });
+
+  const integrity = sha256(azp);
+  const bytes = signingKey
+    ? signAzp(azp, { privateKey: signingKey, ...(signingKeyId ? { keyId: signingKeyId } : {}) })
+    : azp;
+
+  return {
+    source: { id, repo: "(local)", ref: "(local)", version: manifest.version, integrity },
+    bytes,
+    integrity,
+    manifest,
+    signed: Boolean(signingKey),
+    file: `${id}-${manifest.version}.azp`,
+  };
+}
+
 /** Run [jobs] with at most [limit] in flight, preserving input order in the results. */
 async function pooled<T, R>(items: T[], limit: number, job: (item: T) => Promise<R>): Promise<PromiseSettledResult<R>[]> {
   const results = new Array<PromiseSettledResult<R>>(items.length);
@@ -349,8 +406,34 @@ async function main(): Promise<void> {
     built.push(b);
   }
 
+  // First-party header packages (packs, companion apps, MCP servers) authored in this repo.
+  if (existsSync(localDir)) {
+    const ids = readdirSync(localDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
+      .filter((id) => !only || id === only)
+      .sort();
+    for (const id of ids) {
+      try {
+        built.push(buildLocal(id));
+      } catch (e) {
+        failures.push(`local/${id}: ${(e as Error).message}`);
+      }
+    }
+    if (ids.length) console.log(`build-catalog: + ${ids.length} first-party package(s) from registry/local/`);
+  }
+
+  // An id must resolve to exactly one package, whatever it was built from.
+  const seen = new Map<string, string>();
+  for (const b of built) {
+    const where = b.source.repo === "(local)" ? `local/${b.source.id}` : b.source.repo;
+    const prev = seen.get(b.source.id);
+    if (prev) failures.push(`${b.source.id}: defined twice — ${prev} and ${where}`);
+    seen.set(b.source.id, where);
+  }
+
   if (failures.length) {
-    console.error(`build-catalog: ${failures.length} of ${selected.length} failed:`);
+    console.error(`build-catalog: ${failures.length} failed:`);
     for (const f of failures) console.error(`  - ${f}`);
     process.exit(1);
   }
