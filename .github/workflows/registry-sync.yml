@@ -54,11 +54,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build @azphalt/azp (build-catalog imports it at runtime)
-        # `pnpm install` links the workspace packages but does not compile them, and build-catalog
-        # imports `@azphalt/azp`'s compiled `dist/` for writeAzp/signAzp. The `...` suffix builds azp
-        # together with its workspace dependencies.
-        run: pnpm --filter "@azphalt/azp..." build
+      - name: Build the workspace packages these scripts import at runtime
+        # `pnpm install` links the workspace packages but does not compile them, so anything importing
+        # a sibling's `dist/` fails with ERR_MODULE_NOT_FOUND until it is built. build-catalog needs
+        # `@azphalt/azp` (writeAzp/signAzp); build-previews additionally needs
+        # `@azphalt/runtime-reference`, because it generates a preview by actually executing the
+        # filter. The `...` suffix builds each together with its workspace dependencies.
+        run: pnpm --filter "@azphalt/azp..." --filter "@azphalt/runtime-reference..." build
 
       - name: Re-pin every source to its default-branch head and rebuild
         env:
