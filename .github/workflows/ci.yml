@@ -51,6 +51,14 @@ jobs:
         working-directory: apps/storefront-cmp
         run: ./gradlew wasmJsBrowserDistribution --no-daemon --stacktrace
 
+      - name: Assemble the Android store app
+        # The store app other developers link to instead of building their own storefront
+        # (spec/store-app.md). Assembling rather than only compiling, because the parts most likely to
+        # break are the ones the Kotlin compiler never sees: the BROWSE intent filter, the FileProvider
+        # authority, and resource merging.
+        working-directory: apps/storefront-cmp
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
       - name: Test the Kotlin .azp verifier
         # Separate from the wasm task above, which does not touch this subproject — without this the
         # verifier would have no CI coverage at all. It is a security boundary (integrity digests and

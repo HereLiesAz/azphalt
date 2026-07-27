@@ -10,3 +10,5 @@ dist/
 apps/storefront-cmp/build/
 apps/storefront-cmp/*/build/
 apps/storefront-cmp/.gradle/
+
+apps/storefront-cmp/local.properties
