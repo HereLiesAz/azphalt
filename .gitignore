@@ -5,3 +5,8 @@ dist/
 
 # Local agent/editor tooling (dev-server launch config, etc.)
 .claude/
+
+# Gradle build output
+apps/storefront-cmp/build/
+apps/storefront-cmp/*/build/
+apps/storefront-cmp/.gradle/
