@@ -37,7 +37,7 @@ jobs:
       - run: corepack enable
       # The docs workspace is self-contained (VitePress + Vue); install just it, then build.
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter docs build
+      - run: pnpm --filter @azphalt/docs build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
