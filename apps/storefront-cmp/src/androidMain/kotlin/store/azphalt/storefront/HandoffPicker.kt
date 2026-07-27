@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import models.PackageSummary
@@ -94,6 +95,37 @@ internal fun HandoffPicker(
                     )
                 }
             }
+
+            // Reachable from inside the app, not only from the Play listing. A user deciding whether
+            // to buy something should be able to read the terms at that moment, and Play expects the
+            // policy to be linked in-app as well as in the console.
+            item { LegalLinks() }
         }
+    }
+}
+
+/** Privacy / Terms, opened in the browser. */
+@Composable
+private fun LegalLinks() {
+    val uriHandler = LocalUriHandler.current
+    val cs = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "Privacy",
+            style = MaterialTheme.typography.labelSmall,
+            color = cs.onSurfaceVariant,
+            modifier = Modifier.clickable { uriHandler.openUri("https://www.azphalt.store/privacy") },
+        )
+        Text("  ·  ", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+        Text(
+            "Terms",
+            style = MaterialTheme.typography.labelSmall,
+            color = cs.onSurfaceVariant,
+            modifier = Modifier.clickable { uriHandler.openUri("https://www.azphalt.store/terms") },
+        )
     }
 }

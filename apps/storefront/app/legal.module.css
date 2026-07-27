@@ -1,0 +1,120 @@
+/*
+ * Styling for the privacy policy and terms.
+ *
+ * These are the only pages on the storefront that are ordinary HTML rather than the Compose/Wasm
+ * canvas, and deliberately so: a privacy policy has to be readable by someone with JavaScript off, by
+ * a screen reader, by a Play Store reviewer, and by a crawler. Rendering it inside a WebGL canvas
+ * would make it none of those things.
+ */
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 6rem;
+  color: #e8e6e1;
+  background: #0f0f12;
+  font: 400 1rem/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.page h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.page h2 {
+  font-size: 1.25rem;
+  margin: 2.5rem 0 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.page h3 {
+  font-size: 1.05rem;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.updated {
+  color: #9b978f;
+  font-size: 0.9rem;
+  margin: 0 0 2rem;
+}
+
+.page p,
+.page li {
+  color: #cfccc5;
+}
+
+.page ul {
+  padding-left: 1.25rem;
+}
+
+.page li {
+  margin: 0.4rem 0;
+}
+
+.page a {
+  color: #7fd1e8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.page strong {
+  color: #f2f0eb;
+}
+
+.page code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: #1b1b20;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* A statement people should be able to find without reading the whole document. */
+.callout {
+  border-left: 3px solid #7fd1e8;
+  background: #16161b;
+  padding: 0.9rem 1.1rem;
+  margin: 1.5rem 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.footer {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #26262c;
+  font-size: 0.9rem;
+  color: #9b978f;
+}
+
+@media (prefers-color-scheme: light) {
+  .page {
+    color: #1a1a1e;
+    background: #ffffff;
+  }
+  .page p,
+  .page li {
+    color: #33333a;
+  }
+  .page strong {
+    color: #000;
+  }
+  .updated,
+  .footer {
+    color: #63636d;
+  }
+  .page a {
+    color: #0b6b86;
+  }
+  .page code {
+    background: #f1f1f4;
+  }
+  .callout {
+    background: #f6fbfd;
+    border-left-color: #0b6b86;
+  }
+  .footer {
+    border-top-color: #e3e3e8;
+  }
+}
