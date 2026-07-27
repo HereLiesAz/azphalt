@@ -4,7 +4,7 @@
   "name": "My Custom Asset Pack",
   "version": "1.0.0",
   "author": "Your Name",
-  "license": "CC-BY-4.0",
+  "license": "MIT",
   "compat": ">=0.1",
   "kind": "asset",
   "assets": [

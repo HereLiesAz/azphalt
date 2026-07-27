@@ -1,0 +1,341 @@
+{
+  "//": [
+    "The registry lockfile: exactly which extensions this store serves, and from which commit.",
+    "",
+    "Each entry pins a repo to one immutable commit sha. `pnpm --filter @azphalt/storefront build-catalog`",
+    "fetches that commit, packs it into a .azp, signs it, and writes the bytes to registry/packages/ —",
+    "which are committed. The deployment serves those bytes and nothing else.",
+    "",
+    "So changing what the store serves REQUIRES a reviewed commit here. There is no runtime write path,",
+    "no database to drift, and no way to slip a package in without it appearing in a diff.",
+    "",
+    "`integrity` is the sha256 of the UNSIGNED .azp (a signature is a detached addition, so it does not",
+    "perturb this). build-catalog fails on mismatch; pass --update to re-pin deliberately."
+  ],
+  "sources": [
+    {
+      "id": "com.hereliesaz.azphalt.gtcrn",
+      "repo": "HereLiesAz/azphalt-gtcrn",
+      "ref": "6b51369b6e3380b28d203bebf2be2c51b70fd547",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.lama",
+      "repo": "HereLiesAz/azphalt-lama",
+      "ref": "4a312b1ef4ff98d489c261d9af1a7b0b242f76f2",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.lensflare",
+      "repo": "HereLiesAz/azphalt-lensflare",
+      "ref": "b2e9a1d4f2051a8e4ee1f66e35249e2f337797ad",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.midas",
+      "repo": "HereLiesAz/azphalt-midas",
+      "ref": "a29554d312da7ff07e1c2a86504d20abeb3c9a94",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.mirnet",
+      "repo": "HereLiesAz/azphalt-mirnet",
+      "ref": "0b70fdf9d7509ba981bf30d787adc268f4cf002e",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.mobilefacenet",
+      "repo": "HereLiesAz/azphalt-mobilefacenet",
+      "ref": "e20711fd22b6544db27056c567b112b873e4e405",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.mobilenet",
+      "repo": "HereLiesAz/azphalt-mobilenet",
+      "ref": "635e9ccb7c09e9d8d8ab2e5139d476945647fdd1",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.moondream",
+      "repo": "HereLiesAz/azphalt-moondream",
+      "ref": "b67e2df010d1bebd77fbfe4f546f485494b07292",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.motion-tracking",
+      "repo": "HereLiesAz/azphalt-motion-tracking",
+      "ref": "476b04bf06e69d6b74e74c43b7ac98989cb8650d",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.noise",
+      "repo": "HereLiesAz/azphalt-noise",
+      "ref": "7576e16a8cc53ae5562c66e2792fa47b0111e113",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.particle-shatter",
+      "repo": "HereLiesAz/azphalt-particle-shatter",
+      "ref": "9bec1ed72a37b892e70b90cb9ef7f74cd327386b",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.particles",
+      "repo": "HereLiesAz/azphalt-particles",
+      "ref": "4e5790fb7f151b47a4df743cc543a4cf4277fed7",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pip",
+      "repo": "HereLiesAz/azphalt-pip",
+      "ref": "6d54ebc652eb0bc12c649dd19d365ef12a4c8a5c",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.piper-en",
+      "repo": "HereLiesAz/azphalt-piper-en",
+      "ref": "dae83addce16549cd56b3689fb04f7231fb3337c",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pitch-rotation",
+      "repo": "HereLiesAz/azphalt-pitch-rotation",
+      "ref": "df8f0e8b82676339d2d260781be7c31a4c97b51e",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pitch-tracker",
+      "repo": "HereLiesAz/azphalt-pitch-tracker",
+      "ref": "a33505a94d3305b629766e89c7c7322b85207dfa",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.planar-tracking",
+      "repo": "HereLiesAz/azphalt-planar-tracking",
+      "ref": "26c6e1db2054ad025d7858d33630db12f60f5154",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pop-in",
+      "repo": "HereLiesAz/azphalt-pop-in",
+      "ref": "4cc8b58a06fcdcef29ec55d604fe0d0bbbb3bfb9",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.pyannote-segmentation",
+      "repo": "HereLiesAz/azphalt-pyannote-segmentation",
+      "ref": "de17afbaf31ef8f92682495bb7c511a0e3f9b452",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.real-esrgan",
+      "repo": "HereLiesAz/azphalt-real-esrgan",
+      "ref": "410fb6890a3c795cba27327ff65a0782219d7685",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.rotate-snap",
+      "repo": "HereLiesAz/azphalt-rotate-snap",
+      "ref": "35f37757ccb26702bd9cc78f334d6439d6701696",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.rsvp-delivery",
+      "repo": "HereLiesAz/azphalt-rsvp-delivery",
+      "ref": "bf2596b8554f67e77c0b4449d060cbbf259896b6",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.scale-stagger",
+      "repo": "HereLiesAz/azphalt-scale-stagger",
+      "ref": "c0a52e3481399cf8ff7698fc8cebf8a3ba4d6315",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.scene-lit-shadow",
+      "repo": "HereLiesAz/azphalt-scene-lit-shadow",
+      "ref": "9aef3444bd35b15414a95453e58db6e49a391476",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.selfie-segmentation",
+      "repo": "HereLiesAz/azphalt-selfie-segmentation",
+      "ref": "c056d11d322319d2cf737c0b8f0c64e7e57760a8",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.sentiment-hue",
+      "repo": "HereLiesAz/azphalt-sentiment-hue",
+      "ref": "37f4f52a0175a5078359b15419e78258127ae237",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.slide-right",
+      "repo": "HereLiesAz/azphalt-slide-right",
+      "ref": "22a58c032e3fcc0fcac4f31a637c7cd59a0b7beb",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.slump-disappointment",
+      "repo": "HereLiesAz/azphalt-slump-disappointment",
+      "ref": "e1ba632c5af51127b127a62f232fbd89c6d59229",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.smpte",
+      "repo": "HereLiesAz/azphalt-smpte",
+      "ref": "134a1e2f491b1767e268f4fed2834bbbfe582d0c",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.solid",
+      "repo": "HereLiesAz/azphalt-solid",
+      "ref": "ab7488e52c5c4bb70385d42622709d497d52ffc5",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.speaker-drop",
+      "repo": "HereLiesAz/azphalt-speaker-drop",
+      "ref": "22c6d81c323492273c3f8e148e69353f28c3a80c",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.speaker-pan",
+      "repo": "HereLiesAz/azphalt-speaker-pan",
+      "ref": "206ebafb730955aa587fde4ad6ff4acdadb1452b",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.speed-blur",
+      "repo": "HereLiesAz/azphalt-speed-blur",
+      "ref": "c4f327dd7089de61beda6fd91de2abd7133578c0",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.spotlights",
+      "repo": "HereLiesAz/azphalt-spotlights",
+      "ref": "3d4727de99a4e2aa2b5b3cb759cfd07de1093216",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.stabilize-actioncam",
+      "repo": "HereLiesAz/azphalt-stabilize-actioncam",
+      "ref": "2e92e416df3a0bd7a32d134a2520e43bc7cd722b",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.stabilizer",
+      "repo": "HereLiesAz/azphalt-stabilizer",
+      "ref": "68b107469f6c71ca1307e3625cc477eafceeaa2d",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.stencil-layers",
+      "repo": "HereLiesAz/azphalt-stencil-layers",
+      "ref": "a978531e3fbc346b98a43cad6b58bdd55df114d0",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.subject-orbit",
+      "repo": "HereLiesAz/azphalt-subject-orbit",
+      "ref": "75b9b2ae10d5352f87de65be94689befb7bf95ff",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.subject-track",
+      "repo": "HereLiesAz/azphalt-subject-track",
+      "ref": "fdc5620a2349ea7561f9e470aaaa44d5cefbf6cd",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.terrain-puddle",
+      "repo": "HereLiesAz/azphalt-terrain-puddle",
+      "ref": "1525fd1262d6fc8e6a6a4def945a27a301ed6522",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.timecode",
+      "repo": "HereLiesAz/azphalt-timecode",
+      "ref": "8c8dd3a511b268bf58df1636e59a27bad8df13c4",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.tremble-arousal",
+      "repo": "HereLiesAz/azphalt-tremble-arousal",
+      "ref": "33b65d20d38bcd46df596ca5de11fb31775912a9",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.tripod-stabilizer",
+      "repo": "HereLiesAz/azphalt-tripod-stabilizer",
+      "ref": "4288db81429ad8dadee62e71e8c2e061da028aba",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.typewriter-cursor",
+      "repo": "HereLiesAz/azphalt-typewriter-cursor",
+      "ref": "69b3af2cfa65b3354b81700e5115aa61c850e0fa",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.ultraface",
+      "repo": "HereLiesAz/azphalt-ultraface",
+      "ref": "63b6db96cbe14bff7e19cdef336f10cef3403bf5",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.volume-bulge",
+      "repo": "HereLiesAz/azphalt-volume-bulge",
+      "ref": "7cf986a3a355af45b411607c2f0f05f40e07c43f",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.warpflow",
+      "repo": "HereLiesAz/azphalt-warpflow",
+      "ref": "282d247c04ca0786444e68230aa658edfa65cab7",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.wespeaker",
+      "repo": "HereLiesAz/azphalt-wespeaker",
+      "ref": "130bf55f5ced6bc6b3e682a8f1a8af7ec7f014fd",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.whisper",
+      "repo": "HereLiesAz/azphalt-whisper",
+      "ref": "293c02acdcd59848ec15bcbde0834611d9521faa",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.whisper-blur",
+      "repo": "HereLiesAz/azphalt-whisper-blur",
+      "ref": "770366446e4008d088d318871480a0de59dd1df4",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.word-stagger",
+      "repo": "HereLiesAz/azphalt-word-stagger",
+      "ref": "89339a24138b7bcdb3bf13476f9fe069640ee5bc",
+      "version": "1.2.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.yamnet",
+      "repo": "HereLiesAz/azphalt-yamnet",
+      "ref": "8c302c946c1a4634bddc4417a7a14362c4955f37",
+      "version": "1.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.yell-shake",
+      "repo": "HereLiesAz/azphalt-yell-shake",
+      "ref": "c822dc7ee11c5a26140187e799816c4335cba096",
+      "version": "2.0.0"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.zdepth",
+      "repo": "HereLiesAz/azphalt-zdepth",
+      "ref": "1bedcf239c5ba4028fbf85af3a7aae143e88d5c4",
+      "version": "1.0.0"
+    }
+  ]
+}

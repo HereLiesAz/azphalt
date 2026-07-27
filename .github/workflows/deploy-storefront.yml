@@ -63,6 +63,23 @@ jobs:
       - name: Install workspace deps
         run: pnpm install --frozen-lockfile
 
+      - name: Verify the committed catalog matches its pinned sources
+        # The `.azp` bytes under registry/packages/ are committed, so a deploy needs no network for
+        # them. This re-derives them from the pinned commits and fails on any mismatch — a deploy is
+        # the last place to notice that what is about to be served differs from what was reviewed.
+        # No --update: a genuine change belongs in a PR from registry-sync.yml, not in a deploy.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZPHALT_PACKAGE_SIGNING_KEY: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY }}
+          AZPHALT_PACKAGE_SIGNING_KEY_ID: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY_ID }}
+        run: |
+          pnpm --filter @azphalt/storefront build-catalog
+          if ! git diff --quiet -- apps/storefront/registry; then
+            echo "::error::The committed catalog does not match its pinned sources. Run registry-sync."
+            git diff --stat -- apps/storefront/registry
+            exit 1
+          fi
+
       - name: Build & embed the docs site (served at azphalt.org via host rewrites)
         # Builds the VitePress docs into apps/storefront/public/_docs so the same deployment that
         # serves azphalt.store also serves the docs at azphalt.org (see next.config.mjs host rewrites).
@@ -82,6 +99,11 @@ jobs:
           echo "Resolved org=$teamId project=$pid"
 
       - name: Vercel pull / build / deploy (prebuilt, production)
+        env:
+          # The demo examples (Halftone Studio, the mock model packages) ship placeholder payloads —
+          # fine for `next dev` and the tests, but serving them beside real extensions would offer
+          # users installable packages that cannot work. Production serves the baked catalog only.
+          AZPHALT_DEMO_SEEDS: "0"
         run: |
           npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
           npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"

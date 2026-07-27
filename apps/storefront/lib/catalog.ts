@@ -667,7 +667,17 @@ const SEEDS: Seed[] = [
 ];
 
 import { NpmStore } from "./backend";
+import { loadBaked } from "./baked";
 import { createVercelStores } from "@azphalt/registry-store-vercel";
+
+/**
+ * Whether to also seed the fabricated demo examples (Halftone Studio, the mock model packages, …).
+ *
+ * On by default so `next dev` and the tests keep a catalog that exercises every `kind` and both
+ * lanes. A deployment sets `AZPHALT_DEMO_SEEDS=0`: their payloads are placeholder bytes, so serving
+ * them next to real extensions means shipping users installable packages that cannot work.
+ */
+const demoSeedsEnabled = process.env.AZPHALT_DEMO_SEEDS !== "0";
 
 /* ─────────────────────────── Store selection ───────────────────────────
  * `DATABASE_URL` **and** `BLOB_READ_WRITE_TOKEN` both present ⇒ the durable Neon + Blob backend, so
@@ -1191,6 +1201,65 @@ export async function completeStubSession(sessionId: string): Promise<void> {
  * it per seed would hang seeding on lookups for ids that aren't on npm.
  */
 export async function seedCatalog(
+  reg: Registry,
+  mkt: Marketplace,
+  str: RegistryStoreWithRatings,
+  opts: { idempotent?: boolean } = {},
+): Promise<void> {
+  const { idempotent = false } = opts;
+
+  // The real catalog first: the `.azp` packages committed under `registry/packages/`, built from the
+  // commit-pinned sources in `registry/sources.json`. These are what the store actually serves.
+  await seedBaked(reg, str, { idempotent });
+
+  // The demo examples below are fabricated — their payloads are placeholder bytes like
+  // `MOCK_ONNX_BYTES_DEPTH`. They exist to give `next dev` and the tests a catalog covering every
+  // `kind` and both lanes with no network and no services. A deployment serving them alongside real
+  // extensions would offer users installable packages that do nothing, so production turns them off.
+  if (demoSeedsEnabled) await seedDemoExamples(reg, mkt, str, { idempotent });
+}
+
+/**
+ * Publish the baked catalog. Each package is republished through `registry.publish`, so the committed
+ * bytes go through exactly the same verification a third-party upload would — a corrupted or
+ * tampered `.azp` in the deployment fails here rather than being served.
+ *
+ * A missing catalog is not fatal: a fresh clone that has not run `build-catalog` yet still boots with
+ * the demo examples, which is what the unit tests rely on.
+ */
+async function seedBaked(
+  reg: Registry,
+  str: RegistryStoreWithRatings,
+  opts: { idempotent?: boolean },
+): Promise<void> {
+  const baked = loadBaked();
+  if (!baked) {
+    console.warn(
+      "catalog: no baked catalog found (registry/catalog.json) — serving demo examples only. " +
+        "Build it with: pnpm --filter @azphalt/storefront build-catalog",
+    );
+    return;
+  }
+
+  for (const { meta } of baked.packages) str.reserveLocal?.(meta.id);
+
+  let published = 0;
+  for (const { meta, bytes } of baked.packages) {
+    if (opts.idempotent && (await str.getVersion(meta.id, meta.version))) continue;
+    try {
+      await reg.publish(bytes);
+      published++;
+    } catch (e) {
+      // One bad package must not take the whole store down with it — the other 50 are fine and a
+      // storefront that 500s on boot is worse than one missing a card. It is still loud.
+      console.error(`catalog: failed to publish baked ${meta.id}@${meta.version} — ${(e as Error).message}`);
+    }
+  }
+  console.log(`catalog: ${published} baked package(s) published${baked.signed ? " (signed)" : " (UNSIGNED)"}.`);
+}
+
+/** The fabricated demo catalog — see the note in {@link seedCatalog}. */
+async function seedDemoExamples(
   reg: Registry,
   mkt: Marketplace,
   str: RegistryStoreWithRatings,

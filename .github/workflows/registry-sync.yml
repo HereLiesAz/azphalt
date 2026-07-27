@@ -1,0 +1,103 @@
+name: Sync registry from extension repos
+
+# Rebuild the store's catalog from the extension repos and open a PR when anything moved.
+#
+# `apps/storefront/registry/sources.json` pins every extension to one commit sha, and
+# `registry/packages/*.azp` holds the exact bytes built from those commits. Both are committed, so
+# what the store serves is whatever is on `main` — there is no database to drift from the repo and
+# no runtime write path that can put a package into the store without a commit.
+#
+# This job re-resolves each pinned repo to its default-branch head, rebuilds the packages, and — if
+# that produced a diff — opens a PR. **Merging that PR is the publish step.** Nothing reaches the
+# store until a human approves the diff, which is the whole point of doing it this way: the review
+# that gates a plugin update is a GitHub review, not an API call.
+#
+# Merging then triggers `deploy-storefront.yml` (it watches `apps/storefront/**`), which rebuilds and
+# redeploys. Every serverless instance reads the same committed bytes at cold start, so the catalog
+# is identical everywhere with no Postgres and no Blob store.
+on:
+  # Instant path: an extension repo posts a repository_dispatch after its own PR merges.
+  #   curl -X POST -H "Authorization: Bearer $TOKEN" \
+  #        -H "Accept: application/vnd.github+json" \
+  #        https://api.github.com/repos/HereLiesAz/azphalt/dispatches \
+  #        -d '{"event_type":"extension-updated"}'
+  repository_dispatch:
+    types: [extension-updated]
+  # Catch-all: extensions that have not wired the dispatch still get picked up within the day, with
+  # no per-repo setup at all. A no-op run costs one tarball fetch per pinned source and opens nothing.
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: registry-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9.15.0'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Re-pin every source to its default-branch head and rebuild
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signing the catalog here is what gives packages provenance. Without it they still verify
+          # for integrity, but pin no publisher key — so a host cannot tell a later update apart from
+          # a third party's (spec/package-format.md § Publisher continuity).
+          AZPHALT_PACKAGE_SIGNING_KEY: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY }}
+          AZPHALT_PACKAGE_SIGNING_KEY_ID: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY_ID }}
+        run: pnpm --filter @azphalt/storefront build-catalog --update --latest
+
+      - name: Open a PR if the catalog moved
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- apps/storefront/registry; then
+            echo "Catalog unchanged — nothing to publish."
+            echo "Catalog unchanged." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          branch=registry-sync/$(date -u +%Y%m%d-%H%M%S)
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add apps/storefront/registry
+          git commit -m "chore(registry): sync catalog from extension repos
+
+Re-pinned each source in apps/storefront/registry/sources.json to its
+default-branch head and rebuilt registry/packages/. Merging this publishes
+the new bytes: deploy-storefront then rebuilds and redeploys."
+          git push -u origin "$branch"
+
+          # A summary of what actually moved, so the reviewer sees the change in package terms rather
+          # than as a wall of binary diffs.
+          {
+            echo "## Registry changes"
+            echo '```'
+            git diff "origin/${GITHUB_REF_NAME}...$branch" -- apps/storefront/registry/sources.json \
+              | grep -E '^[+-] +"(id|ref|version)"' || echo "(no lockfile field changes)"
+            echo '```'
+          } > /tmp/pr-body.md
+
+          gh pr create --draft \
+            --title "chore(registry): sync catalog from extension repos" \
+            --body-file /tmp/pr-body.md
+          cat /tmp/pr-body.md >> "$GITHUB_STEP_SUMMARY"
