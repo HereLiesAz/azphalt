@@ -224,7 +224,7 @@ function parseTracks(preset: unknown): Record<string, Key[]> | null {
   const addTrack = (name: string, keys: unknown): void => {
     if (!Array.isArray(keys)) return;
     const parsed = keys
-      .map((k) => {
+      .map((k): Key | null => {
         const e = k as { time?: unknown; value?: unknown };
         const t = Number(e.time);
         if (!Number.isFinite(t)) return null;

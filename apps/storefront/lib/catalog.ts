@@ -667,7 +667,7 @@ const SEEDS: Seed[] = [
 ];
 
 import { NpmStore } from "./backend";
-import { loadBaked } from "./baked";
+import { loadBaked, loadPreviewIndex } from "./baked";
 import { createVercelStores } from "@azphalt/registry-store-vercel";
 
 /**
@@ -1260,12 +1260,32 @@ async function seedBaked(
 
   for (const { meta } of baked.packages) str.reserveLocal?.(meta.id);
 
+  // Store-side preview overlay.
+  //
+  // `scripts/build-previews.ts` renders a card for each package by *running* it, and writes the
+  // index to `registry/previews.json`. Those are attached here rather than written into the
+  // manifests, because a manifest lives inside a signed `.azp` — embedding a preview reference would
+  // mean re-signing every package to change a picture. `preview.image` is allowed to be an absolute
+  // URL precisely so a repository can serve its own artwork for packages it did not author.
+  //
+  // Only packages that got a preview are touched. Most deliberately have none (see build-previews):
+  // absent is what a host should see for something with no truthful preview.
+  const previews = loadPreviewIndex();
+
   let published = 0;
   for (const { meta, bytes } of baked.packages) {
     if (opts.idempotent && (await str.getVersion(meta.id, meta.version))) continue;
     try {
       await reg.publish(bytes);
       published++;
+      const preview = previews?.[meta.id];
+      if (preview) {
+        // The stored manifest is what `registry.getSummary` reads `preview` from, so attaching it
+        // here is what puts the card into every `GET /packages` response. Mutating the stored
+        // version rather than the package bytes is the point: signatures stay valid.
+        const stored = await str.getVersion(meta.id, meta.version);
+        if (stored) (stored.manifest as { preview?: unknown }).preview = { image: preview.image };
+      }
     } catch (e) {
       // One bad package must not take the whole store down with it — the other 50 are fine and a
       // storefront that 500s on boot is worse than one missing a card. It is still loud.
