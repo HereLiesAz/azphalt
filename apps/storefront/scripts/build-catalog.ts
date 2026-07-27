@@ -452,11 +452,54 @@ async function main(): Promise<void> {
   }
 
   if (check) {
-    // Every integrity match was already asserted above; getting here means the catalog is intact.
+    // Re-deriving from the lockfile proves the *pins* are intact. It says nothing about the packages
+    // actually committed under `registry/packages/`, and those are what a deployment serves.
+    //
+    // Those two drifted apart in exactly the way this now catches: two manifests were repinned to a
+    // fixed commit and the catalog was never rebuilt, so the store shipped the old bytes — with the
+    // wrong capabilities — while this check reported green on the corrected sources.
+    //
+    // The comparison is against `catalog.json` rather than the `.azp` bytes on purpose. Signing
+    // changes bytes, so a byte comparison starts failing the moment a key is configured against a
+    // catalog committed unsigned, which reads as tampering when nothing is wrong. `integrity` is the
+    // digest of the *unsigned* package precisely so it survives that, and the generated index is
+    // where it is recorded.
+    const catalogPath = join(registryDir, "catalog.json");
+    const drift: string[] = [];
+    if (!existsSync(catalogPath)) {
+      drift.push("registry/catalog.json is missing — the catalog has never been built");
+    } else {
+      const committed = JSON.parse(readFileSync(catalogPath, "utf8")) as {
+        packages: { id: string; version: string; integrity: string; file: string }[];
+      };
+      const byId = new Map(committed.packages.map((p) => [p.id, p]));
+      for (const b of built) {
+        const c = byId.get(b.source.id);
+        if (!c) {
+          drift.push(`${b.source.id}: pinned but absent from the committed catalog`);
+        } else if (c.integrity !== b.integrity) {
+          drift.push(`${b.source.id}: committed catalog has ${c.integrity}, pinned source re-derives ${b.integrity}`);
+        } else if (!existsSync(join(packagesDir, c.file))) {
+          drift.push(`${b.source.id}: catalog lists ${c.file} but it is missing from registry/packages/`);
+        }
+        byId.delete(b.source.id);
+      }
+      for (const id of byId.keys()) drift.push(`${id}: committed but no longer pinned in sources.json`);
+    }
+
+    if (drift.length) {
+      console.error(
+        `build-catalog: the committed catalog is stale — ${drift.length} package(s) differ from their pinned sources:`,
+      );
+      for (const d of drift) console.error(`  - ${d}`);
+      console.error("build-catalog: rebuild and commit — pnpm --filter @azphalt/storefront build-catalog");
+      process.exit(1);
+    }
+
     const total = built.reduce((sum, b) => sum + b.bytes.length, 0);
     console.log(
       `build-catalog: OK — ${built.length} package(s) re-derived from their pinned commits, ` +
-        `${(total / 1024).toFixed(0)} KiB, integrity verified. Nothing written.`,
+        `${(total / 1024).toFixed(0)} KiB, integrity verified against the committed catalog. Nothing written.`,
     );
     return;
   }
