@@ -115,6 +115,150 @@ Reuse the **same** key across all your extensions so a host recognizes one publi
   }
 }
 
+/** The local git `user.name`, as the default author — the answer is usually right and always real. */
+function gitUserName(): string | undefined {
+  try {
+    // Import lazily: the scaffolder must still run where git is absent.
+    const { execFileSync } = require("node:child_process") as typeof import("node:child_process");
+    const name = execFileSync("git", ["config", "user.name"], { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    return name || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Marker line in a stub LICENSE. `build.js` refuses to package while it is still present. */
+export const LICENSE_STUB_MARKER = "REPLACE THIS FILE WITH THE FULL LICENCE TEXT";
+
+/**
+ * The licence choices offered at scaffold time.
+ *
+ * Nothing here is a default the tooling imposes — the author picks, and the point of asking is that
+ * `manifest.license` (an SPDX identifier) and the LICENSE file (the actual terms) then agree. A
+ * template that ships MIT text while its manifest declares `CC-BY-4.0` publishes a package whose
+ * stated licence is not the one it grants, and that is the failure this prompt exists to prevent.
+ *
+ * `text` is inlined only where the licence is short enough to reproduce exactly and verbatim. For
+ * everything else the scaffolder writes a stub naming the SPDX id and pointing at the canonical
+ * text: an approximate licence is worse than an obviously missing one, so it refuses to guess.
+ */
+const LICENSES: { title: string; spdx: string; url?: string; text?: (year: number, holder: string) => string }[] = [
+  {
+    title: "MIT — permissive, short",
+    spdx: "MIT",
+    text: (year, holder) =>
+      `MIT License\n\nCopyright (c) ${year} ${holder}\n\n` +
+      `Permission is hereby granted, free of charge, to any person obtaining a copy\n` +
+      `of this software and associated documentation files (the "Software"), to deal\n` +
+      `in the Software without restriction, including without limitation the rights\n` +
+      `to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n` +
+      `copies of the Software, and to permit persons to whom the Software is\n` +
+      `furnished to do so, subject to the following conditions:\n\n` +
+      `The above copyright notice and this permission notice shall be included in all\n` +
+      `copies or substantial portions of the Software.\n\n` +
+      `THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n` +
+      `IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n` +
+      `FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n` +
+      `AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n` +
+      `LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n` +
+      `OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n` +
+      `SOFTWARE.\n`,
+  },
+  {
+    title: "Apache-2.0 — permissive, with a patent grant",
+    spdx: "Apache-2.0",
+    url: "https://www.apache.org/licenses/LICENSE-2.0.txt",
+  },
+  {
+    title: "CC-BY-4.0 — for asset packs (attribution required)",
+    spdx: "CC-BY-4.0",
+    url: "https://creativecommons.org/licenses/by/4.0/legalcode.txt",
+  },
+  {
+    title: "CC0-1.0 — public domain dedication",
+    spdx: "CC0-1.0",
+    url: "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+  },
+  {
+    title: "GPL-3.0-or-later — copyleft",
+    spdx: "GPL-3.0-or-later",
+    url: "https://www.gnu.org/licenses/gpl-3.0.txt",
+  },
+  {
+    title: "Proprietary — all rights reserved",
+    spdx: "LicenseRef-Proprietary",
+    text: (year, holder) =>
+      `Copyright (c) ${year} ${holder}\n\nAll rights reserved.\n\n` +
+      `No permission is granted to use, copy, modify, or distribute this software or\n` +
+      `its assets, in whole or in part, except under a separate written agreement with\n` +
+      `the copyright holder.\n`,
+  },
+  {
+    title: "Other — I'll supply my own",
+    spdx: "",
+  },
+];
+
+/**
+ * Stamp author and licence onto everything that carries them.
+ *
+ * `manifest.author` is what the store shows next to the package and what a reader uses to decide
+ * whether to trust it; the LICENSE copyright line is what actually names the rights holder — a
+ * licence reading "Copyright (c) 2026 Your Name" grants nothing to anyone. Both are easy to leave at
+ * a template default and expensive to notice later, so they are filled in here rather than left to
+ * be replaced by hand.
+ */
+function applyAuthorAndLicense(
+  root: string,
+  author: string,
+  choice: { spdx: string; url?: string; text?: (year: number, holder: string) => string } | undefined,
+): void {
+  const year = new Date().getFullYear();
+  const holder = author.trim() || "the copyright holder";
+
+  const manifestPath = path.join(root, "manifest.json");
+  if (fs.existsSync(manifestPath)) {
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    if (author.trim()) manifest.author = author;
+    if (choice?.spdx) manifest.license = choice.spdx;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+  }
+
+  const pkgPath = path.join(root, "package.json");
+  if (fs.existsSync(pkgPath)) {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+    if (author.trim()) pkg.author = author;
+    if (choice?.spdx) pkg.license = choice.spdx;
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+  }
+
+  // The templates ship no LICENSE of their own — they are part of this MIT-licensed repo, and a
+  // checked-in licence file would both be redundant here and become the scaffolded project's terms
+  // by accident. The new project's LICENSE is written here, from the author's answer.
+  const licensePath = path.join(root, "LICENSE");
+  if (choice?.text) {
+    fs.writeFileSync(licensePath, choice.text(year, holder));
+  } else if (choice?.url) {
+    fs.writeFileSync(
+      licensePath,
+      `${choice.spdx}\n\nCopyright (c) ${year} ${holder}\n\n` +
+        `${LICENSE_STUB_MARKER}\n\n` +
+        `Download the canonical text and replace this file with it:\n  ${choice.url}\n\n` +
+        `It is not reproduced here because an approximate licence is worse than a missing one.\n` +
+        `build.js refuses to package while this marker is still present.\n`,
+    );
+  } else {
+    // "Other" — no terms chosen. Say so plainly rather than inventing any.
+    fs.writeFileSync(
+      licensePath,
+      `Copyright (c) ${year} ${holder}\n\n${LICENSE_STUB_MARKER}\n\n` +
+        `Put your licence terms here, and set "license" in manifest.json to the matching SPDX\n` +
+        `identifier (https://spdx.org/licenses/) so the declared licence and the granted terms agree.\n` +
+        `build.js refuses to package while this marker is still present.\n`,
+    );
+  }
+}
+
 const TEMPLATES = [
   {
     title: "Code Extension (For Developers)",
@@ -181,7 +325,7 @@ export function toPackageId(namespace: string, name: string): string {
 async function init() {
   console.log(`\n${cyan('azphalt')} open extension standard\n`);
 
-  let result: prompts.Answers<"projectName" | "namespace" | "template">;
+  let result: prompts.Answers<"projectName" | "namespace" | "author" | "license" | "template">;
 
   try {
     result = await prompts([
@@ -196,6 +340,24 @@ async function init() {
         name: 'namespace',
         message: reset('Your namespace (a domain you own, e.g. developer.space):'),
         initial: 'example.com'
+      },
+      {
+        // Asked, not left to the template. A template's placeholder author survives scaffolding,
+        // then survives review, and ends up as the published package's attribution — and the same
+        // string lands in the LICENSE copyright line, where "Your Name" grants nothing to anyone.
+        type: 'text',
+        name: 'author',
+        message: reset('Author (name or handle, used for attribution and the licence copyright):'),
+        initial: gitUserName() ?? ''
+      },
+      {
+        // Your extension, your terms. This exists so the SPDX id in manifest.json and the text in
+        // LICENSE agree — not to steer the answer.
+        type: 'select',
+        name: 'license',
+        message: reset('Licence (your choice — this is your work):'),
+        initial: 0,
+        choices: LICENSES.map((l) => ({ title: l.title, value: l.spdx }))
       },
       {
         type: 'select',
@@ -218,7 +380,7 @@ async function init() {
     return;
   }
 
-  const { projectName, namespace, template } = result;
+  const { projectName, namespace, author, license, template } = result;
   const root = path.join(process.cwd(), projectName);
   
   if (fs.existsSync(root)) {
@@ -264,6 +426,17 @@ async function init() {
     manifest.id = toPackageId(namespace, projectName);
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
     console.log(`  ${green('id')} ${manifest.id}`);
+  }
+
+  // Attribution + licence: manifest.author/license, package.json, and the LICENSE file itself.
+  const licenseChoice = LICENSES.find((l) => l.spdx === license);
+  applyAuthorAndLicense(root, author ?? '', licenseChoice);
+  if (author?.trim()) console.log(`  ${green('author')} ${author}`);
+  else console.log(`  ${yellow('no author given — set manifest.author and the LICENSE copyright before publishing')}`);
+  if (licenseChoice?.text) {
+    console.log(`  ${green('licence')} ${licenseChoice.spdx}`);
+  } else {
+    console.log(`  ${yellow('licence')} ${licenseChoice?.spdx || 'unset'} — LICENSE is a stub; paste the real text before publishing`);
   }
 
   // Sign at creation: generate a publisher key and a signing release workflow so the very first
