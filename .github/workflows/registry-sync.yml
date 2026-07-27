@@ -7,10 +7,24 @@ name: Sync registry from extension repos
 # what the store serves is whatever is on `main` — there is no database to drift from the repo and
 # no runtime write path that can put a package into the store without a commit.
 #
-# This job re-resolves each pinned repo to its default-branch head, rebuilds the packages, and — if
-# that produced a diff — opens a PR. **Merging that PR is the publish step.** Nothing reaches the
-# store until a human approves the diff, which is the whole point of doing it this way: the review
-# that gates a plugin update is a GitHub review, not an API call.
+# This job rebuilds the packages and — if that produced a diff — opens a PR. **Merging that PR is the
+# publish step.** Nothing reaches the store until a human approves the diff, which is the whole point
+# of doing it this way: the review that gates a plugin update is a GitHub review, not an API call.
+#
+# It runs in one of two modes, because "publish what the lockfile already pins" and "go see whether
+# any extension moved" are different questions, and answering both in one run makes each harder to
+# review:
+#
+#   pinned  Build every source at the sha `sources.json` already pins. This is what publishes a newly
+#           added extension: its PR only edits the lockfile, so its bytes do not exist in
+#           registry/packages until a sync runs. Every existing pin stays exactly where it is, so the
+#           diff is confined to the packages that were genuinely missing.
+#   latest  Re-resolve every pinned repo to its default-branch head first, then build. This is how
+#           upstream extension updates get picked up, and it necessarily touches all ~130 pins.
+#
+# Schedule and repository_dispatch runs use `latest` — catching upstream movement is the entire reason
+# they fire. A manual run defaults to `pinned`, because the usual reason to click Run workflow is that
+# sources were just added and want publishing, without dragging every other extension forward too.
 #
 # Merging then triggers `deploy-storefront.yml` (it watches `apps/storefront/**`), which rebuilds and
 # redeploys. Every serverless instance reads the same committed bytes at cold start, so the catalog
@@ -28,6 +42,14 @@ on:
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "pinned = publish sources at the shas already pinned; latest = also re-pin every source to its default-branch head"
+        type: choice
+        default: pinned
+        options:
+          - pinned
+          - latest
 
 permissions:
   contents: write
@@ -62,7 +84,24 @@ jobs:
         # filter. The `...` suffix builds each together with its workspace dependencies.
         run: pnpm --filter "@azphalt/azp..." --filter "@azphalt/runtime-reference..." build
 
-      - name: Re-pin every source to its default-branch head and rebuild
+      - name: Decide what this run syncs
+        id: mode
+        # Only a manual run gets to choose. Schedule and repository_dispatch exist to notice upstream
+        # movement, so forcing them to `latest` keeps that guarantee out of reach of a stray input.
+        env:
+          MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'latest' }}
+        run: |
+          set -euo pipefail
+          case "$MODE" in
+            pinned) flags="--update" ;;
+            latest) flags="--update --latest" ;;
+            *) echo "::error::unknown sync mode '$MODE'"; exit 1 ;;
+          esac
+          echo "mode=$MODE"    >> "$GITHUB_OUTPUT"
+          echo "flags=$flags"  >> "$GITHUB_OUTPUT"
+          echo "Sync mode: **$MODE** (\`build-catalog $flags\`)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build the catalog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Signing the catalog here is what gives packages provenance. Without it they still verify
@@ -70,7 +109,7 @@ jobs:
           # a third party's (spec/package-format.md § Publisher continuity).
           AZPHALT_PACKAGE_SIGNING_KEY: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY }}
           AZPHALT_PACKAGE_SIGNING_KEY_ID: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY_ID }}
-        run: pnpm --filter @azphalt/storefront build-catalog --update --latest
+        run: pnpm --filter @azphalt/storefront build-catalog ${{ steps.mode.outputs.flags }}
 
       - name: Regenerate the store previews
         # Previews are rendered *from* the built packages — filters are executed, motion presets are
@@ -82,15 +121,21 @@ jobs:
       - name: Open a PR if the catalog moved
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODE: ${{ steps.mode.outputs.mode }}
         run: |
           set -euo pipefail
+          if [ "$MODE" = latest ]; then
+            what="Re-pinned each source in apps/storefront/registry/sources.json to its default-branch head and rebuilt registry/packages/."
+          else
+            what="Rebuilt registry/packages/ from the shas apps/storefront/registry/sources.json already pins. No source's ref was moved, so anything new here is a package that was pinned but never built."
+          fi
           if git diff --quiet -- apps/storefront/registry apps/storefront/public/previews; then
             echo "Catalog unchanged — nothing to publish."
             echo "Catalog unchanged." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          branch=registry-sync/$(date -u +%Y%m%d-%H%M%S)
+          branch=registry-sync/$MODE-$(date -u +%Y%m%d-%H%M%S)
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
@@ -99,15 +144,29 @@ jobs:
           # line here stays indented inside the `run: |` block. A message body written at column 0
           # would terminate the block scalar, and YAML would then read it as further workflow keys.
           git commit \
-            -m "chore(registry): sync catalog from extension repos" \
-            -m "Re-pinned each source in apps/storefront/registry/sources.json to its default-branch head and rebuilt registry/packages/." \
+            -m "chore(registry): sync catalog from extension repos ($MODE)" \
+            -m "$what" \
             -m "Merging this publishes the new bytes; deploy-storefront then rebuilds and redeploys."
           git push -u origin "$branch"
 
           # A summary of what actually moved, so the reviewer sees the change in package terms rather
           # than as a wall of binary diffs.
           {
-            echo "## Registry changes"
+            echo "Sync mode: **$MODE**."
+            echo ""
+            echo "$what"
+            echo ""
+            echo "## Packages first built here"
+            echo ""
+            echo "Bytes that did not exist in the catalog before this run — i.e. sources that were"
+            echo "pinned in the lockfile but never published."
+            echo '```'
+            git diff --diff-filter=A --name-only "origin/${GITHUB_REF_NAME}...$branch" \
+              -- apps/storefront/registry/packages \
+              | sed 's#.*/##' || true
+            echo '```'
+            echo ""
+            echo "## Lockfile changes"
             echo '```'
             git diff "origin/${GITHUB_REF_NAME}...$branch" -- apps/storefront/registry/sources.json \
               | grep -E '^[+-] +"(id|ref|version)"' || echo "(no lockfile field changes)"
@@ -119,7 +178,7 @@ jobs:
           # the run there would throw away work that already succeeded: the rebuilt, signed catalog
           # is pushed and safe on "$branch". Report how to open it by hand instead.
           if gh pr create --draft \
-               --title "chore(registry): sync catalog from extension repos" \
+               --title "chore(registry): sync catalog from extension repos ($MODE)" \
                --body-file /tmp/pr-body.md; then
             cat /tmp/pr-body.md >> "$GITHUB_STEP_SUMMARY"
           else

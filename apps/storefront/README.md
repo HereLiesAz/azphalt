@@ -24,8 +24,10 @@ commit-pinned sources in [`registry/sources.json`](registry/sources.json). Every
 reads the same bytes at cold start and reconstructs an identical catalog.
 
 ```sh
-pnpm --filter @azphalt/storefront build-catalog            # build + verify against the lockfile
-pnpm --filter @azphalt/storefront build-catalog --update   # re-pin integrity deliberately
+pnpm --filter @azphalt/storefront build-catalog                     # build + verify against the lockfile
+pnpm --filter @azphalt/storefront build-catalog --update            # build at the pinned shas, re-pin integrity
+pnpm --filter @azphalt/storefront build-catalog --update --latest   # also move every ref to its default-branch head
+pnpm --filter @azphalt/storefront build-catalog --update --only <id>  # one source, leaving its siblings in place
 ```
 
 **The registry needs no durable storage, because nothing is written at runtime.** Publishing used to
@@ -46,11 +48,25 @@ a catalog that differs from the one that was reviewed.
 
 ### Changing what the store serves is a merged PR
 
-[`registry-sync.yml`](../../.github/workflows/registry-sync.yml) re-pins each source to its
-default-branch head — on `repository_dispatch` from an extension repo, daily, or on demand — rebuilds
-the packages, and opens a PR when anything moved. **Merging that PR is the publish step**;
-`deploy-storefront` then takes it live. The gate on a plugin update is a GitHub review, not an API
-call.
+[`registry-sync.yml`](../../.github/workflows/registry-sync.yml) rebuilds the packages and opens a PR
+when anything moved. **Merging that PR is the publish step**; `deploy-storefront` then takes it live.
+The gate on a plugin update is a GitHub review, not an API call.
+
+It runs in one of two modes, because adding an extension and following an existing one upstream are
+different operations:
+
+| Mode | Flags | What moves |
+| --- | --- | --- |
+| `pinned` | `--update` | Builds every source at the sha the lockfile **already pins**. No ref changes. |
+| `latest` | `--update --latest` | Re-resolves every source to its default-branch head first, then builds. |
+
+`pinned` is what publishes a **newly added** extension. Adding one is a lockfile edit — the PR appends
+an entry to `sources.json` — so its bytes do not exist under `registry/packages/` until a sync builds
+them. A `pinned` run adds exactly the missing packages and leaves all ~130 existing pins alone, which
+keeps the reviewable diff about the thing that changed.
+
+`latest` is how upstream extension updates get noticed, and necessarily touches every pin. It is what
+`repository_dispatch` and the daily schedule use. A manual **Run workflow** defaults to `pinned`.
 
 ### What still needs a database
 
