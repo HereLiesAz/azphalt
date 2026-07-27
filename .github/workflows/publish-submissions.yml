@@ -32,4 +32,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Build @azphalt/azp + @azphalt/azdk, which the publish script packages submissions with.
       - run: pnpm --filter @azphalt/azp --filter @azphalt/azdk build
+      # Sign each .azp with the publisher key before publishing, so the first release a user
+      # installs pins a key and hosts can enforce publisher continuity on later updates
+      # (spec/package-format.md § Publisher continuity). Absent the secret the script still
+      # publishes, but unsigned and with a warning — signing is optional per the spec.
       - run: pnpm --filter @azphalt/storefront publish-submissions
+        env:
+          AZPHALT_PACKAGE_SIGNING_KEY: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY }}
+          AZPHALT_PACKAGE_SIGNING_KEY_ID: ${{ vars.AZPHALT_PACKAGE_SIGNING_KEY_ID }}

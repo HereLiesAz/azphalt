@@ -52,6 +52,29 @@ pnpm --filter @azphalt/submit-check validate    # validates every folder under s
 
 See [`com.azphalt.example.hello-lut/`](com.azphalt.example.hello-lut) for a minimal working submission to copy.
 
+## Signing
+
+On merge, [`publish-submissions.yml`](../.github/workflows/publish-submissions.yml) packages each
+folder and publishes it to the live registry. If the `AZPHALT_PACKAGE_SIGNING_KEY` repo secret is
+set (a PKCS#8 PEM Ed25519 private key), each `.azp` is signed with it first; the optional
+`AZPHALT_PACKAGE_SIGNING_KEY_ID` repo variable records a key id in the signature.
+
+Signing is optional — without the secret, packages publish unsigned and still verify for integrity.
+What is lost is *provenance*: per [`spec/package-format.md`](../spec/package-format.md) § Publisher
+continuity, a host pins the signer's key on first install and rejects a later same-`id` package
+signed by a different key, so an unsigned first release pins nothing and leaves the `id` open to a
+third party. Registry versions are immutable, so a version published unsigned stays unsigned — only
+a new semver gets a signature.
+
+To enable it:
+
+~~~sh
+openssl genpkey -algorithm ed25519          # store the PEM as the AZPHALT_PACKAGE_SIGNING_KEY secret
+~~~
+
+This is a *different* key from `AZPHALT_SIGNING_KEY`, which the storefront uses to issue entitlement
+tokens — they are separate trust roles and must not be shared.
+
 ## Licensing
 
 Submit only content you have the right to distribute, under the SPDX license your manifest names. Importers ([`packages/importers`](../packages/importers)) can normalize `.abr` / `.cube` / ISF / glTF / … into the `.azp` layout for you.

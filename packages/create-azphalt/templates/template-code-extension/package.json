@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "@azphalt/runtime-reference": "^0.1.0"
-  }
+  },
+  "license": "MIT",
+  "author": "Your Name"
 }
-
