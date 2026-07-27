@@ -1,8 +1,8 @@
 {
-  "name": "docs",
+  "name": "@azphalt/docs",
   "version": "0.1.1",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "The azphalt documentation site (VitePress).",
   "scripts": {
     "sync-specs": "node scripts/sync-specs.mjs",
     "predev": "node scripts/sync-specs.mjs",
@@ -15,7 +15,6 @@
     "vitepress": "^1.6.4",
     "vue": "^3.5.40"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "Az (https://hereliesaz.com)",
+  "license": "MIT"
 }
