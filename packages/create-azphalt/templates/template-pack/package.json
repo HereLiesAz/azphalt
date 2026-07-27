@@ -8,5 +8,7 @@
   },
   "dependencies": {
     "@azphalt/azp": "^0.1.0"
-  }
+  },
+  "license": "MIT",
+  "author": "Your Name"
 }

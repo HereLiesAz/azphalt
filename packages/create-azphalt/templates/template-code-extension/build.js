@@ -16,11 +16,26 @@ for (const dir of ["code", "ui", "assets"]) {
   for (const rel of walk(dir)) payload[rel] = fs.readFileSync(rel);
 }
 
-const license = fs.existsSync("LICENSE")
-  ? fs.readFileSync("LICENSE", "utf-8")
-  : manifest.license || "All Rights Reserved";
+// The licence BODY, not the SPDX id. Falling back to `manifest.license` would ship a package whose
+// entire licence text is a single identifier like "MIT" — naming terms it does not include.
+if (!fs.existsSync("LICENSE")) {
+  console.error("build: no LICENSE file. A package must carry its licence text, not just the SPDX id in manifest.license.");
+  process.exit(1);
+}
+const license = fs.readFileSync("LICENSE", "utf-8");
 
-const { azp } = writeAzp({ manifest, payload, license });
+// create-azphalt writes a stub when the licence text is one it will not reproduce approximately.
+// Publishing that stub would ship a package whose licence says only "put the licence here".
+if (license.includes("REPLACE THIS FILE WITH THE FULL LICENCE TEXT")) {
+  console.error("build: LICENSE is still the scaffolded stub. Paste your licence text in, then build.");
+  process.exit(1);
+}
+
+// A submission manifest must not carry its own `files` map (spec/package-format.md) — writeAzp
+// computes the real digests, and dropping any hand-written one keeps those authoritative.
+const { files: _drop, ...clean } = manifest;
+
+const { azp } = writeAzp({ manifest: clean, payload, license });
 const out = `${manifest.name.replace(/\s+/g, "-").toLowerCase()}-${manifest.version}.azp`;
 fs.writeFileSync(out, azp);
 console.log(`Built ${out} (${azp.length} bytes)`);
