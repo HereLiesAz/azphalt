@@ -42,6 +42,13 @@
       "integrity": "sha256-iz00oPv8o/MW+vo9y8jWax4gscrLuwy46Ux1P+NTTv0="
     },
     {
+      "id": "com.hereliesaz.azphalt.anamorphic-flare",
+      "repo": "HereLiesAz/azphalt-anamorphic-flare",
+      "ref": "d5001b411513abba401993c0006cfd068e256e14",
+      "version": "1.0.0",
+      "integrity": "sha256-q+B5dARiFhgb5c6s1HsqXYvQAK7QVIISJnR8wF7nhBA="
+    },
+    {
       "id": "com.hereliesaz.azphalt.anger-jiggle",
       "repo": "HereLiesAz/azphalt-anger-jiggle",
       "ref": "0253a7b9e73b9a6dbc1ee124a90cc4a739e5b04c",
@@ -77,11 +84,25 @@
       "integrity": "sha256-SgYAkbtax+ipzJQrMwngSLma+bdkn0QwayaRHVFGFuc="
     },
     {
+      "id": "com.hereliesaz.azphalt.baby-bloom",
+      "repo": "HereLiesAz/azphalt-baby-bloom",
+      "ref": "ff8e14c396427a3367580a31db1696cbddf67c0a",
+      "version": "1.0.0",
+      "integrity": "sha256-IUD+amNgbum2aLLDEtXp3lg4y0h3byTOb2x49tYqNzw="
+    },
+    {
       "id": "com.hereliesaz.azphalt.beast-shake",
       "repo": "HereLiesAz/azphalt-beast-shake",
       "ref": "fc514ad7c46b7ee54a1db8124084e76f255602f0",
       "version": "1.2.0",
       "integrity": "sha256-1X23XNmE+/M2YTnmJ5XUI08FsQfZ68X4dvMR3gxRmhY="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.beat-pulse",
+      "repo": "HereLiesAz/azphalt-beat-pulse",
+      "ref": "2035b79a48a9fbe67c345e3e34d0fe5867c7d4a0",
+      "version": "1.0.0",
+      "integrity": "sha256-y8ixWT7u5TWlM1+xv/meDTJM6xUw15iGLWD0yTrmd1M="
     },
     {
       "id": "com.hereliesaz.azphalt.bevel-emboss",
@@ -168,6 +189,13 @@
       "integrity": "sha256-Ks6fxZPIjb+Sa3/eyQQDTb7DfU5sWT6xI9rLzwiVvVE="
     },
     {
+      "id": "com.hereliesaz.azphalt.comic-edge",
+      "repo": "HereLiesAz/azphalt-comic-edge",
+      "ref": "aded60df524cc7dee96c95d85c1d25737f92c9bc",
+      "version": "1.0.0",
+      "integrity": "sha256-0y3RNynVc9OkDbvO53JnCsEAYjExW6DA/BtbPXZKHxg="
+    },
+    {
       "id": "com.hereliesaz.azphalt.countdown",
       "repo": "HereLiesAz/azphalt-countdown",
       "ref": "c177a24410bea5735798fc813bd6caf7e7236f24",
@@ -201,6 +229,20 @@
       "ref": "e068ce21dee832dd743dd68faea8f70a8ee2fb74",
       "version": "2.0.0",
       "integrity": "sha256-D8FdsN5fpYiy8GHW6MVpWBz47p4H0Z8k+lredokJZDU="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.dreamy-glow",
+      "repo": "HereLiesAz/azphalt-dreamy-glow",
+      "ref": "de75ead8f601146609c9e3f2a37a3d363c9592a6",
+      "version": "1.0.0",
+      "integrity": "sha256-/Mp+5/28MdN/LUVXFPFoY7/YCd/9o1Vb9BqipbEMPik="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.duotone",
+      "repo": "HereLiesAz/azphalt-duotone",
+      "ref": "150071958a1f849985f549d96adee825ecb6f495",
+      "version": "1.0.0",
+      "integrity": "sha256-gJY3Beb2EuaHOYqEIwG5TX2F9LnIGePLy05vuj9dmaY="
     },
     {
       "id": "com.hereliesaz.azphalt.elastic-drop",
@@ -252,6 +294,13 @@
       "integrity": "sha256-3XQ9R8qMnVHHIlq8LNJ3BJko9n+mrDdppPrQA337/LA="
     },
     {
+      "id": "com.hereliesaz.azphalt.film-burn",
+      "repo": "HereLiesAz/azphalt-film-burn",
+      "ref": "4ebe7b785da8084abf5e58f245aa7a1bc847e320",
+      "version": "1.0.0",
+      "integrity": "sha256-yQp1jqlJ5EqKgeip1qxcBuxU/UvzKmTKG0WetmzTlLU="
+    },
+    {
       "id": "com.hereliesaz.azphalt.film-damage",
       "repo": "HereLiesAz/azphalt-film-damage",
       "ref": "8b1bf43b1d404c05e8d17ec05852717a44cc9b94",
@@ -271,6 +320,13 @@
       "ref": "be391c0ba889bf07eb4b770688947c23d100e0d8",
       "version": "2.0.0",
       "integrity": "sha256-6ex2Z1uJuIy6lqZebR6Vb5UkOtoEa4XzHJxkGBoKYQ8="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.frost-glass",
+      "repo": "HereLiesAz/azphalt-frost-glass",
+      "ref": "5d38edef27db95d6a4c5f8bc0416dbf10827971b",
+      "version": "1.0.0",
+      "integrity": "sha256-sHQZbeQ68Y5+nxgOVi7YLZa+uHXJpjzVO5S1A84BILo="
     },
     {
       "id": "com.hereliesaz.azphalt.gaze-dodge",
@@ -770,6 +826,13 @@
       "integrity": "sha256-H9l0NLLEP54H3WZLgQMe9l/cHGLvyTPSJBQpaunyitQ="
     },
     {
+      "id": "com.hereliesaz.azphalt.vhs-retro",
+      "repo": "HereLiesAz/azphalt-vhs-retro",
+      "ref": "bd41fa2041a5305791ec4730081c66513a434daf",
+      "version": "1.0.0",
+      "integrity": "sha256-1NmE/fUh676k5+4dRbRBiS6kvXEdyTLygvR8mecR6D0="
+    },
+    {
       "id": "com.hereliesaz.azphalt.vintage-grain-halation",
       "repo": "HereLiesAz/azphalt-vintage-grain-halation",
       "ref": "b702bc9134ed4947374bca83ca5d99a5ef7b4bcc",
@@ -838,6 +901,13 @@
       "ref": "ce9ad39363799c26a77c8456996bbced756926dd",
       "version": "1.0.0",
       "integrity": "sha256-TggoREhLi51okFKfv2HESk++s8iNhM88WKjy0RloFkU="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.zoom-punch",
+      "repo": "HereLiesAz/azphalt-zoom-punch",
+      "ref": "134e7d506fcc0a01be26d3efe2c4c2ca9cd78581",
+      "version": "1.0.0",
+      "integrity": "sha256-7OLGpAiolFisgzKZvuJJ74G+4bRms5vaxAmHhmvJxaQ="
     }
   ]
 }
