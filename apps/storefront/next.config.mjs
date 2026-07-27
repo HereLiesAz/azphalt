@@ -40,6 +40,12 @@ const nextConfig = {
   output: "standalone",
   // Deterministic standalone layout across machines (see `repoRoot` above).
   outputFileTracingRoot: repoRoot,
+  // The baked catalog — the committed `.azp` packages the store actually serves (see `lib/baked.ts`).
+  // Next's tracer follows `import`s, and these are read with `fs` at runtime, so it cannot see them:
+  // without this the standalone bundle deploys with an empty registry and every card 404s on download.
+  outputFileTracingIncludes: {
+    "/**": ["./apps/storefront/registry/catalog.json", "./apps/storefront/registry/packages/**"],
+  },
   // Optional sub-path mount (baked in at build time). Next prefixes routes + assets with it.
   ...(basePath ? { basePath } : {}),
   async rewrites() {
