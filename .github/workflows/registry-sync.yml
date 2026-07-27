@@ -54,6 +54,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Build @azphalt/azp (build-catalog imports it at runtime)
+        # `pnpm install` links the workspace packages but does not compile them, and build-catalog
+        # imports `@azphalt/azp`'s compiled `dist/` for writeAzp/signAzp. The `...` suffix builds azp
+        # together with its workspace dependencies.
+        run: pnpm --filter "@azphalt/azp..." build
+
       - name: Re-pin every source to its default-branch head and rebuild
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

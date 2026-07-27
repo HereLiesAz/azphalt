@@ -63,6 +63,14 @@ jobs:
       - name: Install workspace deps
         run: pnpm install --frozen-lockfile
 
+      - name: Build @azphalt/azp (build-catalog imports it at runtime)
+        # `pnpm install` links the workspace packages but does not compile them, and build-catalog
+        # imports `@azphalt/azp`'s compiled `dist/` for writeAzp/signAzp. Without this the verify
+        # step below dies with ERR_MODULE_NOT_FOUND before it checks anything — which is exactly how
+        # it failed, silently leaving production on a stale deployment. The `...` suffix builds azp
+        # together with its workspace dependencies.
+        run: pnpm --filter "@azphalt/azp..." build
+
       - name: Verify the committed catalog matches its pinned sources
         # The `.azp` bytes under registry/packages/ are committed, so a deploy needs no network for
         # them. This re-derives each one from the commit the lockfile pins and fails on any integrity
