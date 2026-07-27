@@ -140,6 +140,13 @@
       "integrity": "sha256-tU6dqqQ/WmXcTpS24VQ2Iuhw+CSDnBBkOY+hf/yRlVU="
     },
     {
+      "id": "com.hereliesaz.azphalt.cinematic-glow",
+      "repo": "HereLiesAz/azphalt-cinematic-glow",
+      "ref": "794347c0804c9e63f6e930b5d4657e6eba78794c",
+      "version": "1.0.0",
+      "integrity": "sha256-l75d53HjUTDqodEnG6+5KavVEgbgKH5JOb8aW1C+6aU="
+    },
+    {
       "id": "com.hereliesaz.azphalt.cinematic-pan",
       "repo": "HereLiesAz/azphalt-cinematic-pan",
       "ref": "17bd6550de6238ddb5a24a24e0fd1c64ee71efcb",
@@ -350,6 +357,13 @@
       "integrity": "sha256-easR/gSbUJOUTE5j4UFcbTkbq36KJVVxWAydYVy783o="
     },
     {
+      "id": "com.hereliesaz.azphalt.kaleidoscope-spin",
+      "repo": "HereLiesAz/azphalt-kaleidoscope-spin",
+      "ref": "89d0b5303ecfc8e71152ac48a0624a3ea5fa9788",
+      "version": "1.0.0",
+      "integrity": "sha256-wlXR8RbHmC0w8i/pGDB9Rh9FTJLRotD5BMO9PsQr6ZA="
+    },
+    {
       "id": "com.hereliesaz.azphalt.karaoke-sweep",
       "repo": "HereLiesAz/azphalt-karaoke-sweep",
       "ref": "188d6a583eb7f3f4f9e0e6ea2636795e7305a369",
@@ -369,6 +383,20 @@
       "ref": "c51eedd9bd3fbf34eba74ef1944f7dbcd07898e3",
       "version": "1.0.0",
       "integrity": "sha256-uiehJ3emkB+Q0n7RHa7xrGCQDPCoam1Pu3e3VXnIO8A="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.light-leak-sweep",
+      "repo": "HereLiesAz/azphalt-light-leak-sweep",
+      "ref": "0028cb810b034b81bdce84ca2dcba49e45270876",
+      "version": "1.0.0",
+      "integrity": "sha256-SLaZJYjevxMu7oFdhYn8bZKxWUT32bpxIxIXCBfmekU="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.liquid-chrome",
+      "repo": "HereLiesAz/azphalt-liquid-chrome",
+      "ref": "988fff42ea9fc760b738aefff377364b7cf748c0",
+      "version": "1.0.0",
+      "integrity": "sha256-e7OzesYLsprlWozCWr02Z+OxZPfy4j/lZXJP5O7FfVU="
     },
     {
       "id": "com.hereliesaz.azphalt.loudness-color",
@@ -439,6 +467,13 @@
       "ref": "86f8b924ce7d74d83b6006e647a49c82afff01c3",
       "version": "1.2.0",
       "integrity": "sha256-J2DbHyuxO0tnd7nwm5bgJrkpHq1Xia4DR1rf8arYTj0="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.neon-rim-pulse",
+      "repo": "HereLiesAz/azphalt-neon-rim-pulse",
+      "ref": "d7137c538ade090629b58c3a695a7e510046e98c",
+      "version": "1.0.0",
+      "integrity": "sha256-4u+W+cg1yfPoeKEPp8Ac8d8KhSYplOGUO/TvDFZ3BDc="
     },
     {
       "id": "com.hereliesaz.azphalt.noise",
@@ -733,6 +768,13 @@
       "ref": "ee2c9a5d8d490916dcb39ad0aa03aeb55119ddf1",
       "version": "1.0.0",
       "integrity": "sha256-H9l0NLLEP54H3WZLgQMe9l/cHGLvyTPSJBQpaunyitQ="
+    },
+    {
+      "id": "com.hereliesaz.azphalt.vintage-grain-halation",
+      "repo": "HereLiesAz/azphalt-vintage-grain-halation",
+      "ref": "b702bc9134ed4947374bca83ca5d99a5ef7b4bcc",
+      "version": "1.0.0",
+      "integrity": "sha256-TMtOFCmSWAhSP+Zb4ZT2c3vgmmBCm2DiZkVi5ZcN+OU="
     },
     {
       "id": "com.hereliesaz.azphalt.volume-bulge",
