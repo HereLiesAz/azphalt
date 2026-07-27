@@ -1,6 +1,6 @@
 {
   "method": "GET",
-  "path": "/packages?app=com.hereliesaz.graffitixr",
+  "path": "/packages?app=com.hereliesaz.graffux",
   "status": 200,
   "body": {
     "packages": [
@@ -58,12 +58,12 @@
         "priceStatus": "free",
         "maturity": "general",
         "targetApps": [
-          "com.hereliesaz.graffitixr"
+          "com.hereliesaz.graffux"
         ],
         "downloads": 0,
         "ratingCount": 0,
         "updatedAt": "2026-01-01T00:00:00.000Z",
-        "byteSize": 876,
+        "byteSize": 874,
         "mediaDomains": [],
         "latest": "1.0.0"
       }

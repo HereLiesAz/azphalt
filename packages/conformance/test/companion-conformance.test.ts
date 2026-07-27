@@ -4,7 +4,7 @@ import { runCompanionConformance, satisfiesCompat, type CompanionHost } from "..
 import type { HandoffIO, Manifest } from "@azphalt/azdk";
 
 /**
- * A reference conforming companion-app host — the worked example a real store-providing app (GraffitiXR,
+ * A reference conforming companion-app host — the worked example a real store-providing app (Graffux,
  * Guillotine) mirrors. It runs **no** code: verify → refuse non-`app` → gate on compat → surface the
  * handoff on a platform it supports → consent → send only the declared input → validate the return
  * against the declared `output`. `HOST_VERSION` / `PLATFORMS` stand in for the host's own OS surface.

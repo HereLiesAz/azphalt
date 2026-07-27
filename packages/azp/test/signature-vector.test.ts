@@ -5,7 +5,7 @@ import { createPrivateKey, createPublicKey, sign, verify } from "node:crypto";
 
 /**
  * The signed-package **test vector** (spec/package-format.md § Signing). It pins the two things a
- * second implementation (e.g. GraffitiXR's Kotlin verifier) must match: the signature is Ed25519 over
+ * second implementation (e.g. Graffux's Kotlin verifier) must match: the signature is Ed25519 over
  * the **exact `manifest.json` bytes, verbatim** — no re-canonicalization — and it is deterministic.
  */
 const vector = JSON.parse(

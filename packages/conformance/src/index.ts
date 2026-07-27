@@ -135,7 +135,7 @@ export async function runVideoAudioConformance(host: VideoAudioHost): Promise<Vi
 
 /**
  * Run the **companion-app host** conformance battery against `host` — the profile a store-providing app
- * (GraffitiXR, Guillotine) implements to consume `kind:"app"` companion packages (`spec/companion-app.md`,
+ * (Graffux, Guillotine) implements to consume `kind:"app"` companion packages (`spec/companion-app.md`,
  * `docs/ADOPTION_COMPANION_HOST.md`). It certifies that the host verifies the header, runs none of the
  * companion's code (refusing non-`app` packages), surfaces a handoff on a supported platform, shows
  * consent, hands off **only** the declared input, and validates the untrusted return against the

@@ -97,6 +97,19 @@ const update = has("update");
 const latest = has("latest");
 const only = opt("only");
 
+/**
+ * Verify without writing: rebuild every package and confirm its `integrity` still matches the
+ * lockfile, then exit.
+ *
+ * This is the check a deploy wants, and comparing the built `.azp` **bytes** to the committed ones
+ * is not — because signing changes the bytes. Configure the signing key and a byte comparison starts
+ * failing against a catalog that was committed unsigned, which reads as "the catalog was tampered
+ * with" when nothing is wrong. `integrity` is the digest of the *unsigned* package precisely so it
+ * is signature-agnostic, so checking it answers the real question: does this content still come from
+ * the commit the lockfile pins?
+ */
+const check = has("check");
+
 const signingKey = process.env.AZPHALT_PACKAGE_SIGNING_KEY?.trim() || undefined;
 const signingKeyId = process.env.AZPHALT_PACKAGE_SIGNING_KEY_ID?.trim() || undefined;
 
@@ -436,6 +449,16 @@ async function main(): Promise<void> {
     console.error(`build-catalog: ${failures.length} failed:`);
     for (const f of failures) console.error(`  - ${f}`);
     process.exit(1);
+  }
+
+  if (check) {
+    // Every integrity match was already asserted above; getting here means the catalog is intact.
+    const total = built.reduce((sum, b) => sum + b.bytes.length, 0);
+    console.log(
+      `build-catalog: OK — ${built.length} package(s) re-derived from their pinned commits, ` +
+        `${(total / 1024).toFixed(0)} KiB, integrity verified. Nothing written.`,
+    );
+    return;
   }
 
   // Rewrite the whole packages dir on a full build so a package dropped from the lockfile stops being

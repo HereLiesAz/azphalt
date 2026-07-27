@@ -12,7 +12,7 @@
     "kind": "app",
     "types": [],
     "targetApps": [
-      "com.hereliesaz.graffitixr"
+      "com.hereliesaz.graffux"
     ],
     "priceStatus": "free",
     "manifest": {
@@ -26,7 +26,7 @@
       "license": "MIT",
       "compat": ">=0.1",
       "targetApps": [
-        "com.hereliesaz.graffitixr"
+        "com.hereliesaz.graffux"
       ],
       "app": {
         "platforms": {
@@ -89,8 +89,8 @@
       {
         "version": "1.0.0",
         "publishedAt": "2026-01-01T00:00:00.000Z",
-        "size": 876,
-        "digest": "sha256-4c39914b938b1c184b6ce2bde2a2ff59f9a4077f68867ffd12e07aa36b31ce9c",
+        "size": 874,
+        "digest": "sha256-042388ce0bcd490361d6de17118e5a0eb4cb83beb0c07012e11db90a7eca3d88",
         "yanked": false
       }
     ]

@@ -1,6 +1,6 @@
 # My Companion App
 
-An azphalt **companion-app** package (`kind: "app"`) — a header that lets a host (e.g. GraffitiXR,
+An azphalt **companion-app** package (`kind: "app"`) — a header that lets a host (e.g. Graffux,
 Guillotine) launch your **Android app or PWA** to perform a function and hand a result back. Your app
 runs in the OS's own sandbox with its own permissions; azphalt only standardizes the *handoff*. See the
 [Companion Apps spec](https://azphalt.org/specs/companion-app) and the

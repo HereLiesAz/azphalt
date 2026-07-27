@@ -65,20 +65,20 @@ jobs:
 
       - name: Verify the committed catalog matches its pinned sources
         # The `.azp` bytes under registry/packages/ are committed, so a deploy needs no network for
-        # them. This re-derives them from the pinned commits and fails on any mismatch — a deploy is
-        # the last place to notice that what is about to be served differs from what was reviewed.
-        # No --update: a genuine change belongs in a PR from registry-sync.yml, not in a deploy.
+        # them. This re-derives each one from the commit the lockfile pins and fails on any integrity
+        # mismatch — a deploy is the last place to notice that what is about to be served differs
+        # from what was reviewed.
+        #
+        # `--check` compares `integrity` (the digest of the UNSIGNED package) rather than the built
+        # bytes, and writes nothing. A byte comparison would be wrong here: signing changes the
+        # bytes, so the first deploy after the signing key is configured would "fail verification"
+        # against a catalog that was committed unsigned, with nothing actually wrong. The signing key
+        # is deliberately absent from this step for the same reason — a deploy verifies provenance of
+        # content, it does not re-sign. Signing belongs to registry-sync.yml, whose output is
+        # reviewed in a PR.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          AZPHALT_PACKAGE_SIGNING_KEY: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY }}
-          AZPHALT_PACKAGE_SIGNING_KEY_ID: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY_ID }}
-        run: |
-          pnpm --filter @azphalt/storefront build-catalog
-          if ! git diff --quiet -- apps/storefront/registry; then
-            echo "::error::The committed catalog does not match its pinned sources. Run registry-sync."
-            git diff --stat -- apps/storefront/registry
-            exit 1
-          fi
+        run: pnpm --filter @azphalt/storefront build-catalog --check
 
       - name: Build & embed the docs site (served at azphalt.org via host rewrites)
         # Builds the VitePress docs into apps/storefront/public/_docs so the same deployment that
