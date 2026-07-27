@@ -80,11 +80,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
           git add apps/storefront/registry
-          git commit -m "chore(registry): sync catalog from extension repos
-
-Re-pinned each source in apps/storefront/registry/sources.json to its
-default-branch head and rebuilt registry/packages/. Merging this publishes
-the new bytes: deploy-storefront then rebuilds and redeploys."
+          # Repeated -m rather than one multi-line string: git joins them with blank lines, and every
+          # line here stays indented inside the `run: |` block. A message body written at column 0
+          # would terminate the block scalar, and YAML would then read it as further workflow keys.
+          git commit \
+            -m "chore(registry): sync catalog from extension repos" \
+            -m "Re-pinned each source in apps/storefront/registry/sources.json to its default-branch head and rebuilt registry/packages/." \
+            -m "Merging this publishes the new bytes; deploy-storefront then rebuilds and redeploys."
           git push -u origin "$branch"
 
           # A summary of what actually moved, so the reviewer sees the change in package terms rather
