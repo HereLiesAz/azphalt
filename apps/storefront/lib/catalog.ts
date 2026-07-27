@@ -673,11 +673,23 @@ import { createVercelStores } from "@azphalt/registry-store-vercel";
 /**
  * Whether to also seed the fabricated demo examples (Halftone Studio, the mock model packages, …).
  *
- * On by default so `next dev` and the tests keep a catalog that exercises every `kind` and both
- * lanes. A deployment sets `AZPHALT_DEMO_SEEDS=0`: their payloads are placeholder bytes, so serving
- * them next to real extensions means shipping users installable packages that cannot work.
+ * On locally so `next dev` and the tests keep a catalog that exercises every `kind` and both lanes;
+ * **off in a deployment**, because their payloads are placeholder bytes like `MOCK_ONNX_BYTES_DEPTH`
+ * and serving them beside real extensions offers users installable packages that cannot work.
+ *
+ * Keyed off `VERCEL`, which the platform sets in the **serverless runtime**, rather than left to a
+ * variable the deploy workflow exports. `seedCatalog` runs at module load inside the deployed
+ * function, so an env var set on the CI step that builds and uploads the bundle is simply not
+ * present when this is read — configuring it there looks right, does nothing, and the fabricated
+ * packages ship anyway.
+ *
+ * `AZPHALT_DEMO_SEEDS` still overrides explicitly in either direction (`1` forces them on, `0` off),
+ * which is what a preview deployment demoing both lanes wants.
  */
-const demoSeedsEnabled = process.env.AZPHALT_DEMO_SEEDS !== "0";
+const demoSeedsEnabled =
+  process.env.AZPHALT_DEMO_SEEDS === "1" ? true
+  : process.env.AZPHALT_DEMO_SEEDS === "0" ? false
+  : process.env.VERCEL !== "1";
 
 /* ─────────────────────────── Store selection ───────────────────────────
  * `DATABASE_URL` **and** `BLOB_READ_WRITE_TOKEN` both present ⇒ the durable Neon + Blob backend, so

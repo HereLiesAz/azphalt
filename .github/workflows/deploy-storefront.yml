@@ -107,11 +107,10 @@ jobs:
           echo "Resolved org=$teamId project=$pid"
 
       - name: Vercel pull / build / deploy (prebuilt, production)
-        env:
-          # The demo examples (Halftone Studio, the mock model packages) ship placeholder payloads —
-          # fine for `next dev` and the tests, but serving them beside real extensions would offer
-          # users installable packages that cannot work. Production serves the baked catalog only.
-          AZPHALT_DEMO_SEEDS: "0"
+        # NOTE: do not try to switch off the demo examples with an env var here. `seedCatalog` runs at
+        # module load inside the deployed serverless function, so anything exported on this step is
+        # long gone by then. `lib/catalog.ts` keys off `VERCEL`, which the platform sets in the
+        # runtime, and turns them off in a deployment on its own.
         run: |
           npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
           npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
