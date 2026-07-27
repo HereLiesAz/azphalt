@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Only the handoff directory is shared, never the app's whole cache. A FileProvider path is a grant
+  surface: anything reachable through it can be handed to another app, so it names exactly the one
+  directory verified packages are staged in and nothing else.
+-->
+<paths>
+    <cache-path name="handoff" path="handoff/" />
+</paths>
