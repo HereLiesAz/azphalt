@@ -56,7 +56,7 @@ describe("catalog", () => {
     const { registry } = await getCatalog();
     const pkg = await registry.getPackage("com.acme.ar-stencil-capture");
     expect(pkg?.summary.kind).toBe("app");
-    expect(pkg?.summary.targetApps).toContain("com.hereliesaz.graffitixr");
+    expect(pkg?.summary.targetApps).toContain("com.hereliesaz.graffux");
 
     const latest = await registry.latest("com.acme.ar-stencil-capture");
     const app = latest?.manifest.app;
@@ -115,11 +115,11 @@ describe("catalog", () => {
 
   it("scopes the per-app catalog: a host sees its own companions plus globals", async () => {
     const { registry } = await getCatalog();
-    const visible = await registry.list({ app: "com.hereliesaz.graffitixr" });
+    const visible = await registry.list({ app: "com.hereliesaz.graffux" });
     const ids = visible.map((p) => p.id);
     expect(ids).toContain("com.acme.ar-stencil-capture"); // app-scoped companion
     expect(ids).toContain("com.foldlab.filmluts"); // a global package, also visible
-    // A different app does NOT see the graffitixr-scoped companion.
+    // A different app does NOT see the graffux-scoped companion.
     const other = await registry.list({ app: "com.someone.else" });
     expect(other.map((p) => p.id)).not.toContain("com.acme.ar-stencil-capture");
   });

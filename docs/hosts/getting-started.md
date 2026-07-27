@@ -44,7 +44,7 @@ If you pass your app's reverse-DNS id, the store returns **global** packages plu
 to your app (`targetApps`) — the mechanism companions and app-specific extensions use:
 
 ```typescript
-const store = new RepositoryClient({ url: "https://azphalt.store", app: "com.hereliesaz.graffitixr" });
+const store = new RepositoryClient({ url: "https://azphalt.store", app: "com.hereliesaz.graffux" });
 ```
 
 ## 3. Download a free package

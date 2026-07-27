@@ -434,7 +434,7 @@ const SEEDS: Seed[] = [
   },
   {
     // A companion app (kind:"app") — an external Android app / PWA the host launches over a handoff
-    // and gets a validated result back (companion-app.md). App-scoped to GraffitiXR's store. Carries
+    // and gets a validated result back (companion-app.md). App-scoped to Graffux's store. Carries
     // no /code and no assets — just the header that says how to install and invoke the app.
     manifest: {
       azphalt: "0.1",
@@ -451,7 +451,7 @@ const SEEDS: Seed[] = [
       author: "HereLiesAz",
       homepage: "https://arstencil.acme.com",
       preview: { image: "preview/card.svg" },
-      targetApps: ["com.hereliesaz.graffitixr"],
+      targetApps: ["com.hereliesaz.graffux"],
       app: {
         platforms: {
           android: {

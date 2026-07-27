@@ -497,7 +497,7 @@ export interface Manifest {
   pack?: PackManifest;
 
   /**
-   * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffitixr"]`).
+   * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffux"]`).
    * A repository shows an app-scoped package only to a matching app; **absent or empty means the
    * package is global** (available to every app). Scoping is a discovery filter, not access control.
    * See `spec/repository-api.md` § App scoping.

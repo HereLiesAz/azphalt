@@ -15,7 +15,7 @@ Keeping these separable is the core constraint: anyone can implement azphalt and
 
 - **Credible neutrality.** A standard trapped in an app's repo reads as that app's private thing, and no competitor adopts it. Separation is the first structural signal that it's shared infrastructure.
 - **A physical moat boundary.** A separate MIT repo literally cannot see a host's proprietary engine source. "The extension surface never exposes GraffitiXR's relocalization engine" stops being a discipline you maintain and becomes a line you *can't cross by accident*.
-- **Clean dependency direction.** A conforming host (GraffitiXR the first, Guillotine — a video/audio editor — the second) depends on azphalt as a published library and calls across the boundary. azphalt never depends on any host.
+- **Clean dependency direction.** A conforming host (Graffux the first, Guillotine — a video/audio editor — the second) depends on azphalt as a published library and calls across the boundary. azphalt never depends on any host.
 
 ## The stack, and why
 
@@ -33,10 +33,10 @@ Keeping these separable is the core constraint: anyone can implement azphalt and
 
 **Two decisions fall out, and neither is React — these are the real architecture:**
 
-- **Execution substrate.** Extensions don't run in a browser; they run inside a native host — GraffitiXR, for instance, is a Kotlin/Compose Android app. **Decided: a WASM substrate** — not React Native (which drags a whole runtime and renderer into a Compose app to do what a lean embedded runtime does lighter), and not a bare JS engine. In short, WASM is the substrate and JS runs on it via QuickJS-in-WASM, so the single TS SDK survives and behavior is deterministic across hosts.
+- **Execution substrate.** Extensions don't run in a browser; they run inside a native host — Graffux, for instance, is a Kotlin/Compose Android app. **Decided: a WASM substrate** — not React Native (which drags a whole runtime and renderer into a Compose app to do what a lean embedded runtime does lighter), and not a bare JS engine. In short, WASM is the substrate and JS runs on it via QuickJS-in-WASM, so the single TS SDK survives and behavior is deterministic across hosts.
 - **Extension UI.** A declarative UI schema the host renders as native controls — *not* React-in-a-webview (the Figma model). This is what keeps azphalt genuinely cross-app: if a plugin's UI is a control schema, a Kotlin app renders it in Compose and a SwiftUI app renders it natively; if it's React/HTML, every adopting app is forced to ship a webview, which quietly breaks "any app can implement." Portability argues against React here.
 
-The native host that embeds the engine and renders the schema is **each app's own conforming implementation** (GraffitiXR writes the Kotlin one). This repo ships the language-neutral spec plus the TS/JS reference so any host can be checked against it.
+The native host that embeds the engine and renders the schema is **each app's own conforming implementation** (Graffux writes the Kotlin one). This repo ships the language-neutral spec plus the TS/JS reference so any host can be checked against it.
 
 ## Repo layout (monorepo — pnpm workspaces)
 
@@ -118,7 +118,7 @@ So: keep the standard open and self-hostable, require nobody to touch the store 
 1. **Spec skeleton** — package format, extension manifest, capability model, UI schema. The seed. *(built)*
 2. **SDK + first importers** — `.abr` and `.cube` first; now a wide importer family targeting `.azp`. *(built)*
 3. **Reference runtime + real sandbox** — `runtime-reference` proves the contract; `runtime-wasm` runs it under QuickJS-in-WASM and raw WebAssembly. *(built)*
-4. **Native hosts** — embed the engine, render the UI schema natively. GraffitiXR (paint/AR) is the first real consumer; Guillotine (video/audio) is the second, adopting the same `.azp` loader + Ed25519 trust on-device. These live outside this repo, behind their own engine boundaries.
+4. **Native hosts** — embed the engine, render the UI schema natively. Graffux (paint/AR) is the first real consumer; Guillotine (video/audio) is the second, adopting the same `.azp` loader + Ed25519 trust on-device. These live outside this repo, behind their own engine boundaries.
 5. **Registry + marketplace** — `registry` (open lane) and its consignment overlay + `repository-server` are built; the hosted marketplace grows once there's an audience.
 
 ## Execution engine — decided

@@ -1,0 +1,72 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.speech-and-captions",
+  "name": "Speech & Captions",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Transcribe, diarize, denoise and caption. Speech-to-text and speaker segmentation with the caption motion to put words on screen.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.whisper",
+        "required": true,
+        "note": "transcription"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.pyannote-segmentation",
+        "required": true,
+        "note": "who spoke when"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.gtcrn",
+        "required": true,
+        "note": "denoise before transcribing"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.wespeaker",
+        "required": false,
+        "note": "speaker identity"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.piper-en",
+        "required": false,
+        "note": "text-to-speech"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.karaoke-sweep",
+        "required": false,
+        "note": "word-synced highlight"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.word-stagger",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.typewriter",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.typewriter-cursor",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.rsvp-delivery",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.diarization-box",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.diarization-flip",
+        "required": false
+      }
+    ]
+  }
+}

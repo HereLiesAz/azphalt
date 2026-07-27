@@ -1,0 +1,49 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.stencil-studio",
+  "name": "Stencil Studio",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Turn a photo into something you can actually cut and paint: flat luminance bands, halftone screens, and the proportional grid for scaling a sketch onto a wall.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.stencil-layers",
+        "required": true,
+        "note": "2–4 flat bands — the cut stencil"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.halftone",
+        "required": true,
+        "note": "ink dots on a rotated screen"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.grid-guide",
+        "required": true,
+        "note": "the grid method, square by square"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.checkerboard",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.noise",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.solid",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.gradients",
+        "required": false
+      }
+    ]
+  }
+}

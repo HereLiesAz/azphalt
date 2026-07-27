@@ -55,7 +55,17 @@ See [`com.azphalt.example.hello-lut/`](com.azphalt.example.hello-lut) for a mini
 ## Signing
 
 On merge, [`publish-submissions.yml`](../.github/workflows/publish-submissions.yml) packages each
-folder and publishes it to the live registry. If the `AZPHALT_PACKAGE_SIGNING_KEY` repo secret is
+folder and publishes it over `POST /api/publish`.
+
+> **This lane is not the same as the store's own catalog.** The extensions the store serves are built
+> from commit-pinned sources into committed `.azp` bytes (see
+> [`apps/storefront/registry/`](../apps/storefront/registry) and the storefront README), so they
+> survive any restart. `POST /api/publish` is a *runtime* write, and a deployment without
+> `DATABASE_URL` + `BLOB_READ_WRITE_TOKEN` answers `503` rather than accepting one it cannot keep.
+> Until submissions are folded into the baked catalog, a merged submission reaches a live store only
+> where that durable store is configured.
+
+If the `AZPHALT_PACKAGE_SIGNING_KEY` repo secret is
 set (a PKCS#8 PEM Ed25519 private key), each `.azp` is signed with it first; the optional
 `AZPHALT_PACKAGE_SIGNING_KEY_ID` repo variable records a key id in the signature.
 
@@ -78,3 +88,31 @@ tokens — they are separate trust roles and must not be shared.
 ## Licensing
 
 Submit only content you have the right to distribute, under the SPDX license your manifest names. Importers ([`packages/importers`](../packages/importers)) can normalize `.abr` / `.cube` / ISF / glTF / … into the `.azp` layout for you.
+
+**`manifest.license` and the `LICENSE` file must agree.** The manifest field is an
+[SPDX identifier](https://spdx.org/licenses/); `LICENSE` is the actual terms. A package declaring
+`CC-BY-4.0` while shipping MIT text grants terms other than the ones it states, and CI cannot catch
+that for you. `LicenseRef-…` is legal SPDX for anything without a standard identifier — the store's
+own catalog uses `LicenseRef-Proprietary` for all-rights-reserved packages.
+
+### If your package carries someone else's work
+
+A model, a font, a sample library, or a LUT derived from someone else's profile is **their** work,
+and bundling or re-hosting it is redistribution — which is what triggers their licence's obligations.
+Apache-2.0, BSD-3-Clause, MIT and CC-BY all require attribution to survive redistribution, so:
+
+- Set `modelLicense` (or note the source in the description) naming the upstream terms.
+- Ship a `NOTICE` file alongside `LICENSE` carrying the upstream attribution and where you got it.
+- Do not assert your own licence over content you did not make. If the upstream states no licence at
+  all, you have nothing to pass on — say so plainly rather than picking terms you cannot grant.
+
+Using the **remote-header** pattern (`"path": ""` plus `remoteUrl`) pointing at the *original* source
+avoids the problem entirely: the host fetches from upstream, you redistribute nothing, and only your
+own manifest is yours to license. Re-hosting the file on your own releases is the case that needs the
+NOTICE.
+
+### Non-commercial and gated upstreams
+
+Some models are CC-BY-NC or require accepting conditions before download. Those cannot be consigned
+to the paid lane, and re-hosting them may breach the terms regardless of the SPDX id. Check before
+submitting.

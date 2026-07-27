@@ -1,0 +1,50 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.vision-and-masking",
+  "name": "Vision & Masking",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Understand the image before you paint it — subject mattes, face detection, monocular depth, inpainting and a vision-language model that can describe a frame.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.selfie-segmentation",
+        "required": true,
+        "note": "per-pixel subject matte"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.midas",
+        "required": true,
+        "note": "depth from a single image"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.lama",
+        "required": true,
+        "note": "erase and fill large regions"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.ultraface",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.mobilefacenet",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.moondream",
+        "required": false,
+        "note": "describe / ask about a frame"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.mobilenet",
+        "required": false
+      }
+    ]
+  }
+}

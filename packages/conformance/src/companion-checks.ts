@@ -1,5 +1,5 @@
 /**
- * Conformance checks for a **companion-app host** — an app (GraffitiXR, Guillotine, …) that consumes
+ * Conformance checks for a **companion-app host** — an app (Graffux, Guillotine, …) that consumes
  * `kind:"app"` companion packages: it verifies the header, matches the platform it runs on, gets
  * OS-style consent, launches an external Android app or PWA over the declared transport, and validates
  * the returned assets/params against the handoff's declared `output` before ingesting them

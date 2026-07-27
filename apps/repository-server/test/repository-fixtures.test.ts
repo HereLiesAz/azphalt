@@ -36,7 +36,7 @@ function azp(id: string, extra: Partial<Omit<Manifest, "files" | "id">> = {}): U
 }
 
 /** The host id the sample companion is scoped to — a paint host browsing its own store. */
-const HOST_APP = "com.hereliesaz.graffitixr";
+const HOST_APP = "com.hereliesaz.graffux";
 
 /**
  * A `kind:"app"` **companion** package (`companion-app.md`) — a header (no /code, no /assets) that lets
@@ -182,7 +182,7 @@ describe("Repository API — canonical sample responses (#43)", () => {
     const scoped = (f["packages-app-scoped"] as { body: { packages: Array<{ id: string; kind: string; targetApps?: string[] }> } }).body;
     const companion = scoped.packages.find((p) => p.id === "com.demo.companion");
     expect(companion?.kind).toBe("app");
-    expect(companion?.targetApps).toContain("com.hereliesaz.graffitixr");
+    expect(companion?.targetApps).toContain("com.hereliesaz.graffux");
     // The companion's detail carries the full app manifest (platforms + handoffs).
     const detail = (f["package-detail-companion"] as { body: { manifest: { kind: string; app: { handoffs: Array<{ action: string }> } } } }).body;
     expect(detail.manifest.kind).toBe("app");

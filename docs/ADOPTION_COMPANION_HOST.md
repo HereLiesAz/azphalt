@@ -10,7 +10,7 @@ it hands off to a separate OS-level app and ingests a validated result. The norm
 ## Why this profile exists
 
 A `code` extension is powerless by design — no camera, no sensors, no network (the *moat*). But some
-functions want a **full app**: an AR-capture tool that returns a stencil to GraffitiXR, an audio-mastering
+functions want a **full app**: an AR-capture tool that returns a stencil to Graffux, an audio-mastering
 PWA that returns a track to Guillotine. Those are whole OS-level applications with their own permissions —
 the opposite of a sandbox. A `kind: "app"` package doesn't put them *in* the sandbox; it standardizes the
 **handoff** so any host invokes any companion the same way, and **the moat still holds**:

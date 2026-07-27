@@ -6,7 +6,7 @@ wiring, `verifyAzp` acceptance of an `app` package, the `create-azphalt` compani
 `companion` host-conformance profile (`runCompanionConformance`), and registry discovery are all
 implemented and on `main`; every design question below is resolved. Reference host handoffs (the
 Android Intent round-trip, the PWA popup/`postMessage` return) live in conforming hosts
-([GraffitiXR](https://github.com/HereLiesAz/GraffitiXR), [Guillotine](https://github.com/HereLiesAz/Guillotine)),
+([Graffux](https://github.com/HereLiesAz/Graffux), [Guillotine](https://github.com/HereLiesAz/Guillotine)),
 outside this standards repo.*
 
 ## Why this exists — and why it doesn't break the moat
@@ -32,7 +32,7 @@ returns a **declared result** the host validates and ingests. The moat holds bec
   permissions") before any handoff — the same trust gesture as a system share sheet.
 
 The result: the marketplace grows from *assets + sandboxed filters* to *assets + filters + full
-companion apps* — a specialized AR-capture app returns a stencil to GraffitiXR; an audio-mastering PWA
+companion apps* — a specialized AR-capture app returns a stencil to Graffux; an audio-mastering PWA
 returns a processed track to Guillotine — **without** widening what a sandboxed extension can do.
 
 ## The package (`kind: "app"`)
@@ -50,7 +50,7 @@ invoke an external app. Its manifest adds one block, `app`:
   "kind": "app",
   "license": "MIT",
   "compat": ">=0.1",
-  "targetApps": ["com.hereliesaz.graffitixr"],   // usually app-scoped (see repository-api.md § App scoping)
+  "targetApps": ["com.hereliesaz.graffux"],   // usually app-scoped (see repository-api.md § App scoping)
   "app": {
     "platforms": {
       "android": {
@@ -258,7 +258,7 @@ package-signature check or the host's return validation.
 A companion-app package lists in the registry like any other, with two touches:
 
 - It is almost always **app-scoped** (`targetApps`) — a `capture-stencil` companion belongs to
-  GraffitiXR's store, not everyone's — surfaced via `GET /packages?app=…` (`repository-api.md §
+  Graffux's store, not everyone's — surfaced via `GET /packages?app=…` (`repository-api.md §
   App scoping`).
 - The discovery index MAY advertise a **`"companion"` profile** in `profiles`
   (`repository-api.md § Supported types and profiles`), and a host filters to it, so only hosts that

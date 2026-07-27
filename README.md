@@ -45,7 +45,7 @@ LICENSE         MIT
 | [`@azphalt/runtime-wasm`](packages/runtime-wasm) | The real sandbox — QuickJS-in-WASM (`js`) and raw WebAssembly (`wasm`). |
 | [`@azphalt/conformance`](packages/conformance) | Executable pass/fail battery for code hosts and asset hosts. |
 | [`@azphalt/registry`](packages/registry) | Verify · index · version · serve · search, the consignment marketplace overlay, and the Stripe Connect charge + onboarding surfaces. |
-| [`@azphalt/registry-store-vercel`](packages/registry-store-vercel) | A durable `RegistryStore` (Neon Postgres + private Vercel Blob) so a deployment survives restarts and serverless fan-out. |
+| [`@azphalt/registry-store-vercel`](packages/registry-store-vercel) | A durable `RegistryStore` (Neon Postgres + private Vercel Blob) for the paid lane's runtime state — checkout sessions, entitlements, seller accounts. The storefront's *catalog* needs none of it: it is built from commit-pinned sources and committed to git. |
 | [`@azphalt/repository-client`](packages/repository-client) | Client SDK for the Repository API. |
 | [`@azphalt/mcp`](packages/mcp) | An MCP server exposing `.azp` verify/inspect/extract to any MCP host. |
 | [`create-azphalt`](packages/create-azphalt) | Scaffolder for a new extension package. |
@@ -62,7 +62,11 @@ The `docs/` tree also builds as a VitePress site (`pnpm --filter docs build`).
 
 ## Status
 
-Spec-first, and now substantially built: the SDK, the `.azp` container with signing and a trust model, a wide importer family, both runtimes (the reference contract and the QuickJS-in-WASM / raw-WASM sandbox), a conformance suite, and the registry with its consignment marketplace and a reference repository backend. The marketplace's paid lane runs end to end — a durable store (Neon + Blob), real Stripe Connect split-payout checkout with self-service seller onboarding, and signed buy-once entitlements that gate downloads and are recoverable by the buyer. The first conforming native hosts are [GraffitiXR](https://github.com/HereLiesAz/GraffitiXR) (paint / AR) and [Guillotine](https://github.com/HereLiesAz/Guillotine) (video / audio, temporal), which adopt azphalt across their own engine boundaries. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and its reasoning.
+Spec-first, and now substantially built: the SDK, the `.azp` container with signing and a trust model, a wide importer family, both runtimes (the reference contract and the QuickJS-in-WASM / raw-WASM sandbox), a conformance suite, and the registry with its consignment marketplace and a reference repository backend. The marketplace's paid lane runs end to end — real Stripe Connect split-payout checkout with self-service seller onboarding, and signed buy-once entitlements that gate downloads and are recoverable by the buyer, over a durable store (Neon + Blob) for that runtime state.
+
+The store's **catalog** is git, not a database: [`apps/storefront/registry/sources.json`](apps/storefront/registry/sources.json) pins every extension to one commit, the built `.azp` bytes are committed alongside it, and every serverless instance reconstructs an identical catalog at cold start. Changing what the store serves therefore takes a merged PR — there is no runtime write path and nothing to drift. It currently carries **120 packages** — 109 extensions plus nine app packs and two header packages.
+
+The first conforming native hosts are [Graffux](https://github.com/HereLiesAz/Graffux) (paint / AR) and [Guillotine](https://github.com/HereLiesAz/Guillotine) (video / audio, temporal), which adopt azphalt across their own engine boundaries. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and its reasoning.
 
 ## Future Projects
 

@@ -1,0 +1,49 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.broadcast-toolkit",
+  "name": "Broadcast Toolkit",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Bars, timecode, countdowns and fill sources — the technical layers an edit needs for slating, alignment and delivery checks.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.smpte",
+        "required": true,
+        "note": "colour bars"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.timecode",
+        "required": true,
+        "note": "burn-in"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.countdown",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.solid",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.gradients",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.noise",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.checkerboard",
+        "required": false,
+        "note": "alpha/transparency check"
+      }
+    ]
+  }
+}

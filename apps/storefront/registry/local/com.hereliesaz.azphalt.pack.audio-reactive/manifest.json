@@ -1,0 +1,80 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.audio-reactive",
+  "name": "Audio-Reactive",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Motion driven by the sound itself — loudness, pitch, speaker turns and vocal affect mapped onto scale, colour, position and blur.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.volume-bulge",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.loudness-color",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.pitch-rotation",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.audio-skew",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.yamnet",
+        "required": false,
+        "note": "sound-event classification for highlight detection"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.pitch-tracker",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.speaker-drop",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.speaker-pan",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.whisper-blur",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.yell-shake",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.sentiment-hue",
+        "required": false,
+        "note": "affect-driven colour"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.anger-jiggle",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.tremble-arousal",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.slump-disappointment",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.beast-shake",
+        "required": false
+      }
+    ]
+  }
+}

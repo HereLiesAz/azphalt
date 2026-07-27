@@ -1,0 +1,41 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.graffitixr",
+  "name": "GraffitiXR",
+  "version": "1.0.0",
+  "kind": "app",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Project artwork onto a real wall in AR, line it up on site, and hand the framed result back to the host.",
+  "author": "HereLiesAz",
+  "homepage": "https://github.com/HereLiesAz/GraffitiXR/releases/latest",
+  "app": {
+    "platforms": {
+      "android": {
+        "packageId": "com.hereliesaz.graffitixr",
+        "minSdk": 29,
+        "install": "https://github.com/HereLiesAz/GraffitiXR/releases/latest"
+      }
+    },
+    "handoffs": [
+      {
+        "id": "project-on-wall",
+        "action": "capture",
+        "name": "Project on a wall (AR)",
+        "input": {
+          "assets": [
+            "image"
+          ],
+          "params": {
+            "wallWidthMm": "number?"
+          }
+        },
+        "output": {
+          "assets": [
+            "image"
+          ]
+        }
+      }
+    ]
+  }
+}
