@@ -105,7 +105,25 @@ jobs:
             echo '```'
           } > /tmp/pr-body.md
 
-          gh pr create --draft \
-            --title "chore(registry): sync catalog from extension repos" \
-            --body-file /tmp/pr-body.md
-          cat /tmp/pr-body.md >> "$GITHUB_STEP_SUMMARY"
+          # Opening the PR is best-effort. A repo with "Allow GitHub Actions to create and approve
+          # pull requests" switched off rejects this with a GraphQL permissions error — and failing
+          # the run there would throw away work that already succeeded: the rebuilt, signed catalog
+          # is pushed and safe on "$branch". Report how to open it by hand instead.
+          if gh pr create --draft \
+               --title "chore(registry): sync catalog from extension repos" \
+               --body-file /tmp/pr-body.md; then
+            cat /tmp/pr-body.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Could not open the PR automatically — the catalog is pushed to $branch."
+            {
+              echo "### Catalog rebuilt, PR not opened"
+              echo ""
+              echo "The rebuilt catalog is on \`$branch\`. Opening its PR failed, most likely because"
+              echo "**Settings → Actions → General → Workflow permissions → \"Allow GitHub Actions to"
+              echo "create and approve pull requests\"** is off."
+              echo ""
+              echo "Open it here: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_REF_NAME}...${branch}?expand=1"
+              echo ""
+              cat /tmp/pr-body.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
