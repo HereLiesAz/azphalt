@@ -144,7 +144,7 @@ jobs:
           else
             what="Rebuilt registry/packages/ from the shas apps/storefront/registry/sources.json already pins. No source's ref was moved, so anything new here is a package that was pinned but never built."
           fi
-          if git diff --quiet -- apps/storefront/registry apps/storefront/public/previews; then
+          if git diff --quiet -- apps/storefront/registry; then
             echo "Catalog unchanged — nothing to publish."
             echo "Catalog unchanged." >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -154,7 +154,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add apps/storefront/registry apps/storefront/public/previews
+          git add apps/storefront/registry
           # Repeated -m rather than one multi-line string: git joins them with blank lines, and every
           # line here stays indented inside the `run: |` block. A message body written at column 0
           # would terminate the block scalar, and YAML would then read it as further workflow keys.

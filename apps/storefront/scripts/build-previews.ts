@@ -22,7 +22,7 @@
  * ## Why previews are served, not packaged
  *
  * `preview.image` may be an in-package path *or* an `https:` URL. These are written to
- * `public/previews/` and referenced by URL, which keeps package bytes — and therefore every
+ * `registry/previews/` and referenced by URL, which keeps package bytes — and therefore every
  * `integrity` digest and every signature — untouched. Baking previews into the `.azp` would mean
  * re-signing 133 packages to change a picture.
  *
@@ -41,7 +41,19 @@ import { encodePng } from "./lib/png.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const registryDir = resolve(__dirname, "..", "registry");
 const packagesDir = join(registryDir, "packages");
-const outDir = resolve(__dirname, "..", "public", "previews");
+/**
+ * Generated previews live under `registry/`, **not** `public/`.
+ *
+ * `public/` is the output directory of the Kotlin/Wasm distribution
+ * (`apps/storefront-cmp/build.gradle.kts`), and a Gradle distribution task *clears* its output
+ * directory before writing. Anything committed there that the wasm build does not itself re-emit is
+ * deleted on every deploy — which is exactly what happened to these PNGs: committed in git, absent
+ * from production, and disguised as a 200 by the SPA fallback rewrite.
+ *
+ * Keeping them beside `previews.json` also puts them where they belong: they are generated registry
+ * data, like `registry/packages/*.azp`, and are served by a route handler for the same reason.
+ */
+const outDir = join(registryDir, "previews");
 
 /** Scratch space for evaluating extension code payloads (see `loadModule`). */
 const scratch = join(tmpdir(), "azphalt-previews");

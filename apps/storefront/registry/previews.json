@@ -55,6 +55,12 @@
     "com.hereliesaz.azphalt.glitch-decode": {
       "image": "/previews/com.hereliesaz.azphalt.glitch-decode.png"
     },
+    "com.hereliesaz.azphalt.grid-guide": {
+      "image": "/previews/com.hereliesaz.azphalt.grid-guide.png"
+    },
+    "com.hereliesaz.azphalt.halftone": {
+      "image": "/previews/com.hereliesaz.azphalt.halftone.png"
+    },
     "com.hereliesaz.azphalt.hop-in": {
       "image": "/previews/com.hereliesaz.azphalt.hop-in.png"
     },
@@ -99,6 +105,9 @@
     },
     "com.hereliesaz.azphalt.stabilize-actioncam": {
       "image": "/previews/com.hereliesaz.azphalt.stabilize-actioncam.png"
+    },
+    "com.hereliesaz.azphalt.stencil-layers": {
+      "image": "/previews/com.hereliesaz.azphalt.stencil-layers.png"
     },
     "com.hereliesaz.azphalt.subject-orbit": {
       "image": "/previews/com.hereliesaz.azphalt.subject-orbit.png"
