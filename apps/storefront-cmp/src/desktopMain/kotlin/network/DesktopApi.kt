@@ -41,3 +41,12 @@ actual suspend fun httpPostJson(path: String, body: String): String = withContex
         .build()
     HttpClient.newBuilder().build().send(request, HttpResponse.BodyHandlers.ofString()).body()
 }
+
+actual suspend fun fetchBytes(url: String): ByteArray? = withContext(Dispatchers.IO) {
+    runCatching {
+        val target = if (url.startsWith("http")) url else "$API_BASE$url"
+        HttpClient.newBuilder().build()
+            .send(HttpRequest.newBuilder().uri(URI.create(target)).GET().build(), HttpResponse.BodyHandlers.ofByteArray())
+            .takeIf { it.statusCode() in 200..299 }?.body()
+    }.getOrNull()
+}

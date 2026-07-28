@@ -18,6 +18,16 @@ data class PackEntryDto(
 @Serializable
 data class PackDto(val entries: List<PackEntryDto> = emptyList())
 
+/**
+ * Generated store-card artwork (`spec/extension-manifest.md` § preview).
+ *
+ * `image` is a still — for a filter, the actual output of running it; for a motion preset, a
+ * filmstrip sampled from its keyframes. It may be an in-package path or an absolute URL; the store
+ * serves its own from `/previews/<id>.png`.
+ */
+@Serializable
+data class PreviewDto(val image: String? = null, val clip: String? = null)
+
 @Serializable
 data class PackageSummary(
     val id: String,
@@ -38,7 +48,15 @@ data class PackageSummary(
     val types: List<String> = emptyList(),
     /** Developer content-maturity self-attestation: "general" (default) or "mature" (18+, age-gated). */
     val maturity: String = "general",
-    val pack: PackDto? = null
+    val pack: PackDto? = null,
+    /**
+     * The real artwork, when the package has any.
+     *
+     * Without this the UI could only ever draw the procedural stand-in in `PreviewArt` — which is
+     * what it did, even after the repository started serving generated previews, because nothing on
+     * this side knew the field existed.
+     */
+    val preview: PreviewDto? = null
 ) {
     /** True when the developer flagged this as 18+ content the store should put behind an age gate. */
     val isMature: Boolean get() = maturity == "mature"

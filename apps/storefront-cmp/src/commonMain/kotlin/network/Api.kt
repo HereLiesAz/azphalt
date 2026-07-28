@@ -57,3 +57,12 @@ suspend fun submitIpClaim(
     }.toString()
     return json.decodeFromString<ReportResponse>(httpPostJson("/api/reports", body))
 }
+
+/**
+ * Fetch raw bytes for [url], or null if it cannot be loaded.
+ *
+ * Used for store-card preview images. Returns null rather than throwing because a missing preview is
+ * a cosmetic absence, not an error: the card falls back to its procedural art and the grid keeps
+ * rendering. A preview that failed to load must never be able to take the store down with it.
+ */
+expect suspend fun fetchBytes(url: String): ByteArray?

@@ -225,3 +225,7 @@ public actual suspend fun startCheckout(packageId: String): CheckoutResponse {
         "paid packages on Android go through Play Billing, not the web checkout",
     )
 }
+
+public actual suspend fun fetchBytes(url: String): ByteArray? = withContext(Dispatchers.IO) {
+    runCatching { httpGet(if (url.startsWith("http")) url else "$DEFAULT_REPOSITORY$url") }.getOrNull()
+}
