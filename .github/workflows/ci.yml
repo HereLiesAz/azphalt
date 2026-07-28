@@ -48,21 +48,10 @@ jobs:
           distribution: corretto
           java-version: '17'
       - name: Write google-services.json when Firebase is configured
-        # Firebase config is a secret, so it cannot live in the tree. The Gradle build gates the plugin
-        # and the Firebase dependencies on this file existing, which is what keeps the Android app
-        # buildable for a fork or a pull request from one — neither can read repository secrets, and
-        # both would otherwise fail on a plugin that aborts when the file is missing.
+        # See the script for why a package-name mismatch warns and builds on rather than failing.
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
-        run: |
-          if [ -z "$GOOGLE_SERVICES" ]; then
-            echo "GOOGLE_SERVICES is not set — building without Firebase."
-            exit 0
-          fi
-          printf '%s' "$GOOGLE_SERVICES" > apps/storefront-cmp/google-services.json
-          node -e 'JSON.parse(require("fs").readFileSync("apps/storefront-cmp/google-services.json","utf8"))' \
-            || { echo "::error::GOOGLE_SERVICES is not valid JSON" >&2; exit 1; }
-          echo "Firebase configured."
+        run: node .github/scripts/write-google-services.mjs
 
       - name: Build the Compose/Wasm storefront (compiles commonMain + wasmJs)
         working-directory: apps/storefront-cmp
