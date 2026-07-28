@@ -65,8 +65,23 @@ an entry to `sources.json` — so its bytes do not exist under `registry/package
 them. A `pinned` run adds exactly the missing packages and leaves all ~130 existing pins alone, which
 keeps the reviewable diff about the thing that changed.
 
-`latest` is how upstream extension updates get noticed, and necessarily touches every pin. It is what
-`repository_dispatch` and the daily schedule use. A manual **Run workflow** defaults to `pinned`.
+`latest` is how upstream extension updates get noticed, and necessarily touches every pin.
+
+Which trigger picks which is fixed in the workflow, not passed in — each trigger has one right answer,
+so no dispatch payload can talk a run out of the guarantee its trigger exists to provide:
+
+| Trigger | Mode | Why |
+| --- | --- | --- |
+| Push to `main` touching `sources.json` | `pinned` | The lockfile just changed deliberately; publish exactly what it now says. |
+| `repository_dispatch` (`extension-updated`) | `latest` | An extension repo is reporting that it moved. |
+| Daily schedule | `latest` | The catch-all sweep for repos that never wired the dispatch. |
+| Manual **Run workflow** | your choice, default `pinned` | |
+
+The push trigger means **adding an extension publishes itself**: merge the PR that appends to
+`sources.json` and the sync runs on its own. It cannot recurse — a `pinned` run's PR touches only
+`packages/` and `catalog.json`, so merging it does not match the path filter, and a `latest` run's PR
+does re-pin `sources.json` but the `pinned` run that follows finds the catalog already matching and
+exits without opening anything.
 
 ### What still needs a database
 
