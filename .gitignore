@@ -13,6 +13,12 @@ apps/storefront-cmp/.gradle/
 
 apps/storefront-cmp/local.properties
 
+# The Firebase config. Written from the GOOGLE_SERVICES secret in CI, never committed: it names the
+# Firebase project and carries its API key, and a committed copy would let anyone write analytics
+# events into that project. The Android build treats it as optional (see `firebaseConfigured` in
+# apps/storefront-cmp/build.gradle.kts) so a checkout without it still builds.
+apps/storefront-cmp/google-services.json
+
 # apps/storefront/public/ is the Kotlin/Wasm distribution's output directory, and a Gradle
 # distribution task clears it before writing. Nothing committed there survives a build, so these —
 # every one of them a wasmJsMain/resources file the build re-emits — were copies that silently drifted

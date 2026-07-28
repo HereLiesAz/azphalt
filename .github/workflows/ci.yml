@@ -47,6 +47,12 @@ jobs:
         with:
           distribution: corretto
           java-version: '17'
+      - name: Write google-services.json when Firebase is configured
+        # See the script for why a package-name mismatch warns and builds on rather than failing.
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+        run: node .github/scripts/write-google-services.mjs
+
       - name: Build the Compose/Wasm storefront (compiles commonMain + wasmJs)
         working-directory: apps/storefront-cmp
         run: ./gradlew wasmJsBrowserDistribution --no-daemon --stacktrace
