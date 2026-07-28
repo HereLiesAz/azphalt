@@ -1,6 +1,16 @@
 package components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.decodeToImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import network.fetchBytes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -43,6 +53,28 @@ private fun styleFor(pkg: PackageSummary): ArtStyle {
  */
 @Composable
 fun PreviewArt(pkg: PackageSummary, tint: Color, phase: Float, modifier: Modifier = Modifier) {
+    // Real artwork wins over the procedural stand-in.
+    //
+    // The generated previews are the *actual* output of running the filter, or a filmstrip sampled
+    // from a motion preset's real keyframes. The drawings below are a guess derived from the
+    // package's name and kind — a decent placeholder, and no substitute for the thing itself. This
+    // check is what makes the store show what an extension does rather than what its name suggests.
+    val url = pkg.preview?.image
+    if (url != null) {
+        val bitmap = rememberPreviewBitmap(url)
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = modifier,
+            )
+            return
+        }
+        // Still loading, or the image failed: fall through to the procedural art rather than
+        // showing a hole. A card is never empty.
+    }
+
     // Derive a 0..1 "breathing" pulse from the linear phase.
     val pulse = 0.5f + 0.5f * sin(phase * TAU)
     val style = styleFor(pkg)
@@ -165,3 +197,27 @@ private fun DrawScope.drawWave(phase: Float, tint: Color) {
         drawPath(path, tint.copy(alpha = 0.5f - l * 0.12f), style = Stroke(width = 3f, cap = StrokeCap.Round))
     }
 }
+
+/**
+ * Load and decode a preview image, cached for the session.
+ *
+ * A browse grid re-composes constantly as it scrolls, so without the cache every card would refetch
+ * and re-decode its PNG on each pass. The map is keyed by URL and never evicted, which is fine at
+ * this scale — the whole catalogue's previews are a few hundred kilobytes.
+ *
+ * Returns null while loading and on failure; the caller falls back to procedural art either way.
+ */
+@Composable
+private fun rememberPreviewBitmap(url: String): ImageBitmap? {
+    var bitmap by remember(url) { mutableStateOf(previewCache[url]) }
+    LaunchedEffect(url) {
+        if (bitmap != null) return@LaunchedEffect
+        val bytes = fetchBytes(url) ?: return@LaunchedEffect
+        val decoded = runCatching { bytes.decodeToImageBitmap() }.getOrNull() ?: return@LaunchedEffect
+        previewCache[url] = decoded
+        bitmap = decoded
+    }
+    return bitmap
+}
+
+private val previewCache = mutableMapOf<String, ImageBitmap>()

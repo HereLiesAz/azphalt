@@ -6,6 +6,9 @@ import kotlinx.browser.window
 import kotlinx.coroutines.await
 import models.CheckoutResponse
 import models.PackageSummary
+import org.khronos.webgl.ArrayBuffer
+import org.khronos.webgl.Int8Array
+import org.khronos.webgl.get
 import org.w3c.fetch.RequestInit
 import org.w3c.fetch.Response
 
@@ -34,4 +37,15 @@ actual suspend fun httpPostJson(path: String, body: String): String {
     ).await()
     val text: JsString = response.text().await()
     return text.toString()
+}
+
+actual suspend fun fetchBytes(url: String): ByteArray? = try {
+    val response: Response = window.fetch(url).await()
+    if (!response.ok) null else {
+        val buffer: ArrayBuffer = response.arrayBuffer().await()
+        val view = Int8Array(buffer)
+        ByteArray(view.length) { view.get(it) }
+    }
+} catch (_: Throwable) {
+    null
 }
