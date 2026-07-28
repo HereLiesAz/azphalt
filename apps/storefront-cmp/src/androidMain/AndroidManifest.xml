@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Play Billing. Required for the paid lane (spec/store-app.md § Paid packages). -->
     <uses-permission android:name="com.android.vending.BILLING" />
+
+    <!-- Firebase Analytics ships with advertising permissions this app has no use for.
+         `firebase-analytics` merges in the advertising ID and the Privacy Sandbox ad-attribution
+         permissions by default, because most apps that measure also advertise. This one does not:
+         the published privacy policy states there is no advertising identifier and no advertising
+         partner, and a permission in the manifest is a fact about the app regardless of whether any
+         code reads it — Play's Data Safety form is answered from what is declared here.
+
+         Removed rather than merely unused, so the claim holds at the manifest level. Analytics keeps
+         working; what stops working is ad attribution, which was never wanted. The meta-data flags
+         below turn off the same collection inside the SDK, so this does not depend on the merger
+         alone. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
 
     <application
         android:label="Azphalt"
@@ -11,6 +27,18 @@
         android:theme="@style/Theme.Azphalt"
         android:allowBackup="false"
         android:supportsRtl="true">
+
+        <!-- Firebase Analytics collection settings.
+             The advertising ID and the Android ID (SSAID) are both device-scoped identifiers that
+             would survive a reinstall and could be joined against other apps' data. Analytics does
+             not need either to count screen views and installs, which is all this app measures, so
+             it is left with only the app-instance id — a random value scoped to this install and
+             cleared when the app is uninstalled or its data wiped. -->
+        <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
+        <meta-data android:name="google_analytics_ssaid_collection_enabled" android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="false" />
 
         <!-- The store, opened by a person. -->
         <activity

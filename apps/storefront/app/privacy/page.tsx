@@ -6,6 +6,11 @@
  *
  * - No cookies: production sets no `Set-Cookie` on the site or the API, and there is no
  *   `localStorage` / `sessionStorage` / analytics call anywhere in `apps/storefront`.
+ * - The Android app is the one exception, and it is stated as one. `apps/storefront-cmp` depends on
+ *   `com.google.firebase:firebase-analytics`; the permissions it actually ships with are the merged
+ *   manifest's, not the ones the source file lists, which is why the advertising-ID and ad-services
+ *   permissions are explicitly `tools:node="remove"`d there and the collection flags set to false.
+ *   The web store carries no Firebase and no analytics of any kind.
  * - Ratings, reports and download tallies live in process memory and reset on redeploy — see the
  *   "Runtime-mutable state" note in `lib/baked.ts`.
  * - Checkout takes `{ packageId, buyerId }` and no name, email or address (`api/checkout/route.ts`).
@@ -24,7 +29,7 @@ export const metadata: Metadata = {
   description: "What Azphalt collects, what it does not, and who else is involved.",
 };
 
-const UPDATED = "27 July 2026";
+const UPDATED = "28 July 2026";
 
 export default function Privacy() {
   return (
@@ -34,8 +39,10 @@ export default function Privacy() {
 
       <div className={styles.callout}>
         <p>
-          <strong>Azphalt has no user accounts, sets no cookies, and runs no analytics.</strong> You can
-          browse the store and download free extensions without identifying yourself in any way.
+          <strong>Azphalt has no user accounts and sets no cookies.</strong> You can browse the store
+          and download free extensions without identifying yourself in any way. The website runs no
+          analytics at all; the Android app includes Firebase Analytics, which is described{" "}
+          <a href="#app-analytics">below</a>.
         </p>
       </div>
 
@@ -52,8 +59,18 @@ export default function Privacy() {
           not for preferences, not for tracking.
         </li>
         <li>
-          <strong>No analytics or tracking.</strong> There is no analytics SDK, tag manager, tracking
-          pixel, session recorder, or advertising identifier in the site or the app.
+          <strong>No analytics on the website.</strong> There is no analytics SDK, tag manager,
+          tracking pixel or session recorder on <code>azphalt.store</code>. The Android app is
+          different and is described <a href="#app-analytics">below</a>.
+        </li>
+        <li>
+          <strong>No advertising identifier.</strong> Neither the site nor the app reads your device
+          advertising ID or Android ID. The app removes the advertising permissions that Firebase
+          would otherwise add, and switches that collection off in the SDK as well.
+        </li>
+        <li>
+          <strong>No advertising.</strong> Azphalt shows no ads, has no advertising partners, and does
+          not share anything for ad targeting or measurement.
         </li>
         <li>
           <strong>No accounts.</strong> There is nothing to sign up for. Browsing, searching and
@@ -95,6 +112,42 @@ export default function Privacy() {
         yourself. Anything you type into it is stored with the claim.
       </p>
 
+      <h3 id="app-analytics">App usage (Android app only)</h3>
+      <p>
+        The Android app includes{" "}
+        <a href="https://firebase.google.com/support/privacy">Firebase Analytics</a>, a Google
+        service, so we can see how many people install the app and which parts of it get used. The
+        website has no equivalent and gets none of this.
+      </p>
+      <p>What Firebase sends to Google from the app:</p>
+      <ul>
+        <li>
+          An <strong>app-instance ID</strong> — a random identifier created when you install the app.
+          It is not your device ID and not an advertising ID; deleting the app&rsquo;s data or
+          uninstalling it destroys it, and a reinstall gets a new one.
+        </li>
+        <li>
+          <strong>Device and app information</strong> — device model, operating-system version, app
+          version, language, and an approximate region derived from the IP address (the IP itself is
+          not retained by Analytics).
+        </li>
+        <li>
+          <strong>Usage events</strong> — first launch, sessions, screens viewed, and in-app purchase
+          events reported by Google Play.
+        </li>
+      </ul>
+      <p>
+        What it does <em>not</em> send: your advertising ID, your Android ID, your name or email, the
+        other apps on your device, or anything you make with an extension. Which extensions you browse
+        or download is not reported to Analytics as identifiable activity.
+      </p>
+      <p>
+        Google processes this data as described in{" "}
+        <a href="https://firebase.google.com/support/privacy">Firebase&rsquo;s privacy documentation</a>
+        . If you would rather not send it, browse the same catalogue on the web at{" "}
+        <code>azphalt.store</code>, which has no analytics.
+      </p>
+
       <h3>Purchases</h3>
       <p>
         Azphalt never sees or stores your payment-card details. Payment is handled entirely by a
@@ -134,9 +187,11 @@ export default function Privacy() {
 
       <h2>The Android app</h2>
       <p>
-        The Azphalt Android app requests two permissions: internet access, to reach the store, and
-        billing, to purchase paid extensions. It requests no access to your files, camera, microphone,
-        contacts, or location.
+        The Azphalt Android app requests internet and network-state access, to reach the store;
+        billing, to purchase paid extensions; and a small number of background permissions that
+        Firebase Analytics adds for its own use — keeping the device awake long enough to upload a
+        batch of events, and reading the Play install referrer. It requests no access to your files,
+        camera, microphone, contacts, or location, and no advertising permissions.
       </p>
       <p>
         When another app asks Azphalt to fetch an extension for it, Azphalt is told which app is
@@ -174,7 +229,8 @@ export default function Privacy() {
           <strong>Stripe</strong> — web payments and seller payouts.
         </li>
         <li>
-          <strong>Google</strong> — Play Billing for in-app purchases, and Play distribution.
+          <strong>Google</strong> — Play Billing for in-app purchases, Play distribution, and Firebase
+          Analytics in the Android app.
         </li>
         <li>
           <strong>GitHub</strong> — where extension source and the store&rsquo;s own code are hosted.
@@ -195,6 +251,11 @@ export default function Privacy() {
       <p>
         For payment records, contact the payment provider directly; they hold that data and can act on
         it.
+      </p>
+      <p>
+        For the app&rsquo;s analytics, the identifier everything is keyed to is destroyed by clearing
+        the app&rsquo;s data or uninstalling it, which leaves the past events with nothing to link
+        them to. Ask us if you would like the underlying records deleted as well.
       </p>
 
       <h2>Children</h2>
