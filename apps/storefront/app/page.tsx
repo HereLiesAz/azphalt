@@ -1,17 +1,36 @@
 export default function Home() {
-  // The UI is a Compose Multiplatform (Kotlin/Wasm) app; the built bundle renders into this canvas
-  // (#ComposeTarget). Size it to the full viewport directly (viewport units, so it doesn't depend on
-  // an ancestor's resolved height); the html/body reset lives in globals.css.
+  /*
+   * The storefront UI is a Compose Multiplatform (Kotlin/Wasm) app.
+   *
+   * There is deliberately **no `<canvas>` here.** `ComposeViewport(document.body)` (see
+   * `apps/storefront-cmp/src/wasmJsMain/kotlin/Main.kt`) creates its own container element and
+   * appends it to `<body>` — it does not adopt an existing one.
+   *
+   * This page used to render `<canvas id="ComposeTarget" style="width:100vw;height:100vh">`, which
+   * looked like the mount point and was not. Compose's own container was appended *after* it, so the
+   * entire app sat one full viewport below the fold, and `overflow: hidden` meant it could not be
+   * scrolled to. What a visitor saw was the empty canvas: a black page where nothing rendered,
+   * nothing could be clicked, and no error appeared anywhere — the app was running correctly, just
+   * off-screen.
+   *
+   * The script is also loaded **without `async`**, matching the wasm build's own `index.html`. That
+   * shell is the configuration this bundle is actually tested against, and there is no reason for
+   * this one to differ from it.
+   */
   return (
     <>
-      <canvas id="ComposeTarget" style={{ display: 'block', width: '100vw', height: '100vh' }}></canvas>
-      <script src="/storefront-cmp.js" async></script>
       {/*
-        Legal links, in real DOM rather than inside the canvas.
-        A canvas is opaque to crawlers, screen readers, and anyone running without WebGL, so links
-        drawn by the Wasm app would be undiscoverable to exactly the parties most likely to need
-        them — an app-store reviewer checking for a privacy policy, or a user on assistive tech.
-        Rendering them here costs nothing and keeps them reachable however the page is being read.
+        The mount point, rendered by React and filled by Compose.
+
+        `suppressHydrationWarning` because Compose puts its own canvas inside this div after
+        hydration, which React would otherwise flag as server/client markup drift on every render.
+      */}
+      <div id="compose-root" suppressHydrationWarning style={{ width: '100vw', height: '100vh' }} />
+      <script src="/storefront-cmp.js"></script>
+      {/*
+        Legal links, in real DOM rather than inside the Compose surface. Compose renders to a canvas,
+        which is opaque to crawlers, screen readers, and anyone running without WebGL — exactly the
+        parties most likely to be looking for a privacy policy, an app-store reviewer among them.
       */}
       <footer
         style={{
