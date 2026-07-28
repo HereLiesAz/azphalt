@@ -47,6 +47,17 @@
       "bytes": 1314
     },
     {
+      "id": "com.hereliesaz.azphalt.anamorphic-flare",
+      "version": "1.0.0",
+      "name": "Anamorphic Flare",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-anamorphic-flare",
+      "ref": "d5001b411513abba401993c0006cfd068e256e14",
+      "integrity": "sha256-q+B5dARiFhgb5c6s1HsqXYvQAK7QVIISJnR8wF7nhBA=",
+      "file": "com.hereliesaz.azphalt.anamorphic-flare-1.0.0.azp",
+      "bytes": 2287
+    },
+    {
       "id": "com.hereliesaz.azphalt.anger-jiggle",
       "version": "2.0.0",
       "name": "Anger Jiggle",
@@ -102,6 +113,17 @@
       "bytes": 1303
     },
     {
+      "id": "com.hereliesaz.azphalt.baby-bloom",
+      "version": "1.0.0",
+      "name": "Baby Bloom",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-baby-bloom",
+      "ref": "ff8e14c396427a3367580a31db1696cbddf67c0a",
+      "integrity": "sha256-IUD+amNgbum2aLLDEtXp3lg4y0h3byTOb2x49tYqNzw=",
+      "file": "com.hereliesaz.azphalt.baby-bloom-1.0.0.azp",
+      "bytes": 2258
+    },
+    {
       "id": "com.hereliesaz.azphalt.beast-shake",
       "version": "1.2.0",
       "name": "Beast Shake",
@@ -111,6 +133,17 @@
       "integrity": "sha256-1X23XNmE+/M2YTnmJ5XUI08FsQfZ68X4dvMR3gxRmhY=",
       "file": "com.hereliesaz.azphalt.beast-shake-1.2.0.azp",
       "bytes": 1417
+    },
+    {
+      "id": "com.hereliesaz.azphalt.beat-pulse",
+      "version": "1.0.0",
+      "name": "Beat Pulse",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-beat-pulse",
+      "ref": "2035b79a48a9fbe67c345e3e34d0fe5867c7d4a0",
+      "integrity": "sha256-y8ixWT7u5TWlM1+xv/meDTJM6xUw15iGLWD0yTrmd1M=",
+      "file": "com.hereliesaz.azphalt.beat-pulse-1.0.0.azp",
+      "bytes": 2363
     },
     {
       "id": "com.hereliesaz.azphalt.bevel-emboss",
@@ -190,6 +223,28 @@
       "bytes": 14184
     },
     {
+      "id": "com.hereliesaz.azphalt.chromatic-pulse",
+      "version": "1.0.0",
+      "name": "Chromatic Pulse",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-chromatic-pulse",
+      "ref": "563d3169afedc89872f3db347da1747daf140dae",
+      "integrity": "sha256-tU6dqqQ/WmXcTpS24VQ2Iuhw+CSDnBBkOY+hf/yRlVU=",
+      "file": "com.hereliesaz.azphalt.chromatic-pulse-1.0.0.azp",
+      "bytes": 2195
+    },
+    {
+      "id": "com.hereliesaz.azphalt.cinematic-glow",
+      "version": "1.0.0",
+      "name": "Cinematic Glow",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-cinematic-glow",
+      "ref": "794347c0804c9e63f6e930b5d4657e6eba78794c",
+      "integrity": "sha256-l75d53HjUTDqodEnG6+5KavVEgbgKH5JOb8aW1C+6aU=",
+      "file": "com.hereliesaz.azphalt.cinematic-glow-1.0.0.azp",
+      "bytes": 2413
+    },
+    {
       "id": "com.hereliesaz.azphalt.cinematic-pan",
       "version": "1.2.0",
       "name": "Cinematic Pan",
@@ -221,6 +276,17 @@
       "integrity": "sha256-Ks6fxZPIjb+Sa3/eyQQDTb7DfU5sWT6xI9rLzwiVvVE=",
       "file": "com.hereliesaz.azphalt.collision-dodge-1.0.0.azp",
       "bytes": 1298
+    },
+    {
+      "id": "com.hereliesaz.azphalt.comic-edge",
+      "version": "1.0.0",
+      "name": "Comic Edge",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-comic-edge",
+      "ref": "aded60df524cc7dee96c95d85c1d25737f92c9bc",
+      "integrity": "sha256-0y3RNynVc9OkDbvO53JnCsEAYjExW6DA/BtbPXZKHxg=",
+      "file": "com.hereliesaz.azphalt.comic-edge-1.0.0.azp",
+      "bytes": 2242
     },
     {
       "id": "com.hereliesaz.azphalt.countdown",
@@ -276,6 +342,28 @@
       "integrity": "sha256-D8FdsN5fpYiy8GHW6MVpWBz47p4H0Z8k+lredokJZDU=",
       "file": "com.hereliesaz.azphalt.diarization-flip-2.0.0.azp",
       "bytes": 1298
+    },
+    {
+      "id": "com.hereliesaz.azphalt.dreamy-glow",
+      "version": "1.0.0",
+      "name": "Dreamy Glow",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-dreamy-glow",
+      "ref": "de75ead8f601146609c9e3f2a37a3d363c9592a6",
+      "integrity": "sha256-/Mp+5/28MdN/LUVXFPFoY7/YCd/9o1Vb9BqipbEMPik=",
+      "file": "com.hereliesaz.azphalt.dreamy-glow-1.0.0.azp",
+      "bytes": 2250
+    },
+    {
+      "id": "com.hereliesaz.azphalt.duotone",
+      "version": "1.0.0",
+      "name": "Duotone",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-duotone",
+      "ref": "150071958a1f849985f549d96adee825ecb6f495",
+      "integrity": "sha256-gJY3Beb2EuaHOYqEIwG5TX2F9LnIGePLy05vuj9dmaY=",
+      "file": "com.hereliesaz.azphalt.duotone-1.0.0.azp",
+      "bytes": 2159
     },
     {
       "id": "com.hereliesaz.azphalt.elastic-drop",
@@ -355,6 +443,17 @@
       "bytes": 1507
     },
     {
+      "id": "com.hereliesaz.azphalt.film-burn",
+      "version": "1.0.0",
+      "name": "Film Burn",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-film-burn",
+      "ref": "4ebe7b785da8084abf5e58f245aa7a1bc847e320",
+      "integrity": "sha256-yQp1jqlJ5EqKgeip1qxcBuxU/UvzKmTKG0WetmzTlLU=",
+      "file": "com.hereliesaz.azphalt.film-burn-1.0.0.azp",
+      "bytes": 2251
+    },
+    {
       "id": "com.hereliesaz.azphalt.film-damage",
       "version": "1.0.0",
       "name": "Vintage Film Damage",
@@ -388,6 +487,17 @@
       "bytes": 1300
     },
     {
+      "id": "com.hereliesaz.azphalt.frost-glass",
+      "version": "1.0.0",
+      "name": "Frost Glass",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-frost-glass",
+      "ref": "5d38edef27db95d6a4c5f8bc0416dbf10827971b",
+      "integrity": "sha256-sHQZbeQ68Y5+nxgOVi7YLZa+uHXJpjzVO5S1A84BILo=",
+      "file": "com.hereliesaz.azphalt.frost-glass-1.0.0.azp",
+      "bytes": 2320
+    },
+    {
       "id": "com.hereliesaz.azphalt.gaze-dodge",
       "version": "2.0.0",
       "name": "Eye-Contact Dodge",
@@ -419,6 +529,17 @@
       "integrity": "sha256-HazpfuOFllzPTDfMPCNVDT4QU8S5yElWYCto0dX+siU=",
       "file": "com.hereliesaz.azphalt.glitch-decode-1.2.0.azp",
       "bytes": 1362
+    },
+    {
+      "id": "com.hereliesaz.azphalt.glitch-slice",
+      "version": "1.0.0",
+      "name": "Glitch Slice",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-glitch-slice",
+      "ref": "70a0427abe325851f0be61298b242b081ba2c1c1",
+      "integrity": "sha256-PlmFzmHYeMmkuSYevOWLMwgr7r5D4TYDNBBrFByENUc=",
+      "file": "com.hereliesaz.azphalt.glitch-slice-1.0.0.azp",
+      "bytes": 2353
     },
     {
       "id": "com.hereliesaz.azphalt.gradients",
@@ -520,6 +641,17 @@
       "bytes": 1319
     },
     {
+      "id": "com.hereliesaz.azphalt.kaleidoscope-spin",
+      "version": "1.0.0",
+      "name": "Kaleidoscope Spin",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-kaleidoscope-spin",
+      "ref": "89d0b5303ecfc8e71152ac48a0624a3ea5fa9788",
+      "integrity": "sha256-wlXR8RbHmC0w8i/pGDB9Rh9FTJLRotD5BMO9PsQr6ZA=",
+      "file": "com.hereliesaz.azphalt.kaleidoscope-spin-1.0.0.azp",
+      "bytes": 2107
+    },
+    {
       "id": "com.hereliesaz.azphalt.karaoke-sweep",
       "version": "1.2.0",
       "name": "Karaoke Sweep",
@@ -551,6 +683,28 @@
       "integrity": "sha256-uiehJ3emkB+Q0n7RHa7xrGCQDPCoam1Pu3e3VXnIO8A=",
       "file": "com.hereliesaz.azphalt.lensflare-1.0.0.azp",
       "bytes": 14230
+    },
+    {
+      "id": "com.hereliesaz.azphalt.light-leak-sweep",
+      "version": "1.0.0",
+      "name": "Light Leak Sweep",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-light-leak-sweep",
+      "ref": "0028cb810b034b81bdce84ca2dcba49e45270876",
+      "integrity": "sha256-SLaZJYjevxMu7oFdhYn8bZKxWUT32bpxIxIXCBfmekU=",
+      "file": "com.hereliesaz.azphalt.light-leak-sweep-1.0.0.azp",
+      "bytes": 2168
+    },
+    {
+      "id": "com.hereliesaz.azphalt.liquid-chrome",
+      "version": "1.0.0",
+      "name": "Liquid Chrome",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-liquid-chrome",
+      "ref": "988fff42ea9fc760b738aefff377364b7cf748c0",
+      "integrity": "sha256-e7OzesYLsprlWozCWr02Z+OxZPfy4j/lZXJP5O7FfVU=",
+      "file": "com.hereliesaz.azphalt.liquid-chrome-1.0.0.azp",
+      "bytes": 2215
     },
     {
       "id": "com.hereliesaz.azphalt.loudness-color",
@@ -672,6 +826,17 @@
       "integrity": "sha256-J2DbHyuxO0tnd7nwm5bgJrkpHq1Xia4DR1rf8arYTj0=",
       "file": "com.hereliesaz.azphalt.neon-pulse-1.2.0.azp",
       "bytes": 1398
+    },
+    {
+      "id": "com.hereliesaz.azphalt.neon-rim-pulse",
+      "version": "1.0.0",
+      "name": "Neon Rim Pulse",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-neon-rim-pulse",
+      "ref": "d7137c538ade090629b58c3a695a7e510046e98c",
+      "integrity": "sha256-4u+W+cg1yfPoeKEPp8Ac8d8KhSYplOGUO/TvDFZ3BDc=",
+      "file": "com.hereliesaz.azphalt.neon-rim-pulse-1.0.0.azp",
+      "bytes": 2267
     },
     {
       "id": "com.hereliesaz.azphalt.noise",
@@ -1059,6 +1224,17 @@
       "bytes": 1309
     },
     {
+      "id": "com.hereliesaz.azphalt.prism-flare",
+      "version": "1.0.0",
+      "name": "Prism Flare",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-prism-flare",
+      "ref": "f5c08f335250f5ef526b37a50f5563da8ff3a6b0",
+      "integrity": "sha256-cXLOI0oYgud0UXvHP5yScYeaxZKkZHBWPbRBLeHAs4g=",
+      "file": "com.hereliesaz.azphalt.prism-flare-1.0.0.azp",
+      "bytes": 2381
+    },
+    {
       "id": "com.hereliesaz.azphalt.pyannote-segmentation",
       "version": "1.0.0",
       "name": "pyannote Segmentation",
@@ -1367,6 +1543,28 @@
       "bytes": 1487
     },
     {
+      "id": "com.hereliesaz.azphalt.vhs-retro",
+      "version": "1.0.0",
+      "name": "VHS Retro",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-vhs-retro",
+      "ref": "bd41fa2041a5305791ec4730081c66513a434daf",
+      "integrity": "sha256-1NmE/fUh676k5+4dRbRBiS6kvXEdyTLygvR8mecR6D0=",
+      "file": "com.hereliesaz.azphalt.vhs-retro-1.0.0.azp",
+      "bytes": 2344
+    },
+    {
+      "id": "com.hereliesaz.azphalt.vintage-grain-halation",
+      "version": "1.0.0",
+      "name": "Vintage Grain & Halation",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-vintage-grain-halation",
+      "ref": "b702bc9134ed4947374bca83ca5d99a5ef7b4bcc",
+      "integrity": "sha256-TMtOFCmSWAhSP+Zb4ZT2c3vgmmBCm2DiZkVi5ZcN+OU=",
+      "file": "com.hereliesaz.azphalt.vintage-grain-halation-1.0.0.azp",
+      "bytes": 2349
+    },
+    {
       "id": "com.hereliesaz.azphalt.volume-bulge",
       "version": "2.0.0",
       "name": "Volume Bulge",
@@ -1464,6 +1662,17 @@
       "integrity": "sha256-TggoREhLi51okFKfv2HESk++s8iNhM88WKjy0RloFkU=",
       "file": "com.hereliesaz.azphalt.zdepth-1.0.0.azp",
       "bytes": 1432
+    },
+    {
+      "id": "com.hereliesaz.azphalt.zoom-punch",
+      "version": "1.0.0",
+      "name": "Zoom Punch",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-zoom-punch",
+      "ref": "134e7d506fcc0a01be26d3efe2c4c2ca9cd78581",
+      "integrity": "sha256-7OLGpAiolFisgzKZvuJJ74G+4bRms5vaxAmHhmvJxaQ=",
+      "file": "com.hereliesaz.azphalt.zoom-punch-1.0.0.azp",
+      "bytes": 2281
     }
   ]
 }
