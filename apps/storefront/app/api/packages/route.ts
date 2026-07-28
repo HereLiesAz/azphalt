@@ -27,6 +27,11 @@ export async function GET() {
       types: p.assetTypes,
       maturity: p.maturity,
       price: priceById.get(p.id) || null,
+      // The store card's artwork. The registry summary has carried this all along and this route
+      // simply never copied it, so every card in the Compose UI drew a procedural placeholder while
+      // the generated previews sat unreferenced — the same omission #138 fixed for `description` on
+      // the Repository API. `/packages` surfaces it; this endpoint is what the UI actually fetches.
+      preview: p.preview,
     };
     // A pack (kind:"pack") carries its member references in the manifest, not the summary — surface them
     // so the detail view can show "what's inside" (each still installed/gated individually). Only packs

@@ -44,7 +44,14 @@ const nextConfig = {
   // Next's tracer follows `import`s, and these are read with `fs` at runtime, so it cannot see them:
   // without this the standalone bundle deploys with an empty registry and every card 404s on download.
   outputFileTracingIncludes: {
-    "/**": ["./apps/storefront/registry/catalog.json", "./apps/storefront/registry/packages/**"],
+    "/**": [
+      "./apps/storefront/registry/catalog.json",
+      "./apps/storefront/registry/packages/**",
+      // The generated store-card previews, served by `app/previews/[name]/route.ts`. Read with `fs`
+      // at runtime like the packages above, so the tracer cannot see them either — without this the
+      // standalone bundle deploys with every card's artwork missing.
+      "./apps/storefront/registry/previews/**",
+    ],
   },
   // Optional sub-path mount (baked in at build time). Next prefixes routes + assets with it.
   ...(basePath ? { basePath } : {}),
