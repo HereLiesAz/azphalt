@@ -23,8 +23,9 @@ name: Sync registry from extension repos
 #           upstream extension updates get picked up, and it necessarily touches all ~130 pins.
 #
 # Schedule and repository_dispatch runs use `latest` — catching upstream movement is the entire reason
-# they fire. A manual run defaults to `pinned`, because the usual reason to click Run workflow is that
-# sources were just added and want publishing, without dragging every other extension forward too.
+# they fire. A push that edits `sources.json` on main uses `pinned`: something was just added or
+# re-pinned deliberately, and the job is to publish exactly that. A manual run defaults to `pinned`
+# too, because that is the usual reason to click Run workflow.
 #
 # Merging then triggers `deploy-storefront.yml` (it watches `apps/storefront/**`), which rebuilds and
 # redeploys. Every serverless instance reads the same committed bytes at cold start, so the catalog
@@ -41,6 +42,18 @@ on:
   # no per-repo setup at all. A no-op run costs one tarball fetch per pinned source and opens nothing.
   schedule:
     - cron: "17 6 * * *"
+  # Adding an extension is a lockfile edit — its PR appends to sources.json and nothing else, so its
+  # bytes do not exist under registry/packages until a sync builds them. Firing on that merge makes a
+  # new extension publish itself instead of waiting for someone to remember to dispatch this by hand.
+  #
+  # This cannot recurse. A pinned run's own PR does not touch sources.json (only packages/ and
+  # catalog.json), so merging it does not match this filter. A latest run's PR does re-pin
+  # sources.json, so merging that one fires a pinned run — which finds the catalog already matches
+  # the lockfile, produces no diff, and exits without opening anything. One idle run, not a loop.
+  push:
+    branches: [main]
+    paths:
+      - "apps/storefront/registry/sources.json"
   workflow_dispatch:
     inputs:
       mode:
@@ -86,10 +99,12 @@ jobs:
 
       - name: Decide what this run syncs
         id: mode
-        # Only a manual run gets to choose. Schedule and repository_dispatch exist to notice upstream
-        # movement, so forcing them to `latest` keeps that guarantee out of reach of a stray input.
+        # Only a manual run gets to choose. Every other trigger has one right answer and is pinned to
+        # it here rather than read from an input, so no dispatch payload can talk the job out of the
+        # guarantee its trigger exists to provide: a push that edited the lockfile publishes exactly
+        # what the lockfile now says, and schedule/repository_dispatch always go look upstream.
         env:
-          MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'latest' }}
+          MODE: ${{ github.event_name == 'push' && 'pinned' || github.event_name == 'workflow_dispatch' && inputs.mode || 'latest' }}
         run: |
           set -euo pipefail
           case "$MODE" in
