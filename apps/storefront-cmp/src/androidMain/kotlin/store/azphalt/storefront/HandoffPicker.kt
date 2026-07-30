@@ -21,7 +21,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import models.ExtensionState
+import models.ExtensionStateEntry
 import models.PackageSummary
+import models.statusLabelFor
 
 /**
  * The list a user picks from when another app asked for an extension.
@@ -36,6 +39,14 @@ internal fun HandoffPicker(
     callerLabel: String?,
     onCancel: () -> Unit,
     onPick: (PackageSummary) -> Unit,
+    /**
+     * What the calling host says it already has (`spec/state-reporting.md` § 3.1).
+     *
+     * This is the surface where it matters most. A host sends the user here to add an extension, and
+     * without this the list shows no difference between something they have had installed for months
+     * and something they have never seen.
+     */
+    inventory: Map<String, ExtensionStateEntry> = emptyMap(),
 ) {
     val cs = MaterialTheme.colorScheme
 
@@ -88,11 +99,24 @@ internal fun HandoffPicker(
                             Text(it, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
                         }
                     }
-                    Text(
-                        if (pkg.priceStatus == "paid") "Paid" else "Free",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (pkg.priceStatus == "paid") cs.primary else cs.onSurfaceVariant,
-                    )
+                    // The host's state wins the trailing slot over the price when there is one: a user
+                    // looking at a list of things they might add cares more that one is already active
+                    // than that it was free.
+                    val state = inventory[pkg.id]
+                    val status = statusLabelFor(state)
+                    if (status != null) {
+                        Text(
+                            status,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (state?.state == ExtensionState.FAILED) cs.error else cs.tertiary,
+                        )
+                    } else {
+                        Text(
+                            if (pkg.priceStatus == "paid") "Paid" else "Free",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (pkg.priceStatus == "paid") cs.primary else cs.onSurfaceVariant,
+                        )
+                    }
                 }
             }
 

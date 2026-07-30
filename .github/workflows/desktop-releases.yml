@@ -15,7 +15,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    
+    # Three runners build the same commit. Without this each would bump the version independently
+    # and the Windows, macOS and Linux installers from one commit would carry three different
+    # numbers — and none of the bumps could be committed anyway. The version for a main commit is
+    # owned by debug-apk.yml.
+    env:
+      AZPHALT_VERSION_FROZEN: '1'
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

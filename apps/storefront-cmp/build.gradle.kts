@@ -21,6 +21,86 @@ plugins {
  */
 val firebaseConfigured = file("google-services.json").exists()
 
+// --- Version ---------------------------------------------------------------------------------
+//
+// Every version this module reports comes from `version.properties` at the repository root, and a
+// compile bumps it. See RELEASING.md § Versioning for the scheme and who bumps what.
+
+/** The repository root. This build's root is `apps/storefront-cmp`, so the repo is two up. */
+val repoRoot: File = rootDir.parentFile.parentFile
+val versionFile: File = File(repoRoot, "version.properties")
+val versionTool: File = File(repoRoot, "tools/version.mjs")
+
+/**
+ * Whether this invocation should bump the version.
+ *
+ * The requirement is that a compile always bumps — so the test is on the *requested tasks*, not on
+ * anything the build discovers later. An IDE sync requests no tasks and `./gradlew tasks` or
+ * `clean` request nothing that compiles, so neither moves the number; `assembleDebug`,
+ * `wasmJsBrowserDistribution`, `:azp:test` and `packageReleaseDistributionForCurrentOS` all do.
+ *
+ * `AZPHALT_VERSION_FROZEN=1` is what CI sets. A CI run invokes Gradle several times — the wasm
+ * bundle, the APK, the verifier tests — and if each bumped, one commit would produce a store and an
+ * app claiming different versions. So CI bumps exactly once, up front, then freezes: every artifact
+ * from that run carries the same number, and that number is what gets committed and released.
+ */
+val shouldBumpVersion: Boolean = run {
+    if (System.getenv("AZPHALT_VERSION_FROZEN") == "1") return@run false
+    if (gradle.startParameter.isDryRun) return@run false
+    val compiles = listOf("assemble", "build", "compile", "test", "check", "package", "distribution", "install", "bundle", "jar", "apk")
+    gradle.startParameter.taskNames.any { requested -> compiles.any { requested.contains(it, ignoreCase = true) } }
+}
+
+// Bumped at configuration time, on purpose: the numbers are read a few lines below, so the artifact
+// this build produces carries the version this build bumped to — rather than the previous one, with
+// the new value only landing on the *next* build.
+//
+// The increment itself is delegated to `tools/version.mjs` instead of being reimplemented here.
+// That file is the only writer of version.properties, so its format cannot drift between a Node
+// caller and a Gradle one. If node is unavailable this warns and builds at the current version:
+// making the app unbuildable without a Node install would be a worse failure than a version that
+// did not move.
+if (shouldBumpVersion && versionTool.isFile) {
+    try {
+        val process = ProcessBuilder("node", versionTool.absolutePath, "bump")
+            .directory(repoRoot)
+            .redirectErrorStream(true)
+            .start()
+        val output = process.inputStream.bufferedReader().readText().trim()
+        if (process.waitFor() == 0) logger.lifecycle("version → $output")
+        else logger.warn("WARNING: version bump failed, building at the committed version: $output")
+    } catch (error: Exception) {
+        logger.warn("WARNING: could not run 'node ${versionTool.name}', building at the committed version: ${error.message}")
+    }
+}
+
+// Parsed by hand rather than with `java.util.Properties`, which cannot be named here: `java`
+// resolves to Gradle's own project extension, so `java.util.Properties()` does not compile in a
+// build script. This is the same `key=value` / `#`-comment shape `tools/version.mjs` writes.
+val versionParts: List<Int> = run {
+    require(versionFile.isFile) { "$versionFile is missing — it is the source of every version in this build" }
+    val values = versionFile.readLines()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
+        .associate { it.substringBefore("=").trim() to it.substringAfter("=").trim() }
+    listOf("major", "minor", "patch", "build").map { key ->
+        values[key]?.toIntOrNull() ?: error("$versionFile: '$key' is missing or not a whole number")
+    }
+}
+
+/** `a.b.c.d` — what the app, the store and the installers all report. */
+val azphaltVersion: String = versionParts.joinToString(".")
+
+/**
+ * Android's `versionCode`, which is `d`.
+ *
+ * `d` is used rather than an encoding of all four numbers because Play requires versionCode to
+ * increase monotonically forever and accepts a given value exactly once. `d` never resets and never
+ * decreases by construction, which is precisely that contract; anything derived from a.b.c can go
+ * backwards the moment a component resets.
+ */
+val azphaltVersionCode: Int = versionParts[3]
+
 // Applied here rather than in `plugins {}` because that block cannot be conditional. The plugin reads
 // `google-services.json` and generates the string resources Firebase initialises itself from at
 // startup; with no file it fails the build rather than degrading, hence the gate.
@@ -31,7 +111,7 @@ if (firebaseConfigured) {
 }
 
 group = "com.azphalt.storefront"
-version = "0.1.1"
+version = azphaltVersion
 
 kotlin {
     jvm("desktop")
@@ -69,6 +149,15 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+            }
+        }
+        // The one test source set for the shared module. `desktopTest` rather than `commonTest`
+        // because a common test source set would demand a runner for every target — including wasm,
+        // which needs a browser — and the code under test is pure Kotlin with no platform surface. One
+        // JVM run covers it, and `./gradlew desktopTest` is a plain unit-test task.
+        val desktopTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
             }
         }
         val androidMain by getting {
@@ -113,8 +202,8 @@ android {
         // avoids shipping a rasterised legacy icon per density for the sake of pre-Oreo devices.
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = azphaltVersionCode
+        versionName = azphaltVersion
     }
 
     sourceSets["main"].apply {
@@ -150,7 +239,16 @@ compose.desktop {
         nativeDistributions {
             targetFormats(org.jetbrains.compose.desktop.application.dsl.TargetFormat.Dmg, org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi, org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb)
             packageName = "AzphaltStorefront"
-            packageVersion = "1.0.0"
+            // Three components, because that is all jpackage accepts — `d` is not representable in
+            // an installer version, so the installer is identified by a.b.c and the app it installs
+            // reports the full a.b.c.d.
+            packageVersion = "${versionParts[0]}.${versionParts[1]}.${versionParts[2]}"
+            macOS {
+                // The one platform that rejects a zero major: jpackage requires the first component
+                // of a .dmg version to be greater than zero. Floored here rather than everywhere, so
+                // the msi and the deb still carry the true major.
+                packageVersion = "${maxOf(versionParts[0], 1)}.${versionParts[1]}.${versionParts[2]}"
+            }
         }
     }
 }

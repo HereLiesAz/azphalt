@@ -1191,6 +1191,16 @@ export interface PackageSummary {
   /* Discovery / ranking metadata — a gallery ranks and previews on these without a download. */
   /** Total served downloads across all versions. */
   downloads?: number;
+  /**
+   * Reported installs and uninstalls (`spec/state-reporting.md` § 4). Absent unless the repository
+   * keeps install statistics — absent and zero are different facts, so do not default these to 0.
+   *
+   * `installs - uninstalls` is a net figure and **not** "active installs": the protocol carries no
+   * device identity and so cannot measure a live gauge. § 4.3 of that spec forbids presenting one as
+   * the other, and a client that renders "N active installs" from these is the party doing so.
+   */
+  installs?: number;
+  uninstalls?: number;
   /** Average user rating 0–5, if the repository tracks ratings (absent when untracked). */
   rating?: number;
   /** Number of ratings behind `rating` (0 when none / untracked). */

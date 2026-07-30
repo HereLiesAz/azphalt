@@ -11,6 +11,10 @@
  *   manifest's, not the ones the source file lists, which is why the advertising-ID and ad-services
  *   permissions are explicitly `tools:node="remove"`d there and the collection flags set to false.
  *   The web store carries no Firebase and no analytics of any kind.
+ * - The install-count and on-device state rules are not aspirational: they are normative in
+ *   `spec/state-reporting.md` § 2 (what a report MUST NOT contain) and enforced by the token lifecycle
+ *   in `packages/registry` — a count is only accepted against a single-use token the repository issued
+ *   with a download, and no device identifier exists anywhere in the protocol to accept.
  * - Ratings, reports and download tallies live in process memory and reset on redeploy — see the
  *   "Runtime-mutable state" note in `lib/baked.ts`.
  * - Checkout takes `{ packageId, buyerId }` and no name, email or address (`api/checkout/route.ts`).
@@ -29,7 +33,7 @@ export const metadata: Metadata = {
   description: "What Azphalt collects, what it does not, and who else is involved.",
 };
 
-const UPDATED = "28 July 2026";
+const UPDATED = "30 July 2026";
 
 export default function Privacy() {
   return (
@@ -146,6 +150,54 @@ export default function Privacy() {
         <a href="https://firebase.google.com/support/privacy">Firebase&rsquo;s privacy documentation</a>
         . If you would rather not send it, browse the same catalogue on the web at{" "}
         <code>azphalt.store</code>, which has no analytics.
+      </p>
+
+      <h3 id="install-counts">Install counts</h3>
+      <p>
+        An app that fetches extensions through Azphalt can tell us that an install happened, so a
+        developer can see how many installs their extension has. What is recorded is a{" "}
+        <strong>count against the extension</strong> — a number going up — and nothing else.
+      </p>
+      <p>There is deliberately no way for those reports to identify you:</p>
+      <ul>
+        <li>
+          They carry <strong>no device id, no advertising id, no install id, no account</strong> — no
+          value of any kind whose purpose is to link two reports together.
+        </li>
+        <li>
+          They never carry a <strong>list of what you have installed</strong>. One report says
+          &ldquo;an install of this extension happened&rdquo;, not &ldquo;here is this
+          device&rsquo;s library&rdquo;.
+        </li>
+        <li>
+          They never carry the names of other apps on your device, or anything you made with an
+          extension.
+        </li>
+      </ul>
+      <p>
+        A report has to present a one-time token that we issued with the download itself, which is how
+        a count stays tied to a real download rather than to anyone who felt like sending us a number.
+        The token is random, is stored with no record of who received it, and works once.
+      </p>
+      <p>
+        Like the ratings and download tallies above, these counters live in the running
+        server&rsquo;s memory and reset whenever the store is redeployed.
+      </p>
+      <p>
+        Because none of this identifies a device, we can count installs and uninstalls but{" "}
+        <strong>cannot</strong> measure how many devices have an extension right now. We do not
+        publish a figure claiming otherwise. The rules above are written down as a specification the
+        store and any app using it must follow, not just a policy statement.
+      </p>
+
+      <h3>What an app tells the store on your device</h3>
+      <p>
+        Separately, and <strong>without anything leaving your device</strong>, an app can tell the
+        Azphalt app which extensions it already has — installed, switched off, downloaded but not
+        installed — so the store can show <em>Open</em> or <em>Update</em> instead of offering you
+        something you already own. That exchange happens between two apps on your phone. It is not
+        sent to us, and the Azphalt app is forbidden from looking at your installed apps to discover
+        it: it only ever learns from an app that deliberately opens the store.
       </p>
 
       <h3>Purchases</h3>

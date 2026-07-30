@@ -4,12 +4,14 @@
  * {@link Marketplace} overlay (see `consignment.ts`), kept deliberately separate so the open lane
  * stays neutral (see `docs/ARCHITECTURE.md § The marketplace — consignment model`).
  */
+import { randomUUID } from "node:crypto";
 import { digest, readAzp, verifyAzp } from "@azphalt/azp";
 import type { AssetType, Capability, Manifest, MediaDomain } from "@azphalt/azdk";
 import { InMemoryStore, type RegistryStore } from "./store.js";
 import { nameContains, packageSimilarity } from "./similarity.js";
 import { scanPackage, type ScanCheck } from "./sweep.js";
 import type {
+  InstallEvent,
   ListQuery,
   PackageSummary,
   PackageVersion,
@@ -269,6 +271,10 @@ export class Registry {
     };
     const times = vs.map((v) => v.publishedAt).sort();
     const { rating, ratingCount } = await this.store.getRating(id);
+    // `undefined` rather than `{0,0}` when the store keeps no install statistics: absent and
+    // genuinely-zero are different facts, and a card showing "0 installs" for a store that never
+    // counted any is a lie the summary should not be able to tell.
+    const installs = this.store.getInstalls ? await this.store.getInstalls(id) : undefined;
 
     return {
       id: m.id,
@@ -290,6 +296,7 @@ export class Registry {
       publishedAt: times[0],
       updatedAt: times[times.length - 1],
       downloads: await this.store.getDownloads(id),
+      ...(installs ? { installs: installs.installs, uninstalls: installs.uninstalls } : {}),
       byteSize: latest.size,
       mediaDomains: mediaDomainsForManifest(m),
       preview: m.preview,
@@ -327,7 +334,10 @@ export class Registry {
    * Serve the `.azp` bytes for [id] at [version] (default: {@link latest}), counting a download.
    * Throws {@link RegistryError} when the package or version is unknown.
    */
-  async serve(id: string, version?: string): Promise<{ version: PackageVersion; bytes: Uint8Array }> {
+  async serve(
+    id: string,
+    version?: string,
+  ): Promise<{ version: PackageVersion; bytes: Uint8Array; reportToken?: string }> {
     const resolved = version ? await this.getVersion(id, version) : await this.latest(id);
     if (!resolved) {
       throw new RegistryError(`not found: ${id}${version ? `@${version}` : ""}`);
@@ -335,7 +345,79 @@ export class Registry {
     const bytes = await this.store.getBytes(resolved.id, resolved.version);
     if (!bytes) throw new RegistryError(`bytes missing: ${resolved.id}@${resolved.version}`);
     await this.store.incrementDownloads(resolved.id, resolved.version);
-    return { version: resolved, bytes };
+
+    // Mint a single-use report token for this transfer (spec/state-reporting.md § 4.2), which a later
+    // `installed` report must present. This is what ties an install count to a download the repository
+    // actually served, instead of to whoever felt like sending a POST.
+    //
+    // Random, and derived from nothing about the request — not the client, not the address, not the
+    // clock. A token that encoded any of those would be a device identifier wearing a different hat,
+    // and § 2 of that spec forbids one.
+    let reportToken: string | undefined;
+    if (this.store.putReportToken) {
+      reportToken = randomUUID();
+      await this.store.putReportToken(reportToken, resolved.id, resolved.version);
+    }
+    return { version: resolved, bytes, reportToken };
+  }
+
+  /**
+   * Record install/uninstall transitions (`spec/state-reporting.md` § 4, `repository-api.md` § 8).
+   *
+   * Returns `undefined` when this store keeps no install statistics, which a transport maps to `501` —
+   * distinct from "every event was rejected", which is a `200` reporting `rejected`.
+   *
+   * A rejected event is counted, not thrown: a client batching twenty transitions should not lose
+   * nineteen good ones to one stale token. The rejections that matter (an unknown or already-spent
+   * token) are indistinguishable from an attempt to inflate a number, and the correct response to both
+   * is the same — decline it quietly and carry on.
+   */
+  async reportInstalls(
+    events: InstallEvent[],
+  ): Promise<{ accepted: number; rejected: number; receipts: { id: string; receipt: string }[] } | undefined> {
+    const { redeemReportToken, putInstallReceipt, redeemInstallReceipt, incrementInstalls } = this.store;
+    if (!redeemReportToken || !putInstallReceipt || !redeemInstallReceipt || !incrementInstalls) {
+      return undefined;
+    }
+
+    let accepted = 0;
+    let rejected = 0;
+    const receipts: { id: string; receipt: string }[] = [];
+
+    for (const event of events) {
+      if (event.event === "installed") {
+        // The token must exist, must be unspent, and must have been minted for the package being
+        // reported. Without the last check a token from a free package would count an install of a
+        // paid one — the token proves *a* download happened, so it must also say which.
+        const minted = event.token ? await this.store.redeemReportToken!(event.token) : undefined;
+        if (!minted || minted.id !== event.id) {
+          rejected++;
+          continue;
+        }
+        await this.store.incrementInstalls!(minted.id, "installed");
+        const receipt = randomUUID();
+        await this.store.putInstallReceipt!(receipt, minted.id, minted.version);
+        receipts.push({ id: minted.id, receipt });
+        accepted++;
+      } else if (event.event === "uninstalled") {
+        const minted = event.receipt ? await this.store.redeemInstallReceipt!(event.receipt) : undefined;
+        if (!minted || minted.id !== event.id) {
+          rejected++;
+          continue;
+        }
+        await this.store.incrementInstalls!(minted.id, "uninstalled");
+        accepted++;
+      } else if (event.event === "activated" || event.event === "deactivated") {
+        // Accepted and deliberately not counted. These are unbounded by nature — a user may toggle an
+        // extension all day — so counting them would produce a number with no meaning. Reporting them
+        // as accepted keeps a well-behaved client from retrying forever.
+        accepted++;
+      } else {
+        rejected++;
+      }
+    }
+
+    return { accepted, rejected, receipts };
   }
 
   /**

@@ -246,6 +246,43 @@ export class NpmStore implements RegistryStore {
     await this.local.putVersion(pkg, bytes);
   }
 
+  // --- Install reporting (spec/state-reporting.md § 4) --------------------------------------------
+  //
+  // Delegated wholesale to the in-memory overlay, which is where this backend's download tallies
+  // already live and carries the same caveat: these counters reset when the store is redeployed, and
+  // the privacy policy says so. Implementing the group at all is what makes `POST /installs` answer
+  // something other than `501` on azphalt.store.
+  //
+  // The single-use property is what matters here, and it holds for the same reason it does in the
+  // in-memory store: a redemption reads and deletes with no `await` between the two, so two concurrent
+  // reports of one download cannot both succeed. A backend that moved these to a database would have to
+  // make that atomicity explicit — a conditional delete, or a transaction — or the counts stop being
+  // bounded by downloads actually served, which is the entire point of the token.
+
+  async putReportToken(token: string, id: string, version: string): Promise<void> {
+    await this.local.putReportToken(token, id, version);
+  }
+
+  async redeemReportToken(token: string): Promise<{ id: string; version: string } | undefined> {
+    return this.local.redeemReportToken(token);
+  }
+
+  async putInstallReceipt(receipt: string, id: string, version: string): Promise<void> {
+    await this.local.putInstallReceipt(receipt, id, version);
+  }
+
+  async redeemInstallReceipt(receipt: string): Promise<{ id: string; version: string } | undefined> {
+    return this.local.redeemInstallReceipt(receipt);
+  }
+
+  async incrementInstalls(id: string, kind: "installed" | "uninstalled", by = 1): Promise<void> {
+    await this.local.incrementInstalls(id, kind, by);
+  }
+
+  async getInstalls(id: string): Promise<{ installs: number; uninstalls: number }> {
+    return this.local.getInstalls(id);
+  }
+
   async incrementDownloads(id: string, version: string, by = 1): Promise<void> {
     const localVersions = await this.local.getVersions(id);
     if (localVersions.length > 0) {

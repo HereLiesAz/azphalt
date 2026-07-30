@@ -35,14 +35,24 @@ import components.SortMode
 import components.StorefrontControls
 import components.buildSections
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.CompositionLocalProvider
+import models.ExtensionStateEntry
+import models.LocalHostInventory
 import models.PackageSummary
 import network.fetchRegistryList
 import theme.AzphaltExpressiveTheme
 import theme.ExpressiveMotion
 
 @Composable
-fun StorefrontApp() {
+fun StorefrontApp(
+    /**
+     * What the calling host has already done with these extensions (`spec/state-reporting.md` § 3).
+     * Empty for the web store and for the app opened on its own — neither has a host to ask.
+     */
+    hostInventory: Map<String, ExtensionStateEntry> = emptyMap(),
+) {
     AzphaltExpressiveTheme {
+      CompositionLocalProvider(LocalHostInventory provides hostInventory) {
         var packages by remember { mutableStateOf<List<PackageSummary>>(emptyList()) }
         var loading by remember { mutableStateOf(true) }
         var selected by remember { mutableStateOf<PackageSummary?>(null) }
@@ -204,5 +214,6 @@ fun StorefrontApp() {
                 }
             }
         }
+      }
     }
 }

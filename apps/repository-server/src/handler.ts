@@ -20,7 +20,7 @@
  * and served unconditionally. That is the same lane separation the rest of the standard keeps — money
  * lives only on listings, never in the open registry.
  */
-import { RangeNotSatisfiableError, RegistryError, type ByteRangeSpec, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
+import { RangeNotSatisfiableError, RegistryError, type ByteRangeSpec, type InstallEvent, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
 import type { PackageSearchResponse, PackageSummary, RepositoryErrorCode, RepositoryIndex } from "@azphalt/azdk";
 import { denyAllAuthorizer, issueEntitlement, type DownloadAuthorizer } from "@azphalt/registry";
 
@@ -168,6 +168,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     maturity: s.maturity,
     targetApps: s.targetApps,
     downloads: s.downloads,
+    ...(s.installs !== undefined ? { installs: s.installs, uninstalls: s.uninstalls } : {}),
     rating: s.rating,
     ratingCount: s.ratingCount,
     updatedAt: s.updatedAt,
@@ -333,12 +334,77 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
       }
     }
 
-    const { bytes } = await registry.serve(id, version);
+    const { bytes, reportToken } = await registry.serve(id, version);
     return {
       status: 200,
-      headers: { "content-type": "application/x-azphalt", "content-length": String(bytes.length), "accept-ranges": "bytes" },
+      headers: {
+        "content-type": "application/x-azphalt",
+        "content-length": String(bytes.length),
+        "accept-ranges": "bytes",
+        // The single-use capability that authorises one install report for this transfer
+        // (`spec/state-reporting.md` § 4.2). Absent when the store keeps no install statistics, and
+        // absent from `206` responses above — a ranged read is not a download, so it must not authorise
+        // an install, or one transfer split into ten chunks would authorise ten.
+        ...(reportToken ? { "azphalt-report-token": reportToken } : {}),
+      },
       body: bytes,
     };
+  }
+
+  /**
+   * `POST /installs` — record install/uninstall transitions (`repository-api.md` § 8).
+   *
+   * Optional: a repository whose store keeps no install statistics answers `501`, which a client is
+   * required to treat as final. That is deliberately distinguished from "every event was rejected",
+   * which is a `200` carrying a `rejected` count — the first means stop, the second means try again
+   * with better tokens.
+   *
+   * Nothing here identifies anyone. The body carries transitions for packages, never an inventory, and
+   * the tokens are bearer capabilities the repository minted itself (`spec/state-reporting.md` § 2).
+   */
+  async function installs(req: RepoRequest): Promise<RepoResponse> {
+    let body: unknown;
+    try {
+      body = JSON.parse(req.body ?? "");
+    } catch {
+      return fail(400, "body must be JSON");
+    }
+    if (!body || typeof body !== "object" || !Array.isArray((body as { events?: unknown }).events)) {
+      return fail(400, "body must be an object with an events array");
+    }
+    const raw = (body as { events: unknown[] }).events;
+    // Bounded before anything is validated, let alone stored: an unbounded array from the network is a
+    // memory budget set by the caller.
+    if (raw.length > 200) return fail(400, "at most 200 events per request");
+
+    const events: InstallEvent[] = [];
+    for (const entry of raw) {
+      if (!entry || typeof entry !== "object") return fail(400, "each event must be an object");
+      const e = entry as Record<string, unknown>;
+      if (typeof e.id !== "string" || typeof e.version !== "string" || typeof e.event !== "string") {
+        return fail(400, "each event needs a string id, version and event");
+      }
+      if (e.id.length > 256 || e.version.length > 64) return fail(400, "event fields exceed their maximum length");
+      if (e.token !== undefined && (typeof e.token !== "string" || e.token.length > 256)) {
+        return fail(400, "token must be a string of at most 256 characters");
+      }
+      if (e.receipt !== undefined && (typeof e.receipt !== "string" || e.receipt.length > 256)) {
+        return fail(400, "receipt must be a string of at most 256 characters");
+      }
+      events.push({
+        id: e.id,
+        version: e.version,
+        // Not narrowed to the four known names here on purpose — an unrecognised name is a *rejected
+        // event*, counted in the response, not a `400` that discards the whole batch.
+        event: e.event as InstallEvent["event"],
+        ...(typeof e.token === "string" ? { token: e.token } : {}),
+        ...(typeof e.receipt === "string" ? { receipt: e.receipt } : {}),
+      });
+    }
+
+    const result = await registry.reportInstalls(events);
+    if (!result) return fail(501, "this repository does not keep install statistics");
+    return json(200, result);
   }
 
   /**
@@ -403,6 +469,9 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     }
     if (req.path === "/entitlements/play") {
       return req.method === "POST" ? await playEntitlement(req) : fail(405, `method not allowed: ${req.method}`);
+    }
+    if (req.path === "/installs") {
+      return req.method === "POST" ? await installs(req) : fail(405, `method not allowed: ${req.method}`);
     }
     if (req.method !== "GET") return fail(405, `method not allowed: ${req.method}`);
     if (req.path === "/.well-known/azphalt-repository.json") return json(200, index);

@@ -180,7 +180,93 @@ Checks a whole installed library for updates in **one** request, instead of one 
 { "updates": [ { "id": "com.sfx.explosions-pack", "latest": "1.2.0" } ] }
 ```
 
-Only ids with something newer appear; an id that is current, ahead, or unknown is silently omitted (a host treats "absent" as "up to date"). `latest` uses the same newest-non-yanked resolution as everywhere else. A malformed body (not a JSON array of `{ id: string, version: string }`) returns `400` with the error envelope below. This is the only non-`GET` endpoint in the API; it is read-only despite the verb (a `POST` because the request carries a body).
+Only ids with something newer appear; an id that is current, ahead, or unknown is silently omitted (a host treats "absent" as "up to date"). `latest` uses the same newest-non-yanked resolution as everywhere else. A malformed body (not a JSON array of `{ id: string, version: string }`) returns `400` with the error envelope below. It is read-only despite the verb (a `POST` because the request carries a body).
+
+### 7. Play purchase exchange
+`POST /entitlements/play`
+
+Trades a verified Google Play purchase for the same registry-signed entitlement a web payment would produce. **Optional** — a repository that does not sell through Google Play answers `501`.
+
+This exists because a store app distributed on Google Play cannot send the user to a web checkout for digital goods; it must use Play Billing (see [`store-app.md`](store-app.md) § Paid packages). Without this exchange the Play lane would dead-end: the buyer pays Google, and the repository has no way to recognise it.
+
+**Request:**
+```json
+{ "packageId": "com.acme.filter", "productId": "com.acme.filter", "purchaseToken": "<opaque token from Play>" }
+```
+
+**Response (200 OK):**
+```json
+{ "entitlement": "<base64 of the EntitlementToken JSON>" }
+```
+
+The returned value is exactly what the download endpoint accepts as a Bearer token (§ 4), so a client can present it unchanged.
+
+The exchange MUST happen server-side. Only the repository can verify a purchase token with Google, and only the repository holds the entitlement signing key — a client that minted its own entitlement would be defeated by anyone willing to patch the client. This is precisely why a host verifies the entitlement's **signature** rather than trusting whoever presents it.
+
+Failure modes are distinguished on purpose:
+
+- `402` — Google does not recognise the purchase, or it does not cover this package.
+- `502` — the repository could not reach Google. This is **not** `402`: telling a paying customer they did not pay is a worse failure than asking them to retry.
+- `501` — this repository has no Play integration configured.
+- `400` — a malformed body, or fields beyond their length bounds (a purchase token is capped before it is forwarded upstream).
+
+`subject` — the identity the entitlement is issued to — is chosen by the repository's Play verifier and SHOULD be stable for the buyer across devices, or a reinstall will not restore their purchase.
+
+### 8. Install reporting
+`POST /installs`
+
+Accepts state transitions for packages a client has installed, so a repository can report install
+numbers to publishers. **Optional** — a repository that keeps no install statistics answers `501`, and a
+client MUST take that as final and stop reporting rather than retrying.
+
+The design, the privacy rules it MUST obey, and what the resulting numbers do and do not mean are
+normative in [`state-reporting.md`](state-reporting.md). In short: no identity of any kind appears in
+this protocol, one request carries transitions rather than an inventory, and an `installed` report must
+present a token the repository issued with a download it actually served.
+
+**Report tokens.** Every full `200` from § 4 carries an `azphalt-report-token` response header: an
+opaque, single-use, random string identifying that transfer. It is not derived from the client, the
+request, the address or the time, and it is stored server-side as a bare string with no record of who
+received it. Ranged (`206`) responses carry no token, for the same reason they do not count as
+downloads — one logical transfer is many range requests.
+
+**Request:**
+```json
+{
+  "events": [
+    { "id": "com.acme.filter", "version": "1.2.0", "event": "installed", "token": "<azphalt-report-token>" },
+    { "id": "com.acme.brushes", "version": "2.0.1", "event": "uninstalled", "receipt": "<receipt from a prior installed>" },
+    { "id": "com.acme.filter", "version": "1.2.0", "event": "activated" }
+  ]
+}
+```
+
+`event` is one of `installed`, `uninstalled`, `activated`, `deactivated`. `installed` requires `token`;
+`uninstalled` requires `receipt`; the other two take neither and a repository MAY ignore them entirely.
+At most **200** events per request.
+
+**Response (200 OK):**
+```json
+{ "accepted": 2, "rejected": 1, "receipts": [ { "id": "com.acme.filter", "receipt": "<opaque single-use>" } ] }
+```
+
+One `receipts` entry per accepted `installed` event. The receipt is what a later `uninstalled` report
+presents, which is what bounds uninstalls by installs — nobody can drive a package's number down
+without having first driven it up. A client that discards a receipt simply cannot report that
+uninstall; nothing else breaks.
+
+A rejected event (unknown or already-spent token, unknown package, unrecognised `event`) is **counted,
+not fatal**: the response reports how many were rejected and the request still returns `200`, because a
+client batching twenty transitions should not lose nineteen good ones to one stale token. A malformed
+body — not an object with an `events` array, an entry missing `id` / `version` / `event`, or more than
+200 events — returns `400` with the error envelope below.
+
+`installs` and `uninstalls` appear on the package summary from § 2, alongside `downloads` — the same
+place a store card reads its numbers from. They are deliberately **not** added to § 3, which carries no
+`downloads` or `rating` either: package *detail* describes the package, and tallies belong with the rest
+of the tallies rather than half in each response. A repository MUST NOT present net installs as *active* installs; the protocol cannot measure a
+live gauge without the identifier it forbids, and [`state-reporting.md`](state-reporting.md) § 4.3 says
+why.
 
 ## Error responses
 

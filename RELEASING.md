@@ -1,5 +1,59 @@
 # Releasing
 
+There are **two independent version schemes** in this repository, and they are not the same thing:
+
+- **The apps** — the Android store app, the desktop builds, and the web store — share one version, `a.b.c.d`, held in [`version.properties`](version.properties). See § Versioning the apps below.
+- **The npm packages** (`@azphalt/*`, `create-azphalt`) are versioned per-package by Changesets. Everything from § Day to day onwards is about those.
+
+Nothing links the two. A package release does not move `version.properties`, and a build does not move a package version.
+
+## Versioning the apps
+
+`version.properties` at the repository root is the single source of truth. Format `a.b.c.d`:
+
+| | Name | Who moves it | When |
+|---|---|---|---|
+| `a` | major | **The owner, by hand.** Nothing automated ever touches it. | A deliberate decision. |
+| `b` | minor | An agent or a contributor, deliberately. Resets `c` to 0. | A feature or a function was added. |
+| `c` | patch | Automatic. | Every compile. |
+| `d` | build | Automatic. **Never resets.** | Every compile. |
+
+Everything that reports a version reads it from that file: the Android `versionName`, the Android `versionCode` (which is `d` alone), the Gradle project version, the desktop installers, and the version shown in the web store's footer. Nothing hardcodes a version anywhere else — if you find one, it is a bug.
+
+`d` is `versionCode` because Play requires that number to increase monotonically forever and accepts each value exactly once. `d` never resets and never decreases by construction; anything derived from `a.b.c` goes backwards the moment a component resets.
+
+### The commands
+
+`tools/version.mjs` is the only thing that writes the file. Do not hand-edit it.
+
+~~~sh
+node tools/version.mjs print          # 0.1.2.7
+node tools/version.mjs print --code   # 7   (the Android versionCode)
+node tools/version.mjs bump           # c + 1, d + 1        — what a compile does
+node tools/version.mjs bump --minor   # b + 1, c = 0, d + 1 — a feature was added
+node tools/version.mjs bump --major   # a + 1, b = 0, c = 0, d + 1 — owner only
+node tools/version.mjs check          # validate the file
+~~~
+
+### When bumps happen
+
+- **Locally**, any Gradle invocation that compiles bumps `c` and `d` before reading them, so the artifact carries the version that build produced. `./gradlew tasks`, `clean`, `--dry-run` and IDE syncs do not. The bump shells out to `tools/version.mjs`; if node is not on `PATH` it warns and builds at the committed version rather than failing.
+- **In CI**, `AZPHALT_VERSION_FROZEN=1` disables that, and `.github/workflows/debug-apk.yml` bumps exactly once per run instead. A run invokes Gradle several times — the wasm bundle, the APK, the verifier tests — and per-invocation bumps would make one commit produce a store and an app claiming different versions. One bump per run means every artifact from it agrees.
+- **After a feature lands**, run `bump --minor` in the same change that adds it. That is the only bump a human or an agent performs by hand.
+
+### The debug APK
+
+`.github/workflows/debug-apk.yml` runs on every push to `main`. It bumps the version, builds `assembleDebug`, commits `version.properties` back to `main`, tags `v<a.b.c.d>`, and publishes the APK as a **prerelease** named for its version.
+
+Two things about that loop worth knowing:
+
+- It pushes to the branch it triggers on. It does not recurse because pushes made with `GITHUB_TOKEN` do not trigger workflows; the `[skip ci]` in the commit message is a second belt. That also means CI does not run on the version commit, which is intended — it changes four digits.
+- The commit lands **before** the tag, so `v0.1.2.7` always points at a tree that says `0.1.2.7`. A tag that disagreed with the file would make the file untrustworthy, which is the one thing it cannot be.
+
+The APK is debug-signed with the automatically-generated debug key. It installs for testing and can never be updated to or from a Play build, because Android refuses an install whose signature differs from the installed app's.
+
+## The npm packages
+
 The `@azphalt/*` packages are versioned and published with [Changesets](https://github.com/changesets/changesets). Versions move together loosely: each package is independent, but internal `workspace:*` deps are rewritten to real versions at publish time.
 
 ## Day to day: add a changeset with your PR

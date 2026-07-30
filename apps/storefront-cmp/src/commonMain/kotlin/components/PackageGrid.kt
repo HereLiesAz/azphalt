@@ -23,7 +23,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import models.ExtensionState
+import models.ExtensionStateEntry
+import models.LocalHostInventory
 import models.PackageSummary
+import models.statusLabelFor
 import theme.azTiltOnPress
 import theme.azTurnstileEntrance
 import util.formatCount
@@ -83,6 +87,10 @@ fun PackageCard(
     ageConfirmed: Boolean = true,
     onConfirmAge: () -> Unit = {},
 ) {
+    // What the calling host reported about this package, if anything (`spec/state-reporting.md` § 3).
+    // Null means the host said nothing — the standalone app and every web visitor — and the card must
+    // then look exactly as it did before any of this existed.
+    val state: ExtensionStateEntry? = LocalHostInventory.current[pkg.id]
     // A developer-flagged 18+ package stays behind an age gate until the viewer confirms: the preview
     // art is hidden and a tap confirms age instead of opening the detail.
     val gated = pkg.isMature && !ageConfirmed
@@ -165,6 +173,19 @@ fun PackageCard(
                                 content = onContainer,
                             )
                             if (pkg.isMature) Pill("18+", cs.secondary, cs.onSecondary)
+                            // What the host has already done with this one. Placed with the kind and
+                            // maturity pills rather than the price, because it describes the user's
+                            // relationship to the package, not the package's terms.
+                            statusLabelFor(state)?.let { status ->
+                                val failed = state?.state == ExtensionState.FAILED
+                                Pill(
+                                    text = status.uppercase(),
+                                    // Failure is the one state worth pulling the eye: it means the
+                                    // user tried to get this and did not.
+                                    container = if (failed) cs.error else cs.tertiary,
+                                    content = if (failed) cs.onError else cs.onTertiary,
+                                )
+                            }
                         }
                         Pill(
                             text = priceLabel(pkg),

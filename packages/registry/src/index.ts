@@ -88,6 +88,7 @@ export type {
   SubscriptionInterval,
   ConsignmentTerms,
   PriceBreakdown,
+  InstallEvent,
   PackageSummary,
   PackageVersion,
   RegistryPackage,
