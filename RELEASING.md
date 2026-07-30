@@ -38,19 +38,43 @@ node tools/version.mjs check          # validate the file
 ### When bumps happen
 
 - **Locally**, any Gradle invocation that compiles bumps `c` and `d` before reading them, so the artifact carries the version that build produced. `./gradlew tasks`, `clean`, `--dry-run` and IDE syncs do not. The bump shells out to `tools/version.mjs`; if node is not on `PATH` it warns and builds at the committed version rather than failing.
-- **In CI**, `AZPHALT_VERSION_FROZEN=1` disables that, and `.github/workflows/debug-apk.yml` bumps exactly once per run instead. A run invokes Gradle several times — the wasm bundle, the APK, the verifier tests — and per-invocation bumps would make one commit produce a store and an app claiming different versions. One bump per run means every artifact from it agrees.
+- **In CI**, `AZPHALT_VERSION_FROZEN=1` disables that, and the `version` job of `.github/workflows/app-release.yml` performs the one bump for a `main` commit instead. Nothing else in CI moves the number: a PR check has no business rewriting a tracked file it cannot commit, and a run that invokes Gradle several times — the wasm bundle, the APK, the verifier tests — would otherwise make one commit produce a store and an app claiming different versions. See § One commit, one version, every artifact.
 - **After a feature lands**, run `bump --minor` in the same change that adds it. That is the only bump a human or an agent performs by hand.
 
-### The debug APK
+### One commit, one version, every artifact
 
-`.github/workflows/debug-apk.yml` runs on every push to `main`. It bumps the version, builds `assembleDebug`, commits `version.properties` back to `main`, tags `v<a.b.c.d>`, and publishes the APK as a **prerelease** named for its version.
+`.github/workflows/app-release.yml` runs on every push to `main` and is the **only** thing that moves
+the version on `main`. It has four jobs, in this order:
 
-Two things about that loop worth knowing:
+1. **version** — bumps `c` and `d` once, commits `version.properties` back to `main`, tags
+   `v<a.b.c.d>`, and outputs both the version and the sha it landed on.
+2. **android** — checks out that sha and builds the debug APK.
+3. **desktop** — checks out that sha on Windows, macOS and Linux and builds the installers.
+4. **release** — publishes every artifact under `v<a.b.c.d>`, and updates the rolling `latest` release
+   to the same assets so existing download links keep working.
 
-- It pushes to the branch it triggers on. It does not recurse because pushes made with `GITHUB_TOKEN` do not trigger workflows; the `[skip ci]` in the commit message is a second belt. That also means CI does not run on the version commit, which is intended — it changes four digits.
-- The commit lands **before** the tag, so `v0.1.2.7` always points at a tree that says `0.1.2.7`. A tag that disagreed with the file would make the file untrustworthy, which is the one thing it cannot be.
+Every build job runs with `AZPHALT_VERSION_FROZEN=1` and checks out the **commit the version job
+produced**, so the APK, the msi, the dmg and the deb from one commit all carry the same number. That is
+not a nicety: this used to be two workflows racing on the same push, and a single commit produced an
+APK and three installers with four different versions — which makes a single source of truth worthless.
 
-The APK is debug-signed with the automatically-generated debug key. It installs for testing and can never be updated to or from a Play build, because Android refuses an install whose signature differs from the installed app's.
+Other things worth knowing about that loop:
+
+- It pushes to the branch it triggers on and does not recurse, because pushes made with `GITHUB_TOKEN`
+  do not trigger workflows; the `[skip ci]` in the commit message is a second belt. CI therefore does
+  not run on the version commit, which is intended — it changes four digits.
+- The commit lands **before** the tag and before anything builds, so `v0.2.1.4` always points at a tree
+  that says `0.2.1.4`. A tag that disagreed with the file would make the file untrustworthy, which is
+  the one thing it cannot be.
+- The version job's sha is read **after** its rebase-and-retry loop, so it is the commit that actually
+  landed rather than the one the run hoped for. Another workflow pushing to `main` mid-run is a case
+  that has already happened here.
+- A single platform failing does not sink the release: the matrix is `fail-fast: false` and the release
+  job publishes what arrived and warns about what did not. Zero artifacts is a hard failure, because a
+  tagged release with no assets looks shipped.
+- The APK is debug-signed. It installs for testing and can never update to or from a Play build, because
+  Android refuses an install whose signature differs from the installed app's. The versioned releases
+  are prereleases for that reason; the rolling `latest` stays the non-prerelease one.
 
 ## The npm packages
 

@@ -14,6 +14,12 @@ Two rules that apply to you:
    do not run `bump --major` unless asked to in so many words.
 2. **Never hand-edit `version.properties`, and never hardcode a version anywhere else.** Read it
    from that file. `tools/version.mjs` is its only writer.
+3. **There is exactly one `version.properties`, at the repository root, and everything reads it.** Not
+   one per module, not a second one "just for" a subproject — every such copy has drifted from the real
+   one within a release. If you add a module that has a version, derive it (`rootProject.version` in
+   Gradle, `readVersion()` from `tools/version.mjs` in Node) rather than writing a number down.
+   Anything built from one commit must report the same version as everything else built from it, which
+   is why `app-release.yml` bumps once and every build job checks out the commit that bump produced.
 
 The npm packages (`@azphalt/*`) are a separate scheme owned by Changesets — a package release does
 not move `version.properties`, and a build does not move a package version.
