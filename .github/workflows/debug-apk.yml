@@ -1,0 +1,138 @@
+name: Debug APK
+
+# Every commit that lands on main produces a versioned debug APK on the Releases page.
+on:
+  push:
+    branches:
+      - main
+  # So a release can be re-cut by hand if a run is lost to a runner failure.
+  workflow_dispatch:
+
+# Serialised, and deliberately never cancelled. This job bumps `version.properties` and pushes the
+# result; two runs overlapping would race on that file, and cancelling one mid-push could leave a
+# release tagged with a version that was never committed. Queueing costs a few minutes and removes
+# the whole class of problem.
+concurrency:
+  group: debug-apk
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The default token is what pushes the version commit below. Pushes made with
+          # GITHUB_TOKEN do not trigger workflows, which is what stops this job — a push to main
+          # that itself pushes to main — from re-triggering itself forever.
+          persist-credentials: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Exactly one bump per run, before anything compiles.
+      #
+      # The Gradle build bumps on every compiling invocation by default, which is right locally but
+      # wrong here: this job invokes Gradle once now and could invoke it again, and a CI run must
+      # produce one version, not one per task. So the bump happens here and AZPHALT_VERSION_FROZEN
+      # holds every build in this run to it.
+      - name: Bump the version
+        id: version
+        run: |
+          version="$(node tools/version.mjs bump)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Building $version"
+
+      - name: Write google-services.json when Firebase is configured
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+        run: node .github/scripts/write-google-services.mjs
+
+      - name: Assemble the debug APK
+        working-directory: apps/storefront-cmp
+        env:
+          AZPHALT_VERSION_FROZEN: '1'
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      # Named for the version it carries, because a Releases page full of identically-named files is
+      # unusable — nothing on disk would say which build any of them is.
+      #
+      # The source name is discovered rather than assumed: AGP derives it from the Gradle project
+      # name (it is `storefront-cmp-debug.apk`, not the `app-debug.apk` most snippets hardcode), and
+      # a rename would silently break a literal path. `output-metadata.json`, which AGP writes
+      # alongside the APK, is the authority on both the file name and the version inside it.
+      - name: Name the APK for its version
+        id: apk
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          dest="azphalt-store-$VERSION-debug.apk"
+          node .github/scripts/name-debug-apk.mjs "$VERSION" "$dest"
+          echo "path=$dest" >> "$GITHUB_OUTPUT"
+          ls -l "$dest"
+
+      # Committed before the release is cut, so the tag points at a commit that actually contains
+      # the version it claims. A release tagged v0.1.2.7 whose tree says 0.1.2.6 is worse than no
+      # release at all — it makes the version file untrustworthy, which is the one thing it cannot be.
+      - name: Commit the new version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.properties
+          if git diff --cached --quiet; then
+            echo "::error::version.properties did not change — the bump did not happen" >&2
+            exit 1
+          fi
+          # [skip ci] belt-and-braces: GITHUB_TOKEN pushes already do not trigger workflows.
+          git commit -m "chore(version): $VERSION [skip ci]"
+          # Another workflow (or a person) can land on main between the checkout and this push.
+          # Rebasing keeps the bump rather than clobbering their commit; the retry covers the
+          # narrow window where a second push arrives during the rebase itself.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected, rebasing (attempt $attempt)"
+            git pull --rebase origin main
+            sleep $((attempt * 3))
+          done
+          echo "::error::could not push the version commit after 5 attempts" >&2
+          exit 1
+
+      - name: Tag the release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Azphalt Store ${{ steps.version.outputs.version }} (debug)
+          # Prerelease, so these never become the repository's "Latest release" and displace the
+          # desktop installers. A debug APK is signed with the automatically-generated debug key: it
+          # installs for testing and can never be updated to or from a Play build, because Android
+          # refuses an install whose signature differs from the installed app's.
+          prerelease: true
+          body: |
+            Debug build of the Azphalt store app, from commit ${{ github.sha }}.
+
+            - **Version** `${{ steps.version.outputs.version }}` (`versionCode` = the fourth number)
+            - Debug-signed. Uninstall any other build of `store.azphalt.storefront` first — Android
+              rejects an install whose signing key differs from the installed app's.
+            - Not for distribution. The Play build is a separate, release-signed artifact.
+          files: ${{ steps.apk.outputs.path }}

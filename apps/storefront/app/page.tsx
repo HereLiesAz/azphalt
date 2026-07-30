@@ -52,6 +52,15 @@ export default function Home() {
         <a href="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>
           Terms
         </a>
+        {/*
+          The store's version, from `version.properties` via next.config.mjs — the same four numbers
+          the Android app reports. Here rather than inside the Compose canvas so it is readable
+          without WebGL, and so "what is deployed right now" can be answered by looking at the page.
+        */}
+        <span aria-hidden="true" style={{ margin: '0 0.4rem' }}>
+          ·
+        </span>
+        <span title="Store version">v{process.env.AZPHALT_VERSION}</span>
       </footer>
     </>
   );

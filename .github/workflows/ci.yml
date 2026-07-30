@@ -40,6 +40,11 @@ jobs:
   # production deploy. This gates it here. Uses the same task the deploy build runs.
   storefront-compose:
     runs-on: ubuntu-latest
+    # Read the version, never move it. This job invokes Gradle three times, and a PR check has no
+    # business rewriting a tracked file it cannot commit — the bump belongs to debug-apk.yml, which
+    # runs on main and pushes the result.
+    env:
+      AZPHALT_VERSION_FROZEN: '1'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Java (for the Kotlin/Wasm Gradle build)

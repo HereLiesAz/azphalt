@@ -17,6 +17,7 @@
  */
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { formatVersion, readVersion } from "../../tools/version.mjs";
 
 // Pin the file-tracing root to the monorepo root. Otherwise Next *infers* it (walking up for a
 // lockfile) and the guess differs across machines/OSes — on some setups the standalone tree nests
@@ -33,8 +34,17 @@ if (basePath) {
   if (basePath === "") basePath = undefined;
 }
 
+// The store's version, read from the repository's `version.properties` and baked in at build time.
+//
+// Baked rather than read at runtime on purpose: an `fs` read in a server component would need a
+// matching `outputFileTracingIncludes` entry to survive the standalone bundle, and would let the
+// deployed store's reported version drift from the code it is actually running. A build-time
+// constant cannot drift — it is the version of this build, by construction.
+const version = formatVersion(readVersion());
+
 const nextConfig = {
   reactStrictMode: true,
+  env: { AZPHALT_VERSION: version },
   transpilePackages: ["@azphalt/registry", "@azphalt/azp", "@azphalt/azdk", "@azphalt/repository-server"],
   // A self-contained server bundle, convenient for `node .next/standalone/.../server.js`.
   output: "standalone",
