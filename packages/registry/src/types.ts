@@ -111,6 +111,16 @@ export interface PackageSummary {
   updatedAt: string;
   /** Total served downloads across every version. */
   downloads: number;
+  /**
+   * Reported installs and uninstalls (`spec/state-reporting.md` § 4). Absent when the store keeps no
+   * install statistics — which is the default, and distinct from a genuine zero.
+   *
+   * Deliberately two numbers rather than one net figure: net installs is not "active installs", and a
+   * single field named `installs` holding a difference invites exactly that misreading. § 4.3 of the
+   * spec forbids presenting one as the other.
+   */
+  installs?: number;
+  uninstalls?: number;
   /** Size of the latest version's `.azp` container, in bytes. */
   byteSize: number;
   /** Coarse media domains this package touches, derived from its asset types + capabilities. */
@@ -239,4 +249,23 @@ export interface PriceBreakdown {
   platformFee: Money;
   /** What the seller receives after both cuts (never negative). */
   sellerNet: Money;
+}
+
+/**
+ * One install/uninstall transition reported by a client (`spec/state-reporting.md` § 4,
+ * `repository-api.md` § 8).
+ *
+ * `token` is required for `installed` and comes from the `azphalt-report-token` header of the download
+ * that delivered the bytes; `receipt` is required for `uninstalled` and comes from the response to that
+ * `installed` report. Both are single-use, opaque, and carry no identity — they exist so a count is
+ * bounded by something the repository witnessed rather than by whoever chose to send a request.
+ */
+export interface InstallEvent {
+  id: string;
+  version: string;
+  event: "installed" | "uninstalled" | "activated" | "deactivated";
+  /** Required for `installed`. The `azphalt-report-token` from the download. */
+  token?: string;
+  /** Required for `uninstalled`. The receipt returned when the install was counted. */
+  receipt?: string;
 }

@@ -70,6 +70,14 @@ jobs:
         working-directory: apps/storefront-cmp
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
+      - name: Test the shared Kotlin model
+        # `desktopTest` covers the host-inventory parser (spec/state-reporting.md § 3.1), which reads a
+        # JSON document another application hands over through an intent extra. Its whole contract is
+        # that bad input degrades to "the host told us nothing" — a claim that rots silently without a
+        # test, and whose failure mode is a store another app can crash.
+        working-directory: apps/storefront-cmp
+        run: ./gradlew desktopTest --no-daemon --stacktrace
+
       - name: Test the Kotlin .azp verifier
         # Separate from the wasm task above, which does not touch this subproject — without this the
         # verifier would have no CI coverage at all. It is a security boundary (integrity digests and

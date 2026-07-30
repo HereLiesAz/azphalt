@@ -159,6 +159,7 @@ private fun HandoffFlow(
                     onPick = { pkg ->
                         phase = Phase.Fetching(pkg)
                     },
+                    inventory = request.inventory,
                 )
             }
         }
@@ -190,7 +191,13 @@ private fun HandoffFlow(
                 downloadPackage(pkg.id, pkg.version, request.repository, entitlement)
             }
             val acquired = withContext(Dispatchers.IO) {
-                stageForHandoff(context, downloaded.bytes, downloaded.integrity, downloaded.entitlement)
+                stageForHandoff(
+                    context,
+                    downloaded.bytes,
+                    downloaded.integrity,
+                    downloaded.entitlement,
+                    downloaded.reportToken,
+                )
             }
             onAcquired(acquired)
             return@LaunchedEffect

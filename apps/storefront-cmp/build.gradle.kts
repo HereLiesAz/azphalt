@@ -151,6 +151,15 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
             }
         }
+        // The one test source set for the shared module. `desktopTest` rather than `commonTest`
+        // because a common test source set would demand a runner for every target — including wasm,
+        // which needs a browser — and the code under test is pure Kotlin with no platform surface. One
+        // JVM run covers it, and `./gradlew desktopTest` is a plain unit-test task.
+        val desktopTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
         val androidMain by getting {
             dependencies {
                 implementation("androidx.activity:activity-compose:1.9.3")

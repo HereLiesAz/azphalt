@@ -15,6 +15,8 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import java.io.File
+import models.ExtensionStateEntry
+import models.parseHostInventory
 import store.azphalt.azp.VerifyResult
 import store.azphalt.azp.openAzp
 
@@ -30,12 +32,33 @@ public object Handoff {
     public const val EXTRA_ID: String = "id"
     public const val EXTRA_MULTIPLE: String = "multiple"
 
+    /**
+     * What the host already holds — `spec/state-reporting.md` § 3.1.
+     *
+     * Namespaced like the result extras rather than bare like the filters above, because it is not a
+     * filter: the filters shape *what is shown*, this shapes *how it is labelled*.
+     */
+    public const val EXTRA_INVENTORY: String = "azphalt.extra.INVENTORY"
+
+    /** The host's read-only state provider authority (`spec/state-reporting.md` § 3.2). */
+    public const val EXTRA_STATE_AUTHORITY: String = "azphalt.extra.STATE_AUTHORITY"
+
     public const val RESULT_ID: String = "azphalt.extra.ID"
     public const val RESULT_VERSION: String = "azphalt.extra.VERSION"
     public const val RESULT_INTEGRITY: String = "azphalt.extra.INTEGRITY"
     public const val RESULT_SIGNED: String = "azphalt.extra.SIGNED"
     public const val RESULT_SIGNER_KEY: String = "azphalt.extra.SIGNER_KEY"
     public const val RESULT_ENTITLEMENT: String = "azphalt.extra.ENTITLEMENT"
+
+    /**
+     * The report token from the download that produced these bytes
+     * (`spec/state-reporting.md` § 4.2).
+     *
+     * Handed on rather than spent here: this app downloaded, but only the host knows whether it went
+     * on to install, verified the bytes and declined, or crashed. Reporting an install we cannot
+     * observe would put a number in the registry that is not true.
+     */
+    public const val RESULT_REPORT_TOKEN: String = "azphalt.extra.REPORT_TOKEN"
 
     public const val MIME: String = "application/vnd.azphalt.package"
 }
@@ -55,6 +78,10 @@ public data class BrowseRequest(
     public val repository: String? = null,
     public val id: String? = null,
     public val multiple: Boolean = false,
+    /** Host-reported extension states, by package id. Empty when the host sent none, or sent junk. */
+    public val inventory: Map<String, ExtensionStateEntry> = emptyMap(),
+    /** The host's state provider authority, when it offered one. */
+    public val stateAuthority: String? = null,
 ) {
     public companion object {
         /** Read a request off the launching intent, or null when `app` is absent (a malformed call). */
@@ -79,6 +106,10 @@ public data class BrowseRequest(
                 repository = source.getStringExtra(Handoff.EXTRA_REPOSITORY),
                 id = source.getStringExtra(Handoff.EXTRA_ID) ?: source.data?.getQueryParameter(Handoff.EXTRA_ID),
                 multiple = source.getBooleanExtra(Handoff.EXTRA_MULTIPLE, false),
+                // Never from the link form: `azphalt://browse?...` returns nothing, so a URL long
+                // enough to carry an inventory would buy the user nothing and log a huge intent.
+                inventory = parseHostInventory(source.getStringExtra(Handoff.EXTRA_INVENTORY)),
+                stateAuthority = source.getStringExtra(Handoff.EXTRA_STATE_AUTHORITY)?.takeIf { it.isNotBlank() },
             )
         }
     }
@@ -110,6 +141,13 @@ public data class AcquiredPackage(
     public val entitlement: String?,
     public val verify: VerifyResult,
     public val file: File,
+    /**
+     * The `azphalt-report-token` from the download, when the repository issued one.
+     *
+     * Passed to the host rather than spent here (`spec/state-reporting.md` § 4.2): this app knows a
+     * download happened, the host knows whether an install did, and only the second is worth counting.
+     */
+    public val reportToken: String? = null,
 )
 
 /**
@@ -125,6 +163,7 @@ public fun stageForHandoff(
     bytes: ByteArray,
     integrity: String?,
     entitlement: String?,
+    reportToken: String? = null,
 ): AcquiredPackage {
     val (pkg, result) = openAzp(bytes)
     if (!result.ok) {
@@ -141,7 +180,7 @@ public fun stageForHandoff(
     val file = File(dir, "$safe.azp")
     file.writeBytes(bytes)
 
-    return AcquiredPackage(id, version, integrity, entitlement, result, file)
+    return AcquiredPackage(id, version, integrity, entitlement, result, file, reportToken)
 }
 
 /**
@@ -180,6 +219,7 @@ public fun handoffResult(context: Context, packages: List<AcquiredPackage>): Int
     // attacker as the legitimate publisher of that id.
     first.verify.signerPublicKey?.let { intent.putExtra(Handoff.RESULT_SIGNER_KEY, it) }
     first.entitlement?.let { intent.putExtra(Handoff.RESULT_ENTITLEMENT, it) }
+    first.reportToken?.let { intent.putExtra(Handoff.RESULT_REPORT_TOKEN, it) }
 
     return intent
 }

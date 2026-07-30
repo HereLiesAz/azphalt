@@ -212,6 +212,62 @@ Failure modes are distinguished on purpose:
 
 `subject` — the identity the entitlement is issued to — is chosen by the repository's Play verifier and SHOULD be stable for the buyer across devices, or a reinstall will not restore their purchase.
 
+### 8. Install reporting
+`POST /installs`
+
+Accepts state transitions for packages a client has installed, so a repository can report install
+numbers to publishers. **Optional** — a repository that keeps no install statistics answers `501`, and a
+client MUST take that as final and stop reporting rather than retrying.
+
+The design, the privacy rules it MUST obey, and what the resulting numbers do and do not mean are
+normative in [`state-reporting.md`](state-reporting.md). In short: no identity of any kind appears in
+this protocol, one request carries transitions rather than an inventory, and an `installed` report must
+present a token the repository issued with a download it actually served.
+
+**Report tokens.** Every full `200` from § 4 carries an `azphalt-report-token` response header: an
+opaque, single-use, random string identifying that transfer. It is not derived from the client, the
+request, the address or the time, and it is stored server-side as a bare string with no record of who
+received it. Ranged (`206`) responses carry no token, for the same reason they do not count as
+downloads — one logical transfer is many range requests.
+
+**Request:**
+```json
+{
+  "events": [
+    { "id": "com.acme.filter", "version": "1.2.0", "event": "installed", "token": "<azphalt-report-token>" },
+    { "id": "com.acme.brushes", "version": "2.0.1", "event": "uninstalled", "receipt": "<receipt from a prior installed>" },
+    { "id": "com.acme.filter", "version": "1.2.0", "event": "activated" }
+  ]
+}
+```
+
+`event` is one of `installed`, `uninstalled`, `activated`, `deactivated`. `installed` requires `token`;
+`uninstalled` requires `receipt`; the other two take neither and a repository MAY ignore them entirely.
+At most **200** events per request.
+
+**Response (200 OK):**
+```json
+{ "accepted": 2, "rejected": 1, "receipts": [ { "id": "com.acme.filter", "receipt": "<opaque single-use>" } ] }
+```
+
+One `receipts` entry per accepted `installed` event. The receipt is what a later `uninstalled` report
+presents, which is what bounds uninstalls by installs — nobody can drive a package's number down
+without having first driven it up. A client that discards a receipt simply cannot report that
+uninstall; nothing else breaks.
+
+A rejected event (unknown or already-spent token, unknown package, unrecognised `event`) is **counted,
+not fatal**: the response reports how many were rejected and the request still returns `200`, because a
+client batching twenty transitions should not lose nineteen good ones to one stale token. A malformed
+body — not an object with an `events` array, an entry missing `id` / `version` / `event`, or more than
+200 events — returns `400` with the error envelope below.
+
+`installs` and `uninstalls` appear on the package summary from § 2, alongside `downloads` — the same
+place a store card reads its numbers from. They are deliberately **not** added to § 3, which carries no
+`downloads` or `rating` either: package *detail* describes the package, and tallies belong with the rest
+of the tallies rather than half in each response. A repository MUST NOT present net installs as *active* installs; the protocol cannot measure a
+live gauge without the identifier it forbids, and [`state-reporting.md`](state-reporting.md) § 4.3 says
+why.
+
 ## Error responses
 
 Every non-2xx response carries a normative JSON **error envelope** so a host can branch on a stable machine code and show a human message, rather than parsing a bare status:

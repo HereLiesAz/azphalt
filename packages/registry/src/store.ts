@@ -45,6 +45,33 @@ export interface RegistryStore {
    */
   addRating?(id: string, stars: number): void | Promise<void>;
 
+  /**
+   * Install statistics (`spec/state-reporting.md` § 4). **Optional as a group** — a store that keeps
+   * no install numbers omits all five, and {@link Registry.reportInstalls} reports that clearly so the
+   * transport can answer `501`.
+   *
+   * The five exist together because they are one mechanism: a token is minted with a download,
+   * redeemed by an install, and replaced by a receipt that an uninstall redeems in turn. Implementing
+   * the counters without the tokens would give a number anyone with `curl` could fabricate, which is
+   * worse than no number at all.
+   */
+  /** Mint and store a single-use report token for a served download. */
+  putReportToken?(token: string, id: string, version: string): Promise<void>;
+  /**
+   * Spend a report token, returning the `{id, version}` it was minted for — or `undefined` if it is
+   * unknown or already spent. MUST be atomic with respect to concurrent redemptions of the same token:
+   * two simultaneous reports of one download must not both succeed.
+   */
+  redeemReportToken?(token: string): Promise<{ id: string; version: string } | undefined>;
+  /** Mint and store a single-use uninstall receipt for a counted install. */
+  putInstallReceipt?(receipt: string, id: string, version: string): Promise<void>;
+  /** Spend an uninstall receipt, returning what it was minted for, or `undefined`. Atomic, as above. */
+  redeemInstallReceipt?(receipt: string): Promise<{ id: string; version: string } | undefined>;
+  /** Add [by] (default 1) to a package's install or uninstall tally. */
+  incrementInstalls?(id: string, kind: "installed" | "uninstalled", by?: number): Promise<void>;
+  /** A package's install and uninstall totals. Absent counters read as 0. */
+  getInstalls?(id: string): Promise<{ installs: number; uninstalls: number }>;
+
   /** Append a revocation record (a version pulled post-publish). */
   putRevocation(entry: RevocationEntry): Promise<void>;
   /** Revocation records, newest-first; when [since] is given, only those with `revokedAt` > [since]. */
@@ -75,6 +102,12 @@ export class InMemoryStore implements RegistryStore {
   private readonly revocations: RevocationEntry[] = []; // append-only log
   private readonly listings = new Map<string, Listing>(); // packageId
   private readonly reports: Report[] = []; // append-only log
+  // Install reporting (spec/state-reporting.md § 4). Unredeemed tokens and receipts are stored as bare
+  // strings mapped to what they are *for* — deliberately with no record of who received them, so a
+  // token cannot be traced back to a device even in principle.
+  private readonly reportTokens = new Map<string, { id: string; version: string }>();
+  private readonly installReceipts = new Map<string, { id: string; version: string }>();
+  private readonly installs = new Map<string, { installs: number; uninstalls: number }>(); // packageId
 
   private key(id: string, version: string): string {
     return `${id}@${version}`;
@@ -138,6 +171,46 @@ export class InMemoryStore implements RegistryStore {
     const r = this.ratings.get(id);
     if (!r || r.count === 0) return { ratingCount: 0 };
     return { rating: r.sum / r.count, ratingCount: r.count };
+  }
+
+  // --- Install reporting (spec/state-reporting.md § 4) ---------------------------------------------
+  //
+  // `delete`-then-return is what makes redemption single-use. In this store that is atomic for free
+  // (one thread, no await between the read and the delete); a store over a database MUST make it so
+  // explicitly — a conditional delete, or a transaction — or two concurrent reports of one download
+  // both succeed and the counter is no longer bounded by downloads served.
+
+  async putReportToken(token: string, id: string, version: string): Promise<void> {
+    this.reportTokens.set(token, { id, version });
+  }
+
+  async redeemReportToken(token: string): Promise<{ id: string; version: string } | undefined> {
+    const minted = this.reportTokens.get(token);
+    if (!minted) return undefined;
+    this.reportTokens.delete(token);
+    return minted;
+  }
+
+  async putInstallReceipt(receipt: string, id: string, version: string): Promise<void> {
+    this.installReceipts.set(receipt, { id, version });
+  }
+
+  async redeemInstallReceipt(receipt: string): Promise<{ id: string; version: string } | undefined> {
+    const minted = this.installReceipts.get(receipt);
+    if (!minted) return undefined;
+    this.installReceipts.delete(receipt);
+    return minted;
+  }
+
+  async incrementInstalls(id: string, kind: "installed" | "uninstalled", by = 1): Promise<void> {
+    const current = this.installs.get(id) ?? { installs: 0, uninstalls: 0 };
+    if (kind === "installed") current.installs += by;
+    else current.uninstalls += by;
+    this.installs.set(id, current);
+  }
+
+  async getInstalls(id: string): Promise<{ installs: number; uninstalls: number }> {
+    return this.installs.get(id) ?? { installs: 0, uninstalls: 0 };
   }
 
   async putRevocation(entry: RevocationEntry): Promise<void> {

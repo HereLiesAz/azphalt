@@ -40,7 +40,12 @@ private const val TIMEOUT_MS = 20_000
  */
 private const val MAX_PACKAGE_BYTES = 64L * 1024 * 1024
 
-private fun httpGet(url: String, bearer: String? = null): ByteArray {
+/** A response body plus the response headers a caller needs. */
+private class Fetched(val bytes: ByteArray, val headers: Map<String, String>)
+
+private fun httpGet(url: String, bearer: String? = null): ByteArray = httpFetch(url, bearer).bytes
+
+private fun httpFetch(url: String, bearer: String? = null): Fetched {
     val conn = (URI.create(url).toURL().openConnection() as HttpURLConnection).apply {
         requestMethod = "GET"
         connectTimeout = TIMEOUT_MS
@@ -70,7 +75,15 @@ private fun httpGet(url: String, bearer: String? = null): ByteArray {
                 out.write(buf, 0, n)
             }
         }
-        return out.toByteArray()
+        // Lower-cased keys: HTTP header names are case-insensitive and a server may spell
+        // `azphalt-report-token` however it likes.
+        val headers = buildMap {
+            for ((key, values) in conn.headerFields) {
+                val name = key?.lowercase() ?: continue
+                values.firstOrNull()?.let { put(name, it) }
+            }
+        }
+        return Fetched(out.toByteArray(), headers)
     } finally {
         conn.disconnect()
     }
@@ -116,6 +129,12 @@ public data class DownloadedPackage(
     public val bytes: ByteArray,
     public val integrity: String?,
     public val entitlement: String?,
+    /**
+     * The `azphalt-report-token` response header, when the repository issued one
+     * (`spec/state-reporting.md` § 4.2). Absent from repositories that keep no install statistics —
+     * which is most of them, since the endpoint is optional.
+     */
+    public val reportToken: String? = null,
 )
 
 /**
@@ -140,8 +159,13 @@ public suspend fun downloadPackage(
             ?.jsonObject?.get("integrity")?.jsonPrimitive?.content
     }.getOrNull()
 
-    val bytes = httpGet("$base/packages/${enc(id)}/versions/${enc(version)}/download", bearer = entitlement)
-    DownloadedPackage(bytes = bytes, integrity = integrity, entitlement = entitlement)
+    val fetched = httpFetch("$base/packages/${enc(id)}/versions/${enc(version)}/download", bearer = entitlement)
+    DownloadedPackage(
+        bytes = fetched.bytes,
+        integrity = integrity,
+        entitlement = entitlement,
+        reportToken = fetched.headers["azphalt-report-token"],
+    )
 }
 
 // --- expect/actual for the shared Compose UI -------------------------------------------------------
