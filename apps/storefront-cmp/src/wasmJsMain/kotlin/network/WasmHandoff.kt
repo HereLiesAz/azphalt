@@ -22,6 +22,15 @@ private const val HANDOFF_WAIT_MS = 1_400L
 /** Poll interval while waiting — fine enough to feel immediate, coarse enough to cost nothing. */
 private const val POLL_MS = 50L
 
+/**
+ * Whether the page is currently hidden.
+ *
+ * Reached through `js(...)` because Kotlin/Wasm's `Document` binding exposes neither `hidden` nor
+ * `visibilityState` — the typed DOM surface is narrower than the browser's, and this is the sanctioned
+ * escape hatch for the gap rather than a shortcut around the bindings.
+ */
+private fun documentHidden(): Boolean = js("document.hidden")
+
 actual suspend fun attemptHandoff(link: String): Boolean {
     // Departure is recorded by listeners rather than sampled at the end: a user can leave for a host
     // and come back well inside the wait window, and by the time it expires `visibilityState` is
@@ -33,7 +42,7 @@ actual suspend fun attemptHandoff(link: String): Boolean {
         window.addEventListener("pagehide", mark)
         window.addEventListener("blur", mark)
         document.addEventListener("visibilitychange", {
-            if (document.visibilityState.toString() != "visible") left = true
+            if (documentHidden()) left = true
         })
 
         // `location.href` rather than an iframe or an anchor click: modern browsers treat a top-level
