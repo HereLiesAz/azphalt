@@ -40,6 +40,26 @@ export async function GET() {
       const entries = (await registry.latest(p.id))?.manifest.pack?.entries;
       if (entries?.length) return { ...base, pack: { entries } };
     }
+    // An app (kind:"app") carries its `app` block in the manifest for the same reason. The UI needs
+    // it to build the host directory — which listings are hosts, what id each answers to, and where
+    // to install it (spec/web-handoff.md § Host directory). `handoffs` is deliberately not copied:
+    // it can be large, and nothing in the storefront invokes a companion.
+    if (p.kind === "app") {
+      const app = (await registry.latest(p.id))?.manifest.app;
+      if (app) {
+        return {
+          ...base,
+          app: {
+            // Absent `roles` means `["companion"]` (spec/extension-manifest.md § app). Resolved here
+            // rather than in the UI so both storefronts read the same answer instead of each
+            // reimplementing the default — and getting it different.
+            roles: app.roles?.length ? app.roles : ["companion"],
+            hostId: app.hostId,
+            platforms: app.platforms,
+          },
+        };
+      }
+    }
     return base;
   }));
 

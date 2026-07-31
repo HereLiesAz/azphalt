@@ -106,10 +106,16 @@ export default function PublishPage() {
           {fileName && (
             <div style={{ color: MUTED, fontSize: 14, marginTop: 8 }}>{fileName}</div>
           )}
+          {/*
+            Both media types on purpose. This is an *accept* filter, and a `.azp` already sitting on
+            disk may carry the deprecated `application/x-azphalt` from whatever server sent it
+            (spec/package-format.md § Media type). Refusing it here would reject a valid package over
+            a header the user never chose.
+          */}
           <input
             ref={inputRef}
             type="file"
-            accept=".azp,application/x-azphalt"
+            accept=".azp,application/vnd.azphalt.package,application/x-azphalt"
             style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0];

@@ -41,7 +41,10 @@ export default defineConfig({
             { text: 'Marketplace Integrity', link: '/specs/marketplace-integrity' },
             { text: 'MCP Server', link: '/specs/mcp-server' },
             { text: 'Extension Packs', link: '/specs/pack' },
-            { text: 'Companion Apps (RFC)', link: '/specs/companion-app' }
+            { text: 'Companion Apps (RFC)', link: '/specs/companion-app' },
+            { text: 'Store App (RFC)', link: '/specs/store-app' },
+            { text: 'Web Handoff (RFC)', link: '/specs/web-handoff' },
+            { text: 'State Reporting', link: '/specs/state-reporting' }
           ]
         }
       ],
@@ -63,6 +66,7 @@ export default defineConfig({
           items: [
             { text: 'Consume a Repository', link: '/hosts/getting-started' },
             { text: 'Repository API', link: '/specs/repository-api' },
+            { text: 'Receiving a Web Handoff', link: '/specs/web-handoff' },
             { text: 'Adopting the Standard (code host)', link: '/ADOPTION' },
             { text: 'Adopting as an Asset Host', link: '/ADOPTION_ASSET_HOST' },
             { text: 'Adopting as a Companion Host', link: '/ADOPTION_COMPANION_HOST' }

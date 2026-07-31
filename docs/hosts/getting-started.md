@@ -28,6 +28,9 @@ const { packages, total } = await store.search();
 // Or filter to just what your app can actually use — say a paint app that only wants brushes & LUTs:
 const brushes = await store.search({ types: ["brush", "lut"], q: "ink" });
 console.log(`Found ${brushes.total} matching packs.`);
+
+// `kind` narrows by package kind. A host with no code sandbox takes only data:
+const assetsOnly = await store.search({ kind: ["asset"] });
 ```
 
 Each result carries ranking and preview metadata (`downloads`, `rating`, `priceStatus`, `preview`, …)
@@ -141,3 +144,7 @@ or adopt the standard directly — see [Adopting the Standard](/ADOPTION).
 - Run extension **code** safely in your app: the [Capability model](/specs/capability-model) and
   [UI schema](/specs/ui-schema).
 - Launch external **companion apps** over a handoff: [Companion Apps](/specs/companion-app).
+- Let a **web storefront hand your app a package**: [Web Handoff](/specs/web-handoff). Claiming
+  `azphalt://install` and accepting the `.azp` media type is what makes "Install" on a web page reach
+  your app instead of dead-ending — and listing your app puts it in the storefront's "get a host"
+  fallback for users who have none.

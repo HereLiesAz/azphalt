@@ -41,6 +41,15 @@ A companion-app package is a normal signed `.azp` whose `kind` is `"app"`. It ca
 sandbox payload** and **no host capabilities** — it is a *manifest header* describing how to install and
 invoke an external app. Its manifest adds one block, `app`:
 
+> **`kind: "app"` covers two roles.** `app.roles` distinguishes a **companion** (this document — an app
+> a host launches to do work and hand a result back) from a **host** (an app that *runs* extensions,
+> listed so a storefront can point users at it — [`web-handoff.md`](web-handoff.md) § Host directory).
+> It defaults to `["companion"]`, so every listing written before the field existed means what it
+> always meant, and everything below applies to it unchanged. The only thing the split changes for a
+> companion is that `handoffs` is now required *because* the app is a companion, rather than because
+> of its `kind` — a host-only listing has nothing to hand off and carries `hostId` instead. An app that
+> is both declares both roles and satisfies both requirements.
+
 ~~~jsonc
 {
   "azphalt": "0.1",

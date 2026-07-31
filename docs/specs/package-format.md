@@ -7,6 +7,30 @@
 - Entries MUST use forward-slash paths, UTF-8 names, no absolute paths, no `..` traversal. A host MUST reject a package with unsafe paths.
 - For reproducible signing, entries SHOULD be written in sorted path order with fixed timestamps.
 
+## Media type
+
+**`application/vnd.azphalt.package`**, file extension `.azp`. This is the **only** normative statement
+of the type in this specification; every other document cross-references it rather than restating it.
+A sender — a repository serving a download (`repository-api.md` § Download Package), a store app
+handing bytes to a host (`store-app.md` § The result), a browser saving a file (`web-handoff.md`) —
+MUST use it.
+
+It is an **unregistered** vendor-tree type. RFC 6838 § 3.2 opens the `vnd.` tree to anyone
+interchanging files associated with a product, without requiring registration; registration with IANA
+is a later, additive step that would not change the string.
+
+`application/x-azphalt` is a **deprecated alias**. A client SHOULD accept it, because servers
+predating this section emit it; a server MUST NOT send it. The `x-` prefix was deprecated for new
+types by RFC 6648, which RFC 6838 § 3.4 defers to — it was never a way to say "unregistered", only a
+convention that stopped meaning anything once two parties had to agree on it.
+
+**A receiver MUST NOT validate on the media type.** It is a routing hint for the OS, the browser and
+the share sheet — it decides *which application opens the bytes*, never *whether the bytes are
+trustworthy*. That question is answered by the digests in `manifest.files` and the signature
+(§ Signing), both of which are carried inside the package and are unforgeable by whoever transported
+it. A sender that lies about the type causes the wrong app to open; a receiver that *trusts* the type
+causes something worse.
+
 ## Required tree
 ~~~
 manifest.json     REQUIRED — the manifest (see extension-manifest.md)
@@ -24,7 +48,7 @@ Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app` | `mcp` |
 - `asset` — data only (brushes, LUTs, patterns). No executable code; a host MAY load it with no runtime. This is what importers produce.
 - `code` — one or more extensions on the sandbox (JS on QuickJS-in-WASM, or raw WASM).
 - `mixed` — both (e.g. a filter shipping its own LUTs).
-- `app` — a **companion app** (an Android app or PWA the host launches via a declared handoff). Carries **no** `/code` payload and **no** `capabilities` — just an `app` header (see extension-manifest.md § app and companion-app.md). The tree is `manifest.json` + `LICENSE` (+ optional `preview`).
+- `app` — an **external OS-level app**: a **companion** (an Android app or PWA the host launches via a declared handoff) and/or a **host** (an app that runs extensions, listed so a storefront can point users at it). Carries **no** `/code` payload and **no** `capabilities` — just an `app` header declaring `platforms`, `roles`, and per-role `hostId` / `handoffs` (see extension-manifest.md § app, companion-app.md, and web-handoff.md § Host directory). The tree is `manifest.json` + `LICENSE` (+ optional `preview`).
 - `mcp` — an **MCP server** a host's MCP client connects to. A header (an `mcp` block) that declares how to reach the server; no `/code`, no `capabilities` (see extension-manifest.md § mcp and mcp-server.md).
 - `pack` — an **extension pack**: a curated set that **references** other packages by id (a recommended bundle or an app's base set). A header (a `pack` block); no `/code`, no `capabilities`, no assets. Each member is resolved and free/paid-gated individually (see extension-manifest.md § pack and pack.md).
 

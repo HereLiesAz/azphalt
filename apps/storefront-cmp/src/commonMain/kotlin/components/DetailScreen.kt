@@ -35,7 +35,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import models.CheckoutResponse
+import models.HostOption
 import models.PackageSummary
+import models.hostsFor
+import models.installLink
+import network.attemptHandoff
+import network.downloadUrl
+import network.openExternal
 import network.startCheckout
 import network.submitIpClaim
 import network.submitRating
@@ -48,6 +54,7 @@ import util.formatRating
 @Composable
 fun DetailScreen(
     pkg: PackageSummary,
+    catalog: List<PackageSummary>,
     ageConfirmed: Boolean,
     onConfirmAge: () -> Unit,
     onBack: () -> Unit,
@@ -97,6 +104,12 @@ fun DetailScreen(
     var busy by remember { mutableStateOf(false) }
     var dialogText by remember { mutableStateOf<String?>(null) }
     var showFlag by remember { mutableStateOf(false) }
+
+    // The install fallback (spec/web-handoff.md § When no host is installed). Non-null once a handoff
+    // attempt has come back with "nothing claimed it" — never shown pre-emptively, because on a device
+    // that does have a host the user should simply arrive there.
+    var noHost by remember(pkg.id) { mutableStateOf(false) }
+    val hosts = remember(pkg.id, catalog) { hostsFor(pkg, catalog) }
 
     // Live rating state, seeded from the summary and updated when the viewer rates.
     var rating by remember(pkg.id) { mutableStateOf(pkg.rating) }
@@ -294,10 +307,18 @@ fun DetailScreen(
                             dialogText = result.error ?: result.message ?: "Checkout started."
                             busy = false
                         }
-                    } else if (pkg.pack != null) {
-                        dialogText = "“${pkg.name}” bundles ${pkg.pack.entries.size} extensions — a host installs each from any Azphalt-conforming repository (paid members need their own purchase)."
                     } else {
-                        dialogText = "“${pkg.name}” is free — install it from any Azphalt-conforming host."
+                        // The web handoff. One link shape for everything free, packs included — a
+                        // pack is a package with an id, and the host resolves its members
+                        // (spec/web-handoff.md § Packs). Nothing here names a host.
+                        scope.launch {
+                            busy = true
+                            val handed = attemptHandoff(installLink(pkg.id, pkg.version))
+                            // Only on "nothing claimed it". A user who left for a host and came back
+                            // should not find an apology waiting for them.
+                            noHost = !handed
+                            busy = false
+                        }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
@@ -335,6 +356,80 @@ fun DetailScreen(
             text = { Text(message) },
         )
     }
+
+    if (noHost) {
+        NoHostSheet(
+            pkg = pkg,
+            hosts = hosts,
+            onRetry = {
+                noHost = false
+                scope.launch {
+                    busy = true
+                    // The user may have installed a host and come back — that is precisely what the
+                    // retry is for, so ask again rather than assuming the first answer still holds.
+                    noHost = !attemptHandoff(installLink(pkg.id, pkg.version))
+                    busy = false
+                }
+            },
+            onDismiss = { noHost = false },
+        )
+    }
+}
+
+/**
+ * What happens when nothing on the device claimed the link — `spec/web-handoff.md` § When no host is
+ * installed.
+ *
+ * Deliberately not phrased as an error. On a device with no host, downloading the package **is** the
+ * successful outcome of pressing Install: a host registered for the `.azp` media type opens the file
+ * directly, with no link support involved at all. The old copy sent the user back to an app they had
+ * just left and stopped there; this sends them somewhere.
+ */
+@Composable
+private fun NoHostSheet(
+    pkg: PackageSummary,
+    hosts: List<HostOption>,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Install “${pkg.name}”") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Nothing on this device opened the link. Download the package and open it in a " +
+                        "host, or install one below.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = cs.onSurfaceVariant,
+                )
+                Button(
+                    onClick = { openExternal(downloadUrl(pkg.id, pkg.version)) },
+                    shape = RectangleShape,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
+                ) { Text("Download .azp", fontWeight = FontWeight.Bold) }
+
+                if (hosts.isNotEmpty()) {
+                    Text(
+                        if (pkg.targetApps.isEmpty()) "Hosts that run azphalt extensions" else "Made for",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = cs.onBackground,
+                    )
+                    hosts.forEach { host ->
+                        OutlinedButton(
+                            onClick = { openExternal(host.installUrl) },
+                            shape = RectangleShape,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Get ${host.name}") }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onRetry, shape = RectangleShape) { Text("Try again") } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = RectangleShape) { Text("Close") } },
+    )
 }
 
 /**

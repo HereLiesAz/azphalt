@@ -127,8 +127,8 @@ describe("azp", () => {
     const back = readAzp(azp).manifest;
     expect(back.kind).toBe("app");
     expect(back.app?.platforms.android?.packageId).toBe("com.acme.arstencil");
-    expect(back.app?.handoffs[0].output?.assets).toContain("vector");
-    expect(back.app?.handoffs[0].transport.pwa?.return?.kind).toBe("postMessage");
+    expect(back.app?.handoffs?.[0].output?.assets).toContain("vector");
+    expect(back.app?.handoffs?.[0].transport.pwa?.return?.kind).toBe("postMessage");
     // An app package (manifest + LICENSE only, no code, no capabilities) verifies fine.
     expect(verifyAzp(azp).ok).toBe(true);
   });

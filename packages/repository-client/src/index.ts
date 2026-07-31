@@ -3,6 +3,7 @@ import type {
   PackageSearchResponse,
   Manifest,
   AssetType,
+  Kind,
   PackManifest,
   PackEntry,
 } from "@azphalt/azdk";
@@ -42,6 +43,12 @@ export interface SearchOptions {
   types?: AssetType[];
   tags?: string[];
   page?: number;
+  /**
+   * Package kinds to keep (`repository-api.md § Search Packages`). A host with no code sandbox passes
+   * `["asset"]`; a storefront building the host directory passes `["app"]` (`web-handoff.md § Host
+   * directory`).
+   */
+  kind?: Kind[];
   /** Override the client's `app` for this search (see {@link ClientOptions.app}). */
   app?: string;
 }
@@ -108,6 +115,7 @@ export class RepositoryClient {
     if (opts.q) params.set("q", opts.q);
     if (opts.types && opts.types.length > 0) params.set("types", opts.types.join(","));
     if (opts.tags && opts.tags.length > 0) params.set("tags", opts.tags.join(","));
+    if (opts.kind && opts.kind.length > 0) params.set("kind", opts.kind.join(","));
     if (opts.page) params.set("page", opts.page.toString());
     const app = opts.app ?? this.app;
     if (app) params.set("app", app);

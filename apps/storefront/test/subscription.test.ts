@@ -49,6 +49,6 @@ describe("subscription fulfilment", () => {
       { params: Promise.resolve({ id: SUB }) },
     );
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/zip");
+    expect(res.headers.get("content-type")).toBe("application/vnd.azphalt.package");
   });
 });

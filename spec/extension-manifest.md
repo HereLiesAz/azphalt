@@ -20,7 +20,7 @@
 | `entry`, `runtime` | code/mixed | Code entry module and `js` \| `wasm`. |
 | `capabilities` | code/mixed | Declared capabilities (see capability-model.md). |
 | `contributes` | code/mixed | Extension points the code registers (below). |
-| `app` | app | Companion-app block — how to install/invoke an external Android app or PWA + its handoffs. See § `app` and companion-app.md. |
+| `app` | app | External-app block — how to install/invoke an Android app or PWA, its `roles` (`companion` and/or `host`), and its handoffs. See § `app`, companion-app.md, and web-handoff.md § Host directory. |
 | `files` | ✔ | Map of payload path → SHA-256 digest (integrity; see package-format.md). |
 
 ## `compat`
@@ -254,12 +254,18 @@ Two are for **temporal / audio hosts** (video, motion editors), both editor-surf
 - `audio` — read and write the current PCM audio block (float32, interleaved; see capability-model.md § Audio-buffer ABI).
 
 ## `app`
-For a `kind: "app"` **companion app** (an Android app or PWA a host launches to perform a function and hand a result back), the manifest carries an `app` block instead of `assets`/`entry`/`capabilities`. It is a *header* describing how to install and invoke an external OS-level app — it grants **no** capabilities and ships **no** `/code` sandbox payload:
+For a `kind: "app"` package, the manifest carries an `app` block instead of `assets`/`entry`/`capabilities`. It is a *header* describing an external OS-level app — it grants **no** capabilities and ships **no** `/code` sandbox payload:
 
 - `platforms` — how to install/invoke per platform: `android` (`packageId`, `minSdk?`, `install?`) and/or `pwa` (`manifestUrl?`, `startUrl?`, `shareTargetUrl?`). At least one is required.
-- `handoffs[]` — the functions the companion offers, each with an `id`, an `action` (the host hook), a declared `input` / `output` (azphalt **assets** and/or structured **params**), and a per-platform `transport` (Android `Intent` + result, or PWA share-target + `postMessage` return).
+- `roles` — what the app *is*, as an array of `"companion"` and/or `"host"`. **Defaults to `["companion"]`**, so a listing written before this field existed keeps its original meaning. An app may legitimately be both: an editor that hosts extensions and also answers handoffs for other editors.
+- `hostId` — **REQUIRED when `roles` includes `"host"`**, forbidden otherwise. The reverse-DNS id this app answers to: the one packages name in `targetApps`, and the one it sends as the `app` extra in a browse request (**store-app.md** § The request).
+- `handoffs[]` — **REQUIRED when `roles` includes `"companion"`**, optional otherwise. The functions the companion offers, each with an `id`, an `action` (the host hook), a declared `input` / `output` (azphalt **assets** and/or structured **params**), and a per-platform `transport` (Android `Intent` + result, or PWA share-target + `postMessage` return).
 
-The moat holds because azphalt grants the companion nothing — the OS governs its permissions, the host never runs its code and **validates** the returned assets/params before use, and the user consents before each handoff. The full contract (transports, return semantics, security, discovery) is normative in **companion-app.md**.
+The two roles are opposites and the block has to distinguish them. A **companion** is an app a host launches to do work and hand a result back; a **host** is an app that *runs* extensions. Listing both under one `kind` is right — they are the same fact, "an OS-level app exists and here is how to install it" — but a storefront that could not tell them apart would offer an AR capture tool as somewhere to install a LUT.
+
+`hostId` is declared rather than derived because nothing in the listing implies it. The package id, the OS-level `packageId`, and the id used in `targetApps` are three independent strings; in this registry today they differ for the same app. A directory built by guessing at that relationship is a directory that quietly points users at the wrong app.
+
+The moat holds because azphalt grants the app nothing — the OS governs its permissions, a host never runs a companion's code and **validates** the returned assets/params before use, and the user consents before each handoff. The full companion contract (transports, return semantics, security, discovery) is normative in **companion-app.md**; what a `host` listing is *for* is normative in **web-handoff.md** § Host directory.
 
 ## `mcp`
 For a `kind: "mcp"` **MCP server** (a server a host's MCP client connects to), the manifest carries an `mcp` block instead of `assets`/`entry`/`capabilities`/`app`. Like `app`, it is a *header*: it declares how to reach the server (on-device `local` — a portable `wasi` module and/or a per-platform native launch — and/or a `remote` http/sse url), the `inputs` the host prompts for at connect time (`${input:…}`, never stored), and a descriptive `offers` of its tools/resources/prompts. It grants **no** azphalt capabilities and ships **no** `/code` sandbox payload; the host's MCP client runs/connects it under user consent, in the OS's / a WASI runtime's own sandbox. Secrets are never bundled — a credential-shaped `env`/`headers` value MUST be an `${input:…}` reference, enforced at verify time. The full contract (transports, host selection order, the two sandboxes, verification, discovery) is normative in **mcp-server.md**.

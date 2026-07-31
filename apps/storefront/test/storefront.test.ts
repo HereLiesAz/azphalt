@@ -64,8 +64,8 @@ describe("catalog", () => {
     expect(app?.platforms.android?.minVersionCode).toBe(120);
     expect(app?.platforms.pwa?.version).toBe("2026-06-01T00:00:00Z");
     // Two handoffs; the second raises the app-version floor for its newer capability.
-    expect(app?.handoffs.map((h) => h.action)).toEqual(["capture", "measure"]);
-    expect(app?.handoffs[1].minAppVersion?.android).toBe(130);
+    expect(app?.handoffs?.map((h) => h.action)).toEqual(["capture", "measure"]);
+    expect(app?.handoffs?.[1].minAppVersion?.android).toBe(130);
   });
 
   it("still seeds the code and asset packages alongside the companion", async () => {

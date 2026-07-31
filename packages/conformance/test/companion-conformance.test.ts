@@ -36,12 +36,12 @@ const companionHost: CompanionHost = {
     const platform = PLATFORMS.find((p) => app.platforms[p]);
     if (!platform) return { accepted: false, reason: "no transport for a supported platform" };
     // Surface handoffs that declare a transport for the matched platform.
-    const offered = app.handoffs.filter((h) => h.transport[platform]).map((h) => h.id);
+    const offered = (app.handoffs ?? []).filter((h) => h.transport[platform]).map((h) => h.id);
     return { accepted: true, offered, platform };
   },
   invoke(azp, handoffId, ret) {
     const { manifest } = readAzp(azp) as { manifest: Manifest };
-    const handoff = manifest.app?.handoffs.find((h) => h.id === handoffId);
+    const handoff = manifest.app?.handoffs?.find((h) => h.id === handoffId);
     if (!handoff) return { consented: false, accepted: false, reason: `no such handoff: ${handoffId}` };
     // Consent, every time — the host prompts before anything leaves it.
     const consented = true;

@@ -179,11 +179,16 @@ describe("repository handler — spec/repository-api.md", () => {
     });
   });
 
-  it("serves a free package's bytes unconditionally as application/x-azphalt", async () => {
+  it("serves a free package's bytes unconditionally as application/vnd.azphalt.package", async () => {
     const { handle, mk } = await handlerFixture();
     const res = await handle(mk("/packages/com.demo.free/versions/1.0.0/download"));
     expect(res.status).toBe(200);
-    expect(res.headers["content-type"]).toBe("application/x-azphalt");
+    expect(res.headers["content-type"]).toBe("application/vnd.azphalt.package");
+    // Spelled out rather than compared against the MEDIA_TYPE the handler itself uses: a test that
+    // imports the constant under test passes whatever the constant becomes, including a typo. This
+    // is the wire format, so the wire string is what belongs here (spec/package-format.md § Media
+    // type). The deprecated `application/x-azphalt` must not come back.
+    expect(res.headers["content-type"]).not.toBe("application/x-azphalt");
     expect(verifyAzp(res.body as Uint8Array).ok).toBe(true);
   });
 

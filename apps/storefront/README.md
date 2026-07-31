@@ -144,7 +144,7 @@ The storefront's own UI-facing routes (distinct from the normative Repository AP
 | `/search?q=…&sort=…&kind=…` | Browse + search: `registry.search` when a query is present, else `registry.list` with a sort (downloads / rating / updated / name) and a `kind` filter. |
 | `/p/[id]` | Package detail: facts, capabilities, ratings, version history, preview, download — and for a `kind:"app"` companion, the install panel + handoff contract; if consigned, the price, breakdown, and Buy button. |
 | `/app/[appId]` | Per-app catalog: what a host app sees — its own app-scoped companions plus globals (`registry.list({ app })`). |
-| `GET /api/download/[id]` | Serves the `.azp` bytes (`application/zip`), counting a download. Free packages are open; a **consigned** package is gated on a Bearer entitlement — `401` without a recognized token, `402` for a token that licenses something else. |
+| `GET /api/download/[id]` | Serves the `.azp` bytes (`application/vnd.azphalt.package` — see [`spec/package-format.md`](../../spec/package-format.md) § Media type), counting a download. Free packages are open; a **consigned** package is gated on a Bearer entitlement — `401` without a recognized token, `402` for a token that licenses something else. |
 | `GET /api/preview/[id]` | Serves a package's static store-card image (`manifest.preview.image`), no download counted. |
 | `POST /api/publish` | Publishes raw `.azp` bytes to the registry; returns the summary (or `400` with verification errors). |
 | `POST /api/checkout` | `{ packageId, buyerId }` → starts a consignment checkout; returns the session + price breakdown. On the real path the client redirects to `session.url`. |

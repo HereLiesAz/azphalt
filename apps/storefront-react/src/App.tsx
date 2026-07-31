@@ -10,6 +10,7 @@ import {
   type PackageSummary,
 } from "./api";
 import { drawPreview, paletteFor, rgba } from "./preview";
+import { attemptHandoff, downloadUrl, hostsFor, installLink, type HostOption } from "./handoff";
 
 type Sort = "popular" | "rating" | "recent" | "name";
 const SORTS: Array<[Sort, string]> = [
@@ -313,16 +314,32 @@ function CardRow({ section, onOpen }: { section: CatalogSection; onOpen: (p: Pac
 
 /* ─────────────── detail ─────────────── */
 
-function Detail({ pkg, onBack }: { pkg: PackageSummary; onBack: () => void }) {
+function Detail({ pkg, catalog, onBack }: { pkg: PackageSummary; catalog: PackageSummary[]; onBack: () => void }) {
   const [container, on] = paletteFor(pkg.id);
   const [dialog, setDialog] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The install fallback (spec/web-handoff.md § When no host is installed). Set only once a handoff
+  // attempt has come back with "nothing claimed it" — never shown pre-emptively, because on a device
+  // that does have a host the user should simply arrive there.
+  const [noHost, setNoHost] = useState(false);
   const paid = isPaid(pkg);
   const ratingLabel = formatRating(pkg.rating, pkg.ratingCount);
+  const hosts = useMemo(() => hostsFor(pkg, catalog), [pkg, catalog]);
+
+  const hand = async () => {
+    setBusy(true);
+    try {
+      // One link shape for everything free, packs included — a pack is a package with an id, and the
+      // host resolves its members (spec/web-handoff.md § Packs). Nothing here names a host.
+      setNoHost(!(await attemptHandoff(installLink(pkg.id, pkg.version))));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const buy = async () => {
     if (!paid) {
-      setDialog(`“${pkg.name}” is free — install it from any Azphalt-conforming host.`);
+      await hand();
       return;
     }
     setBusy(true);
@@ -382,6 +399,75 @@ function Detail({ pkg, onBack }: { pkg: PackageSummary; onBack: () => void }) {
           </div>
         </div>
       )}
+
+      {noHost && (
+        <NoHostSheet pkg={pkg} hosts={hosts} onRetry={hand} onDismiss={() => setNoHost(false)} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * What happens when nothing on the device claimed the link — spec/web-handoff.md § When no host is
+ * installed.
+ *
+ * Deliberately not phrased as an error. On a device with no host, downloading the package *is* the
+ * successful outcome of pressing Install: a host registered for the `.azp` media type opens the file
+ * directly, with no link support involved at all. The copy this replaced sent the user back to the app
+ * they had just left and stopped there.
+ */
+function NoHostSheet({
+  pkg,
+  hosts,
+  onRetry,
+  onDismiss,
+}: {
+  pkg: PackageSummary;
+  hosts: HostOption[];
+  onRetry: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div onClick={onDismiss} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, zIndex: 60 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", padding: 24, maxWidth: 420, width: "100%", border: "1px solid var(--outline)" }}>
+        <div style={{ fontWeight: 800, fontSize: 18 }}>Install “{pkg.name}”</div>
+        <p style={{ color: "var(--on-surface-variant)", marginTop: 8 }}>
+          Nothing on this device opened the link. Download the package and open it in a host, or install one below.
+        </p>
+
+        <a
+          href={downloadUrl(pkg.id, pkg.version)}
+          download
+          style={{ display: "block", textAlign: "center", marginTop: 16, padding: "12px 20px", fontWeight: 700, background: "var(--primary)", color: "var(--on-primary)", textDecoration: "none" }}
+        >
+          Download .azp
+        </a>
+
+        {hosts.length > 0 && (
+          <>
+            <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" }}>
+              {(pkg.targetApps ?? []).length === 0 ? "Hosts that run azphalt extensions" : "Made for"}
+            </div>
+            {hosts.map((h) => (
+              <a
+                key={h.hostId}
+                href={h.installUrl}
+                target="_blank"
+                /* The listings are third-party URLs from the registry — deny them window.opener. */
+                rel="noopener noreferrer"
+                style={{ display: "block", textAlign: "center", marginTop: 8, padding: "10px 20px", border: "1px solid var(--outline)", color: "var(--on-surface)", textDecoration: "none" }}
+              >
+                Get {h.name}
+              </a>
+            ))}
+          </>
+        )}
+
+        <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+          <button className="chip" onClick={onRetry}>Try again</button>
+          <button className="chip" onClick={onDismiss}>Close</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -492,7 +578,9 @@ export function App() {
 
       {selected && (
         <div className="detail-overlay" data-visible={detailVisible ? "true" : "false"}>
-          <Detail pkg={selected} onBack={close} />
+          {/* The whole catalogue, so the install fallback can build the host directory from its
+              kind:"app" listings (spec/web-handoff.md § Host directory) without a second fetch. */}
+          <Detail pkg={selected} catalog={packages} onBack={close} />
         </div>
       )}
     </div>

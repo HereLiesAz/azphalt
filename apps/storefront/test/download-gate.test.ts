@@ -63,7 +63,7 @@ describe("GET /api/download/[id] — the free lane stays open", () => {
   it("serves a free package with no token at all", async () => {
     const res = await get(FREE);
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/zip");
+    expect(res.headers.get("content-type")).toBe("application/vnd.azphalt.package");
   });
 
   it("404s an unknown package rather than treating it as free and failing oddly", async () => {
@@ -93,7 +93,7 @@ describe("GET /api/download/[id] — the paid lane is gated", () => {
   it("serves the bytes for a validly-signed token that does cover this package", async () => {
     const res = await get(PAID, await buy(PAID));
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/zip");
+    expect(res.headers.get("content-type")).toBe("application/vnd.azphalt.package");
     expect(Number(res.headers.get("content-length"))).toBeGreaterThan(0);
   });
 

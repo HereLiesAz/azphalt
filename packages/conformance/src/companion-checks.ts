@@ -100,7 +100,10 @@ function fixtureHandoff(azp: Uint8Array): { app: AppManifest; handoff: Handoff }
   const { manifest } = readAzp(azp) as { manifest: Manifest };
   const app = manifest.app;
   if (!app) throw new Error("companion fixture has no app block");
-  const handoff = app.handoffs[0];
+  // `handoffs` is optional on AppManifest since a `host`-role listing has none to declare
+  // (`spec/extension-manifest.md § app`). A *companion* fixture must still carry one, which is what
+  // the throw below enforces — this suite only ever runs against companions.
+  const handoff = app.handoffs?.[0];
   if (!handoff) throw new Error("companion fixture declares no handoffs");
   return { app, handoff };
 }

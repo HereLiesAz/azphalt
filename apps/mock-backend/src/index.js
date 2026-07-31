@@ -92,7 +92,9 @@ app.get("/packages/:id/versions/:version/download", (req, res) => {
   }
 
   // Serve the sample package's real .azp bytes.
-  res.setHeader("Content-Type", "application/x-azphalt");
+  // spec/package-format.md § Media type. `application/x-azphalt` is the deprecated alias a server
+  // must no longer send.
+  res.setHeader("Content-Type", "application/vnd.azphalt.package");
   res.setHeader("Content-Disposition", `attachment; filename="${pkg.id}-${req.params.version}.azp"`);
   res.send(SAMPLE_AZP);
 });

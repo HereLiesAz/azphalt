@@ -42,6 +42,10 @@ class BrowseForResultActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // This entry point renders the same shared UI as MainActivity, so it needs the same context
+        // installed — a user who reaches a detail screen through a host's browse request can still
+        // press Install (network/AndroidHandoff.kt).
+        network.AndroidAppContext.install(this)
         enableEdgeToEdge()
 
         val request = BrowseRequest.from(intent)

@@ -99,8 +99,9 @@ NOT return `RESULT_OK` with no package.
 
 ### MIME type
 
-The content URI SHOULD be served as `application/vnd.azphalt.package`. A host SHOULD NOT rely on the
-MIME type for validation; it is a hint for the OS, not a guarantee.
+The content URI MUST be served as the `.azp` media type — [`package-format.md`](package-format.md)
+§ Media type, its one normative definition. A host MUST NOT rely on it for validation; it decides
+which app opens the bytes, never whether they can be trusted. That is what the checks below are for.
 
 ## Host obligations
 
@@ -165,6 +166,8 @@ storefront."
   could instead expose an installed-extension library over a `ContentProvider`, so one acquisition
   serves every host and updates land once. That is a strictly larger contract (cross-app read
   permissions, per-host entitlement scoping) and is deliberately deferred until this one is proven.
-- **Non-Android parity.** The desktop and web storefronts have no equivalent handoff. A PWA store using
-  the `postMessage` return from `companion-app.md` would mirror this closely, but browser install
-  semantics differ enough that it should be specified separately rather than assumed.
+- **Desktop parity.** A desktop storefront has no equivalent handoff. The *web* half of this gap is
+  now closed by [`web-handoff.md`](web-handoff.md) — a browser cannot start an activity for result or
+  return bytes, so it names a package over `azphalt://install` and the host fetches and verifies it —
+  and desktop hosts can register URI schemes on every major OS, so that document is written to cover
+  them without changes. What remains unproven is the ergonomics: no desktop host implements it yet.

@@ -89,7 +89,14 @@ export class VercelRegistryStore implements RegistryStore {
       addRandomSuffix: false,
       allowOverwrite: true,
       token: this.blobToken,
-      contentType: "application/zip",
+      // The `.azp` media type (spec/package-format.md § Media type), not `application/zip`. A blob's
+      // stored contentType is what a direct blob URL serves, so `application/zip` here would hand a
+      // browser an archive to unpack instead of a package for a host to open.
+      //
+      // Spelled out rather than imported from `@azphalt/azdk`: this package keeps `@azphalt/registry`
+      // as a *dev* dependency precisely so it carries no azphalt runtime coupling, and one string is
+      // not worth spending that on.
+      contentType: "application/vnd.azphalt.package",
     });
     // 2) Then the row. On conflict, refresh metadata + blob_url but preserve the download tally.
     await this.sql.query(

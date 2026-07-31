@@ -11,7 +11,7 @@ It is the server counterpart to [`@azphalt/repository-client`](../../packages/re
 | `GET /.well-known/azphalt-repository.json` | The repository index (name, version, auth). |
 | `GET /packages?q=&types=&tags=&app=&page=` | Paginated search/browse. `types` is a comma list of `AssetType`s; `tags` AND-filters over searchable text; `app` scopes results to a host app (see below). |
 | `GET /packages/{id}` | Full metadata, version history, and the latest `Manifest`. |
-| `GET /packages/{id}/versions/{version}/download` | The binary `.azp` (`Content-Type: application/x-azphalt`). Gated for paid packages. |
+| `GET /packages/{id}/versions/{version}/download` | The binary `.azp` (`Content-Type: application/vnd.azphalt.package` — see [`spec/package-format.md`](../../spec/package-format.md) § Media type). Gated for paid packages. |
 
 ## App scoping
 

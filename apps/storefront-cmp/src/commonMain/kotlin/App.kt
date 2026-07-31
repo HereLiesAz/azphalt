@@ -136,6 +136,10 @@ fun StorefrontApp(
             if (target != null) {
                 DetailScreen(
                     pkg = target,
+                    // The whole catalogue, so the install fallback can build the host directory out
+                    // of its `kind:"app"` listings (spec/web-handoff.md § Host directory) without a
+                    // second fetch.
+                    catalog = packages,
                     ageConfirmed = ageConfirmed,
                     onConfirmAge = { ageConfirmed = true },
                     onBack = { selected = null },

@@ -23,6 +23,25 @@ export interface PackageSummary {
   types?: string[];
   /** Developer content-maturity self-attestation: "general" (default) or "mature" (18+). */
   maturity?: string;
+  /**
+   * Present only on a `kind:"app"` listing. The host directory is built from these — see
+   * `spec/web-handoff.md` § Host directory and `handoff.ts`.
+   *
+   * `handoffs` is deliberately not surfaced by the API: the storefront never invokes a companion.
+   */
+  app?: AppBlock;
+}
+
+/** The `app` block of a `kind:"app"` package, as `/api/packages` surfaces it. */
+export interface AppBlock {
+  /** `"companion"` and/or `"host"`. The API resolves the `["companion"]` default before serving. */
+  roles?: string[];
+  /** The reverse-DNS id this app answers to — what packages name in `targetApps`. Hosts only. */
+  hostId?: string;
+  platforms?: {
+    android?: { packageId?: string; install?: string };
+    pwa?: { startUrl?: string; manifestUrl?: string };
+  };
 }
 
 export interface CheckoutResponse {

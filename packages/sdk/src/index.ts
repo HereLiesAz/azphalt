@@ -543,9 +543,64 @@ export type AtLeastOne<T> = Partial<T> & { [K in keyof T]: Required<Pick<T, K>> 
 export interface AppManifest {
   /** How to install/invoke the app on each platform — **at least one** of `android` / `pwa` is required. */
   platforms: AtLeastOne<{ android: AndroidPlatform; pwa: PwaPlatform }>;
-  /** The functions the companion offers the host, each a declared input → transport → validated output. */
-  handoffs: Handoff[];
+  /**
+   * What this app **is**. Defaults to `["companion"]` when absent, so a listing published before this
+   * field existed keeps the meaning it was published with.
+   *
+   * The two roles are opposites — a companion is launched *by* a host to do work; a host *runs*
+   * extensions — and an app may be both. See `spec/extension-manifest.md § app`.
+   */
+  roles?: AppRole[];
+  /**
+   * The reverse-DNS id this app answers to as a **host**: the one packages name in `targetApps`, and
+   * the one it sends as the `app` extra in a browse request. Required when {@link roles} includes
+   * `"host"`, forbidden otherwise.
+   *
+   * Declared rather than derived because nothing in the listing implies it — the package `id`, the
+   * OS-level `packageId` and the `targetApps` id are three independent strings, and in the reference
+   * registry they differ for the same app. A directory that guessed at the relationship would point
+   * users at the wrong app with no way to notice.
+   */
+  hostId?: string;
+  /**
+   * The functions the companion offers the host, each a declared input → transport → validated output.
+   * Required when {@link roles} includes `"companion"` (the default); a host-only listing has nothing
+   * to hand off and omits it.
+   */
+  handoffs?: Handoff[];
 }
+
+/**
+ * What a `kind: "app"` package describes — see {@link AppManifest.roles}.
+ *
+ * `companion`: an app a host launches to perform a function and hand a result back
+ * (`spec/companion-app.md`). `host`: an app that runs azphalt extensions, listed so a storefront can
+ * point a user at somewhere to install one (`spec/web-handoff.md § Host directory`).
+ */
+export type AppRole = "companion" | "host";
+
+/** Whether an {@link AppManifest} claims a role, applying the `["companion"]` default for an absent list. */
+export function hasAppRole(app: Pick<AppManifest, "roles">, role: AppRole): boolean {
+  const roles = app.roles?.length ? app.roles : (["companion"] as AppRole[]);
+  return roles.includes(role);
+}
+
+/**
+ * The `.azp` media type — `spec/package-format.md § Media type`, its one normative definition.
+ *
+ * Exported so the string has a single source in code as well as in prose. A server MUST send this; a
+ * receiver MUST NOT validate on it (the digests and signature inside the package are what decide
+ * trust, and they do not depend on who transported the bytes).
+ */
+export const MEDIA_TYPE = "application/vnd.azphalt.package";
+
+/**
+ * The pre-RFC-6648 media type some deployments still emit.
+ *
+ * A client SHOULD accept it for compatibility with servers predating
+ * `spec/package-format.md § Media type`; a server MUST NOT send it.
+ */
+export const MEDIA_TYPE_DEPRECATED = "application/x-azphalt";
 
 /** Android target: the Play package id + install pointer for a companion app. */
 export interface AndroidPlatform {

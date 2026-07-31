@@ -12,6 +12,7 @@
  * `lib/catalog.ts`), and send it as `Authorization: Bearer <token>`.
  */
 import { NextResponse } from "next/server";
+import { MEDIA_TYPE } from "@azphalt/azdk";
 import { RangeNotSatisfiableError, RegistryError, type ByteRangeSpec } from "@azphalt/registry";
 import { authorizer, getCatalog, priceStatus } from "../../../../lib/catalog";
 
@@ -81,7 +82,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         return new NextResponse(bytes.slice().buffer, {
           status: 206,
           headers: {
-            "content-type": "application/zip",
+            "content-type": MEDIA_TYPE,
             "content-length": String(bytes.length),
             "content-range": `bytes ${start}-${end}/${totalSize}`,
             "accept-ranges": "bytes",
@@ -106,7 +107,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return new NextResponse(body, {
       status: 200,
       headers: {
-        "content-type": "application/zip",
+        "content-type": MEDIA_TYPE,
         "content-length": String(bytes.length),
         "accept-ranges": "bytes",
         "content-disposition": `attachment; filename="${id}-${version.version}.azp"`,

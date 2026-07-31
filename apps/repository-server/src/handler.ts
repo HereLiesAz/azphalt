@@ -6,8 +6,8 @@
  *
  * It implements every endpoint in `spec/repository-api.md`:
  * - `GET /.well-known/azphalt-repository.json` — the repository index.
- * - `GET /packages` — search/browse (`q`, `types`, `tags`, `app`, `capabilities`, `mediaDomains`,
- *   `sort`, `page`), returning ranking/preview metadata on each summary.
+ * - `GET /packages` — search/browse (`q`, `kind`, `types`, `tags`, `app`, `capabilities`,
+ *   `mediaDomains`, `sort`, `page`), returning ranking/preview metadata on each summary.
  * - `GET /packages/{id}` — full metadata + version history + the latest manifest.
  * - `GET /packages/{id}/versions/{version}/download` — the binary `.azp`, gated `401`/`402` when paid.
  * - `GET /revocations?since=` — the host-pollable feed of versions pulled post-publish.
@@ -21,6 +21,7 @@
  * lives only on listings, never in the open registry.
  */
 import { RangeNotSatisfiableError, RegistryError, type ByteRangeSpec, type InstallEvent, type Marketplace, type PackageSummary as RegistrySummary, type Registry } from "@azphalt/registry";
+import { MEDIA_TYPE } from "@azphalt/azdk";
 import type { PackageSearchResponse, PackageSummary, RepositoryErrorCode, RepositoryIndex } from "@azphalt/azdk";
 import { denyAllAuthorizer, issueEntitlement, type DownloadAuthorizer } from "@azphalt/registry";
 
@@ -188,6 +189,16 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     const app = req.query.get("app")?.trim() || undefined;
     let summaries = q ? (await registry.search(q, { app })).map((r) => r.package) : await registry.list({ app });
 
+    // Kind filter: `?kind=app,pack`. Filtered here rather than passed into `list()` because
+    // `ListQuery.kind` takes a single kind and the wire form is a comma-separated set — the same
+    // shape, and the same post-hoc treatment, as `types` below. A storefront builds the host
+    // directory with `?kind=app` (spec/web-handoff.md § Host directory).
+    const kindParam = req.query.get("kind");
+    if (kindParam) {
+      const want = new Set(kindParam.split(",").map((k) => k.trim()).filter(Boolean));
+      summaries = summaries.filter((s) => want.has(s.kind));
+    }
+
     const typesParam = req.query.get("types");
     if (typesParam) {
       const want = new Set(typesParam.split(",").map((t) => t.trim()).filter(Boolean));
@@ -315,7 +326,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
         return {
           status: 206,
           headers: {
-            "content-type": "application/x-azphalt",
+            "content-type": MEDIA_TYPE,
             "content-length": String(bytes.length),
             "content-range": `bytes ${start}-${end}/${totalSize}`,
             "accept-ranges": "bytes",
@@ -338,7 +349,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     return {
       status: 200,
       headers: {
-        "content-type": "application/x-azphalt",
+        "content-type": MEDIA_TYPE,
         "content-length": String(bytes.length),
         "accept-ranges": "bytes",
         // The single-use capability that authorises one install report for this transfer

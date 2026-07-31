@@ -42,6 +42,7 @@ Queries the repository for available packages. Host applications should use quer
 
 **Query Parameters:**
 - `q` (string): Text search query.
+- `kind` (string): Comma-separated list of package `kind`s to filter by — `asset` · `code` · `mixed` · `app` · `mcp` · `pack`. A host with no code sandbox passes `kind=asset`; a storefront building the host directory passes `kind=app` (see **web-handoff.md** § Host directory).
 - `types` (string): Comma-separated list of `AssetType`s to filter by (e.g., `types=brush,vector`).
 - `tags` (string): Comma-separated list of tags to filter by.
 - `app` (string): The requesting host app's reverse-DNS id, for **app scoping** (see below).
@@ -122,7 +123,8 @@ If the token is missing or invalid, or the user does not have a license, the ser
 The registry issues it (Ed25519 over the canonical claims) at purchase; the host verifies it against a registry key from § Trust bootstrap. It is **valid** when the signature verifies, the issuer key is trusted, the token isn't expired (a `perpetual` token never is; a `subscription` carries `expiresAt`), and `claims.packageId` matches the requested package. The server-side gate maps the same verdict to the `401`/`402`/`200` above: a validly-signed token from a trusted registry is an authenticated identity (`402` if it doesn't cover this package or has expired), anything else is `401`. Reference: `@azphalt/registry`'s `issueEntitlement` / `verifyEntitlement`, wired into the reference server's `EntitlementAuthorizer`. This reuses the same Ed25519 trust plumbing as package signing — no new cryptography.
 
 **Response (200 OK):**
-Headers: `Content-Type: application/x-azphalt`, `Accept-Ranges: bytes`
+Headers: `Content-Type:` the `.azp` media type — **package-format.md § Media type**, which is its one
+normative definition — plus `Accept-Ranges: bytes`.
 Body: (binary fflate archive)
 
 **Range requests (resumable & parallel downloads).** A server SHOULD support HTTP byte ranges so a

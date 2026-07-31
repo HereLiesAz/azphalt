@@ -34,6 +34,42 @@ submissions/
 - For a **heavy** asset (a large model, video, audio, HDRI, font), don't bundle it: set `"path": ""`, and give `remoteUrl` + `checksum` + `byteSize` (the remote-header pattern — see [`spec/extension-manifest.md`](../spec/extension-manifest.md)).
 - To scope your entry to one host app, add `"targetApps": ["com.the.app"]` (see [App scoping](../spec/repository-api.md)).
 
+## Listing a host app
+
+If you have written an **app that runs azphalt extensions**, list it here too. That is what puts it in
+the storefront's "get a host" fallback — the thing a user sees when they tap Install on the web and
+have nothing installed to receive it ([`spec/web-handoff.md`](../spec/web-handoff.md) § Host
+directory).
+
+A host listing is a `kind: "app"` package with no payload — just a manifest and a LICENSE:
+
+~~~jsonc
+{
+  "azphalt": "0.1",
+  "id": "com.you.editor",              // the folder name, as always
+  "name": "Your Editor",
+  "version": "1.0.0",
+  "kind": "app",
+  "license": "LicenseRef-Proprietary", // a host app is usually not open source; that's fine
+  "compat": ">=0.1",
+  "app": {
+    "roles": ["host"],
+    "hostId": "com.you.editor.hostid",  // the id extensions name in their `targetApps`
+    "platforms": {
+      "android": { "packageId": "com.you.editor.android", "install": "https://…" }
+    }
+  }
+}
+~~~
+
+- `hostId` is **required** for a host and must be the id extensions actually use in `targetApps` — it
+  is not derived from anything else, and getting it wrong means your app is listed but never matched.
+- `install` is where a user goes to get your app. A listing without one is dropped from the directory
+  rather than shown as a dead entry.
+- Omit `handoffs` — those are for a **companion** (an app a host calls to do work, see
+  [`spec/companion-app.md`](../spec/companion-app.md)). An app that is both declares
+  `"roles": ["host", "companion"]` and carries both `hostId` and `handoffs`.
+
 ## What CI checks
 
 `@azphalt/submit-check` runs on every PR that touches `submissions/**` and fails the check if a submission:

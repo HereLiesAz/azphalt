@@ -31,6 +31,27 @@ Your host implements the `Host` interface from `@azphalt/azdk` — `canvas`, `la
 
 Meet these and any conforming `.azp` runs in your app. That is the whole promise.
 
+## Being reachable (recommended)
+
+The checklist above makes your app able to *run* an extension. It does not make it possible for anyone
+to *hand* your app one. Two small additions close that, and neither touches the runtime:
+
+1. **Accept the `.azp` media type.** Register as an opener for `application/vnd.azphalt.package`
+   ([`spec/package-format.md`](specs/package-format) § Media type). A user who downloads a package in
+   a browser can then open it straight into your app, with no other integration at all. This is the
+   cheapest possible interoperability and it costs one manifest entry.
+2. **Claim `azphalt://install`.** Register the scheme with `install` as its host and implement
+   [`spec/web-handoff.md`](specs/web-handoff) § Host obligations: resolve the named package, download
+   it, and run it through the same verification you already do. A web storefront can then send a
+   package to your app directly. The link is untrusted input that *names* a package — it never
+   vouches for one, so nothing in your trust model changes.
+
+**List yourself so users can find you.** Publish a `kind: "app"` package whose `app` block sets
+`roles: ["host"]` and a `hostId` — the reverse-DNS id extensions name in their `targetApps`. That is
+what puts your app in a storefront's "get a host" fallback for someone who has none installed
+([`spec/web-handoff.md`](specs/web-handoff) § Host directory). It goes through the ordinary submission
+path, the same as any extension.
+
 ## Temporal hosts (video / audio)
 
 A **video / audio** host — like [Guillotine](https://github.com/HereLiesAz/Guillotine) — is *temporal*: on top of the base host contract above, it grants the `time` and `audio` capabilities and dispatches the `transitions` contribution kind (two input frames `from`/`to` blended over a `progress` 0→1). Beyond the checklist, such a host also:

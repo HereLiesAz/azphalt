@@ -28,6 +28,40 @@ data class PackDto(val entries: List<PackEntryDto> = emptyList())
 @Serializable
 data class PreviewDto(val image: String? = null, val clip: String? = null)
 
+/** Android install target for a `kind:"app"` listing (`spec/extension-manifest.md` § app). */
+@Serializable
+data class AndroidPlatformDto(val packageId: String? = null, val install: String? = null)
+
+/** PWA install target for a `kind:"app"` listing. */
+@Serializable
+data class PwaPlatformDto(val startUrl: String? = null, val manifestUrl: String? = null)
+
+@Serializable
+data class PlatformsDto(val android: AndroidPlatformDto? = null, val pwa: PwaPlatformDto? = null)
+
+/**
+ * The `app` block of a `kind:"app"` package, as `/api/packages` surfaces it.
+ *
+ * `handoffs` is deliberately absent: the storefront never invokes a companion, and the list can be
+ * large. What it does need is [roles] and [hostId] — the two fields that turn a listing into a **host
+ * directory** entry (`spec/web-handoff.md` § Host directory).
+ *
+ * [roles] is non-null here because the API resolves the `["companion"]` default before serving, so
+ * this side never has to know the default exists.
+ */
+@Serializable
+data class AppDto(
+    val roles: List<String> = listOf("companion"),
+    val hostId: String? = null,
+    val platforms: PlatformsDto? = null,
+) {
+    /** True when this listing is an app that *runs* extensions — i.e. somewhere to install one. */
+    val isHost: Boolean get() = "host" in roles
+
+    /** Where to get this app, preferring the native target over the web one. */
+    val installUrl: String? get() = platforms?.android?.install ?: platforms?.pwa?.startUrl
+}
+
 @Serializable
 data class PackageSummary(
     val id: String,
@@ -49,6 +83,8 @@ data class PackageSummary(
     /** Developer content-maturity self-attestation: "general" (default) or "mature" (18+, age-gated). */
     val maturity: String = "general",
     val pack: PackDto? = null,
+    /** Present only on a `kind:"app"` listing — the host directory is built from these. */
+    val app: AppDto? = null,
     /**
      * The real artwork, when the package has any.
      *
