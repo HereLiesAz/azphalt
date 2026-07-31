@@ -3,8 +3,17 @@ dist/
 *.tsbuildinfo
 .DS_Store
 
-# Local agent/editor tooling (dev-server launch config, etc.)
-.claude/
+# Local agent/editor tooling (dev-server launch config, machine-local settings, worktrees).
+#
+# `.claude/*` rather than `.claude/`: git does not descend into an excluded *directory*, so a
+# negation for something inside one never fires. Excluding the contents instead leaves the directory
+# itself readable, which is what lets `!.claude/agents/` below take effect.
+.claude/*
+
+# Subagent definitions are checked in deliberately — a cloud session gets only what the repo carries,
+# so an agent that lives in `~/.claude/agents/` exists on one machine and nowhere else. Committing
+# them here is what makes `Agent(subagent_type: "…")` resolve the same way locally and in the cloud.
+!.claude/agents/
 
 # Gradle build output
 apps/storefront-cmp/build/
