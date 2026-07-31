@@ -41,8 +41,8 @@ jobs:
   storefront-compose:
     runs-on: ubuntu-latest
     # Read the version, never move it. This job invokes Gradle three times, and a PR check has no
-    # business rewriting a tracked file it cannot commit — the bump belongs to debug-apk.yml, which
-    # runs on main and pushes the result.
+    # business rewriting a tracked file it cannot commit — the bump belongs to the `version` job of
+    # app-release.yml, which runs on main, pushes the result, and hands the same number to every build.
     env:
       AZPHALT_VERSION_FROZEN: '1'
     steps:
