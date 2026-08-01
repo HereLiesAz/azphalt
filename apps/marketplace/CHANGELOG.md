@@ -1,5 +1,14 @@
 # @azphalt/marketplace
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [e5108c8]
+  - @azphalt/azdk@0.3.0
+  - @azphalt/repository-client@0.3.0
+  - @azphalt/web-handoff@0.2.0
+
 ## 0.1.2
 
 ### Patch Changes
