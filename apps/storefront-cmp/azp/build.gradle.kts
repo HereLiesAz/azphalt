@@ -7,7 +7,10 @@ plugins {
 }
 
 group = "store.azphalt"
-version = "0.1.0"
+// The root project's version, which is `version.properties`. Not restated here: a second version
+// string is a second source of truth, and it drifted from the app's the moment the app's started
+// moving. There is exactly one version in this repository and this subproject is not an exception.
+version = rootProject.version
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
