@@ -92,12 +92,54 @@ private fun httpFetch(url: String, bearer: String? = null): Fetched {
 private fun enc(v: String): String = URLEncoder.encode(v, "UTF-8")
 
 /**
- * Browse a conforming repository, narrowed to what the calling host can actually use.
+ * Stop following pages here.
  *
- * `limit` is set high because the picker shows one flat list; the repository pages at 20 by default,
- * and a store that silently showed the user the first twenty of a hundred-and-thirty would look
- * broken rather than paginated.
+ * At the spec's page size this is twenty thousand packages, which no repository has and no phone
+ * wants in a list. It exists so a repository that answers every request with "there is one more
+ * page" cannot hold this loop open forever.
  */
+private const val MAX_PAGES = 200
+
+/**
+ * Read a `/packages` query to the end and return every package it matched.
+ *
+ * Pagination is not optional here. `page` is the only pagination parameter the Repository API defines
+ * (`spec/repository-api.md` § Browse Packages) — there is no `limit`, and the reference handler pages
+ * at twenty. This used to send `limit=200` anyway, keep whatever came back, and call it the
+ * catalogue: against the flagship registry that was the first twenty of a hundred and fifty-seven,
+ * alphabetically, with the store then reporting "20 portable extensions" as though that were the
+ * whole thing. The response says how many pages there are. Follow them.
+ */
+private fun fetchAllPages(base: String, params: List<String>): List<PackageSummary> {
+    val out = mutableListOf<PackageSummary>()
+    var page = 1
+    var pages = 1
+    while (page <= pages && page <= MAX_PAGES) {
+        val query = (params + "page=$page").joinToString("&")
+        val body = httpGet("$base/packages?$query").decodeToString()
+
+        // `/packages` answers `{ packages, total, page, pages }`; be tolerant of a bare array so this
+        // also works against a repository that serves the list directly — one that does has no pages
+        // to follow, so `pages` stays 1 and the loop ends after this body.
+        val parsed = json.parseToJsonElement(body)
+        val array: JsonArray = when (parsed) {
+            is JsonArray -> parsed
+            is JsonObject -> {
+                pages = parsed["pages"]?.jsonPrimitive?.content?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+                parsed["packages"]?.jsonArray ?: JsonArray(emptyList())
+            }
+            else -> JsonArray(emptyList())
+        }
+        // An empty page short-circuits a repository whose `pages` overcounts, rather than spending
+        // the remaining requests on nothing.
+        if (array.isEmpty()) break
+        array.mapTo(out) { json.decodeFromJsonElement(PackageSummary.serializer(), it) }
+        page++
+    }
+    return out
+}
+
+/** Browse a conforming repository, narrowed to what the calling host can actually use. */
 public suspend fun fetchRegistryList(
     app: String,
     mediaDomains: List<String> = emptyList(),
@@ -107,21 +149,10 @@ public suspend fun fetchRegistryList(
     val base = (repository ?: DEFAULT_REPOSITORY).trimEnd('/')
     val params = buildList {
         add("app=${enc(app)}")
-        add("limit=200")
         if (mediaDomains.isNotEmpty()) add("mediaDomains=${enc(mediaDomains.joinToString(","))}")
         if (kinds.isNotEmpty()) add("kinds=${enc(kinds.joinToString(","))}")
     }
-    val body = httpGet("$base/packages?${params.joinToString("&")}").decodeToString()
-
-    // `/packages` answers `{ packages, total, page, pages }`; be tolerant of a bare array so this also
-    // works against a repository that serves the list directly.
-    val parsed = json.parseToJsonElement(body)
-    val array: JsonArray = when (parsed) {
-        is JsonArray -> parsed
-        is JsonObject -> parsed["packages"]?.jsonArray ?: JsonArray(emptyList())
-        else -> JsonArray(emptyList())
-    }
-    array.map { json.decodeFromJsonElement(PackageSummary.serializer(), it) }
+    fetchAllPages(base, params)
 }
 
 /** A package's bytes plus the metadata the handoff passes back to the host. */
@@ -174,14 +205,7 @@ public suspend fun downloadPackage(
 // the public repository unscoped — that is the standalone MainActivity case.
 
 public actual suspend fun fetchRegistryList(): List<PackageSummary> = withContext(Dispatchers.IO) {
-    val body = httpGet("$DEFAULT_REPOSITORY/packages?limit=200").decodeToString()
-    val parsed = json.parseToJsonElement(body)
-    val array: JsonArray = when (parsed) {
-        is JsonArray -> parsed
-        is JsonObject -> parsed["packages"]?.jsonArray ?: JsonArray(emptyList())
-        else -> JsonArray(emptyList())
-    }
-    array.map { json.decodeFromJsonElement(PackageSummary.serializer(), it) }
+    fetchAllPages(DEFAULT_REPOSITORY, emptyList())
 }
 
 public actual suspend fun httpPostJson(path: String, body: String): String = withContext(Dispatchers.IO) {

@@ -5,15 +5,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,10 +24,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import main.StorefrontApp
+import models.HandoffSession
 import models.PackageSummary
 import network.downloadPackage
 import network.fetchRegistryList
@@ -33,6 +37,11 @@ import theme.AzphaltExpressiveTheme
 
 /**
  * The store as another app opens it: browse, pick, and hand the verified bytes back.
+ *
+ * The browsing surface here is [StorefrontApp] — the identical storefront [MainActivity] shows, with
+ * a [HandoffSession] attached. It used to be a bespoke list, and the result was that arriving from a
+ * host dropped you into a visibly poorer store than the one you would have opened yourself. Who is
+ * asking, and where the bytes go, are the only things a browse request actually changes.
  *
  * Every exit from this activity is a result. A host launched it with `startActivityForResult` and is
  * sitting in its own `onActivityResult` waiting; finishing without one leaves it waiting on a callback
@@ -98,13 +107,6 @@ class BrowseForResultActivity : ComponentActivity() {
     }
 }
 
-private sealed interface Phase {
-    data object Loading : Phase
-    data class Browsing(val packages: List<PackageSummary>) : Phase
-    data class Fetching(val pkg: PackageSummary) : Phase
-    data class Failed(val message: String) : Phase
-}
-
 @Composable
 private fun HandoffFlow(
     request: BrowseRequest,
@@ -112,80 +114,100 @@ private fun HandoffFlow(
     onAcquired: (AcquiredPackage) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var phase by remember { mutableStateOf<Phase>(Phase.Loading) }
-    // Held separately from `phase` so cancelling a purchase can return to the list without refetching.
-    var browsed by remember { mutableStateOf<List<PackageSummary>>(emptyList()) }
+    // The package the user pressed Install on, while it is being bought / downloaded / verified.
+    var acquiring by remember { mutableStateOf<PackageSummary?>(null) }
+    var failure by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(request) {
-        phase = try {
-            val all = fetchRegistryList(
-                app = request.app,
-                mediaDomains = request.mediaDomains,
-                kinds = request.kinds,
-                repository = request.repository,
-            )
-            // Filter again locally. The repository applies `app` scoping itself, but `kinds` and
-            // `mediaDomains` are this app's promise to the host, and a repository that ignores a query
-            // parameter must not turn into the store returning something the host cannot run.
-            browsed = all.filter { request.accepts(it.kind, it.mediaDomains, it.targetApps) }
-            Phase.Browsing(browsed)
-        } catch (e: Exception) {
-            Phase.Failed(e.message ?: "could not reach the repository")
-        }
+    val session = remember(request, callerLabel) {
+        HandoffSession(
+            callerLabel = callerLabel,
+            load = {
+                try {
+                    val all = fetchRegistryList(
+                        app = request.app,
+                        mediaDomains = request.mediaDomains,
+                        kinds = request.kinds,
+                        repository = request.repository,
+                    )
+                    // Filter again locally. The repository applies `app` scoping itself, but `kinds`
+                    // and `mediaDomains` are this app's promise to the host, and a repository that
+                    // ignores a query parameter must not turn into the store returning something the
+                    // host cannot run.
+                    all.filter { request.accepts(it.kind, it.mediaDomains, it.targetApps) }
+                } catch (e: Exception) {
+                    // The storefront treats a failed load as an empty catalogue, which on its own
+                    // would leave the user staring at a store with nothing in it and no reason given.
+                    failure = e.message ?: "could not reach the repository"
+                    emptyList()
+                }
+            },
+            acquire = { pkg -> acquiring = pkg },
+            cancel = onCancel,
+        )
     }
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            when (val p = phase) {
-                is Phase.Loading -> CircularProgressIndicator()
+    Box(Modifier.fillMaxSize()) {
+        StorefrontApp(hostInventory = request.inventory, handoff = session)
 
-                is Phase.Failed -> Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(32.dp),
-                ) {
-                    Text("Couldn't load the store", style = MaterialTheme.typography.titleMedium)
-                    Text(p.message, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
-                }
-
-                is Phase.Fetching -> Column(
+        // Over the storefront rather than instead of it: the catalogue the user was just looking at
+        // stays put behind this, so a failed or cancelled purchase returns them exactly where they
+        // were with no refetch.
+        acquiring?.let { pkg ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(32.dp),
                 ) {
-                    CircularProgressIndicator()
-                    Text("Verifying ${p.pkg.name}…", style = MaterialTheme.typography.bodyMedium)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        "Verifying ${pkg.name}…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
-
-                is Phase.Browsing -> HandoffPicker(
-                    packages = p.packages,
-                    callerLabel = callerLabel,
-                    onCancel = onCancel,
-                    onPick = { pkg ->
-                        phase = Phase.Fetching(pkg)
-                    },
-                    inventory = request.inventory,
-                )
             }
         }
     }
 
+    failure?.let { message ->
+        AlertDialog(
+            onDismissRequest = { failure = null },
+            confirmButton = {
+                TextButton(onClick = { failure = null }, shape = RectangleShape) { Text("OK") }
+            },
+            title = { Text("Couldn't finish") },
+            text = { Text(message) },
+        )
+    }
+
     // Purchase (if paid), download, verify — all off the main thread — then hand back.
-    val fetching = (phase as? Phase.Fetching)?.pkg
     val context = androidx.compose.ui.platform.LocalContext.current
-    LaunchedEffect(fetching) {
-        val pkg = fetching ?: return@LaunchedEffect
-        phase = try {
+    LaunchedEffect(acquiring) {
+        val pkg = acquiring ?: return@LaunchedEffect
+        try {
             // A paid package needs an entitlement before the repository will serve its bytes, and on
             // Play that entitlement can only come from a Play purchase.
             val entitlement = if (pkg.priceStatus == "paid") {
                 val activity = context as? Activity
-                    ?: return@LaunchedEffect run { phase = Phase.Failed("no activity for the purchase flow") }
+                    ?: return@LaunchedEffect run {
+                        failure = "no activity for the purchase flow"
+                        acquiring = null
+                    }
                 when (val outcome = Billing(context).purchase(activity, pkg.id, request.repository)) {
                     is PurchaseOutcome.Entitled -> outcome.entitlementToken
-                    // Backing out of a purchase returns to the list, not to an error screen — the user
+                    // Backing out of a purchase returns to the catalogue, not to an error — the user
                     // did not fail at anything, they changed their mind.
-                    is PurchaseOutcome.Cancelled -> return@LaunchedEffect run { phase = Phase.Browsing(browsed) }
-                    is PurchaseOutcome.Failed -> return@LaunchedEffect run { phase = Phase.Failed(outcome.message) }
+                    is PurchaseOutcome.Cancelled -> return@LaunchedEffect run { acquiring = null }
+                    is PurchaseOutcome.Failed -> return@LaunchedEffect run {
+                        failure = outcome.message
+                        acquiring = null
+                    }
                 }
             } else {
                 null
@@ -204,9 +226,9 @@ private fun HandoffFlow(
                 )
             }
             onAcquired(acquired)
-            return@LaunchedEffect
         } catch (e: Exception) {
-            Phase.Failed(e.message ?: "verification failed")
+            failure = e.message ?: "verification failed"
+            acquiring = null
         }
     }
 }
