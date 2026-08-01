@@ -18,8 +18,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
-import theme.ExpressiveShapes
 import kotlinx.coroutines.delay
 import models.PackageSummary
 import theme.azTurnstileEntrance
@@ -139,7 +139,7 @@ fun HeroCarousel(
                 index = index,
                 onOpen = onOpen,
                 // Sharp Metro mask so the carousel clips/resizes items as they scroll (the hero effect).
-                modifier = Modifier.width(CARD_WIDTH.dp).height(CARD_HEIGHT.dp).maskClip(ExpressiveShapes.Card),
+                modifier = Modifier.width(CARD_WIDTH.dp).height(CARD_HEIGHT.dp).maskClip(RectangleShape),
                 ageConfirmed = ageConfirmed,
                 onConfirmAge = onConfirmAge,
             )

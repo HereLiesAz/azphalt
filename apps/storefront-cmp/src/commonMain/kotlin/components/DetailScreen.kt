@@ -29,10 +29,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import theme.ExpressiveShapes
 import kotlinx.coroutines.launch
 import models.CheckoutResponse
 import models.ExtensionState
@@ -97,10 +97,10 @@ fun DetailScreen(
             )
             Spacer(Modifier.height(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = onBack, shape = ExpressiveShapes.Pill) { Text("←  Back") }
+                OutlinedButton(onClick = onBack, shape = RectangleShape) { Text("←  Back") }
                 Button(
                     onClick = onConfirmAge,
-                    shape = ExpressiveShapes.Pill,
+                    shape = RectangleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = cs.secondary, contentColor = cs.onSecondary),
                 ) { Text("I'm 18 or older", fontWeight = FontWeight.Bold) }
             }
@@ -181,8 +181,8 @@ fun DetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedButton(onClick = onBack, shape = ExpressiveShapes.Pill) { Text("←  Back") }
-                OutlinedButton(onClick = { showFlag = true }, shape = ExpressiveShapes.Pill) { Text("⚑  Flag") }
+                OutlinedButton(onClick = onBack, shape = RectangleShape) { Text("←  Back") }
+                OutlinedButton(onClick = { showFlag = true }, shape = RectangleShape) { Text("⚑  Flag") }
             }
 
             Spacer(Modifier.height(20.dp))
@@ -194,7 +194,7 @@ fun DetailScreen(
                     .height(220.dp)
                     .azTurnstileEntrance(index = 1)
                     .background(container.copy(alpha = 0.14f))
-                    .border(1.dp, onContainer.copy(alpha = 0.55f), ExpressiveShapes.Card),
+                    .border(1.dp, onContainer.copy(alpha = 0.55f), RectangleShape),
             ) {
                 PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
                 Row(
@@ -313,7 +313,7 @@ fun DetailScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, cs.outline.copy(alpha = 0.4f), ExpressiveShapes.Card)
+                                .border(1.dp, cs.outline.copy(alpha = 0.4f), RectangleShape)
                                 .padding(12.dp),
                         ) {
                             Row(
@@ -340,7 +340,7 @@ fun DetailScreen(
             Spacer(Modifier.height(32.dp))
             Button(
                 enabled = !busy,
-                shape = ExpressiveShapes.Pill,
+                shape = RectangleShape,
                 modifier = Modifier.azTurnstileEntrance(index = 3),
                 onClick = {
                     when {
@@ -380,7 +380,7 @@ fun DetailScreen(
             // and on the web nothing will ever contradict it. This is how the user says so.
             if (held) {
                 Spacer(Modifier.height(10.dp))
-                TextButton(onClick = { onForget(pkg) }, shape = ExpressiveShapes.Pill) {
+                TextButton(onClick = { onForget(pkg) }, shape = RectangleShape) {
                     Text("Not installed? Remove from my library", color = cs.onSurfaceVariant)
                 }
             }
@@ -402,7 +402,7 @@ fun DetailScreen(
     dialogText?.let { message ->
         AlertDialog(
             onDismissRequest = { dialogText = null },
-            confirmButton = { TextButton(onClick = { dialogText = null }, shape = ExpressiveShapes.Pill) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { dialogText = null }, shape = RectangleShape) { Text("OK") } },
             title = { Text(if (isPaid(pkg)) "Checkout" else "Install") },
             text = { Text(message) },
         )
@@ -454,7 +454,7 @@ private fun NoHostSheet(
                 )
                 Button(
                     onClick = { openExternal(downloadUrl(pkg.id, pkg.version)) },
-                    shape = ExpressiveShapes.Pill,
+                    shape = RectangleShape,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
                 ) { Text("Download .azp", fontWeight = FontWeight.Bold) }
@@ -468,15 +468,15 @@ private fun NoHostSheet(
                     hosts.forEach { host ->
                         OutlinedButton(
                             onClick = { openExternal(host.installUrl) },
-                            shape = ExpressiveShapes.Pill,
+                            shape = RectangleShape,
                             modifier = Modifier.fillMaxWidth(),
                         ) { Text("Get ${host.name}") }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onRetry, shape = ExpressiveShapes.Pill) { Text("Try again") } },
-        dismissButton = { TextButton(onClick = onDismiss, shape = ExpressiveShapes.Pill) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onRetry, shape = RectangleShape) { Text("Try again") } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = RectangleShape) { Text("Close") } },
     )
 }
 
@@ -523,7 +523,7 @@ private fun FlagDialog(
                         onValueChange = { original = it },
                         label = { Text("Your package id (the original)") },
                         singleLine = true,
-                        shape = ExpressiveShapes.Pill,
+                        shape = RectangleShape,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
@@ -531,7 +531,7 @@ private fun FlagDialog(
                         onValueChange = { signature = it },
                         label = { Text("Signature (optional)") },
                         singleLine = true,
-                        shape = ExpressiveShapes.Pill,
+                        shape = RectangleShape,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 } else {
@@ -545,7 +545,7 @@ private fun FlagDialog(
                     value = detail,
                     onValueChange = { detail = it.take(2000) },
                     label = { Text("Details (optional)") },
-                    shape = ExpressiveShapes.Pill,
+                    shape = RectangleShape,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -553,7 +553,7 @@ private fun FlagDialog(
         confirmButton = {
             TextButton(
                 enabled = !busy && (!ipMode || original.isNotBlank()),
-                shape = ExpressiveShapes.Pill,
+                shape = RectangleShape,
                 onClick = {
                     scope.launch {
                         busy = true
@@ -578,6 +578,6 @@ private fun FlagDialog(
                 },
             ) { Text(if (busy) "Sending…" else "Submit") }
         },
-        dismissButton = { TextButton(onClick = onDismiss, shape = ExpressiveShapes.Pill) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = RectangleShape) { Text("Cancel") } },
     )
 }

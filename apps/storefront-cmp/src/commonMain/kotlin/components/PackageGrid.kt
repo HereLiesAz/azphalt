@@ -19,10 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import theme.ExpressiveShapes
 import models.ExtensionState
 import models.ExtensionStateEntry
 import models.LocalHostInventory
@@ -42,7 +42,7 @@ internal fun Pill(text: String, container: Color, content: Color) {
     Box(
         modifier = Modifier
             .background(container)
-            .border(1.dp, content.copy(alpha = 0.55f), ExpressiveShapes.Card)
+            .border(1.dp, content.copy(alpha = 0.55f), RectangleShape)
             .padding(horizontal = 10.dp, vertical = 5.dp),
     ) {
         Text(
@@ -139,7 +139,7 @@ fun PackageCard(
             .azTurnstileEntrance(index = index.coerceAtMost(6))
             .azTiltOnPress()
             .scale(scale),
-        shape = ExpressiveShapes.Pill,
+        shape = RectangleShape,
         colors = CardDefaults.outlinedCardColors(
             containerColor = container.copy(alpha = 0.14f),
             contentColor = onContainer,

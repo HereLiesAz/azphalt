@@ -14,8 +14,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
-import theme.ExpressiveShapes
 import theme.azTurnstileEntrance
 
 /** Sort orders for the catalog. */
@@ -52,7 +52,7 @@ fun StorefrontControls(
             onValueChange = onQuery,
             placeholder = { Text("Search extensions…") },
             singleLine = true,
-            shape = ExpressiveShapes.Pill,
+            shape = RectangleShape,
             modifier = Modifier.fillMaxWidth(),
         )
 

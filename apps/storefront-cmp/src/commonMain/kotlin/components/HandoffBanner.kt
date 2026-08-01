@@ -13,9 +13,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import theme.ExpressiveShapes
 
 /**
  * The one thing the storefront says differently when another app is waiting on it.
@@ -31,7 +31,7 @@ internal fun HandoffBanner(callerLabel: String?, onCancel: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(cs.secondaryContainer)
-            .border(1.dp, cs.onSecondaryContainer.copy(alpha = 0.55f), ExpressiveShapes.Card)
+            .border(1.dp, cs.onSecondaryContainer.copy(alpha = 0.55f), RectangleShape)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -49,7 +49,7 @@ internal fun HandoffBanner(callerLabel: String?, onCancel: () -> Unit) {
                 color = cs.onSecondaryContainer.copy(alpha = 0.8f),
             )
         }
-        TextButton(onClick = onCancel, shape = ExpressiveShapes.Pill) {
+        TextButton(onClick = onCancel, shape = RectangleShape) {
             Text("Cancel", color = cs.onSecondaryContainer, fontWeight = FontWeight.SemiBold)
         }
     }

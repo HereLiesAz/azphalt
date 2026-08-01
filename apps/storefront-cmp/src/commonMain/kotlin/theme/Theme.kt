@@ -94,9 +94,13 @@ private val AzphaltType = Typography(
  * surface that reads its shape from the theme (cards, chips, text fields, dialogs) squares off to
  * match. A hair of rounding on the smallest sizes keeps hairline outlines from fraying at the corner.
  */
-// The shape scale lives in ExpressiveShapes.kt. It used to be defined here as five zeros — every M3
-// token set to `RoundedCornerShape(0.dp)` — which is what made the whole app hard-cornered no matter
-// what any individual call site asked for.
+private val AzphaltShapes = Shapes(
+    extraSmall = RoundedCornerShape(0.dp),
+    small = RoundedCornerShape(0.dp),
+    medium = RoundedCornerShape(0.dp),
+    large = RoundedCornerShape(0.dp),
+    extraLarge = RoundedCornerShape(0.dp),
+)
 
 @Composable
 fun AzphaltExpressiveTheme(dark: Boolean = true, content: @Composable () -> Unit) {
