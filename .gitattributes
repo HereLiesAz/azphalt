@@ -1,0 +1,27 @@
+# Keep checkout from changing bytes that are part of a package's identity.
+#
+# `core.autocrlf=true` (the Windows default) rewrites LF→CRLF on checkout. That is harmless for
+# source, and not harmless for anything whose *bytes* are hashed: a `.azp` package's `integrity` is
+# a digest, so a file packed on Windows differs from the same commit packed on Linux.
+#
+# `apps/storefront/scripts/build-catalog.ts` normalises line endings defensively as well — belt and
+# braces, because that script is the one that can write a corrupted catalog, and a rule here only
+# helps repositories that were cloned after it landed.
+
+# Every LICENSE is packed verbatim into a `.azp`. Pin it to LF everywhere.
+LICENSE text eol=lf
+**/LICENSE text eol=lf
+
+# Built packages and their fixtures are binary — never transform them, and do not try to diff them
+# as text.
+*.azp binary
+*.wasm binary
+
+# Conformance fixtures are compared byte-for-byte, so pin the text ones to LF.
+#
+# Deliberately `text eol=lf` and not `-text`. `-text` means "treat as binary, never convert, store
+# exactly what is in the working tree" — which, on a checkout that already turned these into CRLF,
+# means *committing* the CRLF. It is the right attribute for genuinely binary content (see `*.azp`
+# above) and the wrong one for anything that must stay LF.
+conformance/fixtures/*.json text eol=lf
+conformance/fixtures/*.md text eol=lf

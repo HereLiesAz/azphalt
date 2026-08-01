@@ -297,7 +297,23 @@ function buildLocal(id: string): Built {
   }
 
   const { files: _drop, ...clean } = manifest as Manifest & { files?: unknown };
-  const { azp } = writeAzp({ manifest: clean, payload, license: readFileSync(licensePath, "utf8") });
+  // Line endings normalised to LF before packing.
+  //
+  // A package's `integrity` is a digest of its bytes, so anything that changes the bytes changes the
+  // identity — and `core.autocrlf` changes them at *checkout*. On Windows this LICENSE arrives as
+  // CRLF, gets read here as text, and packs a different `.azp` than the same commit does on Linux.
+  // The result is a catalog that fails `--check` on one developer's machine and passes on another's,
+  // reporting "the committed catalog is stale" when nothing is stale.
+  //
+  // The write path is the worse half: building on Windows and committing would bake CRLF licences
+  // into every first-party package and move all 24 digests, which reads as a real content change in
+  // review. Remote-pinned packages never had this problem — their LICENSE comes out of a tarball,
+  // which git does not touch — so it only ever showed up here.
+  //
+  // Normalising is safe rather than a re-pin: LF is what CI already produces, so this makes Windows
+  // agree with the committed catalog instead of changing it.
+  const license = readFileSync(licensePath, "utf8").replace(/\r\n/g, "\n");
+  const { azp } = writeAzp({ manifest: clean, payload, license });
 
   const integrity = sha256(azp);
   const bytes = signingKey
