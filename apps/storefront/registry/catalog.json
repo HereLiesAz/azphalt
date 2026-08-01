@@ -564,6 +564,17 @@
       "bytes": 1198
     },
     {
+      "id": "com.hereliesaz.azphalt.graffux",
+      "version": "1.0.0",
+      "name": "Graffux",
+      "kind": "app",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-CUJNKS9zae3fidB7knzU85eprpuHJsh5YHNGT5ocN4M=",
+      "file": "com.hereliesaz.azphalt.graffux-1.0.0.azp",
+      "bytes": 1136
+    },
+    {
       "id": "com.hereliesaz.azphalt.grid-guide",
       "version": "1.0.0",
       "name": "Grid Guide",
@@ -584,6 +595,17 @@
       "integrity": "sha256-DFmw6DsQ8PQ02r2qnoBflAgp7ke2gh5aMkBgBjzI3eo=",
       "file": "com.hereliesaz.azphalt.gtcrn-1.0.0.azp",
       "bytes": 1430
+    },
+    {
+      "id": "com.hereliesaz.azphalt.guillotine",
+      "version": "1.0.0",
+      "name": "Guillotine",
+      "kind": "app",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-brujkmGtsq6jId6+r87NzVIJYzKaSoEEjySt1k2AJgg=",
+      "file": "com.hereliesaz.azphalt.guillotine-1.0.0.azp",
+      "bytes": 1147
     },
     {
       "id": "com.hereliesaz.azphalt.halftone",
