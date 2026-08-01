@@ -7,8 +7,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
+import theme.ExpressiveShapes
 import theme.azTurnstileEntrance
 
 @Composable
@@ -24,7 +24,7 @@ fun HeroSection(total: Int) {
             modifier = Modifier
                 .azTurnstileEntrance(index = 0)
                 .background(cs.secondaryContainer)
-                .border(1.dp, cs.onSecondaryContainer.copy(alpha = 0.55f), RectangleShape)
+                .border(1.dp, cs.onSecondaryContainer.copy(alpha = 0.55f), ExpressiveShapes.Card)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
