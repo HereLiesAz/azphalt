@@ -328,6 +328,10 @@ function Detail({ pkg, catalog, onBack }: { pkg: PackageSummary; catalog: Packag
 
   const hand = async () => {
     setBusy(true);
+    // Close the sheet before re-attempting, so a retry does not sit on screen unchanged for the whole
+    // wait window looking like a dead button. The Compose storefront does the same at its call site;
+    // the two are meant to behave identically.
+    setNoHost(false);
     try {
       // One link shape for everything free, packs included — a pack is a package with an id, and the
       // host resolves its members (spec/web-handoff.md § Packs). Nothing here names a host.

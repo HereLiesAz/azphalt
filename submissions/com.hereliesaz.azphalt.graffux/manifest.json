@@ -1,0 +1,23 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.graffux",
+  "name": "Graffux",
+  "version": "1.0.0",
+  "kind": "app",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "A paint and AR editor that runs azphalt extensions — brushes, LUTs, patterns, shaders and filters — natively on device. Install packages straight from the web store.",
+  "author": "HereLiesAz",
+  "homepage": "https://github.com/HereLiesAz/Graffux/releases/latest",
+  "app": {
+    "roles": ["host"],
+    "hostId": "com.hereliesaz.graffux",
+    "platforms": {
+      "android": {
+        "packageId": "com.hereliesaz.graffux",
+        "minSdk": 29,
+        "install": "https://github.com/HereLiesAz/Graffux/releases/latest"
+      }
+    }
+  }
+}

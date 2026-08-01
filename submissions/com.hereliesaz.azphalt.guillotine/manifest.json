@@ -1,0 +1,23 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.guillotine",
+  "name": "Guillotine",
+  "version": "1.0.0",
+  "kind": "app",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "A video and audio editor that runs azphalt extensions — LUTs, transitions, filters, motion presets and audio effects — natively on device. Install packages straight from the web store.",
+  "author": "HereLiesAz",
+  "homepage": "https://github.com/HereLiesAz/Guillotine/releases/latest",
+  "app": {
+    "roles": ["host"],
+    "hostId": "com.hereliesaz.guillotine",
+    "platforms": {
+      "android": {
+        "packageId": "com.hereliesaz.guillotine",
+        "minSdk": 29,
+        "install": "https://github.com/HereLiesAz/Guillotine/releases/latest"
+      }
+    }
+  }
+}

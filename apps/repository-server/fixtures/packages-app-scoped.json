@@ -66,6 +66,23 @@
         "targetApps": [
           "com.hereliesaz.graffux"
         ],
+        "app": {
+          "roles": [
+            "companion"
+          ],
+          "platforms": {
+            "android": {
+              "packageId": "com.acme.arstencil",
+              "minSdk": 29,
+              "install": "https://play.google.com/store/apps/details?id=com.acme.arstencil"
+            },
+            "pwa": {
+              "manifestUrl": "https://arstencil.acme.com/manifest.webmanifest",
+              "startUrl": "https://arstencil.acme.com/",
+              "shareTargetUrl": "https://arstencil.acme.com/handoff"
+            }
+          }
+        },
         "downloads": 0,
         "installs": 0,
         "uninstalls": 0,

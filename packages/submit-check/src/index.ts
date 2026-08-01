@@ -21,7 +21,18 @@ export interface SubmissionResult {
 const ID_RE = /^[a-z0-9]+(\.[a-z0-9-]+)+$/i; // reverse-DNS, ≥2 dot-separated labels
 const SEMVER_RE = /^\d+\.\d+\.\d+(?:[-+].+)?$/;
 const REQUIRED = ["azphalt", "name", "version", "kind", "license", "compat"] as const;
-const KINDS = ["asset", "code", "mixed"];
+/**
+ * Every kind `spec/package-format.md` § Package kind defines.
+ *
+ * This list had drifted: it stopped at the three payload-bearing kinds, so the three **header** kinds
+ * — `app`, `mcp`, `pack` — were rejected outright with "invalid kind". That silently made three
+ * documented submission paths impossible, including the host listing that
+ * `spec/web-handoff.md` § Host directory tells people to publish.
+ *
+ * The header kinds carry no payload by design, which is why the `assets`/`entry` checks below simply
+ * find nothing to complain about; `verifyAzp` is what enforces their structure (`packages/azp`).
+ */
+const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack"];
 
 /** All files under `dir`, as `/`-separated paths relative to `dir`. */
 function walk(dir: string, prefix = ""): string[] {

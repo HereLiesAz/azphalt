@@ -3,6 +3,22 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Package visibility (API 30+). Without this, `resolveActivity` for a CUSTOM scheme returns
+         null for every app this one cannot already see — the automatic-visibility carve-out covers
+         http/https web intents, not `azphalt://`. `network/AndroidHandoff.kt` asks before launching,
+         so without this declaration the answer is always "no host installed" and the user is shown
+         the fallback sheet while a conforming host sits on the device.
+
+         Deliberately an <intent> filter rather than a <package> name: naming hosts here would be the
+         same privileging the scheme exists to avoid (spec/web-handoff.md § Why a custom scheme). This
+         asks "who claims azphalt://", which is exactly the question, and nothing more. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="azphalt" />
+        </intent>
+    </queries>
     <!-- Play Billing. Required for the paid lane (spec/store-app.md § Paid packages). -->
     <uses-permission android:name="com.android.vending.BILLING" />
 

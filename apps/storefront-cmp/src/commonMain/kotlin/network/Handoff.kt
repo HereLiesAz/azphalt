@@ -17,6 +17,16 @@ package network
  */
 expect suspend fun attemptHandoff(link: String): Boolean
 
+/**
+ * The URI to actually navigate to for `id` at `version`.
+ *
+ * Always `azphalt://install?…` semantically — this exists only so a platform can choose a better
+ * *encoding* of the same request. Chrome on Android gets the `intent://` form, which resolves against
+ * the identical intent filter but carries a fallback URL, turning "wait and see if we're still here"
+ * into a definite answer (`spec/web-handoff.md` § Transport). Everywhere else this is the plain link.
+ */
+expect fun handoffUri(id: String, version: String?): String
+
 /** Open [url] in the platform's browser — the "get a host" and "download the .azp" actions. */
 expect fun openExternal(url: String)
 

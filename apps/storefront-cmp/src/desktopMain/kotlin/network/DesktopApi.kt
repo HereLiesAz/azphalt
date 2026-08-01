@@ -9,7 +9,7 @@ import kotlinx.coroutines.withContext
 import models.CheckoutResponse
 import models.PackageSummary
 
-private const val API_BASE = "https://azphalt.store"
+internal const val API_BASE = "https://azphalt.store"
 
 actual suspend fun fetchRegistryList(): List<PackageSummary> = withContext(Dispatchers.IO) {
     val client = HttpClient.newBuilder().build()

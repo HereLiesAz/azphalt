@@ -32,6 +32,14 @@ export async function GET() {
       // the generated previews sat unreferenced — the same omission #138 fixed for `description` on
       // the Repository API. `/packages` surfaces it; this endpoint is what the UI actually fetches.
       preview: p.preview,
+      // The reduced `app` block on a kind:"app" summary — `roles`, `hostId`, `platforms`, never
+      // `handoffs` (spec/repository-api.md § The `app` summary). The UI builds the host directory out
+      // of these (spec/web-handoff.md § Host directory).
+      //
+      // Taken straight off the registry summary rather than re-read from the manifest here: this
+      // route and the normative `/packages` must agree about what a listing says, and the surest way
+      // to make them agree is for both to copy the same field.
+      ...(p.app ? { app: p.app } : {}),
     };
     // A pack (kind:"pack") carries its member references in the manifest, not the summary — surface them
     // so the detail view can show "what's inside" (each still installed/gated individually). Only packs
@@ -39,26 +47,6 @@ export async function GET() {
     if (p.kind === "pack") {
       const entries = (await registry.latest(p.id))?.manifest.pack?.entries;
       if (entries?.length) return { ...base, pack: { entries } };
-    }
-    // An app (kind:"app") carries its `app` block in the manifest for the same reason. The UI needs
-    // it to build the host directory — which listings are hosts, what id each answers to, and where
-    // to install it (spec/web-handoff.md § Host directory). `handoffs` is deliberately not copied:
-    // it can be large, and nothing in the storefront invokes a companion.
-    if (p.kind === "app") {
-      const app = (await registry.latest(p.id))?.manifest.app;
-      if (app) {
-        return {
-          ...base,
-          app: {
-            // Absent `roles` means `["companion"]` (spec/extension-manifest.md § app). Resolved here
-            // rather than in the UI so both storefronts read the same answer instead of each
-            // reimplementing the default — and getting it different.
-            roles: app.roles?.length ? app.roles : ["companion"],
-            hostId: app.hostId,
-            platforms: app.platforms,
-          },
-        };
-      }
     }
     return base;
   }));

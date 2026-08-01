@@ -38,9 +38,9 @@ import models.CheckoutResponse
 import models.HostOption
 import models.PackageSummary
 import models.hostsFor
-import models.installLink
 import network.attemptHandoff
 import network.downloadUrl
+import network.handoffUri
 import network.openExternal
 import network.startCheckout
 import network.submitIpClaim
@@ -313,7 +313,7 @@ fun DetailScreen(
                         // (spec/web-handoff.md § Packs). Nothing here names a host.
                         scope.launch {
                             busy = true
-                            val handed = attemptHandoff(installLink(pkg.id, pkg.version))
+                            val handed = attemptHandoff(handoffUri(pkg.id, pkg.version))
                             // Only on "nothing claimed it". A user who left for a host and came back
                             // should not find an apology waiting for them.
                             noHost = !handed
@@ -367,7 +367,7 @@ fun DetailScreen(
                     busy = true
                     // The user may have installed a host and come back — that is precisely what the
                     // retry is for, so ask again rather than assuming the first answer still holds.
-                    noHost = !attemptHandoff(installLink(pkg.id, pkg.version))
+                    noHost = !attemptHandoff(handoffUri(pkg.id, pkg.version))
                     busy = false
                 }
             },

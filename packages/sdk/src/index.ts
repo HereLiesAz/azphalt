@@ -556,10 +556,11 @@ export interface AppManifest {
    * the one it sends as the `app` extra in a browse request. Required when {@link roles} includes
    * `"host"`, forbidden otherwise.
    *
-   * Declared rather than derived because nothing in the listing implies it — the package `id`, the
-   * OS-level `packageId` and the `targetApps` id are three independent strings, and in the reference
-   * registry they differ for the same app. A directory that guessed at the relationship would point
-   * users at the wrong app with no way to notice.
+   * Declared rather than derived because nothing in a listing implies it. A package `id` and the
+   * OS-level `packageId` are already independent, and this is independent of both again: it names the
+   * app extensions were *written for*, which need not be the app the listing describes. Apps get
+   * renamed and get split in two, and the id in existing `targetApps` follows the extension surface,
+   * not the name. A directory that guessed would point users at the wrong app and look right doing it.
    */
   hostId?: string;
   /**
@@ -578,6 +579,27 @@ export interface AppManifest {
  * point a user at somewhere to install one (`spec/web-handoff.md § Host directory`).
  */
 export type AppRole = "companion" | "host";
+
+/**
+ * The reduced `app` block carried on a browse summary — see {@link PackageSummary.app} and
+ * `spec/repository-api.md` § The `app` summary. `handoffs` is deliberately absent.
+ */
+export interface AppSummary {
+  /** Always explicit here: a repository resolves the `["companion"]` default before serving. */
+  roles: AppRole[];
+  /** Present when {@link roles} includes `"host"` — the id packages name in `targetApps`. */
+  hostId?: string;
+  platforms?: AppManifest["platforms"];
+}
+
+/** Reduce a full {@link AppManifest} to the {@link AppSummary} a browse response carries. */
+export function toAppSummary(app: AppManifest): AppSummary {
+  return {
+    roles: app.roles?.length ? app.roles : ["companion"],
+    ...(app.hostId ? { hostId: app.hostId } : {}),
+    ...(app.platforms ? { platforms: app.platforms } : {}),
+  };
+}
 
 /** Whether an {@link AppManifest} claims a role, applying the `["companion"]` default for an absent list. */
 export function hasAppRole(app: Pick<AppManifest, "roles">, role: AppRole): boolean {
@@ -1242,6 +1264,19 @@ export interface PackageSummary {
    * § App scoping.
    */
   targetApps?: string[];
+  /**
+   * On a `kind:"app"` summary only: the **reduced** `app` block — `roles`, `hostId`, `platforms`, and
+   * deliberately **not** `handoffs` (`spec/repository-api.md` § The `app` summary).
+   *
+   * These three answer "what is this app and where do I get it", which is what a browse list needs,
+   * and are what makes a **host directory** one request rather than one request plus a detail fetch
+   * per listing (`spec/web-handoff.md` § Host directory). `handoffs` answers "how do I call it" — it
+   * only matters once a host is about to, and it belongs in the detail.
+   *
+   * A repository MUST resolve the `["companion"]` default before serving, so `roles` here is always
+   * explicit and a reader never has to know the rule.
+   */
+  app?: AppSummary;
 
   /* Discovery / ranking metadata — a gallery ranks and previews on these without a download. */
   /** Total served downloads across all versions. */

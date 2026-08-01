@@ -166,8 +166,9 @@ A conforming storefront attempts the link and then falls back:
    mean the user left for a host. The timer's length is an implementation detail — long enough not to
    race a slow app launch, short enough not to feel broken.
 3. **Fall back**, offering in this order:
-   - **Download the `.azp`** — served as `application/vnd.azphalt.package`. This path needs no link
-     support at all: a host registered for the media type opens the downloaded file directly.
+   - **Download the `.azp`** — served as the media type in [`package-format.md`](package-format.md)
+     § Media type. This path needs no link support at all: a host registered for that type opens the
+     downloaded file directly.
    - **Get a host** — from the directory in § Host directory, filtered by the package's `targetApps`.
    - **Retry** the link, for the case where the user installed a host and came back.
 

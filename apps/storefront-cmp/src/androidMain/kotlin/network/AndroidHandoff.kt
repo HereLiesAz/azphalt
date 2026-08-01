@@ -12,6 +12,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import models.installLink
 
 /**
  * The application context, set once at startup.
@@ -31,6 +32,9 @@ internal object AndroidAppContext {
 
     fun get(): Context? = context
 }
+
+/** No platform-specific encoding here: `intent://` is a Chrome-in-a-browser affordance, not a native one. */
+actual fun handoffUri(id: String, version: String?): String = installLink(id, version)
 
 actual suspend fun attemptHandoff(link: String): Boolean {
     val context = AndroidAppContext.get() ?: return false

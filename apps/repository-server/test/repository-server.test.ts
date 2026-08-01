@@ -179,6 +179,70 @@ describe("repository handler — spec/repository-api.md", () => {
     });
   });
 
+  describe("?kind= — the filter the host directory is built on (spec/repository-api.md § Search Packages)", () => {
+    /** A `kind:"app"` listing. `roles`/`hostId` make it a **host** rather than a companion. */
+    function appAzp(id: string, app: Record<string, unknown>) {
+      return writeAzp({
+        manifest: {
+          azphalt: "0.1", id, name: id, version: "1.0.0", kind: "app",
+          license: "MIT", compat: ">=0.1", app,
+        } as never,
+        payload: {},
+        license: LICENSE,
+      }).azp;
+    }
+
+    async function withApps() {
+      const { registry, marketplace, authorizer } = await seededRepo();
+      await registry.publish(appAzp("com.demo.editor", {
+        roles: ["host"],
+        hostId: "com.demo.editor.host",
+        platforms: { android: { packageId: "com.demo.editor.android", install: "https://example.test/get" } },
+      }));
+      const handle = createRepositoryHandler({ registry, marketplace, authorizer, index: INDEX });
+      const mk = (path: string): RepoRequest => {
+        const url = new URL(path, "http://x");
+        return { method: "GET", path: url.pathname, query: url.searchParams, headers: {} };
+      };
+      return { handle, mk };
+    }
+
+    it("filters to the named kinds, and accepts a comma-separated set", async () => {
+      const { handle, mk } = await withApps();
+      const apps = JSON.parse((await handle(mk("/packages?kind=app"))).body as string);
+      expect(apps.packages.map((p: { id: string }) => p.id)).toEqual(["com.demo.editor"]);
+
+      const both = JSON.parse((await handle(mk("/packages?kind=app,asset"))).body as string);
+      expect(both.packages.length).toBe(3);
+    });
+
+    it("returns everything when the filter is absent — an unknown param must not narrow silently", async () => {
+      const { handle, mk } = await withApps();
+      const all = JSON.parse((await handle(mk("/packages"))).body as string);
+      expect(all.packages.length).toBe(3);
+    });
+
+    it("carries the reduced app block on the summary, so a host directory needs no detail fetch", async () => {
+      // The whole point of `?kind=app`. Before the summary carried these, `hostsFor` in both
+      // storefronts had nothing to match on and every host directory was silently empty.
+      const { handle, mk } = await withApps();
+      const { packages } = JSON.parse((await handle(mk("/packages?kind=app"))).body as string);
+      expect(packages[0].app).toEqual({
+        roles: ["host"],
+        hostId: "com.demo.editor.host",
+        platforms: { android: { packageId: "com.demo.editor.android", install: "https://example.test/get" } },
+      });
+      // `handoffs` belongs to the detail — spec/repository-api.md § The `app` summary.
+      expect(packages[0].app.handoffs).toBeUndefined();
+    });
+
+    it("omits the app block on every other kind", async () => {
+      const { handle, mk } = await withApps();
+      const { packages } = JSON.parse((await handle(mk("/packages?kind=asset"))).body as string);
+      expect(packages.every((p: { app?: unknown }) => p.app === undefined)).toBe(true);
+    });
+  });
+
   it("serves a free package's bytes unconditionally as application/vnd.azphalt.package", async () => {
     const { handle, mk } = await handlerFixture();
     const res = await handle(mk("/packages/com.demo.free/versions/1.0.0/download"));

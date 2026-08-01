@@ -7,7 +7,7 @@
  * package can live in the registry forever with no listing, and the money model never leaks into the
  * open lane.
  */
-import type { AssetType, Capability, ContentMaturity, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/azdk";
+import type { AppSummary, AssetType, Capability, ContentMaturity, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/azdk";
 import type { ScanReport } from "./sweep.js";
 
 /** One published, immutable version of a package. */
@@ -100,6 +100,14 @@ export interface PackageSummary {
   capabilities: Capability[];
   /** Host apps this package is scoped to (reverse-DNS ids). Empty = global (shown to every app). */
   targetApps: string[];
+  /**
+   * On a `kind:"app"` package only: the reduced `app` block (`roles`, `hostId`, `platforms` — never
+   * `handoffs`), per `spec/repository-api.md` § The `app` summary.
+   *
+   * Carried on the summary so a **host directory** is one request rather than a detail fetch per
+   * listing (`spec/web-handoff.md` § Host directory). `roles` is always explicit here.
+   */
+  app?: AppSummary;
   /** Discovery/access visibility (`public` default; `unlisted`/`private` hidden from browse). */
   visibility: "public" | "unlisted" | "private";
   /** The developer's content-maturity self-attestation (`general` default; `mature` = 18+, gated). */

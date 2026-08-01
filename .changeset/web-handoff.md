@@ -1,8 +1,10 @@
 ---
 "@azphalt/azdk": minor
 "@azphalt/azp": minor
+"@azphalt/registry": minor
 "@azphalt/repository-client": minor
 "@azphalt/registry-store-vercel": patch
+"@azphalt/submit-check": patch
 ---
 
 **web-handoff**: the `azphalt://install` deep link, plus the manifest and validation it needs.
@@ -24,10 +26,20 @@ receive a package, and `GOVERNANCE.md` rules that out.
   `app` block and nothing installable. That mattered little when the block was only read by a host
   deciding whether to launch a companion; it matters now that a storefront builds a **host directory**
   out of these listings and offers them to users as places to install software.
+- **`@azphalt/registry`** — a browse summary for a `kind:"app"` package now carries the **reduced**
+  `app` block (`roles`, `hostId`, `platforms`; never `handoffs`), and `@azphalt/azdk` gains
+  `AppSummary` / `toAppSummary` for it. This is what makes a host directory one request:
+  `repository-api.md` previously stated outright that the `app` block was *not* in the summary, so the
+  discovery procedure `web-handoff.md` prescribes returned entries with nothing to match on, and every
+  directory built against the normative API was silently empty.
 - **`@azphalt/repository-client`** — `search({ kind })`, matching the new `kind` query parameter on
   `GET /packages`. Without it the host directory could not be fetched at all: `ListQuery.kind` existed
   as an internal type but the HTTP surface never parsed it, so `?kind=app` silently returned the
   entire catalogue.
+- **`@azphalt/submit-check`** — accepts the three **header** kinds. Its allowed-kinds list had drifted
+  to `asset`/`code`/`mixed`, so `app`, `mcp` and `pack` were rejected as "invalid kind" — which made
+  three documented submission paths impossible, including the host listing `web-handoff.md` § Host
+  directory tells people to publish.
 - **`@azphalt/registry-store-vercel`** — blobs are stored as `application/vnd.azphalt.package` rather
   than `application/zip`; a blob's stored content type is what a direct blob URL serves, so the old
   value handed browsers an archive to unpack instead of a package for a host to open.
