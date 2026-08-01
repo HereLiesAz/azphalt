@@ -38,8 +38,9 @@ import { createHash, createPrivateKey } from "node:crypto";
 import { createGunzip } from "node:zlib";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import tar from "tar-stream";
 import { signAzp, writeAzp } from "@azphalt/azp";
 import type { Manifest } from "@azphalt/azdk";
@@ -134,19 +135,47 @@ function sha256(bytes: Uint8Array): string {
   return `sha256-${createHash("sha256").update(bytes).digest("base64")}`;
 }
 
+/**
+ * How many times a network-level failure is re-tried before the run gives up, and the delay between
+ * attempts. Four attempts at 0.5s / 1s / 2s spans a few seconds of packet loss without turning a
+ * genuinely unreachable host into a multi-minute hang.
+ */
+const RETRIES = 4;
+const backoff = (attempt: number) => new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
+
+/**
+ * Whether an HTTP status is worth asking again.
+ *
+ * A `4xx` is the server's *answer* — the repo is private, the ref does not exist, the token was
+ * refused — and re-asking gets the same answer more slowly while hiding the real cause behind a
+ * timeout. `5xx` and `429` are the server declining to answer right now, which is what retrying is
+ * for.
+ */
+const worthRetrying = (status: number) => status >= 500 || status === 429;
+
+/**
+ * A failure that must not be retried, thrown from inside a retry loop.
+ *
+ * The loop catches everything else on purpose — a dropped socket surfaces as a bare `TypeError`, and
+ * enumerating undici's error shapes to recognise it would fail open the day one changes. So the
+ * default is "retry", and the cases that must *not* be retried say so by their type. Without a marker
+ * the two are indistinguishable once thrown, and a `404` would be swallowed by the same `catch` that
+ * exists to absorb network noise, then reported four attempts later as if the host were unreachable.
+ */
+class Terminal extends Error {}
+
 /** Fetch with a few retries — a deploy should not fail on one transient network blip. */
 async function fetchRetry(url: string, init?: RequestInit): Promise<Response> {
   let lastError: unknown;
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < RETRIES; attempt++) {
     try {
       const res = await fetch(url, init);
-      // 4xx is a real answer (bad ref, missing repo) — retrying cannot help. 5xx and 429 can.
-      if (res.ok || (res.status < 500 && res.status !== 429)) return res;
+      if (!worthRetrying(res.status)) return res;
       lastError = new Error(`HTTP ${res.status}`);
     } catch (e) {
       lastError = e;
     }
-    await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
+    await backoff(attempt);
   }
   throw new Error(`${url}: ${(lastError as Error)?.message ?? "unreachable"}`);
 }
@@ -175,45 +204,85 @@ async function headSha(repo: string): Promise<string> {
 }
 
 /**
- * Every file in a repo tarball at [ref], keyed by repo-relative path.
+ * Decompress and unpack one tarball body into `path → bytes`.
  *
  * GitHub wraps the tree in a single `<repo>-<sha>/` directory, so the first path segment is stripped.
  * Only regular files are kept: a symlink entry in a tarball can name any target, and following one
  * would let a repo pull bytes from outside its own tree into a published package.
+ *
+ * `pipeline` rather than `.pipe()` chains, because `.pipe()` does not forward errors: a socket that
+ * drops mid-download makes the *source* emit, and with nothing listening there that surfaced as an
+ * unhandled `'error'` event — a fatal that no caller could catch, let alone retry. Routing every
+ * stage's failure into one rejection is what makes the retry in [fetchTree] possible at all, and it
+ * destroys the half-finished streams instead of leaving them attached to a dead socket.
  */
-async function fetchTree(repo: string, ref: string): Promise<Map<string, Uint8Array>> {
-  const res = await fetchRetry(`https://codeload.github.com/${repo}/tar.gz/${ref}`, { headers: { ...UA } });
-  if (!res.ok) throw new Error(`tarball ${repo}@${ref} → HTTP ${res.status}`);
-  if (!res.body) throw new Error(`tarball ${repo}@${ref}: empty body`);
-
+async function extractTree(body: NonNullable<Response["body"]>): Promise<Map<string, Uint8Array>> {
   const files = new Map<string, Uint8Array>();
   const extract = tar.extract();
 
-  const done = new Promise<void>((resolveDone, rejectDone) => {
-    extract.on("entry", (header, stream, next) => {
-      if (header.type !== "file") {
-        stream.resume();
-        stream.on("end", next);
-        return;
-      }
-      const rel = header.name.split("/").slice(1).join("/");
-      const chunks: Buffer[] = [];
-      stream.on("data", (c: Buffer) => chunks.push(c));
-      stream.on("end", () => {
-        if (rel) files.set(rel, new Uint8Array(Buffer.concat(chunks)));
-        next();
-      });
-      stream.on("error", rejectDone);
+  extract.on("entry", (header, stream, next) => {
+    if (header.type !== "file") {
+      stream.resume();
+      stream.on("end", next);
+      return;
+    }
+    const rel = header.name.split("/").slice(1).join("/");
+    const chunks: Buffer[] = [];
+    stream.on("data", (c: Buffer) => chunks.push(c));
+    stream.on("end", () => {
+      if (rel) files.set(rel, new Uint8Array(Buffer.concat(chunks)));
+      next();
     });
-    extract.on("finish", () => resolveDone());
-    extract.on("error", rejectDone);
   });
 
-  Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0])
-    .pipe(createGunzip())
-    .pipe(extract);
-  await done;
+  await pipeline(Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0]), createGunzip(), extract);
   return files;
+}
+
+/**
+ * Every file in a repo tarball at [ref], keyed by repo-relative path.
+ *
+ * The download is retried as a whole — request *and* body — because the failure this guards against
+ * happens after the response headers arrive. `fetch` resolves as soon as the server answers, so a
+ * retry wrapped around the call alone (which is all this had) covers the handshake and nothing else;
+ * the bytes then stream in over seconds, and an abort during that window escaped the retry entirely.
+ * It cost a deploy: `--check` gates `.github/workflows/deploy-storefront.yml`, one of 128 tarballs
+ * died with undici's `TypeError: terminated`, and an identical re-run passed. The chunk downloader in
+ * `@azphalt/repository-client` reads the body inside its retry for the same reason.
+ *
+ * Only a broken *transfer* is retried. A `4xx` is an answer — a deleted repo, a ref that no longer
+ * exists — and is thrown on the spot, as is every failure the caller derives from these bytes: a
+ * missing manifest, a version that moved, an integrity mismatch. Those mean the pinned content is not
+ * what the lockfile says it is, and that must fail the deploy immediately rather than be re-asked
+ * three times and reported as a network problem.
+ */
+export async function fetchTree(repo: string, ref: string): Promise<Map<string, Uint8Array>> {
+  const url = `https://codeload.github.com/${repo}/tar.gz/${ref}`;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < RETRIES; attempt++) {
+    if (attempt) await backoff(attempt - 1);
+    try {
+      const res = await fetch(url, { headers: { ...UA } });
+      if (!res.ok) {
+        // Nothing will read this body; release the socket rather than leaving it to the GC.
+        await res.body?.cancel();
+        if (!worthRetrying(res.status)) throw new Terminal(`tarball ${repo}@${ref} → HTTP ${res.status}`);
+        lastError = new Error(`HTTP ${res.status}`);
+        continue;
+      }
+      if (!res.body) throw new Terminal(`tarball ${repo}@${ref}: empty body`);
+      // Inside the try: a mid-stream abort or a truncated gzip member lands here, not above.
+      return await extractTree(res.body);
+    } catch (e) {
+      if (e instanceof Terminal) throw e;
+      lastError = e;
+    }
+  }
+
+  throw new Error(
+    `tarball ${repo}@${ref}: ${(lastError as Error)?.message ?? "unreachable"} (after ${RETRIES} attempts)`,
+  );
 }
 
 interface Built {
@@ -567,7 +636,12 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((e) => {
-  console.error("build-catalog: fatal —", e);
-  process.exit(1);
-});
+// Only build when run as a command. The retry behaviour above is worth a test, and a test has to
+// `import` this file to reach it — which without this guard would kick off a full 128-tarball catalog
+// build as an import side effect.
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+  main().catch((e) => {
+    console.error("build-catalog: fatal —", e);
+    process.exit(1);
+  });
+}
