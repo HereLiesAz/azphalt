@@ -27,8 +27,7 @@ import theme.azTurnstileEntrance
 /** The still frame non-active card previews hold, so one card animates at a time within a carousel. */
 internal const val STILL_FRAME = 0.32f
 
-private const val CARD_WIDTH = 340
-private const val CARD_HEIGHT = 300
+// Card geometry lives with the card — see `PackageGrid.kt`'s CARD_WIDTH / CARD_HEIGHT.
 
 /** One titled row of the catalog — a VSCode-style section rendered as a hero carousel. */
 data class CatalogSection(

@@ -11,7 +11,16 @@
  * browser environment. Its behaviour is asserted by the storefronts that use it.
  */
 import { describe, it, expect } from "vitest";
-import { downloadUrl, hostsFor, installLink, type HandoffPackage } from "../src/index";
+import {
+  downloadUrl,
+  hostsFor,
+  installLink,
+  forgetInstall,
+  isHeld,
+  loadInventory,
+  recordInstalled,
+  type HandoffPackage,
+} from "../src/index";
 
 const pkg = (over: Partial<HandoffPackage> = {}): HandoffPackage => ({
   id: "com.acme.lut",
@@ -122,5 +131,79 @@ describe("downloadUrl", () => {
 
   it("encodes path components", () => {
     expect(downloadUrl("com.acme/evil", "1.0.0")).toBe("/packages/com.acme%2Fevil/versions/1.0.0/download");
+  });
+});
+
+/* ─────────────── inventory ─────────────── */
+
+describe("inventory", () => {
+  /** A minimal localStorage, so the persistence path is exercised rather than stubbed away. */
+  function withStorage<T>(fn: () => T): T {
+    const store = new Map<string, string>();
+    const g = globalThis as unknown as { window?: unknown };
+    const prev = g.window;
+    g.window = {
+      localStorage: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => void store.set(k, v),
+      },
+    };
+    try {
+      return fn();
+    } finally {
+      g.window = prev;
+    }
+  }
+
+  it("round-trips a recorded install through storage", () => {
+    withStorage(() => {
+      const after = recordInstalled({}, "com.acme.lut", "1.0.0");
+      expect(after["com.acme.lut"]).toMatchObject({ id: "com.acme.lut", version: "1.0.0", state: "installed" });
+      // Reloaded from storage, not from the returned object — this is what a second visit sees.
+      expect(loadInventory()["com.acme.lut"]?.state).toBe("installed");
+    });
+  });
+
+  it("forgets rather than throws when storage holds junk", () => {
+    withStorage(() => {
+      (globalThis as unknown as { window: { localStorage: Storage } }).window.localStorage.setItem(
+        "azphalt.inventory.v1",
+        "not json",
+      );
+      expect(loadInventory()).toEqual({});
+    });
+  });
+
+  it("returns an empty inventory rather than throwing when storage is unavailable", () => {
+    // Safari private browsing and any browser with site data blocked. A visitor who turned storage
+    // off has said something about what they want remembered; the store should still browse.
+    const g = globalThis as unknown as { window?: unknown };
+    const prev = g.window;
+    g.window = { get localStorage(): Storage { throw new Error("blocked"); } };
+    try {
+      expect(loadInventory()).toEqual({});
+    } finally {
+      g.window = prev;
+    }
+  });
+
+  it("forgets a record the user says is wrong, and persists the removal", () => {
+    withStorage(() => {
+      const after = recordInstalled({}, "com.acme.lut", "1.0.0");
+      const forgotten = forgetInstall(after, "com.acme.lut");
+      expect(forgotten["com.acme.lut"]).toBeUndefined();
+      // Reloaded, so the removal survived the visit rather than living only in memory.
+      expect(loadInventory()["com.acme.lut"]).toBeUndefined();
+    });
+  });
+
+  it("treats removed as not held, so a reinstall can still be offered", () => {
+    const inv = {
+      kept: { id: "kept", version: "1.0.0", state: "installed" as const },
+      gone: { id: "gone", version: "1.0.0", state: "removed" as const },
+    };
+    expect(isHeld(inv, "kept")).toBe(true);
+    expect(isHeld(inv, "gone")).toBe(false);
+    expect(isHeld(inv, "never-seen")).toBe(false);
   });
 });

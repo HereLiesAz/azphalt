@@ -36,6 +36,9 @@ fun StorefrontControls(
     onSort: (SortMode) -> Unit,
     price: Int,
     onPrice: (Int) -> Unit,
+    /** 0 = Any, 1 = Installed, 2 = Not installed — over the merged inventory, not the catalog. */
+    owned: Int,
+    onOwned: (Int) -> Unit,
     categories: List<String>,
     category: String?,
     onCategory: (String?) -> Unit,
@@ -66,6 +69,16 @@ fun StorefrontControls(
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("All", "Free", "Paid").forEachIndexed { i, label ->
                 FilterChip(selected = price == i, onClick = { onPrice(i) }, label = { Text(label) })
+            }
+        }
+
+        // What you already have. A second row rather than more chips in the price row: "free vs paid"
+        // is about the package and "installed vs not" is about the viewer, and one row mixing both
+        // reads as a single set of alternatives when they combine.
+        Spacer(Modifier.height(8.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Any" to 0, "Installed" to 1, "Not installed" to 2).forEach { (label, value) ->
+                FilterChip(selected = owned == value, onClick = { onOwned(value) }, label = { Text(label) })
             }
         }
 

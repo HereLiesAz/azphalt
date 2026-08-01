@@ -38,7 +38,13 @@ receive a package, and `GOVERNANCE.md` rules that out.
   as an internal type but the HTTP surface never parsed it, so `?kind=app` silently returned the
   entire catalogue.
 - **`@azphalt/web-handoff`** (new) — the storefront half, for any web storefront: build the link,
-  attempt it, detect that nothing claimed it, and select the hosts worth offering. The spec requires
+  attempt it, detect that nothing claimed it, select the hosts worth offering, and keep the store's
+  own **inventory** of what it handed over (`loadInventory` / `saveInventory` / `recordInstalled` /
+  `isHeld`). The inventory exists because the link is one-way: a page fires `azphalt://install` and
+  learns nothing, so without its own record every card offers to install something the user already
+  has, and there is no way to filter what you have from what you do not. It is explicitly a **guess**
+  — it records that a host claimed the link, which is the last thing a web page can observe — and a
+  real host report supersedes it wherever the two disagree. The spec requires
   this ladder of every conforming storefront and its middle step is a **heuristic** (no browser API
   answers "is this scheme registered"), so a per-storefront reimplementation is a per-storefront
   behaviour. Zero dependencies, and it takes a structural package shape rather than a nominal type so

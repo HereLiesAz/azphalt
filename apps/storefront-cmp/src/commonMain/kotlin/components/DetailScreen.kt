@@ -35,7 +35,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import models.CheckoutResponse
+import models.ExtensionState
 import models.HostOption
+import models.LocalHostInventory
 import models.PackageSummary
 import models.hostsFor
 import network.attemptHandoff
@@ -58,6 +60,10 @@ fun DetailScreen(
     ageConfirmed: Boolean,
     onConfirmAge: () -> Unit,
     onBack: () -> Unit,
+    /** A host took the link. The store records it so the catalog can show and filter on it. */
+    onHandedOff: (PackageSummary) -> Unit = {},
+    /** The user says the store's record is wrong. See `models.forgetInstall`. */
+    onForget: (PackageSummary) -> Unit = {},
 ) {
     val cs = MaterialTheme.colorScheme
 
@@ -110,6 +116,37 @@ fun DetailScreen(
     // that does have a host the user should simply arrive there.
     var noHost by remember(pkg.id) { mutableStateOf(false) }
     val hosts = remember(pkg.id, catalog) { hostsFor(pkg, catalog) }
+
+    // Whether the store believes the viewer already has this — from a host's report where there is
+    // one, otherwise from the store's own record (`models/LocalInventory.kt`).
+    val held = LocalHostInventory.current[pkg.id]?.state.let { it != null && it != ExtensionState.REMOVED }
+
+    /**
+     * The web handoff — one implementation for the Install button and for the sheet's *Try again*.
+     *
+     * Shared rather than written twice, because written twice is what it was and the two copies had
+     * already diverged: the retry attempted the handoff and then recorded nothing and said nothing,
+     * so a user who had no host, installed one from the sheet, and pressed Try again — the most
+     * likely first-ever install there is — succeeded in complete silence.
+     *
+     * One link shape for everything free, packs included: a pack is a package with an id and the host
+     * resolves its members (`spec/web-handoff.md` § Packs). Nothing here names a host.
+     */
+    val handoff: () -> Unit = {
+        scope.launch {
+            busy = true
+            val handed = attemptHandoff(handoffUri(pkg.id, pkg.version))
+            // Only on "nothing claimed it". A user who left for a host and came back should not find
+            // an apology waiting for them.
+            noHost = !handed
+            if (handed) {
+                onHandedOff(pkg)
+                dialogText = "“${pkg.name}” was sent to your host. It'll show as installed here — " +
+                    "if it didn't arrive, install it again."
+            }
+            busy = false
+        }
+    }
 
     // Live rating state, seeded from the summary and updated when the viewer rates.
     var rating by remember(pkg.id) { mutableStateOf(pkg.rating) }
@@ -308,17 +345,7 @@ fun DetailScreen(
                             busy = false
                         }
                     } else {
-                        // The web handoff. One link shape for everything free, packs included — a
-                        // pack is a package with an id, and the host resolves its members
-                        // (spec/web-handoff.md § Packs). Nothing here names a host.
-                        scope.launch {
-                            busy = true
-                            val handed = attemptHandoff(handoffUri(pkg.id, pkg.version))
-                            // Only on "nothing claimed it". A user who left for a host and came back
-                            // should not find an apology waiting for them.
-                            noHost = !handed
-                            busy = false
-                        }
+                        handoff()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
@@ -326,12 +353,22 @@ fun DetailScreen(
                 Text(
                     text = when {
                         busy -> "Working…"
+                        held -> "Install again"
                         pkg.pack != null -> "Install pack  ·  ${pkg.pack.entries.size} items"
                         isPaid(pkg) -> "Get  ·  ${priceLabel(pkg)}"
                         else -> "Install  ·  Free"
                     },
                     fontWeight = FontWeight.Bold,
                 )
+            }
+
+            // The store's record is a guess: a handoff can succeed and the install still not happen,
+            // and on the web nothing will ever contradict it. This is how the user says so.
+            if (held) {
+                Spacer(Modifier.height(10.dp))
+                TextButton(onClick = { onForget(pkg) }, shape = RectangleShape) {
+                    Text("Not installed? Remove from my library", color = cs.onSurfaceVariant)
+                }
             }
             Spacer(Modifier.height(48.dp))
         }
@@ -362,14 +399,11 @@ fun DetailScreen(
             pkg = pkg,
             hosts = hosts,
             onRetry = {
+                // Close the sheet, then run the same handoff the button runs — including recording it
+                // and telling the user. The user may have installed a host and come back, which is
+                // precisely what the retry is for.
                 noHost = false
-                scope.launch {
-                    busy = true
-                    // The user may have installed a host and come back — that is precisely what the
-                    // retry is for, so ask again rather than assuming the first answer still holds.
-                    noHost = !attemptHandoff(handoffUri(pkg.id, pkg.version))
-                    busy = false
-                }
+                handoff()
             },
             onDismiss = { noHost = false },
         )
