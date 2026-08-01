@@ -5,6 +5,7 @@
 "@azphalt/repository-client": minor
 "@azphalt/registry-store-vercel": patch
 "@azphalt/submit-check": patch
+"@azphalt/web-handoff": minor
 ---
 
 **web-handoff**: the `azphalt://install` deep link, plus the manifest and validation it needs.
@@ -36,6 +37,14 @@ receive a package, and `GOVERNANCE.md` rules that out.
   `GET /packages`. Without it the host directory could not be fetched at all: `ListQuery.kind` existed
   as an internal type but the HTTP surface never parsed it, so `?kind=app` silently returned the
   entire catalogue.
+- **`@azphalt/web-handoff`** (new) — the storefront half, for any web storefront: build the link,
+  attempt it, detect that nothing claimed it, and select the hosts worth offering. The spec requires
+  this ladder of every conforming storefront and its middle step is a **heuristic** (no browser API
+  answers "is this scheme registered"), so a per-storefront reimplementation is a per-storefront
+  behaviour. Zero dependencies, and it takes a structural package shape rather than a nominal type so
+  a storefront with its own catalogue type can adopt it without changing that type. Its tests mirror
+  the Compose storefront's Kotlin suite case for case, so the two implementations cannot drift
+  quietly.
 - **`@azphalt/submit-check`** — accepts the three **header** kinds. Its allowed-kinds list had drifted
   to `asset`/`code`/`mixed`, so `app`, `mcp` and `pack` were rejected as "invalid kind" — which made
   three documented submission paths impossible, including the host listing `web-handoff.md` § Host

@@ -13,6 +13,7 @@
   "dependencies": {
     "@azphalt/azdk": "workspace:*",
     "@azphalt/repository-client": "workspace:*",
+    "@azphalt/web-handoff": "workspace:*",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.25.0",
     "react": "^19.2.7",

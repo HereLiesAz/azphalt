@@ -10,7 +10,7 @@ import {
   type PackageSummary,
 } from "./api";
 import { drawPreview, paletteFor, rgba } from "./preview";
-import { attemptHandoff, downloadUrl, hostsFor, installLink, type HostOption } from "./handoff";
+import { attemptHandoff, downloadUrl, hostsFor, installLink, type HostOption } from "@azphalt/web-handoff";
 
 type Sort = "popular" | "rating" | "recent" | "name";
 const SORTS: Array<[Sort, string]> = [

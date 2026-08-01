@@ -204,6 +204,14 @@ and a `hostId` ([`extension-manifest.md`](extension-manifest.md) § `app`):
 its OS-level package name, and the id packages use in `targetApps` are three independent strings, and
 in practice they differ.
 
+**Nothing about this is advertised in `/.well-known/azphalt-repository.json`, deliberately.** The
+obvious-looking addition — a repository declaring "install links work here" — would describe nothing.
+A repository's only role in this exchange is serving a download the host asks for, which every
+conforming repository already does; whether links get *emitted* is a property of a storefront, and
+whether they get *claimed* is a property of the device. A host reading the index would learn nothing
+it could act on, so there is no field for it, and a reader looking for one should stop here rather
+than assume it was forgotten.
+
 A storefront discovers hosts with `GET /packages?kind=app` (`repository-api.md` § Search Packages),
 keeps those whose `roles` include `"host"`, and matches `hostId` against the package's `targetApps` —
 offering every listed host when `targetApps` is empty. A listing is submitted through the registry's

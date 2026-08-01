@@ -1,11 +1,40 @@
 /**
- * The web→host handoff from `spec/web-handoff.md`.
+ * The web→host install handoff from `spec/web-handoff.md`, for any web storefront.
  *
- * The sibling of the Compose storefront's `models/InstallHandoff.kt` + `network/WasmHandoff.kt`, and
- * deliberately the same decisions in the same order — two storefronts that disagree about what
- * pressing Install does would be two different products wearing one name.
+ * The spec requires the same ladder of every conforming storefront — build the link, attempt it,
+ * detect that nothing claimed it, fall back to the `.azp` download and the host directory — and the
+ * middle step is a **heuristic**, because no browser API answers "is this scheme registered". A
+ * heuristic reimplemented per storefront is a heuristic that behaves differently per storefront, so
+ * it lives here once instead.
+ *
+ * The Compose storefront's `models/InstallHandoff.kt` + `network/WasmHandoff.kt` are the Kotlin
+ * counterpart, deliberately making the same decisions in the same order. Two storefronts that
+ * disagree about what pressing Install does would be two products wearing one name.
  */
-import type { PackageSummary } from "./api";
+/**
+ * The minimum a package must look like for this module to act on it.
+ *
+ * Structural rather than an import of `@azphalt/azdk`'s `PackageSummary` on purpose: a storefront may
+ * carry its own catalogue type (the React storefront does), and forcing every consumer onto one
+ * nominal type would make this package harder to adopt than reimplementing it — which is the outcome
+ * it exists to prevent. Anything with these fields satisfies it.
+ */
+export interface HandoffPackage {
+  id: string;
+  name: string;
+  version: string;
+  /** Reverse-DNS host ids this package is scoped to. Empty/absent = global. */
+  targetApps?: string[];
+  /** The reduced `app` block from a `kind:"app"` summary (`spec/repository-api.md` § The `app` summary). */
+  app?: {
+    roles?: string[];
+    hostId?: string;
+    platforms?: {
+      android?: { install?: string };
+      pwa?: { startUrl?: string };
+    };
+  };
+}
 
 /** How long to wait before concluding nothing claimed the link. See `attemptHandoff`. */
 const HANDOFF_WAIT_MS = 1_400;
@@ -43,7 +72,7 @@ export interface HostOption {
  * Guillotine-only pack at a paint app wastes the user's time in the one place they are already stuck.
  * A listing with no install URL is dropped rather than shown as a dead entry.
  */
-export function hostsFor(pkg: PackageSummary, catalog: PackageSummary[]): HostOption[] {
+export function hostsFor(pkg: HandoffPackage, catalog: HandoffPackage[]): HostOption[] {
   const wanted = new Set(pkg.targetApps ?? []);
   const out: HostOption[] = [];
   const seen = new Set<string>();

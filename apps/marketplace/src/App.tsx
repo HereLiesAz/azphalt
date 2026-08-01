@@ -4,6 +4,7 @@ import type { PanInfo } from 'framer-motion';
 import { Search, Box, Download, ArrowLeft, Layers, Fingerprint } from 'lucide-react';
 import { RepositoryClient } from '@azphalt/repository-client';
 import type { PackageSummary } from '@azphalt/azdk';
+import { attemptHandoff, downloadUrl, installLink } from '@azphalt/web-handoff';
 import './index.css';
 
 const client = new RepositoryClient({ url: 'http://localhost:3000' });
@@ -108,6 +109,9 @@ function App() {
   const [selectedPkg, setSelectedPkg] = useState<PackageSummary | null>(null);
   const [pkgDetail, setPkgDetail] = useState<any>(null);
   const [themeColor, setThemeColor] = useState('var(--md-sys-color-background)');
+  // The install fallback — spec/web-handoff.md § When no host is installed. Set only once an attempt
+  // has come back with "nothing claimed it".
+  const [noHost, setNoHost] = useState(false);
 
   // Animation controls
   const searchControls = useAnimation();
@@ -147,11 +151,15 @@ function App() {
   }, [selectedPkg]);
 
   const handleInstall = async () => {
-    // Physics swell
+    if (!selectedPkg) return;
+    // Physics swell — feedback that the press registered, before anything navigates.
     await installControls.start({
       scale: [1, 1.15, 0.9, 1.05, 1],
       transition: bouncySpring
     });
+    // Then actually hand the package to a host (spec/web-handoff.md). Until this, the button was
+    // only the animation: it looked like it installed and did nothing at all.
+    setNoHost(!(await attemptHandoff(installLink(selectedPkg.id, selectedPkg.version))));
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -290,6 +298,23 @@ function App() {
                     <Download size={20} /> Install
                   </motion.button>
                 </div>
+
+                {/* Nothing claimed the link. Not an error state: on a device with no host, downloading
+                    the package IS the successful outcome — a host registered for the .azp media type
+                    opens the file directly, with no link support involved. */}
+                {noHost && (
+                  <div className="empty-state" style={{ marginTop: 16, padding: 16, border: '1px solid var(--md-sys-color-outline)' }}>
+                    <p style={{ margin: 0 }}>
+                      Nothing on this device opened the link. Download the package and open it in a host.
+                    </p>
+                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                      <a className="btn btn-primary" href={downloadUrl(selectedPkg.id, selectedPkg.version)} download>
+                        Download .azp
+                      </a>
+                      <button className="btn btn-surface" onClick={() => setNoHost(false)}>Close</button>
+                    </div>
+                  </div>
+                )}
 
                 <h4 className="section-title" style={{ marginTop: 32 }}>Included Assets</h4>
                 {!pkgDetail ? (
