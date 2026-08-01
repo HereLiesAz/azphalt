@@ -1,5 +1,12 @@
 # @azphalt/mock-backend
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [e5108c8]
+  - @azphalt/azp@0.3.0
+
 ## 0.1.2
 
 ### Patch Changes
