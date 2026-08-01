@@ -37,20 +37,17 @@ import util.formatRating
  * A small outlined tag (kind, price, capability) — a sharp Metro rectangle with a hairline border in
  * the content color over a faint [container] fill, replacing the old 50%-rounded pill.
  */
+/**
+ * A small capsule — kinds, versions, capabilities, pack membership.
+ *
+ * Was a bordered rectangle with a tinted fill. In the Capsule system a thing that names something is
+ * a capsule like everything else: full radius, solid hue, white label, no border. The [content]
+ * parameter is gone rather than ignored, so a call site cannot quietly keep passing an ink-on-tint
+ * pair that no longer applies.
+ */
 @Composable
-internal fun Pill(text: String, container: Color, content: Color) {
-    Box(
-        modifier = Modifier
-            .background(container)
-            .border(1.dp, content.copy(alpha = 0.55f), RectangleShape)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = content,
-        )
-    }
+internal fun Pill(text: String, background: Color) {
+    Capsule(label = text, background = background, labelSize = 10, height = 26.dp)
 }
 
 /** The container/on-container color pair for a package, rotated by a stable hash for a colorful grid. */
@@ -91,161 +88,6 @@ internal fun isPaid(pkg: PackageSummary): Boolean = pkg.price != null || pkg.pri
 internal const val CARD_WIDTH = 244
 internal const val CARD_HEIGHT = 216
 
-@Composable
-fun PackageCard(
-    pkg: PackageSummary,
-    phase: Float,
-    index: Int,
-    onOpen: (PackageSummary) -> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth().height(CARD_HEIGHT.dp),
-    ageConfirmed: Boolean = true,
-    onConfirmAge: () -> Unit = {},
-) {
-    // What the calling host reported about this package, if anything (`spec/state-reporting.md` § 3).
-    // Null means the host said nothing — the standalone app and every web visitor — and the card must
-    // then look exactly as it did before any of this existed.
-    val state: ExtensionStateEntry? = LocalHostInventory.current[pkg.id]
-    // A developer-flagged 18+ package stays behind an age gate until the viewer confirms: the preview
-    // art is hidden and a tap confirms age instead of opening the detail.
-    val gated = pkg.isMature && !ageConfirmed
-    val interaction = remember { MutableInteractionSource() }
-    val hovered by interaction.collectIsHoveredAsState()
-    val pressed by interaction.collectIsPressedAsState()
-
-    // Bouncy, physics-driven scale on hover/press (kept). The old elevation lift becomes a border
-    // that brightens and thickens on hover, so the flat Metro tile still answers the pointer.
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.96f else if (hovered) 1.03f else 1f,
-        animationSpec = spring(dampingRatio = 0.5f, stiffness = 520f),
-    )
-    val borderWidth by animateDpAsState(
-        targetValue = if (hovered) 2.dp else 1.dp,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
-    )
-    val borderAlpha by animateFloatAsState(
-        targetValue = if (hovered) 0.95f else 0.5f,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
-    )
-
-    val cs = MaterialTheme.colorScheme
-    val (container, onContainer) = paletteFor(pkg.id)
-    val paid = isPaid(pkg)
-
-    OutlinedCard(
-        onClick = { if (gated) onConfirmAge() else onOpen(pkg) },
-        modifier = modifier
-            // Additive WP7 turnstile: the tile pivots in around its left edge, cascaded across the
-            // row. Capped so a card scrolled in far down the list doesn't wait a full cascade.
-            .azTurnstileEntrance(index = index.coerceAtMost(6))
-            .azTiltOnPress()
-            .scale(scale),
-        shape = RectangleShape,
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = container.copy(alpha = 0.14f),
-            contentColor = onContainer,
-        ),
-        border = BorderStroke(borderWidth, onContainer.copy(alpha = borderAlpha)),
-        interactionSource = interaction,
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Live animated preview of what the plugin does, with kind + price pills overlaid.
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(onContainer.copy(alpha = 0.05f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (gated) {
-                    // Age gate: hide the visual behind a scrim until the viewer confirms they're 18+.
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxSize().background(cs.surface).padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Pill("18+", cs.secondary, cs.onSecondary)
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            "Mature content — tap to confirm you're 18 or older",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = cs.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                } else {
-                    PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            // For a pack, the kind pill also shows how many extensions it bundles.
-                            Pill(
-                                text = pkg.pack?.let { "PACK · ${it.entries.size}" } ?: pkg.kind.uppercase(),
-                                container = onContainer.copy(alpha = 0.16f),
-                                content = onContainer,
-                            )
-                            if (pkg.isMature) Pill("18+", cs.secondary, cs.onSecondary)
-                            // What the host has already done with this one. Placed with the kind and
-                            // maturity pills rather than the price, because it describes the user's
-                            // relationship to the package, not the package's terms.
-                            statusLabelFor(state)?.let { status ->
-                                val failed = state?.state == ExtensionState.FAILED
-                                Pill(
-                                    text = status.uppercase(),
-                                    // Failure is the one state worth pulling the eye: it means the
-                                    // user tried to get this and did not.
-                                    container = if (failed) cs.error else cs.tertiary,
-                                    content = if (failed) cs.onError else cs.onTertiary,
-                                )
-                            }
-                        }
-                        Pill(
-                            text = priceLabel(pkg),
-                            container = if (paid) cs.primary else onContainer.copy(alpha = 0.16f),
-                            content = if (paid) cs.onPrimary else onContainer,
-                        )
-                    }
-                }
-            }
-
-            // Title + description block, then a downloads / rating footer.
-            Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 9.dp, bottom = 10.dp)) {
-                Text(
-                    text = pkg.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = onContainer,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = pkg.description ?: "No description available.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = onContainer.copy(alpha = 0.75f),
-                    // One line. At two, a card's height was set by its longest description rather than
-                    // by anything about the extension, and the row read as a wall of prose.
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    formatRating(pkg.rating, pkg.ratingCount)?.let {
-                        Text(it, style = MaterialTheme.typography.labelMedium, color = onContainer)
-                    }
-                    if (pkg.downloads > 0) {
-                        Text(
-                            "${formatCount(pkg.downloads)} installs",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = onContainer.copy(alpha = 0.7f),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+// PackageCard and its carousel are gone. They were a bordered surface with artwork inside it, laid
+// out in a column of equal boxes — the two things the Capsule system has none of. The catalogue is
+// components/Cascade.kt now. What survives here are the helpers the detail screen still uses.

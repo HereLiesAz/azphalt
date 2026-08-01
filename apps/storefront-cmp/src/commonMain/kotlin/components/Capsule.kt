@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -192,4 +193,76 @@ fun RecordTile(
             .background(Ground.inkAt(0.09f))
             .padding(padding),
     ) { content() }
+}
+
+/**
+ * A fact: a key and a value in one capsule, at 10% ink.
+ *
+ * The guide's shape for the small hard facts — version, kind, size, count. Ink rather than a hue
+ * because these are not pressable and not named things competing for attention; they are the record.
+ */
+@Composable
+fun FactCapsule(key: String, value: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .height(34.dp)
+            .clip(CapsuleShape.Full)
+            .background(Ground.inkAt(0.10f))
+            .padding(horizontal = 15.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        Text(
+            text = key.uppercase(),
+            style = TextStyle(
+                fontSize = 9.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.6.sp,
+                color = Ground.inkAt(0.55f),
+            ),
+        )
+        Text(
+            text = value.uppercase(),
+            style = TextStyle(
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Ground.Ink,
+            ),
+        )
+    }
+}
+
+/**
+ * One line of the record: a fixed-width key and a value that wraps.
+ *
+ * Ids, digests and signer keys go here rather than in a [FactCapsule] — they are long, and a capsule
+ * that wraps is not a capsule.
+ */
+@Composable
+fun RecordLine(key: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text(
+            text = key.uppercase(),
+            modifier = Modifier.width(132.dp),
+            style = TextStyle(
+                fontSize = 9.sp,
+                lineHeight = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.6.sp,
+                color = Ground.inkAt(0.5f),
+            ),
+        )
+        Text(
+            text = value,
+            style = TextStyle(
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Ground.Ink,
+            ),
+        )
+    }
 }

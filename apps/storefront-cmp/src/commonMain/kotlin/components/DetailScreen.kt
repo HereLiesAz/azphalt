@@ -1,15 +1,11 @@
 package components
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -48,6 +44,7 @@ import network.startCheckout
 import network.submitIpClaim
 import network.submitRating
 import network.submitReport
+import theme.Hues
 import theme.Ground
 import theme.Roles
 import theme.CapsuleShape
@@ -90,19 +87,18 @@ fun DetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Pill("18+", cs.secondary, cs.onSecondary)
+            Pill("18+", Roles.Acquire.first)
             Spacer(Modifier.height(16.dp))
             Text("Mature content", style = MaterialTheme.typography.headlineSmall, color = cs.onBackground)
             Spacer(Modifier.height(8.dp))
             Text(
                 "“${pkg.name}” is flagged 18+ by its developer.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = cs.onSurfaceVariant,
+                style = bodyStyle,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = onBack, shape = RectangleShape) { Text("←  Back") }
+                Capsule(label = "Back", background = Ground.Ink, labelSize = 11, height = 34.dp, onClick = onBack)
                 Button(
                     onClick = onConfirmAge,
                     shape = RectangleShape,
@@ -114,13 +110,9 @@ fun DetailScreen(
     }
 
     val (container, onContainer) = paletteFor(pkg.id)
-    val transition = rememberInfiniteTransition(label = "detail")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(durationMillis = 5200, easing = LinearEasing), RepeatMode.Restart),
-        label = "phase",
-    )
+    // A still frame, not a loop. The preview used to animate forever; "nothing moves at rest" is a
+    // rule of the system, and a permanently-running canvas is the loudest way to break it.
+    val phase = STILL_FRAME
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var dialogText by remember { mutableStateOf<String?>(null) }
@@ -186,8 +178,8 @@ fun DetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedButton(onClick = onBack, shape = RectangleShape) { Text("←  Back") }
-                OutlinedButton(onClick = { showFlag = true }, shape = RectangleShape) { Text("⚑  Flag") }
+                Capsule(label = "Back", background = Ground.Ink, labelSize = 11, height = 34.dp, onClick = onBack)
+                Capsule(label = "Flag", background = Ground.inkAt(0.14f), labelSize = 11, height = 34.dp, onClick = { showFlag = true })
             }
 
             Spacer(Modifier.height(20.dp))
@@ -208,18 +200,17 @@ fun DetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Pill(pkg.kind.uppercase(), onContainer.copy(alpha = 0.16f), onContainer)
-                        if (pkg.isMature) Pill("18+", cs.secondary, cs.onSecondary)
+                        Pill(pkg.kind, Hues.bgFor(pkg.id))
+                        if (pkg.isMature) Pill("18+", Roles.Acquire.first)
                     }
-                    Pill("v${pkg.version}", onContainer.copy(alpha = 0.16f), onContainer)
+                    Pill("v${pkg.version}", Ground.Ink)
                 }
             }
 
             Spacer(Modifier.height(28.dp))
             Text(
                 pkg.name,
-                style = MaterialTheme.typography.displaySmall,
-                color = cs.onBackground,
+                style = displayStyle(44),
                 modifier = Modifier.azTurnstileEntrance(index = 2),
             )
             pkg.author?.let {
@@ -228,33 +219,31 @@ fun DetailScreen(
             }
 
             // Downloads + rating summary.
-            Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                val ratingLabel = formatRating(rating, ratingCount)
-                Text(
-                    ratingLabel ?: "No ratings yet",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (ratingLabel != null) cs.primary else cs.onSurfaceVariant,
-                )
-                if (pkg.downloads > 0) {
-                    Text(
-                        "${formatCount(pkg.downloads)} installs",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = cs.onSurfaceVariant,
-                    )
+            Spacer(Modifier.height(14.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FactCapsule("Kind", pkg.kind)
+                FactCapsule("Version", pkg.version)
+                formatRating(rating, ratingCount)?.let { FactCapsule("Rated", it) }
+                if (pkg.downloads > 0) FactCapsule("Installs", formatCount(pkg.downloads))
+            }
+            Spacer(Modifier.height(20.dp))
+            RecordTile(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(24.dp)) {
+                Column {
+                    Text(text = pkg.description ?: "No description available.", style = bodyStyle)
+                    Spacer(Modifier.height(18.dp))
+                    RecordLine("Identifier", pkg.id)
+                    Spacer(Modifier.height(7.dp))
+                    pkg.author?.let {
+                        RecordLine("Publisher", it)
+                        Spacer(Modifier.height(7.dp))
+                    }
+                    RecordLine("Media", pkg.mediaDomains.joinToString(", ").ifBlank { "any" })
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = pkg.description ?: "No description available.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = cs.onSurfaceVariant,
-            )
-
             // Interactive star rating — tap a star to record a 1–5 vote.
             Spacer(Modifier.height(24.dp))
-            Text("Rate this extension", style = MaterialTheme.typography.labelLarge, color = cs.onBackground)
+            Text("Rate this extension", style = eyebrowStyle)
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 for (star in 1..5) {
@@ -296,17 +285,17 @@ fun DetailScreen(
 
             if (pkg.capabilities.isNotEmpty()) {
                 Spacer(Modifier.height(24.dp))
-                Text("Capabilities", style = MaterialTheme.typography.labelLarge, color = cs.onBackground)
+                Text("Capabilities", style = eyebrowStyle)
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    pkg.capabilities.take(6).forEach { Pill(it, cs.secondaryContainer, cs.onSecondaryContainer) }
+                    pkg.capabilities.take(6).forEach { Pill(it, Hues.bgFor(it)) }
                 }
             }
 
             // A pack (kind:"pack") lists the packages it bundles — each installed and licensed on its own.
             pkg.pack?.let { pack ->
                 Spacer(Modifier.height(24.dp))
-                Text("What's inside", style = MaterialTheme.typography.labelLarge, color = cs.onBackground)
+                Text("What's inside", style = eyebrowStyle)
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "This pack bundles other extensions by reference — each is installed and licensed on its own.",
@@ -319,8 +308,9 @@ fun DetailScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, cs.outline.copy(alpha = 0.4f), RectangleShape)
-                                .padding(12.dp),
+                                .clip(CapsuleShape.Record)
+                                .background(Ground.inkAt(0.09f))
+                                .padding(14.dp),
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -329,9 +319,9 @@ fun DetailScreen(
                             ) {
                                 Text(entry.id, style = MaterialTheme.typography.bodyMedium, color = cs.onBackground)
                                 if (entry.required) {
-                                    Pill("BASE", cs.primary.copy(alpha = 0.16f), cs.primary)
+                                    Pill("Base", Ground.Ink)
                                 } else {
-                                    Pill("OPTIONAL", cs.secondaryContainer, cs.onSecondaryContainer)
+                                    Pill("Optional", Ground.inkAt(0.30f))
                                 }
                             }
                             entry.note?.let {
