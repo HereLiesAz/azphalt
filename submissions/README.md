@@ -41,6 +41,13 @@ the storefront's "get a host" fallback — the thing a user sees when they tap I
 have nothing installed to receive it ([`spec/web-handoff.md`](../spec/web-handoff.md) § Host
 directory).
 
+> **First-party apps go in [`apps/storefront/registry/local/`](../apps/storefront/registry/local)
+> instead**, not here. That directory is baked into the deployment at build time by `build-catalog`,
+> which is the path that actually reaches the live store; this one publishes at runtime over
+> `POST /api/publish`. The two host listings this repo owns (Guillotine, Graffux) live there for that
+> reason, alongside GraffitiXR. Everything below still describes the manifest itself — only the
+> directory differs.
+
 A host listing is a `kind: "app"` package with no payload — just a manifest and a LICENSE:
 
 ~~~jsonc
