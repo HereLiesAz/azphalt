@@ -16,7 +16,6 @@
     "embed-docs": "node scripts/embed-docs.mjs",
     "build-catalog": "tsx scripts/build-catalog.ts",
     "seed": "tsx scripts/seed.ts",
-    "publish-submissions": "tsx scripts/publish-submissions.ts",
     "clean": "rm -rf .next dist-server public/_docs",
     "build-previews": "tsx scripts/build-previews.ts"
   },
