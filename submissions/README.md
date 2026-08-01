@@ -41,12 +41,11 @@ the storefront's "get a host" fallback — the thing a user sees when they tap I
 have nothing installed to receive it ([`spec/web-handoff.md`](../spec/web-handoff.md) § Host
 directory).
 
-> **First-party apps go in [`apps/storefront/registry/local/`](../apps/storefront/registry/local)
-> instead**, not here. That directory is baked into the deployment at build time by `build-catalog`,
-> which is the path that actually reaches the live store; this one publishes at runtime over
-> `POST /api/publish`. The two host listings this repo owns (Guillotine, Graffux) live there for that
-> reason, alongside GraffitiXR. Everything below still describes the manifest itself — only the
-> directory differs.
+> **Apps this repo owns go in [`apps/storefront/registry/local/`](../apps/storefront/registry/local)
+> instead.** Both directories are built into the same catalog by the same code, so this is not a
+> difference in how they reach the store — it is a difference in whose work a reviewer is reading.
+> The host listings for Guillotine and Graffux live there alongside GraffitiXR for that reason.
+> Everything below describes the manifest either way.
 
 A host listing is a `kind: "app"` package with no payload — just a manifest and a LICENSE:
 
@@ -97,19 +96,23 @@ See [`com.azphalt.example.hello-lut/`](com.azphalt.example.hello-lut) for a mini
 
 ## Signing
 
-On merge, [`publish-submissions.yml`](../.github/workflows/publish-submissions.yml) packages each
-folder and publishes it over `POST /api/publish`.
+On merge, `build-catalog` packs this folder into the store's **baked catalog** — the same code path,
+and the same signing key, as every other package the store serves. Merging is not the publish;
+[`registry-sync.yml`](../.github/workflows/registry-sync.yml) then opens a PR carrying the built
+`.azp` bytes and the updated `catalog.json`, and **merging that PR is the publish step**. Two
+reviews, deliberately: the first approves your *source*, the second approves the *bytes* built from
+it.
 
-> **This lane is not the same as the store's own catalog.** The extensions the store serves are built
-> from commit-pinned sources into committed `.azp` bytes (see
-> [`apps/storefront/registry/`](../apps/storefront/registry) and the storefront README), so they
-> survive any restart. `POST /api/publish` is a *runtime* write, and a deployment without
-> `DATABASE_URL` + `BLOB_READ_WRITE_TOKEN` answers `503` rather than accepting one it cannot keep.
-> Until submissions are folded into the baked catalog, a merged submission reaches a live store only
-> where that durable store is configured.
+> **This used to be a runtime write and no longer is.** Submissions were previously pushed to a live
+> registry over `POST /api/publish`, which a deployment without `DATABASE_URL` +
+> `BLOB_READ_WRITE_TOKEN` correctly refuses rather than accepting a package it cannot keep — so in
+> practice nothing reached the store that way. Folding submissions into the baked catalog is what
+> this section previously said was still pending. It also closes the gap
+> [`registry-sync.yml`](../.github/workflows/registry-sync.yml) names outright: there is no runtime
+> write path that can put a package into the store without a commit.
 
-If the `AZPHALT_PACKAGE_SIGNING_KEY` repo secret is
-set (a PKCS#8 PEM Ed25519 private key), each `.azp` is signed with it first; the optional
+Signing happens during that build. If the `AZPHALT_PACKAGE_SIGNING_KEY` repo secret is set (a PKCS#8
+PEM Ed25519 private key), each `.azp` is signed with it; the optional
 `AZPHALT_PACKAGE_SIGNING_KEY_ID` repo variable records a key id in the signature.
 
 Signing is optional — without the secret, packages publish unsigned and still verify for integrity.

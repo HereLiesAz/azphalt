@@ -7,6 +7,11 @@
  * `AZPHALT_PACKAGE_SIGNING_KEY` is set, and writes the bytes to `registry/packages/`. Those bytes
  * are committed, and the deployment serves them and nothing else.
  *
+ * Two folder sources feed the same catalog alongside the pinned ones: `registry/local/` (first-party
+ * headers) and `submissions/` (third-party submissions that have been reviewed and merged). Both are
+ * built and signed here rather than pushed to a live registry, so there is one publish path and it
+ * always leaves a reviewable commit.
+ *
  * ## Why this exists rather than a database
  *
  * The registry only ever needed a database because publishing happened at **runtime**, over
@@ -57,9 +62,21 @@ const lockPath = join(registryDir, "sources.json");
  * single JSON file. They live here instead, and are built into the same catalog by the same code
  * path, so they get the same verification and land in the same reviewable diff.
  *
- * Each is `local/<package-id>/` containing `manifest.json` + `LICENSE` (+ optional `assets/`).
+ * Each is `local/<package-id>/` containing `manifest.json` + `LICENSE` (+ optional `assets/`) — the
+ * same folder shape as a merged submission (see {@link submissionsDir}), and built by the same code.
  */
 const localDir = join(registryDir, "local");
+/**
+ * Merged third-party submissions (`submissions/README.md`).
+ *
+ * Built into the baked catalog rather than pushed to a live registry over `POST /api/publish`. That
+ * runtime path is what `registry-sync.yml` exists to forbid — "no runtime write path that can put a
+ * package into the store without a commit" — and in practice it published nothing at all, because a
+ * deployment without durable storage correctly refuses a write it cannot keep. Building here means a
+ * merged submission reaches the store the same way everything else does: as reviewable bytes in a
+ * signed catalog.
+ */
+const submissionsDir = resolve(__dirname, "..", "..", "..", "submissions");
 
 /**
  * The only directories whose contents become package payload.
@@ -280,15 +297,22 @@ function walk(dir: string, prefix = ""): string[] {
   return out;
 }
 
-/** Pack one `local/<id>/` folder — same output shape as a pinned source, so both feed one catalog. */
-function buildLocal(id: string): Built {
-  const dir = join(localDir, id);
+/**
+ * Pack one `<base>/<id>/` folder — same output shape as a pinned source, so both feed one catalog.
+ *
+ * `base` is `registry/local/` for first-party headers and `submissions/` for merged third-party
+ * submissions. `label` only names the folder in error messages; the packing is identical, which is
+ * the point — a submission that has been reviewed and merged gets built and signed exactly like
+ * anything else this repo ships, rather than over a separate runtime code path.
+ */
+function buildFolder(base: string, id: string, label: string): Built {
+  const dir = join(base, id);
   const manifest = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8")) as Manifest;
   if (manifest.id !== id) {
-    throw new Error(`local/${id}: manifest id "${manifest.id}" ≠ folder name — the folder must be the package id`);
+    throw new Error(`${label}${id}: manifest id "${manifest.id}" ≠ folder name — the folder must be the package id`);
   }
   const licensePath = join(dir, "LICENSE");
-  if (!existsSync(licensePath)) throw new Error(`local/${id}: no LICENSE file`);
+  if (!existsSync(licensePath)) throw new Error(`${label}${id}: no LICENSE file`);
 
   const payload: Record<string, Uint8Array> = {};
   for (const rel of walk(dir)) {
@@ -435,21 +459,31 @@ async function main(): Promise<void> {
     built.push(b);
   }
 
-  // First-party header packages (packs, companion apps, MCP servers) authored in this repo.
-  if (existsSync(localDir)) {
-    const ids = readdirSync(localDir, { withFileTypes: true })
+  // Folder-sourced packages: first-party headers authored here, and third-party submissions that have
+  // been merged. Both are built the same way, because after review they *are* the same thing — a
+  // manifest in this repo, on main, that a maintainer approved. The directories stay separate so the
+  // review can tell whose work it is reading, not because the build treats them differently.
+  for (const { dir, label } of [
+    { dir: localDir, label: "registry/local/" },
+    { dir: submissionsDir, label: "submissions/" },
+  ]) {
+    if (!existsSync(dir)) continue;
+    const ids = readdirSync(dir, { withFileTypes: true })
       .filter((d) => d.isDirectory())
+      // `submissions/` holds a README beside the package folders, and a folder without a manifest is
+      // not a package. Filtering here rather than failing keeps unrelated files from breaking a build.
+      .filter((d) => existsSync(join(dir, d.name, "manifest.json")))
       .map((d) => d.name)
       .filter((id) => !only || id === only)
       .sort();
     for (const id of ids) {
       try {
-        built.push(buildLocal(id));
+        built.push(buildFolder(dir, id, label));
       } catch (e) {
-        failures.push(`local/${id}: ${(e as Error).message}`);
+        failures.push(`${label}${id}: ${(e as Error).message}`);
       }
     }
-    if (ids.length) console.log(`build-catalog: + ${ids.length} first-party package(s) from registry/local/`);
+    if (ids.length) console.log(`build-catalog: + ${ids.length} package(s) from ${label}`);
   }
 
   // An id must resolve to exactly one package, whatever it was built from.

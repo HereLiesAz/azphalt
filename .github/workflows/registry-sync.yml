@@ -54,6 +54,15 @@ on:
     branches: [main]
     paths:
       - "apps/storefront/registry/sources.json"
+      # A merged submission is built into the baked catalog by the same `build-catalog` run, so the
+      # merge that accepts the source is what should go build its bytes. Without this a submission
+      # sat on main until the nightly run noticed it — and, before submissions were folded in at all,
+      # never reached the store.
+      #
+      # This does not recurse for the same reason the lockfile path does not: a sync's own PR touches
+      # `registry/packages/` and `catalog.json`, never `submissions/`, so merging it matches nothing
+      # here.
+      - "submissions/**"
   workflow_dispatch:
     inputs:
       mode:
