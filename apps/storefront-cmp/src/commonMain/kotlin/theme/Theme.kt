@@ -89,23 +89,58 @@ private val AzphaltType = Typography(
 )
 
 /**
- * Sharp, rectangular Metro tiles — AzNavRail's shape language. The rail draws SQUARE / RECTANGLE
- * buttons with sharp corners and outlines rather than soft, friendly rounding, so every Material
- * surface that reads its shape from the theme (cards, chips, text fields, dialogs) squares off to
- * match. A hair of rounding on the smallest sizes keeps hairline outlines from fraying at the corner.
+ * Every M3 shape token is a full capsule — see `Capsule.kt`.
+ *
+ * These were five zeros, which is what made the store hard-cornered everywhere regardless of what any
+ * call site asked for. In the Capsule system the rule is the opposite and just as absolute: radius is
+ * 999px, always, never a rounded rectangle. The one exception is the record tile, which is not a
+ * pressable thing and is drawn directly rather than through a theme token.
  */
 private val AzphaltShapes = Shapes(
-    extraSmall = RoundedCornerShape(0.dp),
-    small = RoundedCornerShape(0.dp),
-    medium = RoundedCornerShape(0.dp),
-    large = RoundedCornerShape(0.dp),
-    extraLarge = RoundedCornerShape(0.dp),
+    extraSmall = CapsuleShape.Full,
+    small = CapsuleShape.Full,
+    medium = CapsuleShape.Full,
+    large = CapsuleShape.Full,
+    extraLarge = CapsuleShape.Full,
 )
 
+/**
+ * The store's colours, as far as Material is concerned.
+ *
+ * The Capsule system does not really have a "colour scheme" — the page is yellow, text is ink, and
+ * capsules take a hashed hue from `Hues`. This mapping exists so a stray framework component that
+ * reads `MaterialTheme.colorScheme` lands somewhere sane instead of on Material's purple defaults.
+ * Store code should reach for `Ground` and `Hues` directly.
+ */
+private val CapsuleColors = lightColorScheme(
+    primary = Ground.Ink,
+    onPrimary = Color(0xFFF0D42A),
+    secondary = Hues.Bg[0],
+    onSecondary = Color.White,
+    tertiary = Hues.Bg[2],
+    onTertiary = Color.White,
+    background = Ground.Page,
+    onBackground = Ground.Ink,
+    surface = Ground.Page,
+    onSurface = Ground.Ink,
+    surfaceVariant = Ground.Page,
+    onSurfaceVariant = Ground.inkAt(0.62f),
+    outline = Ground.inkAt(0.22f),
+    error = Hues.Bg[6],
+    onError = Color.White,
+)
+
+/**
+ * `dark` is accepted and ignored.
+ *
+ * The page is a printed yellow spread; there is no dark variant of printed stock, and a dark mode
+ * would be a second design rather than a toggle. Kept in the signature so the existing call sites
+ * compile unchanged.
+ */
 @Composable
 fun AzphaltExpressiveTheme(dark: Boolean = true, content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (dark) AzphaltDarkColors else AzphaltLightColors,
+        colorScheme = CapsuleColors,
         typography = AzphaltType,
         shapes = AzphaltShapes,
         content = content,

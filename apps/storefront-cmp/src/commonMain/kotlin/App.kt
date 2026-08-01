@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package main
 
 import androidx.compose.animation.AnimatedContent
@@ -48,6 +50,27 @@ import models.mergeInventories
 import network.fetchRegistryList
 import network.loadStoredInventory
 import network.saveStoredInventory
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
+import components.Capsule
+import components.CascadeCatalog
+import components.CascadeResults
+import components.displayStyle
+import components.eyebrowStyle
+import theme.CapsuleShape
+import theme.Ground
+import theme.Roles
 import theme.AzphaltExpressiveTheme
 import theme.ExpressiveMotion
 
@@ -144,14 +167,10 @@ fun StorefrontApp(
         // rest of the session (developer-set maturity gate, not verified age assurance).
         var ageConfirmed by remember { mutableStateOf(false) }
 
-        // One shared clock; within each carousel a single card animates at a time.
-        val clockTransition = rememberInfiniteTransition(label = "clock")
-        val clock by clockTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(tween(durationMillis = 5200, easing = LinearEasing), RepeatMode.Restart),
-            label = "clock",
-        )
+        // The idle clock is gone. It drove a permanently-running preview animation on the cards,
+        // and the Capsule system forbids exactly that: "nothing moves at rest — no breathing, no
+        // spinners, no fades." Motion here is arrival only (the unfold cascade) and response to a
+        // press (a capsule extending). A page that is not being touched is still.
 
         // Clicking a card expands it into the detail view; going back collapses it. Both directions are
         // an expressive scale + fade so the navigation reads as the item growing / shrinking in place.
@@ -211,74 +230,176 @@ fun StorefrontApp(
                         }
                     },
                 ) { padding ->
-                    // LazyColumn of horizontal carousels — a LazyRow per section is safe inside a
-                    // LazyColumn (orthogonal axes); only nesting same-axis lazy scrollers crashes.
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize().padding(padding),
-                        contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp),
-                        verticalArrangement = Arrangement.spacedBy(30.dp),
-                    ) {
-                        if (handoff != null) {
-                            item {
-                                Box(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                    // The page IS the surface. A yellow spread with the fold, and the cascade drawn
+                    // straight onto it — no scaffold surface, no cards, no panels.
+                    Box(Modifier.fillMaxSize().background(Ground.Spread).padding(padding)) {
+                        val header: @Composable () -> Unit = {
+                            Column(Modifier.padding(bottom = 4.dp)) {
+                                if (handoff != null) {
                                     HandoffBanner(callerLabel = handoff.callerLabel, onCancel = handoff.cancel)
+                                    Spacer(Modifier.height(22.dp))
                                 }
-                            }
-                        }
-                        item {
-                            Box(Modifier.padding(horizontal = 24.dp)) { HeroSection(total = packages.size) }
-                        }
-                        item {
-                            Box(Modifier.padding(horizontal = 24.dp)) {
-                                StorefrontControls(
-                                    query = query, onQuery = { query = it },
-                                    sort = sort, onSort = { sort = it },
+                                CapsuleHeader(
+                                    total = packages.size,
+                                    query = query,
+                                    onQuery = { query = it },
+                                    filtering = filtering,
+                                    shownCount = shown.size,
+                                )
+                                Spacer(Modifier.height(14.dp))
+                                CapsuleFilters(
                                     price = price, onPrice = { price = it },
                                     owned = owned, onOwned = { owned = it },
                                     categories = categories, category = category, onCategory = { category = it },
-                                    apps = apps, app = app, onApp = { app = it },
                                 )
                             }
                         }
+
                         when {
-                            loading -> item {
-                                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                }
-                            }
-                            filtering && shown.isEmpty() -> item {
-                                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        "No extensions match your search.",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                            filtering -> item {
-                                HeroCarousel(
-                                    section = CatalogSection("Results", "${shown.size} matching", shown),
-                                    clock = clock,
-                                    ageConfirmed = ageConfirmed,
-                                    onConfirmAge = { ageConfirmed = true },
-                                    onOpen = { selected = it },
-                                )
-                            }
-                            else -> items(sections, key = { it.title }) { section ->
-                                HeroCarousel(
-                                    section = section,
-                                    clock = clock,
-                                    ageConfirmed = ageConfirmed,
-                                    onConfirmAge = { ageConfirmed = true },
-                                    onOpen = { selected = it },
-                                )
-                            }
+                            loading -> Column(Modifier.fillMaxSize().padding(horizontal = 30.dp)) { header() }
+                            filtering -> CascadeResults(
+                                packages = shown,
+                                onOpen = { selected = it },
+                                listState = listState,
+                                modifier = Modifier.padding(horizontal = 30.dp),
+                                header = header,
+                            )
+                            else -> CascadeCatalog(
+                                sections = sections,
+                                onOpen = { selected = it },
+                                listState = listState,
+                                modifier = Modifier.padding(horizontal = 30.dp),
+                                header = header,
+                            )
                         }
                     }
                 }
             }
         }
       }
+    }
+}
+
+/**
+ * The page head: wordmark capsule, search well, headline, count.
+ *
+ * Replaces the marketing hero and the outlined text field. The search well is a capsule-shaped patch
+ * of ink at 14% with no icon and no border — the placeholder states the count, which is the guide's
+ * way of telling you the size of the thing you are searching without a label saying "Search".
+ */
+@Composable
+private fun CapsuleHeader(
+    total: Int,
+    query: String,
+    onQuery: (String) -> Unit,
+    filtering: Boolean,
+    shownCount: Int,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Capsule(
+                label = "Azphalt",
+                background = Ground.Ink,
+                labelSize = 20,
+                height = 50.dp,
+            )
+            Box(
+                modifier = Modifier
+                    .clip(CapsuleShape.Full)
+                    .background(Ground.inkAt(0.14f))
+                    .padding(horizontal = 22.dp, vertical = 12.dp),
+            ) {
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQuery,
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.6.sp,
+                        color = Ground.Ink,
+                    ),
+                    cursorBrush = SolidColor(Roles.Acquire.first),
+                    modifier = Modifier.width(230.dp),
+                    decorationBox = { inner ->
+                        if (query.isEmpty()) {
+                            Text(
+                                text = "SEARCH $total EXTENSIONS",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.6.sp,
+                                    color = Ground.inkAt(0.45f),
+                                ),
+                            )
+                        }
+                        inner()
+                    },
+                )
+            }
+        }
+
+        Spacer(Modifier.height(28.dp))
+
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = if (filtering) "Results" else "The catalogue",
+                style = displayStyle(54),
+            )
+            Spacer(Modifier.width(16.dp))
+            Text(
+                text = if (filtering) "$shownCount found" else "$total portable",
+                style = eyebrowStyle,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+        }
+    }
+}
+
+/**
+ * Filters, as small capsules.
+ *
+ * Unselected capsules carry no end-cap — the guide's rule for a small filter — so selection reads as
+ * "this one gained a cap and went ink" rather than as a colour change a colour-blind viewer would
+ * miss. Sort is gone: with the catalogue as an index rather than a ranked list, a sort order was
+ * ordering something the user is no longer reading top-to-bottom.
+ */
+@Composable
+private fun CapsuleFilters(
+    price: Int,
+    onPrice: (Int) -> Unit,
+    owned: Int,
+    onOwned: (Int) -> Unit,
+    categories: List<String>,
+    category: String?,
+    onCategory: (String?) -> Unit,
+) {
+    @Composable
+    fun row(items: List<Pair<String, Boolean>>, onPick: (Int) -> Unit) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items.forEachIndexed { i, (label, selected) ->
+                Capsule(
+                    label = label,
+                    background = if (selected) Roles.Selected.first else Ground.inkAt(0.14f),
+                    cap = if (selected) Roles.Selected.second else null,
+                    labelSize = 11,
+                    height = 32.dp,
+                    onClick = { onPick(i) },
+                )
+            }
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        row(listOf("All" to (price == 0), "Free" to (price == 1), "Paid" to (price == 2))) { onPrice(it) }
+        row(listOf("Any" to (owned == 0), "Installed" to (owned == 1), "Not installed" to (owned == 2))) { onOwned(it) }
+        if (categories.isNotEmpty()) {
+            val labels = listOf("All types" to (category == null)) + categories.map { it to (category == it) }
+            row(labels) { i -> onCategory(if (i == 0) null else categories[i - 1]) }
+        }
     }
 }

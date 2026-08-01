@@ -48,6 +48,11 @@ import network.startCheckout
 import network.submitIpClaim
 import network.submitRating
 import network.submitReport
+import theme.Ground
+import theme.Roles
+import theme.CapsuleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import theme.azTurnstileEntrance
 import util.formatCount
 import util.formatRating
@@ -81,7 +86,7 @@ fun DetailScreen(
     // card gate normally confirms first, but a deep link could land here directly).
     if (pkg.isMature && !ageConfirmed) {
         Column(
-            modifier = Modifier.fillMaxSize().background(cs.background).padding(32.dp),
+            modifier = Modifier.fillMaxSize().background(Ground.Spread).padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -167,7 +172,7 @@ fun DetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(cs.background)
+            .background(Ground.Spread)
             .verticalScroll(rememberScrollState()),
     ) {
         Column(
@@ -193,8 +198,9 @@ fun DetailScreen(
                     .fillMaxWidth()
                     .height(220.dp)
                     .azTurnstileEntrance(index = 1)
-                    .background(container.copy(alpha = 0.14f))
-                    .border(1.dp, onContainer.copy(alpha = 0.55f), RectangleShape),
+                    // A record, not a card: 9% ink, one soft radius, no border and no shadow.
+                    .clip(CapsuleShape.Panel)
+                    .background(Ground.inkAt(0.09f)),
             ) {
                 PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
                 Row(
@@ -362,7 +368,10 @@ fun DetailScreen(
                         else -> handoff()
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (held) Roles.Acquired.first else Roles.Acquire.first,
+                    contentColor = Color.White,
+                ),
             ) {
                 Text(
                     text = when {
