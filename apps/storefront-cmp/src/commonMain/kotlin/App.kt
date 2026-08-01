@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import components.CatalogSection
 import components.DetailScreen
+import components.HandoffBanner
 import components.HeroCarousel
 import components.HeroSection
 import components.SortMode
@@ -38,6 +39,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.runtime.CompositionLocalProvider
 import models.ExtensionState
 import models.ExtensionStateEntry
+import models.HandoffSession
 import models.LocalHostInventory
 import models.PackageSummary
 import models.forgetInstall
@@ -56,6 +58,15 @@ fun StorefrontApp(
      * Empty for the web store and for the app opened on its own — neither has a host to ask.
      */
     hostInventory: Map<String, ExtensionStateEntry> = emptyMap(),
+    /**
+     * Set when another app launched the store to get something for itself (`models/HandoffSession.kt`).
+     *
+     * It changes three things and nothing else: where the catalogue is read from (scoped to what the
+     * host can run), what the Install button does (hand the bytes back rather than fire a link), and
+     * a banner naming who is asking. This is the whole difference between the store a person opens
+     * and the store a host opens, and it is deliberately this small.
+     */
+    handoff: HandoffSession? = null,
 ) {
     AzphaltExpressiveTheme {
         // The store's own record of what it has handed to a host (`models/LocalInventory.kt`).
@@ -83,9 +94,11 @@ fun StorefrontApp(
         // of keeping the record at all.
         var owned by remember { mutableStateOf(0) }
 
-        LaunchedEffect(Unit) {
+        LaunchedEffect(handoff) {
             try {
-                packages = fetchRegistryList()
+                // A handoff reads the catalogue narrowed to the requesting host; on its own the store
+                // browses everything.
+                packages = handoff?.load?.invoke() ?: fetchRegistryList()
             } catch (e: Exception) {
                 println("Failed to fetch packages: $e")
             } finally {
@@ -173,6 +186,8 @@ fun StorefrontApp(
                         localInventory = localInventory + (handed.id to installedEntry(handed.id, handed.version))
                         saveStoredInventory(localInventory.values)
                     },
+                    // In a handoff the Install button owes the caller bytes, not a link.
+                    onAcquire = handoff?.acquire,
                     onForget = { forgotten ->
                         localInventory = forgetInstall(localInventory, forgotten.id)
                         saveStoredInventory(localInventory.values)
@@ -182,13 +197,17 @@ fun StorefrontApp(
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     floatingActionButton = {
-                        ExtendedFloatingActionButton(
-                            onClick = { println("publish") },
-                            containerColor = MaterialTheme.colorScheme.tertiary,
-                            contentColor = MaterialTheme.colorScheme.onTertiary,
-                            shape = RectangleShape,
-                        ) {
-                            Text("Publish  +", fontWeight = FontWeight.Bold)
+                        // Publishing is a thing you come to the store to do, not something to offer
+                        // somebody who is halfway through another app's task.
+                        if (handoff == null) {
+                            ExtendedFloatingActionButton(
+                                onClick = { println("publish") },
+                                containerColor = MaterialTheme.colorScheme.tertiary,
+                                contentColor = MaterialTheme.colorScheme.onTertiary,
+                                shape = RectangleShape,
+                            ) {
+                                Text("Publish  +", fontWeight = FontWeight.Bold)
+                            }
                         }
                     },
                 ) { padding ->
@@ -200,6 +219,13 @@ fun StorefrontApp(
                         contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp),
                         verticalArrangement = Arrangement.spacedBy(30.dp),
                     ) {
+                        if (handoff != null) {
+                            item {
+                                Box(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                                    HandoffBanner(callerLabel = handoff.callerLabel, onCancel = handoff.cancel)
+                                }
+                            }
+                        }
                         item {
                             Box(Modifier.padding(horizontal = 24.dp)) { HeroSection(total = packages.size) }
                         }

@@ -64,6 +64,16 @@ fun DetailScreen(
     onHandedOff: (PackageSummary) -> Unit = {},
     /** The user says the store's record is wrong. See `models.forgetInstall`. */
     onForget: (PackageSummary) -> Unit = {},
+    /**
+     * Set when the store is browsing on another app's behalf (`models/HandoffSession.kt`): take this
+     * package and hand it back to whoever asked.
+     *
+     * When present it replaces both of the standalone actions — the `azphalt://install` link and the
+     * web checkout. A host that launched the store with `startActivityForResult` is sitting in its
+     * own callback waiting for verified bytes; firing a scheme at whatever else on the device happens
+     * to claim it would answer a question nobody asked, and leave the caller waiting.
+     */
+    onAcquire: ((PackageSummary) -> Unit)? = null,
 ) {
     val cs = MaterialTheme.colorScheme
 
@@ -333,19 +343,23 @@ fun DetailScreen(
                 shape = RectangleShape,
                 modifier = Modifier.azTurnstileEntrance(index = 3),
                 onClick = {
-                    if (isPaid(pkg)) {
-                        scope.launch {
-                            busy = true
-                            val result = try {
-                                startCheckout(pkg.id)
-                            } catch (e: Exception) {
-                                CheckoutResponse(error = e.message ?: "Checkout failed")
+                    when {
+                        // Acting for a caller: purchase (if paid), download, verify and return — all
+                        // of it driven by the entry point that owes the result.
+                        onAcquire != null -> onAcquire(pkg)
+                        isPaid(pkg) -> {
+                            scope.launch {
+                                busy = true
+                                val result = try {
+                                    startCheckout(pkg.id)
+                                } catch (e: Exception) {
+                                    CheckoutResponse(error = e.message ?: "Checkout failed")
+                                }
+                                dialogText = result.error ?: result.message ?: "Checkout started."
+                                busy = false
                             }
-                            dialogText = result.error ?: result.message ?: "Checkout started."
-                            busy = false
                         }
-                    } else {
-                        handoff()
+                        else -> handoff()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
