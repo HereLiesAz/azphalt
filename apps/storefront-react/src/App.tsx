@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   fetchPackages,
   formatCount,
@@ -10,7 +10,18 @@ import {
   type PackageSummary,
 } from "./api";
 import { drawPreview, paletteFor, rgba } from "./preview";
-import { attemptHandoff, downloadUrl, hostsFor, installLink, type HostOption } from "@azphalt/web-handoff";
+import {
+  attemptHandoff,
+  downloadUrl,
+  forgetInstall,
+  hostsFor,
+  installLink,
+  isHeld,
+  loadInventory,
+  recordInstalled,
+  type HostOption,
+  type InventoryEntry,
+} from "@azphalt/web-handoff";
 
 type Sort = "popular" | "rating" | "recent" | "name";
 const SORTS: Array<[Sort, string]> = [
@@ -25,20 +36,30 @@ const STILL = 0.32;
 // clips it down toward the edges, so a row reads thin · small · medium · HERO · medium · small · thin ·
 // thin… symmetric around a centered focus keyline (the M3 Expressive hero layout).
 // The top hero carousel's masked tiers.
-const HERO = 360;
-const MEDIUM = 244;
-const SMALL = 156;
-const THIN = 84;
-const HERO_H = 392; // the hero row's cards are taller than the plain rows below
+const HERO = 268;
+const MEDIUM = 186;
+const SMALL = 120;
+const THIN = 64;
+const HERO_H = 282; // the hero row's cards are taller than the plain rows below
 
 // The plain rows below the hero carousel: uniform cards (the design we had before the carousels).
-const ROW_W = 320;
-const ROW_H = 300;
+const ROW_W = 244;
+const ROW_H = 216;
 
 // The hero sits at the 2nd slot at rest (index 1), so a row reads small · HERO · medium · small ·
 // thin · thin …, and shifts one slot per SLOT pixels of scroll.
 const HERO_SLOT = 1;
-const SLOT = 244; // scroll distance that advances the focus by one card
+/**
+ * Scroll distance that advances the focus by one card: the card's laid-out width plus the flex gap
+ * between items (`.carousel` gap, theme.css).
+ *
+ * The gap used to be left out — SLOT was set equal to MEDIUM — which made the focus index drift by
+ * the gap's share of the pitch on every slot, about 5%, so roughly one whole card after sixteen. It
+ * was wrong before the cards shrank and shrinking made it worse, because the gap is a larger fraction
+ * of a smaller card.
+ */
+const CAROUSEL_GAP = 12;
+const SLOT = MEDIUM + CAROUSEL_GAP;
 
 /**
  * Mask width for a card `d` slots from the focus (0 = the hero; negative = to its left). Asymmetric:
@@ -57,6 +78,15 @@ function slotWidth(d: number): number {
 }
 
 /* ─────────────── shared bits ─────────────── */
+
+/**
+ * What this browser has handed to a host, for the cards.
+ *
+ * A context rather than a prop threaded through HeroCarousel and CardRow: every card wants it and
+ * neither of those components has anything else to do with it. The Compose storefront uses a
+ * CompositionLocal for the same reason (models/LocalHostInventory.kt).
+ */
+const InventoryContext = createContext<Record<string, InventoryEntry>>({});
 
 function Pill({ text, bg, fg }: { text: string; bg: string; fg: string }) {
   return <span className="pill" style={{ background: bg, color: fg }}>{text}</span>;
@@ -147,6 +177,7 @@ function PackageCard({
 }) {
   const [container, on] = paletteFor(pkg.id);
   const [hover, setHover] = useState(false);
+  const held = isHeld(useContext(InventoryContext), pkg.id);
   const paid = isPaid(pkg);
   const ratingLabel = formatRating(pkg.rating, pkg.ratingCount);
   return (
@@ -166,20 +197,26 @@ function PackageCard({
     >
       <div style={{ position: "relative", flex: 1, background: rgba(on, 0.05) }}>
         <PreviewCanvas pkg={pkg} tint={on} active={active} />
-        <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: 16 }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: 10 }}>
           <div style={{ display: "flex", gap: 6 }}>
             <Pill text={pkg.kind.toUpperCase()} bg={rgba(on, 0.16)} fg={on} />
             {isMature(pkg) && <Pill text="18+" bg="var(--secondary-container)" fg="var(--on-secondary-container)" />}
+            {/* Sits with kind and maturity rather than with the price: it describes the viewer's
+                relationship to the package, not the package's terms. Without it the install
+                confirmation promised a marking the catalogue never showed. */}
+            {held && <Pill text="INSTALLED" bg="var(--primary)" fg="var(--on-primary)" />}
           </div>
           <Pill text={priceLabel(pkg)} bg={paid ? "var(--primary)" : rgba(on, 0.16)} fg={paid ? "var(--on-primary)" : on} />
         </div>
       </div>
-      <div style={{ padding: "14px 20px 16px" }}>
-        <div style={{ fontSize: 20, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pkg.name}</div>
-        <div style={{ fontSize: 14, opacity: 0.75, marginTop: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+      <div style={{ padding: "9px 12px 10px" }}>
+        <div style={{ fontSize: 16, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pkg.name}</div>
+        {/* One line, not two. At two, a card is as tall as its longest description rather than as
+            tall as anything about the extension, and a row reads as a wall of prose. */}
+        <div style={{ fontSize: 12.5, opacity: 0.75, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {pkg.description ?? "No description available."}
         </div>
-        <div style={{ display: "flex", gap: 12, marginTop: 10, fontSize: 12, fontWeight: 700 }}>
+        <div style={{ display: "flex", gap: 10, marginTop: 6, fontSize: 11.5, fontWeight: 700 }}>
           {ratingLabel && <span>{ratingLabel}</span>}
           {(pkg.downloads ?? 0) > 0 && <span style={{ opacity: 0.7 }}>{formatCount(pkg.downloads as number)} installs</span>}
         </div>
@@ -314,7 +351,22 @@ function CardRow({ section, onOpen }: { section: CatalogSection; onOpen: (p: Pac
 
 /* ─────────────── detail ─────────────── */
 
-function Detail({ pkg, catalog, onBack }: { pkg: PackageSummary; catalog: PackageSummary[]; onBack: () => void }) {
+function Detail({
+  pkg,
+  catalog,
+  onBack,
+  onHandedOff,
+  onForget,
+}: {
+  pkg: PackageSummary;
+  catalog: PackageSummary[];
+  onBack: () => void;
+  /** A host took the link. The store records it so the catalog can show and filter on it. */
+  onHandedOff: (p: PackageSummary) => void;
+  /** The user says the store's record is wrong. See `forgetInstall`. */
+  onForget: (p: PackageSummary) => void;
+}) {
+  const held = isHeld(useContext(InventoryContext), pkg.id);
   const [container, on] = paletteFor(pkg.id);
   const [dialog, setDialog] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -335,7 +387,17 @@ function Detail({ pkg, catalog, onBack }: { pkg: PackageSummary; catalog: Packag
     try {
       // One link shape for everything free, packs included — a pack is a package with an id, and the
       // host resolves its members (spec/web-handoff.md § Packs). Nothing here names a host.
-      setNoHost(!(await attemptHandoff(installLink(pkg.id, pkg.version))));
+      const handed = await attemptHandoff(installLink(pkg.id, pkg.version));
+      if (handed) {
+        // Record it, and say so. The successful path used to be the silent one: the user left for a
+        // host, came back, and the page looked exactly as it had — no acknowledgement, and every card
+        // still offering to install it.
+        onHandedOff(pkg);
+        setDialog(
+          `“${pkg.name}” was sent to your host. It'll show as installed here — if it didn't arrive, install it again.`,
+        );
+      }
+      setNoHost(!handed);
     } finally {
       setBusy(false);
     }
@@ -391,8 +453,22 @@ function Detail({ pkg, catalog, onBack }: { pkg: PackageSummary; catalog: Packag
         disabled={busy}
         style={{ marginTop: 32, border: "none", borderRadius: 0, padding: "14px 28px", fontSize: 16, fontWeight: 700, background: "var(--primary)", color: "var(--on-primary)" }}
       >
-        {busy ? "Working…" : paid ? `Get  ·  ${priceLabel(pkg)}` : "Install  ·  Free"}
+        {busy ? "Working…" : held ? "Install again" : paid ? `Get  ·  ${priceLabel(pkg)}` : "Install  ·  Free"}
       </button>
+
+      {/* The store's record is a guess: a handoff can succeed and the install still not happen, and
+          on the web nothing ever contradicts it. This is how the user says so. */}
+      {held && (
+        <div>
+          <button
+            className="chip"
+            style={{ marginTop: 12 }}
+            onClick={() => onForget(pkg)}
+          >
+            Not installed? Remove from my library
+          </button>
+        </div>
+      )}
 
       {dialog && (
         <div onClick={() => setDialog(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, zIndex: 60 }}>
@@ -490,6 +566,10 @@ export function App() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("popular");
   const [price, setPrice] = useState(0);
+  // 0 = Any, 1 = Installed, 2 = Not installed — over the store’s own record, not the catalog.
+  const [owned, setOwned] = useState(0);
+  // What this browser has handed to a host. Loaded once; recording an install re-renders every card.
+  const [inventory, setInventory] = useState<Record<string, InventoryEntry>>(() => loadInventory());
   const [category, setCategory] = useState<string | null>(null);
   const [app, setApp] = useState<string | null>(null);
 
@@ -513,7 +593,7 @@ export function App() {
   const apps = useMemo(() => [...new Set(packages.flatMap((p) => p.targetApps ?? []))].sort(), [packages]);
   const sections = useMemo(() => buildSections(packages), [packages]);
 
-  const filtering = query.trim() !== "" || price !== 0 || category !== null || app !== null;
+  const filtering = query.trim() !== "" || price !== 0 || category !== null || app !== null || owned !== 0;
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = packages.filter((p) => {
@@ -521,7 +601,11 @@ export function App() {
       const matchesPrice = price === 1 ? !isPaid(p) : price === 2 ? isPaid(p) : true;
       const matchesCat = !category || (p.mediaDomains ?? []).includes(category);
       const matchesApp = !app || (p.targetApps ?? []).length === 0 || (p.targetApps ?? []).includes(app);
-      return matchesQuery && matchesPrice && matchesCat && matchesApp;
+      // `removed` is kept rather than deleted so a reinstall can be offered, so "have it" is a
+      // question about the state and not about the key being present — hence `isHeld`, not `in`.
+      const held = isHeld(inventory, p.id);
+      const matchesOwned = owned === 1 ? held : owned === 2 ? !held : true;
+      return matchesQuery && matchesPrice && matchesCat && matchesApp && matchesOwned;
     });
     const by = {
       popular: (a: PackageSummary, b: PackageSummary) => (b.downloads ?? 0) - (a.downloads ?? 0),
@@ -530,9 +614,10 @@ export function App() {
       name: (a: PackageSummary, b: PackageSummary) => a.name.localeCompare(b.name),
     }[sort];
     return [...filtered].sort(by);
-  }, [packages, query, price, category, app, sort]);
+  }, [packages, query, price, category, app, owned, inventory, sort]);
 
   return (
+    <InventoryContext.Provider value={inventory}>
     <div style={{ minHeight: "100%", paddingBottom: 96 }}>
       <div style={{ padding: "0 24px" }}>
         <Hero total={packages.length} />
@@ -545,6 +630,7 @@ export function App() {
           />
           <ChipRow label="Sort" items={SORTS} value={sort} onSelect={setSort} />
           <ChipRow label="Filter" items={[[0, "All"], [1, "Free"], [2, "Paid"]] as Array<[number, string]>} value={price} onSelect={setPrice} />
+          <ChipRow items={[[0, "Any"], [1, "Installed"], [2, "Not installed"]] as Array<[number, string]>} value={owned} onSelect={setOwned} />
           {categories.length > 0 && (
             <ChipRow
               items={[[null, "All types"], ...categories.map((c) => [c, c[0].toUpperCase() + c.slice(1)] as [string, string])] as Array<[string | null, string]>}
@@ -584,9 +670,16 @@ export function App() {
         <div className="detail-overlay" data-visible={detailVisible ? "true" : "false"}>
           {/* The whole catalogue, so the install fallback can build the host directory from its
               kind:"app" listings (spec/web-handoff.md § Host directory) without a second fetch. */}
-          <Detail pkg={selected} catalog={packages} onBack={close} />
+          <Detail
+            pkg={selected}
+            catalog={packages}
+            onBack={close}
+            onHandedOff={(p) => setInventory((inv) => recordInstalled(inv, p.id, p.version))}
+            onForget={(p) => setInventory((inv) => forgetInstall(inv, p.id))}
+          />
         </div>
       )}
     </div>
+    </InventoryContext.Provider>
   );
 }

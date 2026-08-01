@@ -41,7 +41,10 @@ function abortsMidStream(bytes: Uint8Array): Response {
   return new Response(body, { status: 200 });
 }
 
-const ok = (bytes: Uint8Array) => new Response(bytes, { status: 200 });
+// `.slice().buffer` rather than the view itself: `BodyInit` does not accept a
+// `Uint8Array<ArrayBufferLike>` under the current lib types, and slicing yields a standalone,
+// correctly-sized ArrayBuffer. Same pattern as `app/api/download/[id]/route.ts`.
+const ok = (bytes: Uint8Array) => new Response(bytes.slice().buffer, { status: 200 });
 
 afterEach(() => vi.unstubAllGlobals());
 

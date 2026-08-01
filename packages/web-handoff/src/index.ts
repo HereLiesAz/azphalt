@@ -39,6 +39,114 @@ export interface HandoffPackage {
 /** How long to wait before concluding nothing claimed the link. See `attemptHandoff`. */
 const HANDOFF_WAIT_MS = 1_400;
 
+/* ─────────────── the store's own inventory ─────────────── */
+
+/**
+ * What a host has done with a package — the `spec/state-reporting.md` § 1 vocabulary, as far as a
+ * storefront needs it.
+ */
+export type InventoryState = "downloaded" | "installed" | "active" | "failed" | "removed";
+
+export interface InventoryEntry {
+  id: string;
+  version: string;
+  state: InventoryState;
+  /** ISO-8601 instant this was recorded. */
+  at?: string;
+}
+
+/**
+ * Versioned and per-origin. A self-hosted storefront keeps its own record rather than inheriting the
+ * flagship's, and neither can read the other's.
+ */
+const INVENTORY_KEY = "azphalt.inventory.v1";
+
+/**
+ * The store's record of what it has handed to a host.
+ *
+ * A host telling the store what it holds is the better answer, and the Android store app gets one
+ * (`spec/state-reporting.md` § 3). A web page has no host to ask: it fires `azphalt://install` and
+ * learns nothing. Without keeping its own books every card says *Get*, including the ones the user
+ * just installed, and there is no way to filter what you already have.
+ *
+ * Never throws. Storage can be disabled or full, and neither is worth failing a browse over — what is
+ * lost is nicer labels.
+ */
+export function loadInventory(): Record<string, InventoryEntry> {
+  try {
+    const raw = window.localStorage.getItem(INVENTORY_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as { entries?: InventoryEntry[] };
+    const out: Record<string, InventoryEntry> = {};
+    for (const e of parsed.entries ?? []) if (e?.id) out[e.id] = e;
+    return out;
+  } catch {
+    // Corrupt storage, or storage switched off. Forgetting is the correct failure here.
+    return {};
+  }
+}
+
+/** Persist `entries`, replacing what was there. Silent no-op where there is nowhere to put it. */
+export function saveInventory(entries: Record<string, InventoryEntry>): void {
+  try {
+    window.localStorage.setItem(INVENTORY_KEY, JSON.stringify({ entries: Object.values(entries) }));
+  } catch {
+    /* quota, or storage disabled */
+  }
+}
+
+/**
+ * Record a successful handoff.
+ *
+ * Recorded as `installed` rather than `downloaded`, and the distinction is worth stating: the store
+ * did **not** observe an install. It observed that the user pressed Install and that a host claimed
+ * the link, which is the last thing a web page can observe. `downloaded` means "wanted and not yet
+ * had", which describes that moment worse than `installed` does — the user's next question is "did
+ * that work", and "not yet had" answers it wrongly in the common case.
+ */
+export function recordInstalled(
+  inventory: Record<string, InventoryEntry>,
+  id: string,
+  version: string,
+  at?: string,
+): Record<string, InventoryEntry> {
+  const next = { ...inventory, [id]: { id, version, state: "installed" as const, ...(at ? { at } : {}) } };
+  saveInventory(next);
+  return next;
+}
+
+/**
+ * Forget a locally-recorded install.
+ *
+ * The store's record is a guess (see `recordInstalled`), and a guess with no way to correct it is
+ * just a wrong answer that persists. A handoff can succeed — a host claimed the link — and the
+ * install still not happen, and on a web visit nothing will ever contradict that. This is how the
+ * user says so.
+ *
+ * Deletes the entry rather than marking it `removed`: `removed` is a *host's* statement that a
+ * package was uninstalled, which is a different claim from the store admitting it never knew.
+ */
+export function forgetInstall(
+  inventory: Record<string, InventoryEntry>,
+  id: string,
+): Record<string, InventoryEntry> {
+  const next = { ...inventory };
+  delete next[id];
+  saveInventory(next);
+  return next;
+}
+
+/**
+ * Whether the viewer has this package.
+ *
+ * `removed` is kept rather than deleted so a reinstall can be offered, so "has it" is a question
+ * about the state and not about the key being present.
+ */
+export function isHeld(inventory: Record<string, InventoryEntry>, id: string): boolean {
+  const s = inventory[id]?.state;
+  return s !== undefined && s !== "removed";
+}
+
 /**
  * The link a storefront emits for a package.
  *

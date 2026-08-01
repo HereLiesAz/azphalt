@@ -278,4 +278,17 @@ it should take when it is closed.
   so they need nothing new. No desktop host implements it yet, so the ergonomics are untested.
 - **Return path.** The link is one-way: the storefront never learns whether the install happened.
   [`state-reporting.md`](state-reporting.md) § 4 counts installs from the host's side, which covers
-  the statistic but not "show the user what they just installed".
+  the statistic but not this.
+
+  A storefront SHOULD keep its own record of what it handed over, so it can show and filter on what
+  the user already has rather than offering every package as though it were new. That record is a
+  **guess** and must be treated as one: it says a host claimed the link, which is the last thing a
+  web page can observe. Where a real host report exists — the on-device channel of
+  `state-reporting.md` § 3 — it MUST take precedence over the store's own record wherever the two
+  disagree, because one of them knows.
+
+  What is still unspecified is the confirmation: a way for a host to tell the storefront that the
+  install did or did not complete, which would let the guess be corrected rather than merely
+  overridden when a host happens to be present. That needs a return channel from an app to a web
+  origin, and the shape of it — a link back, an origin allowlist, what stops a page claiming
+  installs it never received — is not settled here.

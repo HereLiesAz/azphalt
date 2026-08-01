@@ -95,13 +95,18 @@ button {
   flex: 0 0 auto;
   scroll-snap-align: start;
   overflow: hidden; /* the mask */
-  height: 300px;
+  /* Height comes from the inline style in App.tsx (HERO_H). A number here was a second, stale copy
+     of that one — it read as the source of the card's height while being overridden on every render,
+     so shrinking the cards left it untouched and still saying 300. (The scroll handler animates
+     width only.) */
 }
 
 /* Plain browse rows below the hero carousel: uniform cards, horizontal scroll, no mask. */
 .card-row {
   display: flex;
-  gap: 20px;
+  /* Scaled with the cards. At 20px against a 244px card the gaps read as part of the rhythm rather
+     than as separation. */
+  gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   padding: 0 24px 6px;

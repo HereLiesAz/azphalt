@@ -77,13 +77,27 @@ internal fun isPaid(pkg: PackageSummary): Boolean = pkg.price != null || pkg.pri
  * layout and the fixed-width cards inside a [HeroCarousel]. All AzNavRail motion (turnstile entrance,
  * tilt-on-press, hover scale, animated border) is applied on top of whatever [modifier] sets.
  */
+/**
+ * Card geometry, owned here with the card rather than by whoever lays it out.
+ *
+ * Sized so a row shows more of the catalogue than it does of any one card: at the old 340×300 a
+ * desktop viewport fitted about three, which made browsing a paging exercise and gave a two-line
+ * description the same visual weight as the artwork above it.
+ *
+ * These were previously a private pair in `SectionCarousel` plus an unrelated default height on this
+ * composable — and because the carousel is the only caller and always passes an explicit size, that
+ * default was dead. Two numbers claiming to set one thing, one of them ignored. One source now.
+ */
+internal const val CARD_WIDTH = 244
+internal const val CARD_HEIGHT = 216
+
 @Composable
 fun PackageCard(
     pkg: PackageSummary,
     phase: Float,
     index: Int,
     onOpen: (PackageSummary) -> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth().height(272.dp),
+    modifier: Modifier = Modifier.fillMaxWidth().height(CARD_HEIGHT.dp),
     ageConfirmed: Boolean = true,
     onConfirmAge: () -> Unit = {},
 ) {
@@ -161,7 +175,7 @@ fun PackageCard(
                 } else {
                     PreviewArt(pkg, tint = onContainer, phase = phase, modifier = Modifier.fillMaxSize())
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Top,
                     ) {
@@ -197,23 +211,25 @@ fun PackageCard(
             }
 
             // Title + description block, then a downloads / rating footer.
-            Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 16.dp)) {
+            Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 9.dp, bottom = 10.dp)) {
                 Text(
                     text = pkg.name,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     color = onContainer,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = pkg.description ?: "No description available.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = onContainer.copy(alpha = 0.75f),
-                    maxLines = 2,
+                    // One line. At two, a card's height was set by its longest description rather than
+                    // by anything about the extension, and the row read as a wall of prose.
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(6.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

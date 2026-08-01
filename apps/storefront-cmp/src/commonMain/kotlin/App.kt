@@ -36,10 +36,16 @@ import components.StorefrontControls
 import components.buildSections
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.CompositionLocalProvider
+import models.ExtensionState
 import models.ExtensionStateEntry
 import models.LocalHostInventory
 import models.PackageSummary
+import models.forgetInstall
+import models.installedEntry
+import models.mergeInventories
 import network.fetchRegistryList
+import network.loadStoredInventory
+import network.saveStoredInventory
 import theme.AzphaltExpressiveTheme
 import theme.ExpressiveMotion
 
@@ -52,7 +58,17 @@ fun StorefrontApp(
     hostInventory: Map<String, ExtensionStateEntry> = emptyMap(),
 ) {
     AzphaltExpressiveTheme {
-      CompositionLocalProvider(LocalHostInventory provides hostInventory) {
+        // The store's own record of what it has handed to a host (`models/LocalInventory.kt`).
+        //
+        // Loaded once and kept in state so recording an install re-renders every card that mentions
+        // it — the grid, the carousels and the detail — without a reload.
+        var localInventory by remember { mutableStateOf(loadStoredInventory()) }
+
+        // A host's report wins wherever it says anything; this is only what the store believes in the
+        // absence of one. See `mergeInventories`.
+        val inventory = remember(localInventory, hostInventory) { mergeInventories(localInventory, hostInventory) }
+
+      CompositionLocalProvider(LocalHostInventory provides inventory) {
         var packages by remember { mutableStateOf<List<PackageSummary>>(emptyList()) }
         var loading by remember { mutableStateOf(true) }
         var selected by remember { mutableStateOf<PackageSummary?>(null) }
@@ -63,6 +79,9 @@ fun StorefrontApp(
         var price by remember { mutableStateOf(0) } // 0 = All, 1 = Free, 2 = Paid
         var category by remember { mutableStateOf<String?>(null) }
         var app by remember { mutableStateOf<String?>(null) }
+        // 0 = All, 1 = Installed, 2 = Not installed. Filtering on what you already have is the point
+        // of keeping the record at all.
+        var owned by remember { mutableStateOf(0) }
 
         LaunchedEffect(Unit) {
             try {
@@ -78,12 +97,19 @@ fun StorefrontApp(
         val apps = remember(packages) { packages.flatMap { it.targetApps }.distinct().sorted() }
 
         // Any active search/filter switches the page from curated section carousels to one results row.
-        val filtering = query.isNotBlank() || price != 0 || category != null || app != null
+        val filtering = query.isNotBlank() || price != 0 || category != null || app != null || owned != 0
         val filtered = packages.filter { p ->
             (query.isBlank() || listOf(p.name, p.description ?: "", p.author ?: "", p.id).any { it.contains(query, ignoreCase = true) }) &&
                 (when (price) {
                     1 -> p.price == null && p.priceStatus != "paid"
                     2 -> p.price != null || p.priceStatus == "paid"
+                    else -> true
+                }) &&
+                (when (owned) {
+                    // `REMOVED` is held rather than dropped so a reinstall can be offered, so "have it"
+                    // is a question about the state, not about the key being present.
+                    1 -> inventory[p.id]?.state.let { it != null && it != ExtensionState.REMOVED }
+                    2 -> inventory[p.id]?.state.let { it == null || it == ExtensionState.REMOVED }
                     else -> true
                 }) &&
                 (category == null || category in p.mediaDomains) &&
@@ -143,6 +169,14 @@ fun StorefrontApp(
                     ageConfirmed = ageConfirmed,
                     onConfirmAge = { ageConfirmed = true },
                     onBack = { selected = null },
+                    onHandedOff = { handed ->
+                        localInventory = localInventory + (handed.id to installedEntry(handed.id, handed.version))
+                        saveStoredInventory(localInventory.values)
+                    },
+                    onForget = { forgotten ->
+                        localInventory = forgetInstall(localInventory, forgotten.id)
+                        saveStoredInventory(localInventory.values)
+                    },
                 )
             } else {
                 Scaffold(
@@ -175,6 +209,7 @@ fun StorefrontApp(
                                     query = query, onQuery = { query = it },
                                     sort = sort, onSort = { sort = it },
                                     price = price, onPrice = { price = it },
+                                    owned = owned, onOwned = { owned = it },
                                     categories = categories, category = category, onCategory = { category = it },
                                     apps = apps, app = app, onApp = { app = it },
                                 )

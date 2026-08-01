@@ -196,8 +196,11 @@ body {
 /* Packages Grid & Cards */
 .packages-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
+  /* 300 → 244, the same card width the other two storefronts use (PackageGrid.kt CARD_WIDTH,
+     App.tsx ROW_W). At 300 a laptop viewport fitted three or four cards, which turned browsing a
+     150-package catalogue into a paging exercise. */
+  grid-template-columns: repeat(auto-fill, minmax(244px, 1fr));
+  gap: 16px;
 }
 
 .package-card {
@@ -205,7 +208,7 @@ body {
   background: rgba(19, 27, 35, 0.6);
   backdrop-filter: blur(16px);
   border-radius: var(--shape-corner-large);
-  padding: 24px;
+  padding: 14px;
   cursor: pointer;
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(0,0,0,0.2);
