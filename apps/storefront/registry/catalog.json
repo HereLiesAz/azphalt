@@ -3,6 +3,17 @@
   "signed": true,
   "packages": [
     {
+      "id": "com.azphalt.example.hello-lut",
+      "version": "1.0.0",
+      "name": "Hello LUT",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-T7djN/vXG0/4YEFLeMjJpmaALBvkqFZVES0Jp+bv0NY=",
+      "file": "com.azphalt.example.hello-lut-1.0.0.azp",
+      "bytes": 1270
+    },
+    {
       "id": "com.hereliesaz.azphalt.3d-protrusion",
       "version": "1.0.0",
       "name": "3D Protrusion",
@@ -564,6 +575,17 @@
       "bytes": 1198
     },
     {
+      "id": "com.hereliesaz.azphalt.graffux",
+      "version": "1.0.0",
+      "name": "Graffux",
+      "kind": "app",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-CUJNKS9zae3fidB7knzU85eprpuHJsh5YHNGT5ocN4M=",
+      "file": "com.hereliesaz.azphalt.graffux-1.0.0.azp",
+      "bytes": 1136
+    },
+    {
       "id": "com.hereliesaz.azphalt.grid-guide",
       "version": "1.0.0",
       "name": "Grid Guide",
@@ -584,6 +606,17 @@
       "integrity": "sha256-DFmw6DsQ8PQ02r2qnoBflAgp7ke2gh5aMkBgBjzI3eo=",
       "file": "com.hereliesaz.azphalt.gtcrn-1.0.0.azp",
       "bytes": 1430
+    },
+    {
+      "id": "com.hereliesaz.azphalt.guillotine",
+      "version": "1.0.0",
+      "name": "Guillotine",
+      "kind": "app",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-brujkmGtsq6jId6+r87NzVIJYzKaSoEEjySt1k2AJgg=",
+      "file": "com.hereliesaz.azphalt.guillotine-1.0.0.azp",
+      "bytes": 1147
     },
     {
       "id": "com.hereliesaz.azphalt.halftone",
@@ -1673,6 +1706,28 @@
       "integrity": "sha256-7OLGpAiolFisgzKZvuJJ74G+4bRms5vaxAmHhmvJxaQ=",
       "file": "com.hereliesaz.azphalt.zoom-punch-1.0.0.azp",
       "bytes": 2281
+    },
+    {
+      "id": "com.hereliesaz.guillotine.cool-noir",
+      "version": "1.0.0",
+      "name": "Cool Noir",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-8nB8Z0o7oiN7D90N22AfQH26p68MRyAJrfxF8eTiS4s=",
+      "file": "com.hereliesaz.guillotine.cool-noir-1.0.0.azp",
+      "bytes": 57936
+    },
+    {
+      "id": "com.hereliesaz.guillotine.teal-orange",
+      "version": "1.0.0",
+      "name": "Teal & Orange",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-TgEk16L3IE/EFApbmY9V2S714xTuVmEZrogMS+yVuNY=",
+      "file": "com.hereliesaz.guillotine.teal-orange-1.0.0.azp",
+      "bytes": 49840
     }
   ]
 }
