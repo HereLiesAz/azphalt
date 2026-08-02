@@ -140,6 +140,8 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
+                // Bundles src/commonMain/composeResources — the Jost typeface the Capsule system specifies.
+                implementation(compose.components.resources)
                 implementation(compose.ui)
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
             }

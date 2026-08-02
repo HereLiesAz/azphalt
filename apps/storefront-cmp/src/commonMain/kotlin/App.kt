@@ -63,6 +63,8 @@ import components.CascadeResults
 import components.displayStyle
 import components.eyebrowStyle
 import theme.CapsuleShape
+import components.SurfaceSwitch
+import network.openExternal
 import theme.Ground
 import theme.Roles
 import theme.AzphaltExpressiveTheme
@@ -235,6 +237,7 @@ fun StorefrontApp(
                                 }
                                 CapsuleHeader(
                                     total = packages.size,
+                                    inHandoff = handoff != null,
                                     query = query,
                                     onQuery = { query = it },
                                     filtering = filtering,
@@ -284,6 +287,7 @@ fun StorefrontApp(
 @Composable
 private fun CapsuleHeader(
     total: Int,
+    inHandoff: Boolean,
     query: String,
     onQuery: (String) -> Unit,
     filtering: Boolean,
@@ -295,12 +299,15 @@ private fun CapsuleHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Capsule(
-                label = "Azphalt",
-                background = Ground.Ink,
-                labelSize = 20,
-                height = 50.dp,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Capsule(
+                    label = "Azphalt",
+                    background = Ground.Ink,
+                    labelSize = 20,
+                    height = 50.dp,
+                )
+                if (!inHandoff) SurfaceSwitch(active = "Store", onNavigate = { openExternal(it) })
+            }
             Box(
                 modifier = Modifier
                     .clip(CapsuleShape.Full)

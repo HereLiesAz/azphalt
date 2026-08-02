@@ -1,6 +1,7 @@
 package theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -139,10 +140,13 @@ private val CapsuleColors = lightColorScheme(
  */
 @Composable
 fun AzphaltExpressiveTheme(dark: Boolean = true, content: @Composable () -> Unit) {
+    val jost = jostFamily()
+    CompositionLocalProvider(LocalJost provides jost) {
     MaterialTheme(
         colorScheme = CapsuleColors,
         typography = AzphaltType,
         shapes = AzphaltShapes,
         content = content,
     )
+    }
 }
