@@ -44,11 +44,14 @@ import models.PackageSummary
 import theme.Cascade
 import theme.CapsuleMotion
 import theme.Ground
+import theme.LocalJost
 import theme.Hues
 import theme.Roles
 
 /** Display type: 900 with negative tracking, uppercase. The only place type gets large. */
+@Composable
 fun displayStyle(size: Int) = TextStyle(
+    fontFamily = LocalJost.current,
     fontSize = size.sp,
     lineHeight = (size * 0.92f).sp,
     fontWeight = FontWeight.Black,
@@ -57,7 +60,9 @@ fun displayStyle(size: Int) = TextStyle(
 )
 
 /** Eyebrow: 800, tiny, very wide tracking. Section numbers and quiet counts. */
-val eyebrowStyle = TextStyle(
+val eyebrowStyle: TextStyle
+    @Composable get() = TextStyle(
+    fontFamily = LocalJost.current,
     fontSize = 11.sp,
     lineHeight = 11.sp,
     fontWeight = FontWeight.ExtraBold,
@@ -66,7 +71,9 @@ val eyebrowStyle = TextStyle(
 )
 
 /** Body: the only lowercase in the system, set heavy so it holds against the yellow. */
-val bodyStyle = TextStyle(
+val bodyStyle: TextStyle
+    @Composable get() = TextStyle(
+    fontFamily = LocalJost.current,
     fontSize = 17.sp,
     lineHeight = 25.sp,
     fontWeight = FontWeight.SemiBold,

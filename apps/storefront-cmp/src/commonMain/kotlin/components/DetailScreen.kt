@@ -122,6 +122,8 @@ fun DetailScreen(
     // attempt has come back with "nothing claimed it" — never shown pre-emptively, because on a device
     // that does have a host the user should simply arrive there.
     var noHost by remember(pkg.id) { mutableStateOf(false) }
+    // The receipt, after a successful handoff. Empty until there is something true to put in it.
+    var receipt by remember(pkg.id) { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
     val hosts = remember(pkg.id, catalog) { hostsFor(pkg, catalog) }
 
     // Whether the store believes the viewer already has this — from a host's report where there is
@@ -148,6 +150,15 @@ fun DetailScreen(
             noHost = !handed
             if (handed) {
                 onHandedOff(pkg)
+                // Only what the store actually observed: a host took the link, and it knows which
+                // version it named. It did NOT witness the download, the digest check or the
+                // signature — the host does those, out of sight. Claiming them would be a receipt
+                // for work this side never watched happen.
+                receipt = listOf(
+                    "Sent to a host" to "Ok",
+                    "Version" to pkg.version,
+                    "Verified by the host" to "On arrival",
+                )
                 dialogText = "“${pkg.name}” was sent to your host. It'll show as installed here — " +
                     "if it didn't arrive, install it again."
             }
@@ -373,6 +384,11 @@ fun DetailScreen(
                     },
                     fontWeight = FontWeight.Bold,
                 )
+            }
+
+            if (receipt.isNotEmpty()) {
+                Spacer(Modifier.height(14.dp))
+                Receipt(lines = receipt, modifier = Modifier.fillMaxWidth())
             }
 
             // The store's record is a guess: a handoff can succeed and the install still not happen,

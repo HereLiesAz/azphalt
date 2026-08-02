@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -40,6 +41,7 @@ import androidx.compose.material3.Text
 import theme.CapsuleMotion
 import theme.CapsuleShape
 import theme.Ground
+import theme.LocalJost
 
 /**
  * Capsule label type: 800 uppercase with positive tracking, so short words fill their capsule.
@@ -47,7 +49,9 @@ import theme.Ground
  * Always white on a hue — never ink. The guide is explicit about this and it is the thing that goes
  * wrong first when someone adds a pale hue.
  */
+@Composable
 fun capsuleLabelStyle(size: Int) = TextStyle(
+    fontFamily = LocalJost.current,
     fontSize = size.sp,
     lineHeight = size.sp,
     fontWeight = FontWeight.ExtraBold,
@@ -215,6 +219,7 @@ fun FactCapsule(key: String, value: String, modifier: Modifier = Modifier) {
         Text(
             text = key.uppercase(),
             style = TextStyle(
+                fontFamily = LocalJost.current,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.6.sp,
@@ -224,6 +229,7 @@ fun FactCapsule(key: String, value: String, modifier: Modifier = Modifier) {
         Text(
             text = value.uppercase(),
             style = TextStyle(
+                fontFamily = LocalJost.current,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Ground.Ink,
@@ -248,6 +254,7 @@ fun RecordLine(key: String, value: String) {
             text = key.uppercase(),
             modifier = Modifier.width(132.dp),
             style = TextStyle(
+                fontFamily = LocalJost.current,
                 fontSize = 9.sp,
                 lineHeight = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -258,11 +265,66 @@ fun RecordLine(key: String, value: String) {
         Text(
             text = value,
             style = TextStyle(
+                fontFamily = LocalJost.current,
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Ground.Ink,
             ),
         )
+    }
+}
+
+/**
+ * The surface switch — `azphalt.store` and `azphalt.org` beside the wordmark.
+ *
+ * The guide treats the store and the docs as two pages of one publication rather than two products,
+ * and this is the only thing that says so. Ink when active, hue when not; the inactive one navigates
+ * away, which is why it is the single place in the store that leaves the page.
+ */
+@Composable
+fun SurfaceSwitch(active: String, onNavigate: (String) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("Store" to "https://azphalt.store", "Docs" to "https://azphalt.org").forEach { (label, url) ->
+            val isActive = label.equals(active, ignoreCase = true)
+            Capsule(
+                label = label,
+                background = if (isActive) Ground.Ink else Ground.inkAt(0.14f),
+                cap = if (isActive) Color(0xFFF0D42A) else null,
+                labelSize = 11,
+                height = 34.dp,
+                onClick = if (isActive) null else ({ onNavigate(url) }),
+            )
+        }
+    }
+}
+
+/**
+ * The receipt: what the store can actually say about the bytes, after acquiring.
+ *
+ * Teal because "done" is one of the few roles that means something. It exists because the trust
+ * chain — integrity verified, signature checked, publisher pinned — was previously something the
+ * code did carefully and the interface never mentioned, so a user had no way to tell a verified
+ * install from an unverified one.
+ *
+ * Each line is only shown when it is actually known. A receipt that lists a signature for an unsigned
+ * package would be worse than no receipt at all.
+ */
+@Composable
+fun Receipt(lines: List<Pair<String, String>>, modifier: Modifier = Modifier) {
+    if (lines.isEmpty()) return
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        lines.forEachIndexed { i, (label, detail) ->
+            UnfoldingCapsule(
+                label = label,
+                background = Ground.Ink,
+                index = i,
+                cap = Color(0xFF1F9E86),
+                capText = detail,
+                labelSize = 11,
+                height = 34.dp,
+                modifier = Modifier.fillMaxWidth(0.52f + (i % 3) * 0.12f),
+            )
+        }
     }
 }

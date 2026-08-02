@@ -1,31 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700;800;900&display=swap');
 
+/*
+ * The Capsule system, mirrored from the Compose storefront (theme/Capsule.kt).
+ *
+ * The M3 token names are kept so every call site keeps resolving; what changed is what they point at.
+ * The radii are the notable ones — every "corner" token is now a full capsule, because the system has
+ * exactly one radius for anything pressable and one soft rectangle for the record.
+ */
 :root {
-  /* M3 Expressive Tokens */
-  --md-sys-color-background: #0f141a;
-  --md-sys-color-on-background: #e2e2e9;
-  --md-sys-color-surface: #131b23;
-  --md-sys-color-surface-variant: #2d3846;
-  --md-sys-color-on-surface: #e2e2e9;
-  --md-sys-color-on-surface-variant: #c0c6d2;
-  
-  --md-sys-color-primary: #a1c8fd;
-  --md-sys-color-on-primary: #00315d;
-  --md-sys-color-primary-container: #1b497b;
-  --md-sys-color-on-primary-container: #d3e4ff;
+  /* Ground */
+  --page: #e8c81e;
+  --ink: #1e1a17;
 
-  --md-sys-color-secondary: #bdc7dc;
-  --md-sys-color-on-secondary: #273141;
+  --md-sys-color-background: #e8c81e;
+  --md-sys-color-on-background: #1e1a17;
+  --md-sys-color-surface: #e8c81e;
+  --md-sys-color-surface-variant: rgba(30, 26, 23, 0.09);
+  --md-sys-color-on-surface: #1e1a17;
+  --md-sys-color-on-surface-variant: rgba(30, 26, 23, 0.62);
 
-  /* Typography */
-  --font-display: 'Outfit', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  
-  /* Radii */
-  --shape-corner-extra-large: 32px;
-  --shape-corner-large: 24px;
-  --shape-corner-medium: 16px;
-  --shape-corner-small: 8px;
+  --md-sys-color-primary: #1e1a17;
+  --md-sys-color-on-primary: #f0d42a;
+  --md-sys-color-primary-container: rgba(30, 26, 23, 0.14);
+  --md-sys-color-on-primary-container: #1e1a17;
+
+  --md-sys-color-secondary: #6b4fbb;
+  --md-sys-color-on-secondary: #ffffff;
+
+  /* Roles */
+  --acquire: #c6392f;
+  --acquired: #1f9e86;
+
+  /* Typography — one geometric grotesque, no body/display split. */
+  --font-display: Jost, Futura, "Century Gothic", Helvetica, sans-serif;
+  --font-body: Jost, Futura, "Century Gothic", Helvetica, sans-serif;
+
+  /* Radii. A capsule is a capsule at every size; only the record is a rectangle. */
+  --shape-corner-extra-large: 999px;
+  --shape-corner-large: 999px;
+  --shape-corner-medium: 999px;
+  --shape-corner-small: 999px;
+  --shape-corner-record: 18px;
+
+  --capsule-curve: cubic-bezier(0, 0.9, 0.1, 1);
 }
 
 * {
@@ -35,7 +52,8 @@
 }
 
 body {
-  background-color: var(--md-sys-color-background);
+  background: linear-gradient(100deg, #e4c21c 0%, #f0d42a 46%, #d9b615 50%, #f2d82c 54%, #e8c81e 100%);
+  background-attachment: fixed;
   color: var(--md-sys-color-on-background);
   font-family: var(--font-body);
   line-height: 1.5;
@@ -76,9 +94,8 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 16px 32px;
-  background: rgba(19, 27, 35, 0.4);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(30, 26, 23, 0.09);
+  border-bottom: none;
   z-index: 10;
 }
 
@@ -95,9 +112,8 @@ body {
 /* Sidebar */
 .layout-sidebar {
   width: 320px;
-  background: rgba(19, 27, 35, 0.4);
-  backdrop-filter: blur(24px);
-  border-right: 1px solid rgba(255,255,255,0.05);
+  background: rgba(30, 26, 23, 0.09);
+  border-right: none;
   display: flex;
   flex-direction: column;
   padding: 24px;
@@ -117,8 +133,8 @@ body {
 .search-input {
   width: 100%;
   padding: 14px 16px 14px 44px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(30, 26, 23, 0.09);
+  border: none;
   border-radius: var(--shape-corner-medium);
   color: var(--md-sys-color-on-surface);
   font-family: var(--font-body);
@@ -128,7 +144,7 @@ body {
 
 .search-input:focus {
   outline: none;
-  background: rgba(255,255,255,0.08);
+  background: rgba(30, 26, 23, 0.09);
   border-color: var(--md-sys-color-primary);
 }
 
@@ -158,7 +174,7 @@ body {
 }
 
 .category-item:hover {
-  background: rgba(255,255,255,0.03);
+  background: rgba(30, 26, 23, 0.09);
   color: var(--md-sys-color-on-surface);
 }
 
@@ -203,22 +219,22 @@ body {
   gap: 16px;
 }
 
+/* A record, not a card: a slightly darker patch of the same page. The record radius is the one place
+   the system is not a full capsule. */
 .package-card {
   position: relative;
-  background: rgba(19, 27, 35, 0.6);
-  backdrop-filter: blur(16px);
-  border-radius: var(--shape-corner-large);
+  background: rgba(30, 26, 23, 0.09);
+  border-radius: var(--shape-corner-record);
   padding: 14px;
   cursor: pointer;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
 }
 
 .package-card-border-glow {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   border-radius: inherit;
-  border: 1px solid var(--md-sys-color-primary);
+  border: none;
   pointer-events: none;
 }
 
@@ -250,7 +266,7 @@ body {
 .hero-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(30, 26, 23, 0.28);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,17 +279,16 @@ body {
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
-  border-radius: var(--shape-corner-extra-large);
+  border-radius: var(--shape-corner-record);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 32px 64px rgba(0,0,0,0.6);
   overflow: hidden;
 }
 
 .hero-header {
   padding: 40px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  background: rgba(255,255,255,0.02);
+  border-bottom: none;
+  background: rgba(30, 26, 23, 0.09);
   position: relative;
 }
 
@@ -340,13 +355,13 @@ body {
 }
 
 .btn-surface {
-  background: rgba(255,255,255,0.05);
+  background: rgba(30, 26, 23, 0.09);
   color: var(--md-sys-color-on-surface);
 }
 
 .btn-glass {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: none;
   color: var(--md-sys-color-on-surface);
 }
 
@@ -360,7 +375,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: rgba(255,255,255,0.05);
+  background: rgba(30, 26, 23, 0.09);
   color: var(--md-sys-color-on-surface-variant);
 }
 
@@ -378,8 +393,8 @@ body {
 
 .asset-item {
   padding: 20px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(30, 26, 23, 0.09);
+  border: none;
   border-radius: var(--shape-corner-large);
   display: flex;
   align-items: center;

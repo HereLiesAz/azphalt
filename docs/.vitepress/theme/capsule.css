@@ -1,0 +1,135 @@
+/*
+ * The Capsule system applied to azphalt.org.
+ *
+ * The style guide covers both surfaces — "the visual system behind the azphalt.org and azphalt.store
+ * redesign" — and the docs were the half still running VitePress defaults while the store went yellow.
+ * Two pages of one publication should not look like two products.
+ *
+ * This overrides VitePress's design tokens rather than restyling its components: the theme is built
+ * on CSS variables precisely so a site can repoint them, and rewriting its selectors would break on
+ * the next VitePress minor.
+ *
+ * What is deliberately NOT done here: the cascade. A documentation page is prose, and prose set as a
+ * stack of capsules is unreadable. The capsule is for things you press or that name something — nav,
+ * sidebar links, buttons, badges — and body copy stays body copy.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700;800;900&display=swap");
+
+:root {
+  /* Ground. The fold is on the body; the content column sits on it. */
+  --vp-c-bg: #e8c81e;
+  --vp-c-bg-alt: #e8c81e;
+  --vp-c-bg-soft: rgba(30, 26, 23, 0.09);
+  --vp-c-bg-elv: rgba(30, 26, 23, 0.09);
+
+  --vp-c-text-1: #1e1a17;
+  --vp-c-text-2: rgba(30, 26, 23, 0.78);
+  --vp-c-text-3: rgba(30, 26, 23, 0.55);
+
+  /* No borders. Contrast comes from the hue against the yellow. */
+  --vp-c-divider: rgba(30, 26, 23, 0.14);
+  --vp-c-border: transparent;
+  --vp-c-gutter: rgba(30, 26, 23, 0.14);
+
+  /* Brand = ink, because the wordmark capsule is ink. */
+  --vp-c-brand-1: #1e1a17;
+  --vp-c-brand-2: #6b4fbb;
+  --vp-c-brand-3: #6b4fbb;
+  --vp-c-brand-soft: rgba(107, 79, 187, 0.16);
+
+  --vp-c-default-soft: rgba(30, 26, 23, 0.09);
+  --vp-c-tip-soft: rgba(31, 158, 134, 0.16);
+  --vp-c-warning-soft: rgba(217, 118, 42, 0.16);
+  --vp-c-danger-soft: rgba(198, 57, 47, 0.16);
+
+  --vp-font-family-base: Jost, Futura, "Century Gothic", Helvetica, sans-serif;
+
+  /* Buttons are capsules. */
+  --vp-button-brand-bg: #1e1a17;
+  --vp-button-brand-text: #f0d42a;
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-hover-bg: #6b4fbb;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-border: transparent;
+
+  --capsule-curve: cubic-bezier(0, 0.9, 0.1, 1);
+}
+
+/* One theme. There is no dark variant of printed stock — a dark mode would be a second design. */
+.dark {
+  --vp-c-bg: #e8c81e;
+  --vp-c-bg-alt: #e8c81e;
+  --vp-c-bg-soft: rgba(30, 26, 23, 0.09);
+  --vp-c-bg-elv: rgba(30, 26, 23, 0.09);
+  --vp-c-text-1: #1e1a17;
+  --vp-c-text-2: rgba(30, 26, 23, 0.78);
+  --vp-c-text-3: rgba(30, 26, 23, 0.55);
+}
+
+/* The spread, with the fold. Fixed so it reads as the page rather than as a scrolling texture. */
+body {
+  background: linear-gradient(100deg, #e4c21c 0%, #f0d42a 46%, #d9b615 50%, #f2d82c 54%, #e8c81e 100%);
+  background-attachment: fixed;
+}
+
+/* Titles: 900, negative tracking, uppercase — the display voice. */
+.VPDoc h1,
+.vp-doc h1,
+.VPHero .name,
+.VPHero .text {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.vp-doc h2,
+.vp-doc h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  border-top: none; /* VitePress rules an h2 off with a divider; the system has no rules. */
+}
+
+/* Anything pressable is a capsule. */
+.VPButton,
+.VPNavBarMenuLink,
+.VPSidebarItem .link,
+.VPBadge,
+.DocSearch-Button {
+  border-radius: 999px !important;
+  border: none !important;
+}
+
+.VPBadge {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.VPButton {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Code keeps a monospace face and a soft rectangle: it is a record, not a capsule, and a capsule
+   that wraps is not a capsule. */
+.vp-doc div[class*="language-"],
+.vp-doc pre,
+.vp-doc code {
+  border-radius: 18px;
+  border: none;
+}
+
+/* No shadows anywhere: the page is flat printed stock. */
+.VPNavBar,
+.VPSidebar,
+.VPLocalNav,
+.VPDoc,
+.custom-block {
+  box-shadow: none !important;
+}
+
+.custom-block {
+  border-radius: 18px;
+  border: none;
+}
