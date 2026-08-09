@@ -333,6 +333,17 @@
       "bytes": 1389
     },
     {
+      "id": "com.hereliesaz.azphalt.dev-workflow-skills",
+      "version": "1.0.0",
+      "name": "Dev Workflow Skills",
+      "kind": "skill",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-xlXkUK70jA9qcQFB1yt7nf+P0yEonJs1ngz1K9JrhiM=",
+      "file": "com.hereliesaz.azphalt.dev-workflow-skills-1.0.0.azp",
+      "bytes": 14264
+    },
+    {
       "id": "com.hereliesaz.azphalt.diarization-box",
       "version": "2.0.0",
       "name": "Diarization Box",
