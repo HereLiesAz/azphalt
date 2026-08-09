@@ -75,6 +75,15 @@ import {
   checkSkillProfileDeclaration,
   type SkillHost,
 } from "./skill-checks.js";
+import {
+  checkScriptRejectTampered,
+  checkScriptRejectUnsafePath,
+  checkScriptRejectNonScript,
+  checkScriptSurfacesCommand,
+  checkScriptCompat,
+  checkScriptProfileDeclaration,
+  type ScriptHost,
+} from "./script-checks.js";
 
 export interface ConformanceReport {
   /** True iff every check passed. */
@@ -204,6 +213,26 @@ export async function runSkillConformance(host: SkillHost): Promise<ConformanceR
   return { ok: checks.every((c) => c.ok), checks };
 }
 
+/**
+ * Run the **script host** conformance battery against `host` — the profile an app implements to
+ * consume `kind:"script"` packages (`spec/script.md`). It certifies that the host verifies the
+ * header, refuses tampered / unsafe / non-`script` / incompatible packages, surfaces the declared
+ * command, and declares a `script` profile a registry can match on. Resolving `dependencies` and
+ * invoking the script (with real OS/package-manager access, outside the azphalt sandbox) is the
+ * host's own concern.
+ */
+export async function runScriptConformance(host: ScriptHost): Promise<ConformanceReport> {
+  const checks: CheckResult[] = [
+    await checkScriptRejectTampered(host),
+    await checkScriptRejectUnsafePath(host),
+    await checkScriptRejectNonScript(host),
+    await checkScriptSurfacesCommand(host),
+    await checkScriptCompat(host),
+    checkScriptProfileDeclaration(host),
+  ];
+  return { ok: checks.every((c) => c.ok), checks };
+}
+
 export { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 export { satisfiesCompat } from "./checks.js";
 export * as fixtures from "./fixtures.js";
@@ -224,6 +253,7 @@ export type {
 } from "./companion-checks.js";
 export type { McpHost, McpLoadReport } from "./mcp-checks.js";
 export type { SkillHost, SkillLoadReport } from "./skill-checks.js";
+export type { ScriptHost, ScriptLoadReport } from "./script-checks.js";
 export type {
   VideoAudioHost,
   HostProfile,

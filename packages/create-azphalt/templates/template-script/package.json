@@ -1,0 +1,14 @@
+{
+  "name": "my-azphalt-script",
+  "version": "0.1.0",
+  "description": "A native script (kind:\"script\") package for azphalt — a header that declares an interpreter, its system dependencies, and the script itself.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@azphalt/azp": "^0.4.0"
+  },
+  "license": "MIT",
+  "author": "Your Name"
+}

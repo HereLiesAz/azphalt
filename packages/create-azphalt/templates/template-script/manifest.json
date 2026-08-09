@@ -1,0 +1,18 @@
+{
+  "azphalt": "0.1",
+  "id": "com.example.azphalt.my-script",
+  "name": "My Script",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "script",
+  "script": {
+    "interpreter": "bash",
+    "entry": "script/main.sh",
+    "command": "my-script",
+    "dependencies": {
+      "apt": ["jq"]
+    }
+  }
+}

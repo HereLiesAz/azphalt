@@ -11,6 +11,7 @@ import { validateAppManifest } from "./app.js";
 import { validateMcpManifest } from "./mcp.js";
 import { validatePackManifest } from "./pack.js";
 import { validateSkillManifest } from "./skill.js";
+import { validateScriptManifest } from "./script.js";
 
 /**
  * Fixed archive timestamp for reproducible output. Built from LOCAL fields on purpose: fflate
@@ -163,6 +164,8 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     errors.push(...validateAppManifest(manifest));
   } else if (manifest.kind === "skill") {
     errors.push(...validateSkillManifest(manifest));
+  } else if (manifest.kind === "script") {
+    errors.push(...validateScriptManifest(manifest));
   }
 
   // Signature (optional): validate an Ed25519 `signature.json` over the stored `manifest.json` bytes.
@@ -207,3 +210,4 @@ export { validateAppManifest } from "./app.js";
 export { validateMcpManifest } from "./mcp.js";
 export { validatePackManifest } from "./pack.js";
 export { validateSkillManifest } from "./skill.js";
+export { validateScriptManifest } from "./script.js";

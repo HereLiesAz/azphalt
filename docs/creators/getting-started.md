@@ -157,6 +157,42 @@ runtime executes. Scaffold one with `npm create azphalt@latest` → **Skill**:
 
 Publish it like any other package. See the [skill spec](/specs/skill).
 
+## Building a Script
+
+A **script** (`kind: "script"`) is a native script — bash, Python, PowerShell, whatever — that a host
+installs and runs the way a package manager installs its own package: declare what it needs, and the
+host resolves that before making the script runnable. It's not `kind: "code"` — a script needs real
+filesystem/process access to do anything useful, the same reason an MCP server can't be a sandboxed
+extension either, so it gets its own kind rather than a "native" flavor of `code`. Scaffold one with
+`npm create azphalt@latest` → **Script**:
+
+```jsonc
+{
+  "kind": "script",
+  "script": {
+    "interpreter": "bash",
+    "entry": "script/git-sync.sh",
+    "command": "git-sync",
+    "dependencies": { "apt": ["git", "openssh"] }
+  }
+}
+```
+
+- `interpreter` and `entry` are required; `entry` is the real, integrity-covered script payload — not a
+  pointer to something launched elsewhere.
+- `command` is what the script should be callable as once installed; omit it and the host picks a
+  reasonable default.
+- `dependencies` is optional and namespaced by package manager (`apt`, `brew`, …) — omit it entirely for
+  a script needing nothing beyond what the host already guarantees. When the interpreter itself might be
+  missing, list its package here too: `dependencies: { "apt": ["python3"] }` alongside
+  `interpreter: "python3"` is expected, not redundant — `interpreter` says what runs the script,
+  `dependencies` says what to install first.
+- A script package carries **no** `capabilities` and **no** `/code` `entry`/`runtime` — dependency
+  resolution and execution happen at the host's own OS/package-manager layer, never as an azphalt editor
+  capability.
+
+Publish it like any other package. See the [script spec](/specs/script).
+
 ## What's Next?
 - Check out the [Manifest Schema](/specs/extension-manifest) to see how you can manually write a complex `manifest.json` for multi-asset packs.
 - See how apps will **consume** what you publish: [Use the Store from Your App](/hosts/getting-started).
