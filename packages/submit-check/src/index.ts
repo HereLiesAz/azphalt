@@ -30,9 +30,10 @@ const REQUIRED = ["azphalt", "name", "version", "kind", "license", "compat"] as 
  * `spec/web-handoff.md` § Host directory tells people to publish.
  *
  * The header kinds carry no payload by design, which is why the `assets`/`entry` checks below simply
- * find nothing to complain about; `verifyAzp` is what enforces their structure (`packages/azp`).
+ * find nothing to complain about; `verifyAzp` is what enforces their structure (`packages/azp`). `skill`
+ * is the one exception that DOES carry a real payload (its bundled `SKILL.md` files) — see `spec/skill.md`.
  */
-const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack"];
+const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill"];
 
 /** All files under `dir`, as `/`-separated paths relative to `dir`. */
 function walk(dir: string, prefix = ""): string[] {

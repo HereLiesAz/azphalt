@@ -276,6 +276,11 @@ const TEMPLATES = [
     description: "A kind:\"mcp\" header that declares how a host reaches your MCP server (local or remote)."
   },
   {
+    title: "Skill (For Developers)",
+    value: "template-skill",
+    description: "A kind:\"skill\" bundle of one or more Agent Skills (SKILL.md) for an AI-agent host."
+  },
+  {
     title: "Extension Pack (For Developers)",
     value: "template-pack",
     description: "A kind:\"pack\" header that bundles a recommended / base set of packages (any author) for your app."

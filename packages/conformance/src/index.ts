@@ -66,6 +66,15 @@ import {
   checkMcpProfileDeclaration,
   type McpHost,
 } from "./mcp-checks.js";
+import {
+  checkSkillRejectTampered,
+  checkSkillRejectUnsafePath,
+  checkSkillRejectNonSkill,
+  checkSkillSurfacesSkill,
+  checkSkillCompat,
+  checkSkillProfileDeclaration,
+  type SkillHost,
+} from "./skill-checks.js";
 
 export interface ConformanceReport {
   /** True iff every check passed. */
@@ -175,6 +184,26 @@ export async function runMcpConformance(host: McpHost): Promise<ConformanceRepor
   return { ok: checks.every((c) => c.ok), checks };
 }
 
+/**
+ * Run the **skill host** conformance battery against `host` — the profile an AI-agent app implements to
+ * consume `kind:"skill"` packages (`spec/skill.md`). It certifies that the host verifies the header,
+ * runs none of the bundled `SKILL.md` as code (refusing tampered / unsafe / non-`skill` / incompatible
+ * packages), surfaces the declared skill, and declares a `skill` profile a registry can match on.
+ * Parsing `SKILL.md` against the Agent Skills format and exposing it to the agent/model is the host's
+ * own concern.
+ */
+export async function runSkillConformance(host: SkillHost): Promise<ConformanceReport> {
+  const checks: CheckResult[] = [
+    await checkSkillRejectTampered(host),
+    await checkSkillRejectUnsafePath(host),
+    await checkSkillRejectNonSkill(host),
+    await checkSkillSurfacesSkill(host),
+    await checkSkillCompat(host),
+    checkSkillProfileDeclaration(host),
+  ];
+  return { ok: checks.every((c) => c.ok), checks };
+}
+
 export { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 export { satisfiesCompat } from "./checks.js";
 export * as fixtures from "./fixtures.js";
@@ -194,6 +223,7 @@ export type {
   CompanionInvocation,
 } from "./companion-checks.js";
 export type { McpHost, McpLoadReport } from "./mcp-checks.js";
+export type { SkillHost, SkillLoadReport } from "./skill-checks.js";
 export type {
   VideoAudioHost,
   HostProfile,
