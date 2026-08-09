@@ -44,7 +44,7 @@ README.md         optional
 Every package MUST contain `manifest.json` and `LICENSE`. `assets/` and/or `code/` are present per `kind`.
 
 ## Package kind
-Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app` | `mcp` | `pack` | `skill`.
+Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app` | `mcp` | `pack` | `skill` | `script`.
 - `asset` — data only (brushes, LUTs, patterns). No executable code; a host MAY load it with no runtime. This is what importers produce.
 - `code` — one or more extensions on the sandbox (JS on QuickJS-in-WASM, or raw WASM).
 - `mixed` — both (e.g. a filter shipping its own LUTs).
@@ -52,6 +52,7 @@ Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app` | `mcp` |
 - `mcp` — an **MCP server** a host's MCP client connects to. A header (an `mcp` block) that declares how to reach the server; no `/code`, no `capabilities` (see extension-manifest.md § mcp and mcp-server.md).
 - `pack` — an **extension pack**: a curated set that **references** other packages by id (a recommended bundle or an app's base set). A header (a `pack` block); no `/code`, no `capabilities`, no assets. Each member is resolved and free/paid-gated individually (see extension-manifest.md § pack and pack.md).
 - `skill` — a **skill bundle**: one or more [Agent Skills](https://agentskills.io/specification) an AI-agent host loads. A `skill` block declaring each bundled skill's `id` (plus advisory `name`/`description`); no `capabilities`, no `/code` `entry`/`runtime` — but unlike `app`/`mcp`/`pack` it DOES carry a real payload, the `SKILL.md` files themselves at `skills/<id>/` (see extension-manifest.md § skill and skill.md).
+- `script` — a **native script** (bash, Python, PowerShell, …) a host installs and runs like a package manager's own package: a `script` block declaring `interpreter`, `entry`, an optional `command`/`args`, and optional `dependencies` (system packages, namespaced by package manager, resolved before the script runs). No `capabilities`, no `/code` `entry`/`runtime` — but like `skill` it DOES carry a real payload, the script file itself (see extension-manifest.md § script and script.md).
 
 ## Assets
 - Assets are **normalized, host-neutral data** — never a host-proprietary blob. Per-asset parameters (and a shader's or transition's declared inputs) live in the manifest.

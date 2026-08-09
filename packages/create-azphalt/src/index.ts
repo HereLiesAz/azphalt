@@ -281,6 +281,11 @@ const TEMPLATES = [
     description: "A kind:\"skill\" bundle of one or more Agent Skills (SKILL.md) for an AI-agent host."
   },
   {
+    title: "Script (For Developers)",
+    value: "template-script",
+    description: "A kind:\"script\" native script (bash/Python/PowerShell) a host installs and runs like a package-manager package."
+  },
+  {
     title: "Extension Pack (For Developers)",
     value: "template-pack",
     description: "A kind:\"pack\" header that bundles a recommended / base set of packages (any author) for your app."

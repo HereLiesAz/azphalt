@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill`. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script`. |
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
@@ -275,6 +275,9 @@ For a `kind: "pack"` **extension pack** (a curated set — a recommended bundle 
 
 ## `skill`
 For a `kind: "skill"` **skill bundle** (one or more [Agent Skills](https://agentskills.io/specification) an AI-agent host loads), the manifest carries a `skill` block instead of `assets`/`entry`/`capabilities`/`app`/`mcp`/`pack`. Unlike `app`/`mcp`/`pack` it is not a pure reference/launch header — `skill.skills[]` (≥ 1) each declare an `id`, plus advisory `name`/`description` mirroring the bundled `SKILL.md` frontmatter, and the package payload carries the real files at `skills/<id>/SKILL.md` (and optional `scripts/`/`references`/`assets/`, per the Agent Skills convention). It grants **no** azphalt capabilities and ships **no** `/code` sandbox `entry`/`runtime` — the payload is instructional text and support files an agent reads, not code an azphalt runtime executes. The full contract (packaging, discovery, verification) is normative in **skill.md**.
+
+## `script`
+For a `kind: "script"` **native script** (bash, Python, PowerShell, …) a host installs and runs the way a package manager installs its own package, the manifest carries a `script` block instead of `assets`/`entry`/`capabilities`/`app`/`mcp`/`pack`/`skill`. `script.interpreter` and `script.entry` are required; `script.command`/`script.args` are optional; `script.dependencies` is an optional object mapping a package-manager namespace (`"apt"`, `"brew"`, …) to an array of package names, resolved by the host before the script runs. Like `skill` it is not a pure reference header — the package payload carries the real script file at `script.entry`. It grants **no** azphalt capabilities and ships **no** `/code` sandbox `entry`/`runtime`: it needs real OS/package-manager access to do anything useful, the same reasoning that keeps an MCP server out of the `code` sandbox, so it gets its own kind rather than a "native" flavor of `code`. The full contract (packaging, installation, discovery, verification) is normative in **script.md**.
 
 ## Example
 ~~~

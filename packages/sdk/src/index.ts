@@ -13,7 +13,7 @@
 export const FORMAT_VERSION = "0.1" as const;
 
 /* ───────────────────────────── Manifest ───────────────────────────── */
-export type Kind = "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill";
+export type Kind = "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill" | "script";
 export type Runtime = "js" | "wasm";
 
 /** 
@@ -507,6 +507,18 @@ export interface Manifest {
   skill?: SkillManifest;
 
   /**
+   * For a `kind: "script"` package — a native script (bash, Python, PowerShell, …) that runs
+   * outside the azphalt sandbox with real OS access, the way a package manager's `.deb`/`pkg`
+   * entry does. Like {@link McpManifest} it declares no azphalt `capabilities` and no `/code`
+   * sandbox `entry`/`runtime` — a script needs real filesystem/process access to do anything
+   * useful, the same reasoning that keeps an MCP server out of the `code` sandbox. Unlike
+   * `app`/`mcp`/`pack` it DOES carry a real payload — the script file itself — and unlike `skill`
+   * its payload is meant to be *executed*, not read into a prompt. See {@link ScriptManifest} and
+   * `spec/script.md`.
+   */
+  script?: ScriptManifest;
+
+  /**
    * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffux"]`).
    * A repository shows an app-scoped package only to a matching app; **absent or empty means the
    * package is global** (available to every app). Scoping is a discovery filter, not access control.
@@ -904,6 +916,47 @@ export interface SkillEntry {
   name?: string;
   /** Short description, mirroring the `SKILL.md` frontmatter `description`. */
   description?: string;
+}
+
+/* ───────────────────────────── Script (kind: "script") ───────────────────────────── */
+
+/**
+ * The `script` block of a `kind: "script"` package — a native script that runs outside the
+ * azphalt sandbox with real OS access, installed the way a package manager's own package is: the
+ * host resolves {@link dependencies} (installing anything missing) before making the script
+ * runnable. Like {@link McpManifest} it is a manifest header carrying no azphalt `capabilities`
+ * and no `/code` `entry`/`runtime` — the host's own OS/package-manager access governs it, never an
+ * azphalt editor capability. Unlike `app`/`mcp`/`pack` it bundles a real payload (the script file
+ * itself), and unlike `skill` that payload is meant to be executed, not read into a prompt. See
+ * `spec/script.md`.
+ */
+export interface ScriptManifest {
+  /**
+   * The interpreter/runtime the script needs, e.g. `"bash"`, `"python3"`, `"pwsh"`. Open
+   * vocabulary — a host maps this to an actual executable on its platform (and, when the same
+   * name also appears in {@link dependencies}, to the package that provides it).
+   */
+  interpreter: string;
+  /** In-package path to the script payload, e.g. `"script/main.sh"`. */
+  entry: string;
+  /**
+   * The name the script should be callable as once installed (e.g. on `PATH`), if different from
+   * an id-derived default. Absent means the host picks a reasonable default from `id`/`name`.
+   */
+  command?: string;
+  /** Default arguments passed on every invocation, before any caller-supplied ones. */
+  args?: string[];
+  /**
+   * System packages the script needs, namespaced by package manager (`"apt"`, `"brew"`, `"apk"`,
+   * …) — open vocabulary, like {@link McpWasiServer.grants}. A host installs only the namespace(s)
+   * it understands and ignores the rest; a script needing nothing beyond what's already on the
+   * host (e.g. a `bash` script on a host that always has `bash`) omits this entirely. The
+   * interpreter's own package is an ordinary entry here when it might not already be present —
+   * declaring `dependencies: { apt: ["python3"] }` for `interpreter: "python3"` is expected, not
+   * redundant: `interpreter` says what to run the script *with*, `dependencies` says what must be
+   * *installed* first, and they commonly name the same package for exactly that reason.
+   */
+  dependencies?: Record<string, string[]>;
 }
 
 /* ───────────────────────────── UI schema ───────────────────────────── */
