@@ -10,6 +10,7 @@ import type { Manifest } from "@azphalt/azdk";
 import { validateAppManifest } from "./app.js";
 import { validateMcpManifest } from "./mcp.js";
 import { validatePackManifest } from "./pack.js";
+import { validateSkillManifest } from "./skill.js";
 
 /**
  * Fixed archive timestamp for reproducible output. Built from LOCAL fields on purpose: fflate
@@ -160,6 +161,8 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     errors.push(...validatePackManifest(manifest));
   } else if (manifest.kind === "app") {
     errors.push(...validateAppManifest(manifest));
+  } else if (manifest.kind === "skill") {
+    errors.push(...validateSkillManifest(manifest));
   }
 
   // Signature (optional): validate an Ed25519 `signature.json` over the stored `manifest.json` bytes.
@@ -203,3 +206,4 @@ export type { Compat, Comparator } from "./compat.js";
 export { validateAppManifest } from "./app.js";
 export { validateMcpManifest } from "./mcp.js";
 export { validatePackManifest } from "./pack.js";
+export { validateSkillManifest } from "./skill.js";

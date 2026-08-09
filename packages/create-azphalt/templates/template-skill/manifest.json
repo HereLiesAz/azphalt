@@ -1,0 +1,19 @@
+{
+  "azphalt": "0.1",
+  "id": "com.example.azphalt.my-skill",
+  "name": "My Skill",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "skill",
+  "skill": {
+    "skills": [
+      {
+        "id": "example",
+        "name": "Example Skill",
+        "description": "Describe what this skill teaches an agent to do."
+      }
+    ]
+  }
+}

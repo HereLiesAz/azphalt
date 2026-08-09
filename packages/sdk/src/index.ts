@@ -13,7 +13,7 @@
 export const FORMAT_VERSION = "0.1" as const;
 
 /* ───────────────────────────── Manifest ───────────────────────────── */
-export type Kind = "asset" | "code" | "mixed" | "app" | "mcp" | "pack";
+export type Kind = "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill";
 export type Runtime = "js" | "wasm";
 
 /** 
@@ -497,6 +497,16 @@ export interface Manifest {
   pack?: PackManifest;
 
   /**
+   * For a `kind: "skill"` package — a bundle of one or more **agent skills** (instructional
+   * `SKILL.md` + optional `scripts`/`references`/`assets`, per the external Agent Skills format) an
+   * AI-agent host loads. Like {@link McpManifest} it is a manifest header: no azphalt `capabilities`
+   * and no `/code` sandbox `entry`/`runtime` — the payload is instructional text and support files a
+   * host's *agent* reads, not code an azphalt runtime executes. See {@link SkillManifest} and
+   * `spec/skill.md`.
+   */
+  skill?: SkillManifest;
+
+  /**
    * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffux"]`).
    * A repository shows an app-scoped package only to a matching app; **absent or empty means the
    * package is global** (available to every app). Scoping is a discovery filter, not access control.
@@ -862,6 +872,38 @@ export interface PackEntry {
   required?: boolean;
   /** Optional short human note shown beside the member (why it's in the pack). */
   note?: string;
+}
+
+/* ───────────────────────────── Skill (kind: "skill") ───────────────────────────── */
+
+/**
+ * The `skill` block of a `kind: "skill"` package — one or more **agent skills** an AI-agent host
+ * loads. Like {@link McpManifest} / {@link AppManifest} it is a manifest *header*: it carries no
+ * `/code` sandbox payload and no azphalt `capabilities`. Unlike those, it DOES bundle a real
+ * payload — each entry's `SKILL.md` (and optional `scripts/`/`references/`/`assets/`) lives in the
+ * package at `skills/<id>/`, discovered the same way an Agent Plugins package discovers skills. The
+ * `SKILL.md` format itself is defined by the external Agent Skills specification
+ * (agentskills.io/specification), not by azphalt; this block only advertises what's bundled, for the
+ * store card and a host's browse list. See `spec/skill.md`.
+ */
+export interface SkillManifest {
+  /** One or more bundled skills — at least one is required. */
+  skills: SkillEntry[];
+}
+
+/**
+ * One skill bundled at `skills/<id>/SKILL.md` in the package payload. `name` / `description` mirror
+ * the `SKILL.md` frontmatter and are **advisory** — a host that parses `SKILL.md` treats it, not this
+ * entry, as authoritative; the fields exist here so a store card / browse list can show them without
+ * extracting and parsing every bundled skill.
+ */
+export interface SkillEntry {
+  /** Directory name under `skills/` — the package payload has `skills/<id>/SKILL.md`. */
+  id: string;
+  /** Human-readable name, mirroring the `SKILL.md` frontmatter `name`. */
+  name?: string;
+  /** Short description, mirroring the `SKILL.md` frontmatter `description`. */
+  description?: string;
 }
 
 /* ───────────────────────────── UI schema ───────────────────────────── */
