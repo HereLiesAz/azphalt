@@ -10,6 +10,7 @@ describe("format helpers", () => {
     expect(kindLabel("mixed")).toBe("Code + assets");
     expect(kindLabel("mcp")).toBe("MCP server");
     expect(kindLabel("pack")).toBe("Extension pack");
+    expect(kindLabel("skill")).toBe("Skill");
   });
 
   it("summarizes a handoff IO, marking optional params", () => {

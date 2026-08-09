@@ -112,6 +112,16 @@ private val AzphaltShapes = Shapes(
  * capsules take a hashed hue from `Hues`. This mapping exists so a stray framework component that
  * reads `MaterialTheme.colorScheme` lands somewhere sane instead of on Material's purple defaults.
  * Store code should reach for `Ground` and `Hues` directly.
+ *
+ * The surface-container family (`surfaceContainer*`, `surfaceDim`/`surfaceBright`) and the inverse
+ * roles are listed explicitly, not left to `lightColorScheme()`'s defaults. `lightColorScheme()` only
+ * derives the roles you omit from Material's own baseline neutral-variant palette — it does NOT compute
+ * them from `primary`/`surface` — so an omitted `surfaceContainerHigh` silently keeps Material's default
+ * violet-tinted light gray. `AlertDialog` reads its container color from exactly that role
+ * (`AlertDialogDefaults.containerColor`), which is what put a lavender box behind `NoHostSheet` /
+ * `FlagDialog` against the yellow page. Every surface role therefore lands on `Ground.Page` (or `Ink` for
+ * the inverse pair), so any stray M3 surface — dialog, sheet, menu — matches the one surface this system
+ * has: the page itself. `surfaceTint` is transparent because Capsule has no elevation tinting.
  */
 private val CapsuleColors = lightColorScheme(
     primary = Ground.Ink,
@@ -126,6 +136,17 @@ private val CapsuleColors = lightColorScheme(
     onSurface = Ground.Ink,
     surfaceVariant = Ground.Page,
     onSurfaceVariant = Ground.inkAt(0.62f),
+    surfaceTint = Color.Transparent,
+    surfaceDim = Ground.Page,
+    surfaceBright = Ground.Page,
+    surfaceContainerLowest = Ground.Page,
+    surfaceContainerLow = Ground.Page,
+    surfaceContainer = Ground.Page,
+    surfaceContainerHigh = Ground.Page,
+    surfaceContainerHighest = Ground.Page,
+    inverseSurface = Ground.Ink,
+    inverseOnSurface = Ground.Page,
+    inversePrimary = Ground.Page,
     outline = Ground.inkAt(0.22f),
     error = Hues.Bg[6],
     onError = Color.White,

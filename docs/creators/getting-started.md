@@ -129,6 +129,34 @@ bytes in your app and load them at startup with `readAzp` — no network — usi
 include" list. Pack = the *which extensions*; your app picks bundle-now vs. fetch-on-first-run. See the
 [pack spec](/specs/pack).
 
+## Building a Skill
+
+A **skill** (`kind: "skill"`) bundles one or more [Agent Skills](https://agentskills.io/specification) —
+`SKILL.md` plus optional `scripts/`, `references/`, and `assets/` — for an AI-agent host to load, the same
+way `kind: "mcp"` packages an MCP server: a signed header the host reads, not sandboxed code an azphalt
+runtime executes. Scaffold one with `npm create azphalt@latest` → **Skill**:
+
+```jsonc
+{
+  "kind": "skill",
+  "skill": {
+    "skills": [
+      { "id": "release-notes", "name": "Release Notes", "description": "Draft release notes from a range of commits." }
+    ]
+  }
+}
+```
+
+- Each entry's `id` names a directory in the package: `skills/<id>/SKILL.md` (plus its `scripts/` /
+  `references/` / `assets/`). `name` / `description` mirror the `SKILL.md` frontmatter and power the store
+  card — a host that parses `SKILL.md` treats it, not this block, as authoritative.
+- A skill package carries **no** `capabilities` and **no** `/code` `entry`/`runtime` — it's instructional
+  text and support files an agent reads, not code an azphalt runtime executes.
+- To bundle more than one skill, add another `skills/<id>/SKILL.md` directory and a matching entry in
+  `skill.skills`.
+
+Publish it like any other package. See the [skill spec](/specs/skill).
+
 ## What's Next?
 - Check out the [Manifest Schema](/specs/extension-manifest) to see how you can manually write a complex `manifest.json` for multi-asset packs.
 - See how apps will **consume** what you publish: [Use the Store from Your App](/hosts/getting-started).

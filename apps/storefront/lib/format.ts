@@ -70,6 +70,7 @@ export function kindLabel(kind: string): string {
   if (kind === "app") return "Companion app";
   if (kind === "mcp") return "MCP server";
   if (kind === "pack") return "Extension pack";
+  if (kind === "skill") return "Skill";
   return kind;
 }
 
