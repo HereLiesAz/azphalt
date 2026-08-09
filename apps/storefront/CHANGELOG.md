@@ -1,5 +1,17 @@
 # @azphalt/storefront
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [bdbdb9b]
+  - @azphalt/azdk@0.4.0
+  - @azphalt/azp@0.4.0
+  - @azphalt/repository-server@0.1.4
+  - @azphalt/registry@0.3.1
+  - @azphalt/runtime-reference@0.1.4
+  - @azphalt/registry-store-vercel@2.0.1
+
 ## 0.1.3
 
 ### Patch Changes

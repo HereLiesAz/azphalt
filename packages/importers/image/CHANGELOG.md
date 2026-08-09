@@ -1,5 +1,13 @@
 # @azphalt/importer-image
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [bdbdb9b]
+  - @azphalt/azdk@0.4.0
+  - @azphalt/azp@0.4.0
+
 ## 0.1.3
 
 ### Patch Changes
