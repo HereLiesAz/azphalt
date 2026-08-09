@@ -1,5 +1,13 @@
 # @azphalt/marketplace
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [bdbdb9b]
+  - @azphalt/azdk@0.4.0
+  - @azphalt/repository-client@0.3.1
+
 ## 0.1.4
 
 ### Patch Changes

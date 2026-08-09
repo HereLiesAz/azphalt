@@ -1,5 +1,11 @@
 # @azphalt/registry-store-vercel
 
+## 2.0.1
+
+### Patch Changes
+
+- @azphalt/registry@0.3.1
+
 ## 2.0.0
 
 ### Patch Changes
