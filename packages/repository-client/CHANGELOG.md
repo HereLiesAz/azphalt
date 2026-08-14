@@ -1,5 +1,12 @@
 # @azphalt/repository-client
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [f36110b]
+  - @azphalt/azdk@0.5.0
+
 ## 0.3.1
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @azphalt/importer-palette
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [f36110b]
+  - @azphalt/azdk@0.5.0
+  - @azphalt/azp@0.5.0
+
 ## 0.2.2
 
 ### Patch Changes
