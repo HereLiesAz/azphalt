@@ -1,5 +1,7 @@
 # azphalt
 
+<img src="docs/assets/logo.svg" alt="azphalt" width="96" height="96">
+
 **An open, portable extension standard for creative apps.** Write an extension once — a brush, a filter, a tool — and it runs in any app that adopts azphalt. Plus a consignment marketplace built on top of it. VSCode's extension marketplace shows us the way. 
 
 The pitch in one line: the paint/photo world's extensions are trapped — a Photoshop plugin runs only in Photoshop, a Procreate brush is useless off an iPad, every store is a walled silo. azphalt is the portable format nobody built, and the registry that lets it travel.
