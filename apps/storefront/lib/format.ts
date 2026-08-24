@@ -71,6 +71,8 @@ export function kindLabel(kind: string): string {
   if (kind === "mcp") return "MCP server";
   if (kind === "pack") return "Extension pack";
   if (kind === "skill") return "Skill";
+  if (kind === "script") return "Script";
+  if (kind === "composable") return "Composable";
   return kind;
 }
 

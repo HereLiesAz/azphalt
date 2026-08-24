@@ -13,7 +13,7 @@
 export const FORMAT_VERSION = "0.1" as const;
 
 /* ───────────────────────────── Manifest ───────────────────────────── */
-export type Kind = "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill" | "script";
+export type Kind = "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill" | "script" | "composable";
 export type Runtime = "js" | "wasm";
 
 /** 
@@ -519,6 +519,16 @@ export interface Manifest {
   script?: ScriptManifest;
 
   /**
+   * For a `kind: "composable"` package — one or more **UI element descriptions** a host's own
+   * already-compiled renderer interprets. Like {@link McpManifest} / {@link AppManifest} / {@link PackManifest}
+   * it is a pure manifest *header*: no azphalt `capabilities`, no `/code` sandbox `entry`/`runtime`, and
+   * (unlike `skill`/`script`) no bundled payload file at all — every field is inline data. A composable
+   * package never carries code or new template ids; it only *selects* a `templateId` from a template
+   * library the host already linked at build time. See {@link ComposableManifest} and `spec/composable.md`.
+   */
+  composable?: ComposableManifest;
+
+  /**
    * Reverse-DNS ids of the host apps this extension targets (e.g. `["com.hereliesaz.graffux"]`).
    * A repository shows an app-scoped package only to a matching app; **absent or empty means the
    * package is global** (available to every app). Scoping is a discovery filter, not access control.
@@ -957,6 +967,66 @@ export interface ScriptManifest {
    * *installed* first, and they commonly name the same package for exactly that reason.
    */
   dependencies?: Record<string, string[]>;
+}
+
+/* ───────────────────────────── Composable (kind: "composable") ───────────────────────────── */
+
+/**
+ * The `composable` block of a `kind: "composable"` package — one or more **UI element
+ * descriptions** a host's own already-compiled renderer interprets. Unlike every other real-payload
+ * kind ({@link SkillManifest}, {@link ScriptManifest}) this carries **no bundled file** — it is a pure
+ * header, like {@link McpManifest} / {@link AppManifest} / {@link PackManifest}, because every field is
+ * inline data rather than a path into the package. There is no bytecode anywhere in this block: only
+ * a `templateId` selecting from a library the host already linked at build time, plus the host's own
+ * design-token values to apply to it. See `spec/composable.md`.
+ */
+export interface ComposableManifest {
+  /**
+   * The build-resolved template library this package's `templateId` values are drawn from — purely
+   * descriptive metadata for display/matching. azphalt never fetches, verifies, or resolves it; the
+   * host's own build system (Gradle, npm, …) already did.
+   */
+  library: ComposableLibrary;
+  /** One or more UI elements this package describes — at least one is required. */
+  elements: ComposableElement[];
+}
+
+/** A package-manager coordinate naming the template library a composable package was authored against. */
+export interface ComposableLibrary {
+  /** The library's group/namespace, e.g. a Gradle/Maven `groupId` or an npm scope. */
+  group: string;
+  /** The library's artifact/module name. */
+  artifact: string;
+  /** The version this package was authored against. Advisory — a host resolves against whatever it linked. */
+  version?: string;
+}
+
+/**
+ * One UI element: a `templateId` from the declared {@link ComposableManifest.library}, the host's own
+ * token values to render it with, what it does, and a checkable declaration of what it's *for*. Every
+ * field beyond `id` is **open vocabulary** — azphalt validates only non-emptiness; a host maps each
+ * value into its own template/token/action system.
+ */
+export interface ComposableElement {
+  /** A directory-safe id identifying the element within the package, unique within it. Not a payload path. */
+  id: string;
+  /** The id of a template the named library provides. Open vocabulary, defined entirely by that library. */
+  templateId: string;
+  /** The host's color-role token (e.g. one of a host's named hues, or a "caps" variant). Host-defined. */
+  hue: string;
+  /** The host's surface-shape token, e.g. `recordTile` / `note` / `capsule`. Host-defined. */
+  surface: string;
+  /** The host's type-scale step, e.g. `hero` / `section` / `lead` / `body` / `capsule` / `eyebrow` / `endCap` / `micro`. Host-defined. */
+  scale: string;
+  /** What the element does — the user-facing action it performs (e.g. `create`, `delete`, `send`). Host-defined. */
+  act: string;
+  /**
+   * A checkable declaration of the real jobs this element does — plain-language statements of what
+   * it's *for*, not how it looks (e.g. `"confirms a destructive action"`). At least one is required.
+   * azphalt validates only that each entry is a non-empty string; judging whether a job claim holds is
+   * a host/reviewer concern.
+   */
+  jobs: string[];
 }
 
 /* ───────────────────────────── UI schema ───────────────────────────── */

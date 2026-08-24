@@ -84,6 +84,15 @@ import {
   checkScriptProfileDeclaration,
   type ScriptHost,
 } from "./script-checks.js";
+import {
+  checkComposableRejectTampered,
+  checkComposableRejectUnsafePath,
+  checkComposableRejectNonComposable,
+  checkComposableSurfacesElement,
+  checkComposableCompat,
+  checkComposableProfileDeclaration,
+  type ComposableHost,
+} from "./composable-checks.js";
 
 export interface ConformanceReport {
   /** True iff every check passed. */
@@ -233,6 +242,26 @@ export async function runScriptConformance(host: ScriptHost): Promise<Conformanc
   return { ok: checks.every((c) => c.ok), checks };
 }
 
+/**
+ * Run the **composable host** conformance battery against `host` — the profile an app implements to
+ * consume `kind:"composable"` packages (`spec/composable.md`). It certifies that the host verifies
+ * the header, refuses tampered / unsafe / non-`composable` / incompatible packages, surfaces the
+ * declared elements, and declares a `composable` profile a registry can match on. Resolving each
+ * `templateId` against the host's own build-linked template library and rendering it is the host's
+ * own concern — there is no code anywhere in this kind for azphalt to run.
+ */
+export async function runComposableConformance(host: ComposableHost): Promise<ConformanceReport> {
+  const checks: CheckResult[] = [
+    await checkComposableRejectTampered(host),
+    await checkComposableRejectUnsafePath(host),
+    await checkComposableRejectNonComposable(host),
+    await checkComposableSurfacesElement(host),
+    await checkComposableCompat(host),
+    checkComposableProfileDeclaration(host),
+  ];
+  return { ok: checks.every((c) => c.ok), checks };
+}
+
 export { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 export { satisfiesCompat } from "./checks.js";
 export * as fixtures from "./fixtures.js";
@@ -254,6 +283,7 @@ export type {
 export type { McpHost, McpLoadReport } from "./mcp-checks.js";
 export type { SkillHost, SkillLoadReport } from "./skill-checks.js";
 export type { ScriptHost, ScriptLoadReport } from "./script-checks.js";
+export type { ComposableHost, ComposableLoadReport } from "./composable-checks.js";
 export type {
   VideoAudioHost,
   HostProfile,

@@ -193,6 +193,47 @@ extension either, so it gets its own kind rather than a "native" flavor of `code
 
 Publish it like any other package. See the [script spec](/specs/script).
 
+## Building a Composable
+
+A **composable** (`kind: "composable"`) describes one or more UI elements for a host's own
+already-compiled renderer to build — never code an azphalt runtime executes. It selects a
+`templateId` from a template *library* your host app links at build time (e.g. a Gradle
+`implementation("group:artifact:x.y.z")` dependency), the same way `kind: "mcp"`/`kind: "app"`
+package a signed header rather than sandboxed code. Scaffold one with `npm create azphalt@latest` →
+**Composable**:
+
+```jsonc
+{
+  "kind": "composable",
+  "composable": {
+    "library": { "group": "com.hereliesaz.conveyance", "artifact": "conveyance-m3-expressive", "version": "1.4.0" },
+    "elements": [
+      {
+        "id": "confirm-record",
+        "templateId": "m3e.tile.record",
+        "hue": "azure",
+        "surface": "recordTile",
+        "scale": "lead",
+        "act": "create",
+        "jobs": ["confirms a destructive action", "shows the record being created"]
+      }
+    ]
+  }
+}
+```
+
+- `library` is purely descriptive — azphalt never fetches or resolves it. A `templateId` a host
+  never linked simply fails to resolve at render time: a missing-dependency error, not a security
+  question, since nothing was ever downloaded or executed on the host's behalf.
+- `hue`, `surface`, `scale`, and `act` are your host's own design-token vocabulary (open strings) —
+  azphalt validates only that they're non-empty, never what they mean.
+- `jobs` is a checkable declaration of what the element is actually *for* — write down its real
+  purpose so a reviewer (or you, later) can check the element against its own claim.
+- A composable package carries **no** `capabilities` and **no** `/code` `entry`/`runtime` — and
+  unlike `skill`/`script` it bundles no payload file at all; every field is inline in the manifest.
+
+Publish it like any other package. See the [composable spec](/specs/composable).
+
 ## What's Next?
 - Check out the [Manifest Schema](/specs/extension-manifest) to see how you can manually write a complex `manifest.json` for multi-asset packs.
 - See how apps will **consume** what you publish: [Use the Store from Your App](/hosts/getting-started).

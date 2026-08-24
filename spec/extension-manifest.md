@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script`. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script` \| `composable`. |
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
@@ -278,6 +278,9 @@ For a `kind: "skill"` **skill bundle** (one or more [Agent Skills](https://agent
 
 ## `script`
 For a `kind: "script"` **native script** (bash, Python, PowerShell, …) a host installs and runs the way a package manager installs its own package, the manifest carries a `script` block instead of `assets`/`entry`/`capabilities`/`app`/`mcp`/`pack`/`skill`. `script.interpreter` and `script.entry` are required; `script.command`/`script.args` are optional; `script.dependencies` is an optional object mapping a package-manager namespace (`"apt"`, `"brew"`, …) to an array of package names, resolved by the host before the script runs. Like `skill` it is not a pure reference header — the package payload carries the real script file at `script.entry`. It grants **no** azphalt capabilities and ships **no** `/code` sandbox `entry`/`runtime`: it needs real OS/package-manager access to do anything useful, the same reasoning that keeps an MCP server out of the `code` sandbox, so it gets its own kind rather than a "native" flavor of `code`. The full contract (packaging, installation, discovery, verification) is normative in **script.md**.
+
+## `composable`
+For a `kind: "composable"` **composable set** (one or more UI element *descriptions* a host's own already-compiled renderer interprets), the manifest carries a `composable` block instead of `assets`/`entry`/`capabilities`/`app`/`mcp`/`pack`/`skill`/`script`. Unlike every other real-payload kind (`skill`, `script`), `composable` is a **pure header** like `app`/`mcp`/`pack` — no bundled file at all, since every field is inline data in the manifest. `composable.library` names the build-time-resolved template library (`group`/`artifact`/`version`) this package's `templateId` values are drawn from — purely descriptive; azphalt never fetches or resolves it. `composable.elements[]` (≥ 1) each declare a `templateId` from that library plus a host's own token values (`hue`, `surface`, `scale`), an `act` (what it does), and `jobs[]` (a checkable declaration of what it's *for*). It grants **no** azphalt capabilities and ships **no** `/code` sandbox `entry`/`runtime` — there is no bytecode here at all, only values a host's own compiled code switches on, so this can never become dynamic code loading. The full contract (packaging, discovery, verification) is normative in **composable.md**.
 
 ## Example
 ~~~

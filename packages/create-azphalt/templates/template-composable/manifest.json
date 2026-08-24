@@ -1,0 +1,28 @@
+{
+  "azphalt": "0.1",
+  "id": "com.example.azphalt.my-composable",
+  "name": "My Composable",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "composable",
+  "composable": {
+    "library": {
+      "group": "com.example",
+      "artifact": "my-template-library",
+      "version": "1.0.0"
+    },
+    "elements": [
+      {
+        "id": "example",
+        "templateId": "example.tile",
+        "hue": "azure",
+        "surface": "recordTile",
+        "scale": "lead",
+        "act": "create",
+        "jobs": ["describe what this element is actually for, checkably"]
+      }
+    ]
+  }
+}

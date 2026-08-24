@@ -1,0 +1,14 @@
+{
+  "name": "my-azphalt-composable",
+  "version": "0.1.0",
+  "description": "A composable-set (kind:\"composable\") package for azphalt — UI element descriptions your host's own compiled renderer interprets.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@azphalt/azp": "^0.1.0"
+  },
+  "license": "MIT",
+  "author": "Your Name"
+}
