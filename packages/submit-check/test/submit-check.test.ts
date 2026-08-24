@@ -95,4 +95,178 @@ describe("submit-check", () => {
     expect(r.ok, r.errors.join("; ")).toBe(true);
     rmSync(dir, { recursive: true, force: true });
   });
+
+  // Every non-payload, non-asset `kind` gets its own submission test — `asset` above already covers
+  // the payload/remote-asset paths; these exercise the header kinds (`app`, `mcp`, `pack`) and the
+  // real-payload-but-no-/code kinds (`skill`, `script`, `composable`) through the same
+  // validateSubmission -> writeAzp -> verifyAzp path submissions actually go through, so a drift like
+  // the one `KINDS` fixed (three header kinds silently rejected as "invalid kind") gets caught here.
+
+  it("accepts a well-formed app (companion) submission", () => {
+    const dir = makeSubmission("com.you.companion", {
+      "manifest.json": JSON.stringify({
+        azphalt: "0.1",
+        id: "com.you.companion",
+        name: "Companion",
+        version: "1.0.0",
+        kind: "app",
+        license: "MIT",
+        compat: ">=0.1",
+        app: {
+          platforms: { android: { packageId: "com.you.companion" } },
+          roles: ["companion"],
+          handoffs: [
+            {
+              id: "edit",
+              action: "edit-image",
+              name: "Edit",
+              input: { assets: ["image"] },
+              output: { assets: ["image"] },
+              transport: { android: { intentAction: "com.you.companion.EDIT", resultMimeTypes: ["image/png"] } },
+            },
+          ],
+        },
+      }),
+      LICENSE: "MIT\n",
+    });
+    const r = validateSubmission(dir);
+    expect(r.ok, r.errors.join("; ")).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("accepts a well-formed mcp submission", () => {
+    const dir = makeSubmission("com.you.mcp", {
+      "manifest.json": JSON.stringify({
+        azphalt: "0.1",
+        id: "com.you.mcp",
+        name: "MCP Server",
+        version: "1.0.0",
+        kind: "mcp",
+        license: "MIT",
+        compat: ">=0.1",
+        mcp: { servers: [{ id: "main", remote: { type: "http", url: "https://mcp.example.com" } }] },
+      }),
+      LICENSE: "MIT\n",
+    });
+    const r = validateSubmission(dir);
+    expect(r.ok, r.errors.join("; ")).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("accepts a well-formed pack submission", () => {
+    const dir = makeSubmission("com.you.pack", {
+      "manifest.json": JSON.stringify({
+        azphalt: "0.1",
+        id: "com.you.pack",
+        name: "Starter Pack",
+        version: "1.0.0",
+        kind: "pack",
+        license: "MIT",
+        compat: ">=0.1",
+        pack: { entries: [{ id: "com.other.thing", required: true }] },
+      }),
+      LICENSE: "MIT\n",
+    });
+    const r = validateSubmission(dir);
+    expect(r.ok, r.errors.join("; ")).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("accepts a well-formed skill submission", () => {
+    const dir = makeSubmission("com.you.skill", {
+      "manifest.json": JSON.stringify({
+        azphalt: "0.1",
+        id: "com.you.skill",
+        name: "Release Notes",
+        version: "1.0.0",
+        kind: "skill",
+        license: "MIT",
+        compat: ">=0.1",
+        skill: { skills: [{ id: "release-notes", name: "Release Notes", description: "Draft release notes." }] },
+      }),
+      LICENSE: "MIT\n",
+      "skills/release-notes/SKILL.md": "---\nname: release-notes\ndescription: Draft release notes.\n---\nDo the thing.\n",
+    });
+    const r = validateSubmission(dir);
+    expect(r.ok, r.errors.join("; ")).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("accepts a well-formed script submission", () => {
+    const dir = makeSubmission("com.you.script", {
+      "manifest.json": JSON.stringify({
+        azphalt: "0.1",
+        id: "com.you.script",
+        name: "Git Sync",
+        version: "1.0.0",
+        kind: "script",
+        license: "MIT",
+        compat: ">=0.1",
+        script: { interpreter: "bash", entry: "script/git-sync.sh", command: "git-sync" },
+      }),
+      LICENSE: "MIT\n",
+      "script/git-sync.sh": "#!/usr/bin/env bash\necho sync\n",
+    });
+    const r = validateSubmission(dir);
+    expect(r.ok, r.errors.join("; ")).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("accepts a well-formed composable submission", () => {
+    const dir = makeSubmission("com.you.composable", {
+      "manifest.json": JSON.stringify({
+        azphalt: "0.1",
+        id: "com.you.composable",
+        name: "Confirm Record Tile",
+        version: "1.0.0",
+        kind: "composable",
+        license: "MIT",
+        compat: ">=0.1",
+        composable: {
+          library: { group: "com.hereliesaz.conveyance", artifact: "conveyance-m3-expressive", version: "1.4.0" },
+          elements: [
+            {
+              id: "confirm-record",
+              templateId: "m3e.tile.record",
+              hue: "azure",
+              surface: "recordTile",
+              scale: "lead",
+              act: "create",
+              jobs: ["confirms a destructive action"],
+            },
+          ],
+        },
+      }),
+      LICENSE: "MIT\n",
+    });
+    const r = validateSubmission(dir);
+    expect(r.ok, r.errors.join("; ")).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("rejects a composable submission carrying azphalt capabilities (header-only)", () => {
+    const dir = makeSubmission("com.you.composable-bad", {
+      "manifest.json": JSON.stringify({
+        azphalt: "0.1",
+        id: "com.you.composable-bad",
+        name: "Bad Composable",
+        version: "1.0.0",
+        kind: "composable",
+        license: "MIT",
+        compat: ">=0.1",
+        capabilities: ["bitmap"],
+        composable: {
+          library: { group: "com.example", artifact: "templates" },
+          elements: [
+            { id: "x", templateId: "t", hue: "azure", surface: "recordTile", scale: "lead", act: "create", jobs: ["j"] },
+          ],
+        },
+      }),
+      LICENSE: "MIT\n",
+    });
+    const r = validateSubmission(dir);
+    expect(r.ok).toBe(false);
+    expect(r.errors.join("\n")).toMatch(/must not declare capabilities/);
+    rmSync(dir, { recursive: true, force: true });
+  });
 });
