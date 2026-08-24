@@ -291,6 +291,11 @@ const TEMPLATES = [
     description: "A kind:\"pack\" header that bundles a recommended / base set of packages (any author) for your app."
   },
   {
+    title: "Composable (For Developers)",
+    value: "template-composable",
+    description: "A kind:\"composable\" header describing UI element(s) rendered from templates your host already links — no code, no new template ids."
+  },
+  {
     title: "Asset Pack (For Creators)",
     value: "template-asset-pack",
     description: "Boilerplate workspace for bundling images, audio, or 3D assets."

@@ -32,9 +32,10 @@ const REQUIRED = ["azphalt", "name", "version", "kind", "license", "compat"] as 
  * The header kinds carry no payload by design, which is why the `assets`/`entry` checks below simply
  * find nothing to complain about; `verifyAzp` is what enforces their structure (`packages/azp`). `skill`
  * and `script` are the exceptions that DO carry a real payload (bundled `SKILL.md` files, or a bundled
- * script file respectively) — see `spec/skill.md` and `spec/script.md`.
+ * script file respectively) — see `spec/skill.md` and `spec/script.md`. `composable` is a header kind
+ * like `app`/`mcp`/`pack` — see `spec/composable.md`.
  */
-const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill", "script"];
+const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable"];
 
 /** All files under `dir`, as `/`-separated paths relative to `dir`. */
 function walk(dir: string, prefix = ""): string[] {
