@@ -199,7 +199,7 @@ A **composable** (`kind: "composable"`) describes one or more UI elements for a 
 already-compiled renderer to build — never code an azphalt runtime executes. It selects a
 `templateId` from a template *library* your host app links at build time (e.g. a Gradle
 `implementation("group:artifact:x.y.z")` dependency), the same way `kind: "mcp"`/`kind: "app"`
-package a signed header rather than sandboxed code. Scaffold one with `npm create azphalt@latest` →
+each package a signed header rather than sandboxed code. Scaffold one with `npm create azphalt@latest` →
 **Composable**:
 
 ```jsonc
