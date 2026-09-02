@@ -137,168 +137,192 @@
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
       "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
       "version": "1.0.0",
-      "path": "brushes/acrylic-angular-shader"
+      "path": "brushes/acrylic-angular-shader",
+      "integrity": "sha256-a7qWA0S8cLG7c2U10UN4L1q/kwRTzqeu4S+nOEpaDyw="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-flat",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
       "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
       "version": "1.0.0",
-      "path": "brushes/acrylic-flat"
+      "path": "brushes/acrylic-flat",
+      "integrity": "sha256-JQCcy8Dr4ROuw+KPU39cv77Kcq6C2pM2oy3SmNvWgrk="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-round",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
       "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
       "version": "1.0.0",
-      "path": "brushes/acrylic-round"
+      "path": "brushes/acrylic-round",
+      "integrity": "sha256-FXpEkKMRiZ6wkrLx34nYZHSxX3O8ShBXSEMcMk7jisw="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
       "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
       "version": "1.0.0",
-      "path": "brushes/acrylic-sponge-dab"
+      "path": "brushes/acrylic-sponge-dab",
+      "integrity": "sha256-0hA6qJUTtPYZzWEaUnIr9tdXM+N4Px6QEhKergoAwHk="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-china-marker",
       "repo": "HereLiesAz/azphalt-brushset-ink",
       "ref": "098bcf8735f970ae1f21a7e099b3846cdb4d88b6",
       "version": "1.0.0",
-      "path": "brushes/china-marker"
+      "path": "brushes/china-marker",
+      "integrity": "sha256-fVloee4PcTg4j6iA1T4szQkPXmF9u1CcGz7dSYlfH70="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-chisel-marker",
       "repo": "HereLiesAz/azphalt-brushset-ink",
       "ref": "098bcf8735f970ae1f21a7e099b3846cdb4d88b6",
       "version": "1.0.0",
-      "path": "brushes/chisel-marker"
+      "path": "brushes/chisel-marker",
+      "integrity": "sha256-J01zE3apL3uNGeNR4Pa4uVASU2EDJLYcw1E13vQhnHs="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-conte-crayon",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
       "version": "1.0.0",
-      "path": "brushes/conte-crayon"
+      "path": "brushes/conte-crayon",
+      "integrity": "sha256-XeUzsyccRwgQoOBGI//d8q8lik82Pm5S0ECVlG5meQo="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-hard-chalk",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
       "version": "1.0.0",
-      "path": "brushes/hard-chalk"
+      "path": "brushes/hard-chalk",
+      "integrity": "sha256-uE3EmUUCwk7uwRxCxpyBau9LAtlVK7coSz/+gQAwNeA="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-ink-sumi",
       "repo": "HereLiesAz/azphalt-brushset-ink",
       "ref": "098bcf8735f970ae1f21a7e099b3846cdb4d88b6",
       "version": "1.0.0",
-      "path": "brushes/ink-sumi"
+      "path": "brushes/ink-sumi",
+      "integrity": "sha256-+D+MZvzTAL/v6UwA2FK9PgjdVLIV49lHFMIP5xsULXU="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush",
       "repo": "HereLiesAz/azphalt-brushset-oil",
       "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
       "version": "1.0.0",
-      "path": "brushes/oil-bristle-drybrush"
+      "path": "brushes/oil-bristle-drybrush",
+      "integrity": "sha256-pAAN/4cWQ2GB8CZREkU8prtYIPGl9NqMoRK7hAshlaI="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-fan-blade",
       "repo": "HereLiesAz/azphalt-brushset-oil",
       "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
       "version": "1.0.0",
-      "path": "brushes/oil-fan-blade"
+      "path": "brushes/oil-fan-blade",
+      "integrity": "sha256-pqjKQnludymv5T4lIz4EAT3cTF1NzuCERwQBlMDk7O4="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-filbert",
       "repo": "HereLiesAz/azphalt-brushset-oil",
       "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
       "version": "1.0.0",
-      "path": "brushes/oil-filbert"
+      "path": "brushes/oil-filbert",
+      "integrity": "sha256-dw08H2J8Z1q1M9tE1Uv1pQrUhdPlKW4Y9hugqfQsKDc="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-palette-knife",
       "repo": "HereLiesAz/azphalt-brushset-oil",
       "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
       "version": "1.0.0",
-      "path": "brushes/oil-palette-knife"
+      "path": "brushes/oil-palette-knife",
+      "integrity": "sha256-la1g5BOi2zFCUMCSDvyIjcqkukr77Z5/VPgVcknSGjI="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-paint-pen",
       "repo": "HereLiesAz/azphalt-brushset-ink",
       "ref": "098bcf8735f970ae1f21a7e099b3846cdb4d88b6",
       "version": "1.0.0",
-      "path": "brushes/paint-pen"
+      "path": "brushes/paint-pen",
+      "integrity": "sha256-ZpIEcQhK3Yn/9GmGOe8aqaxINpu/o754R0isuFiNK8Y="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-smudge-stick",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
       "version": "1.0.0",
-      "path": "brushes/smudge-stick"
+      "path": "brushes/smudge-stick",
+      "integrity": "sha256-Sa8Tmvm28IVg3E1IqUFf5akTomo4kxNFWDJ2j8r1YCE="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-soft-charcoal",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
       "version": "1.0.0",
-      "path": "brushes/soft-charcoal"
+      "path": "brushes/soft-charcoal",
+      "integrity": "sha256-jWycM9OXRpWd73s+0q9QQ9SNuwpX+nl+YnpI61ZHQEk="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-fade",
       "repo": "HereLiesAz/azphalt-brushset-spray",
       "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
       "version": "1.0.0",
-      "path": "brushes/spray-fade"
+      "path": "brushes/spray-fade",
+      "integrity": "sha256-NsmSzgmu2EZiZTQWKTdcxLcyxEpRu4qjU7v27lZP4ko="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-fat-cap",
       "repo": "HereLiesAz/azphalt-brushset-spray",
       "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
       "version": "1.0.0",
-      "path": "brushes/spray-fat-cap"
+      "path": "brushes/spray-fat-cap",
+      "integrity": "sha256-D92JIWVNHRYwyd0c1X4cGhP2HmqzR4/8GZ0Fej9pL90="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-halo",
       "repo": "HereLiesAz/azphalt-brushset-spray",
       "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
       "version": "1.0.0",
-      "path": "brushes/spray-halo"
+      "path": "brushes/spray-halo",
+      "integrity": "sha256-JmOjkcbd7xXme8yt1/YUbkDpP5vsFuqkE3x9EUci4zM="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-skinny-cap",
       "repo": "HereLiesAz/azphalt-brushset-spray",
       "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
       "version": "1.0.0",
-      "path": "brushes/spray-skinny-cap"
+      "path": "brushes/spray-skinny-cap",
+      "integrity": "sha256-VTNwNhWlxVth2s+2g6h1Z2TNYQ4f4cWWptTfWo/zm4E="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
       "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
       "version": "1.0.0",
-      "path": "brushes/watercolor-dry-edge-bleed"
+      "path": "brushes/watercolor-dry-edge-bleed",
+      "integrity": "sha256-KeBm8lm9LcxiExH8FG4GcDFfbIHnd83yDM95z0pH8GU="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-salt-texture",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
       "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
       "version": "1.0.0",
-      "path": "brushes/watercolor-salt-texture"
+      "path": "brushes/watercolor-salt-texture",
+      "integrity": "sha256-xgCHXRuPzYol78E3/uxTxf+GDvR48eS8n/wEj35Qm/w="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-wash-flat",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
       "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
       "version": "1.0.0",
-      "path": "brushes/watercolor-wash-flat"
+      "path": "brushes/watercolor-wash-flat",
+      "integrity": "sha256-UbloGjccRY4t0KbJOJQQeGhoWqt2cHeFD8MOO9w1Gv8="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
       "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
       "version": "1.0.0",
-      "path": "brushes/watercolor-wet-on-wet"
+      "path": "brushes/watercolor-wet-on-wet",
+      "integrity": "sha256-9RwUkJEE8MXrntx2t071sak4OD+0neIFIqutydTPxDI="
     },
     {
       "id": "com.hereliesaz.azphalt.camera-controller",
