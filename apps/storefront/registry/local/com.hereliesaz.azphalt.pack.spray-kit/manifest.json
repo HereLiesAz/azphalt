@@ -1,0 +1,38 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.spray-kit",
+  "name": "Spray Kit",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Four spray-can brush tips — wide fat cap, fine skinny cap, a soft atomizing fade, and a ring-shaped halo for outlines.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.brush-spray-fat-cap",
+        "required": true,
+        "note": "Fat Cap"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-spray-skinny-cap",
+        "required": true,
+        "note": "Skinny Cap"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-spray-fade",
+        "required": true,
+        "note": "Fade"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-spray-halo",
+        "required": true,
+        "note": "Halo"
+      }
+    ]
+  }
+}

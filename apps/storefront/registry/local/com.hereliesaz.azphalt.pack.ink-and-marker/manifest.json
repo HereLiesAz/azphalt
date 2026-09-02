@@ -1,0 +1,38 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.ink-and-marker",
+  "name": "Ink & Marker",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Four ink and marker tips — a flat chisel marker, a bold paint pen, a flattened sumi ink brush, and a waxy china marker.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.brush-chisel-marker",
+        "required": true,
+        "note": "Chisel Marker"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-paint-pen",
+        "required": true,
+        "note": "Paint Pen"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-ink-sumi",
+        "required": true,
+        "note": "Sumi Brush"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-china-marker",
+        "required": true,
+        "note": "China Marker"
+      }
+    ]
+  }
+}

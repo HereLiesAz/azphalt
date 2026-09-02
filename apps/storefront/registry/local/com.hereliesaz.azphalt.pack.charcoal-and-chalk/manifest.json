@@ -1,0 +1,38 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
+  "name": "Charcoal & Chalk",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Four drawing-media tips — soft charcoal, hard chalk, a smudge stick for dragging and blending, and a faceted conté crayon.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.brush-soft-charcoal",
+        "required": true,
+        "note": "Soft Charcoal"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-hard-chalk",
+        "required": true,
+        "note": "Hard Chalk"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-smudge-stick",
+        "required": true,
+        "note": "Smudge Stick"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-conte-crayon",
+        "required": true,
+        "note": "Conté Crayon"
+      }
+    ]
+  }
+}

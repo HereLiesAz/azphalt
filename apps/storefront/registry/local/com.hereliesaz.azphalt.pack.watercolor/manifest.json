@@ -1,0 +1,38 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.watercolor",
+  "name": "Watercolor",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Four watercolor tips — a wet-on-wet bloom, a blotchy wash flat, a granular salt texture, and a wispy dry-edge bleed.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet",
+        "required": true,
+        "note": "Wet-on-Wet"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-watercolor-wash-flat",
+        "required": true,
+        "note": "Wash Flat"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-watercolor-salt-texture",
+        "required": true,
+        "note": "Salt Texture"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed",
+        "required": true,
+        "note": "Dry-Edge Bleed"
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.oil",
+  "name": "Oil",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Four oil-painting tips — a soft filbert, a thin palette knife, a radiating fan blade, and a broken-texture bristle drybrush.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.brush-oil-filbert",
+        "required": true,
+        "note": "Filbert"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-oil-palette-knife",
+        "required": true,
+        "note": "Palette Knife"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-oil-fan-blade",
+        "required": true,
+        "note": "Fan Blade"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush",
+        "required": true,
+        "note": "Bristle Drybrush"
+      }
+    ]
+  }
+}
