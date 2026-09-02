@@ -355,6 +355,28 @@
       "bytes": 6463
     },
     {
+      "id": "com.hereliesaz.azphalt.brush-paw-print",
+      "version": "1.0.0",
+      "name": "Paw Print",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-brushset-ink",
+      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "integrity": "sha256-Vl/i3IizxmTpY/yU2/g8jbCMlAKMebftMCnt5qz8br4=",
+      "file": "com.hereliesaz.azphalt.brush-paw-print-1.0.0.azp",
+      "bytes": 4258
+    },
+    {
+      "id": "com.hereliesaz.azphalt.brush-pointed-triangle",
+      "version": "1.0.0",
+      "name": "Pointed Triangle",
+      "kind": "asset",
+      "repo": "HereLiesAz/azphalt-brushset-ink",
+      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "integrity": "sha256-pt8AIzcwvoa4SCL5Wy3otKxi/8to2rSs14AM4bj62Mg=",
+      "file": "com.hereliesaz.azphalt.brush-pointed-triangle-1.0.0.azp",
+      "bytes": 3317
+    },
+    {
       "id": "com.hereliesaz.azphalt.brush-smudge-stick",
       "version": "1.0.0",
       "name": "Smudge Stick",
@@ -1269,14 +1291,14 @@
     },
     {
       "id": "com.hereliesaz.azphalt.pack.ink-and-marker",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "name": "Ink & Marker",
       "kind": "pack",
       "repo": "(local)",
       "ref": "(local)",
-      "integrity": "sha256-BM5vPUtxpFOOhSvC1f6j1eJjSz/E+C6n593neD3cBs8=",
-      "file": "com.hereliesaz.azphalt.pack.ink-and-marker-1.0.0.azp",
-      "bytes": 1129
+      "integrity": "sha256-gInM1s/6THRqTLKLH5z4fzfhaccdreLJFNbrf7ezZKM=",
+      "file": "com.hereliesaz.azphalt.pack.ink-and-marker-1.1.0.azp",
+      "bytes": 1188
     },
     {
       "id": "com.hereliesaz.azphalt.pack.kinetic-type",
