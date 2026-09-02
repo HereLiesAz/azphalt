@@ -1,11 +1,12 @@
- <img src="docs/assets/logo.svg" alt="azphalt" width="96" height="96">
 # azphalt
 
 **An open, portable extension standard for creative apps.** Write an extension once — a brush, a filter, a tool — and it runs in any app that adopts azphalt. Plus a consignment marketplace built on top of it. VSCode's extension marketplace shows us the way. 
 
 The pitch in one line: the paint/photo world's extensions are trapped — a Photoshop plugin runs only in Photoshop, a Procreate brush is useless off an iPad, every store is a walled silo. azphalt is the portable format nobody built, and the registry that lets it travel.
 
-## Two things, kept separable
+ <img src="docs/assets/logo.svg" alt="azphalt" width="96" height="96">
+
+# Two things, kept separable
 
 - **The standard** *(this repo, MIT)* — the `.azp` package format, the SDK, the asset importers, a reference runtime, and the registry. Vendor-neutral by construction. This is the part other apps adopt.
 - **The marketplace** *(a business, on top)* — a hosted consignment storefront on the open standard, the way a store sits on Open VSX. Never a precondition for adopting the standard. It can carry its own name.
