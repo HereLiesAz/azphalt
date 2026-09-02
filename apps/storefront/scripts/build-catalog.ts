@@ -97,6 +97,12 @@ interface Source {
   ref: string;
   version: string;
   integrity?: string;
+  /**
+   * Repo-relative subdirectory holding this package's `manifest.json` + `LICENSE` (+ `assets/`),
+   * for a repo that ships several brush/asset packages side by side rather than one at its root
+   * (e.g. `brushes/fat-cap`). Absent = the package lives at the repo root, as usual.
+   */
+  path?: string;
 }
 
 interface Lock {
@@ -313,33 +319,54 @@ interface Built {
   file: string;
 }
 
+/**
+ * Tarball fetches cached by `repo@ref`, so several sources pinning the same commit — a repo that
+ * ships multiple brush/asset packages side by side, one `path` each — download it once rather than
+ * once per package.
+ */
+const treeCache = new Map<string, Promise<Map<string, Uint8Array>>>();
+function fetchTreeCached(repo: string, ref: string): Promise<Map<string, Uint8Array>> {
+  const key = `${repo}@${ref}`;
+  let promise = treeCache.get(key);
+  if (!promise) {
+    promise = fetchTree(repo, ref);
+    treeCache.set(key, promise);
+  }
+  return promise;
+}
+
 /** Fetch one pinned source and pack it into a `.azp`. */
 async function build(source: Source): Promise<Built> {
-  const tree = await fetchTree(source.repo, source.ref);
+  const tree = await fetchTreeCached(source.repo, source.ref);
+  // A repo-relative subdirectory for a repo that ships several packages side by side — see `Source.path`.
+  const prefix = source.path ? `${source.path.replace(/\/+$/, "")}/` : "";
+  const label = source.path ? `${source.repo}@${source.ref}:${source.path}` : `${source.repo}@${source.ref}`;
 
-  const manifestBytes = tree.get("manifest.json");
-  if (!manifestBytes) throw new Error(`${source.repo}@${source.ref}: no manifest.json`);
+  const manifestBytes = tree.get(`${prefix}manifest.json`);
+  if (!manifestBytes) throw new Error(`${label}: no manifest.json`);
   const manifest = JSON.parse(Buffer.from(manifestBytes).toString("utf8")) as Manifest;
 
   // The lockfile is the authority on identity. If the upstream repo renames its package or bumps its
   // version, that must surface as a failed build and a deliberate re-pin — never as the store quietly
   // serving something other than what the committed lockfile says it serves.
   if (manifest.id !== source.id) {
-    throw new Error(`${source.repo}@${source.ref}: manifest id "${manifest.id}" ≠ lockfile id "${source.id}"`);
+    throw new Error(`${label}: manifest id "${manifest.id}" ≠ lockfile id "${source.id}"`);
   }
   if (manifest.version !== source.version) {
     throw new Error(
-      `${source.repo}@${source.ref}: manifest version "${manifest.version}" ≠ lockfile version "${source.version}" ` +
+      `${label}: manifest version "${manifest.version}" ≠ lockfile version "${source.version}" ` +
         `(re-pin with --update --latest to accept the new version)`,
     );
   }
 
-  const licenseBytes = tree.get("LICENSE");
-  if (!licenseBytes) throw new Error(`${source.repo}@${source.ref}: no LICENSE file`);
+  const licenseBytes = tree.get(`${prefix}LICENSE`);
+  if (!licenseBytes) throw new Error(`${label}: no LICENSE file`);
 
   const payload: Record<string, Uint8Array> = {};
   for (const [rel, bytes] of tree) {
-    if (PAYLOAD_DIRS.some((dir) => rel.startsWith(dir))) payload[rel] = bytes;
+    if (!rel.startsWith(prefix)) continue;
+    const rest = rel.slice(prefix.length);
+    if (PAYLOAD_DIRS.some((dir) => rest.startsWith(dir))) payload[rest] = bytes;
   }
 
   // `writeAzp` computes the real `manifest.files` digests; a submission manifest must not carry its

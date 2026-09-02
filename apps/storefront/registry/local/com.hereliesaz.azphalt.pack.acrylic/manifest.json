@@ -1,0 +1,38 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.acrylic",
+  "name": "Acrylic",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Four acrylic tips — a crisp flat, a classic soft round, a wide angular shader, and a porous sponge dab.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.brush-acrylic-flat",
+        "required": true,
+        "note": "Flat"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-acrylic-round",
+        "required": true,
+        "note": "Round"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-acrylic-angular-shader",
+        "required": true,
+        "note": "Angular Shader"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab",
+        "required": true,
+        "note": "Sponge Dab"
+      }
+    ]
+  }
+}
