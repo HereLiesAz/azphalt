@@ -2,11 +2,11 @@
   "azphalt": "0.1",
   "id": "com.hereliesaz.azphalt.pack.ink-and-marker",
   "name": "Ink & Marker",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "kind": "pack",
   "license": "LicenseRef-Proprietary",
   "compat": ">=0.1",
-  "description": "Four ink and marker tips — a flat chisel marker, a bold paint pen, a flattened sumi ink brush, and a waxy china marker.",
+  "description": "Six ink and marker tips — a flat chisel marker, a bold paint pen, a flattened sumi ink brush, a waxy china marker, plus an optional paw-print stamp and a pointed-triangle mark.",
   "author": "HereLiesAz",
   "targetApps": [
     "com.hereliesaz.graffux"
@@ -32,6 +32,16 @@
         "id": "com.hereliesaz.azphalt.brush-china-marker",
         "required": true,
         "note": "China Marker"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-paw-print",
+        "required": false,
+        "note": "Paw Print"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.brush-pointed-triangle",
+        "required": false,
+        "note": "Pointed Triangle"
       }
     ]
   }

@@ -245,6 +245,20 @@
       "integrity": "sha256-ZpIEcQhK3Yn/9GmGOe8aqaxINpu/o754R0isuFiNK8Y="
     },
     {
+      "id": "com.hereliesaz.azphalt.brush-paw-print",
+      "repo": "HereLiesAz/azphalt-brushset-ink",
+      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "version": "1.0.0",
+      "path": "brushes/paw-print"
+    },
+    {
+      "id": "com.hereliesaz.azphalt.brush-pointed-triangle",
+      "repo": "HereLiesAz/azphalt-brushset-ink",
+      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "version": "1.0.0",
+      "path": "brushes/pointed-triangle"
+    },
+    {
       "id": "com.hereliesaz.azphalt.brush-smudge-stick",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
