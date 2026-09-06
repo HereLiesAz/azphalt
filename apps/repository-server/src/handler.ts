@@ -324,6 +324,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     // above runs first, so a ranged request for paid bytes still needs the entitlement. A ranged read
     // does NOT count a download (the host counts the transfer); a full `200` below does.
     const range = parseRange(req.headers.range);
+    const contentDisposition = `attachment; filename="${id}-${version}.azp"`;
     if (range) {
       try {
         const { bytes, start, end, totalSize } = await registry.serveRange(id, version, range);
@@ -334,6 +335,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
             "content-length": String(bytes.length),
             "content-range": `bytes ${start}-${end}/${totalSize}`,
             "accept-ranges": "bytes",
+            "content-disposition": contentDisposition,
           },
           body: bytes,
         };
@@ -356,6 +358,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
         "content-type": MEDIA_TYPE,
         "content-length": String(bytes.length),
         "accept-ranges": "bytes",
+        "content-disposition": contentDisposition,
         // The single-use capability that authorises one install report for this transfer
         // (`spec/state-reporting.md` § 4.2). Absent when the store keeps no install statistics, and
         // absent from `206` responses above — a ranged read is not a download, so it must not authorise
