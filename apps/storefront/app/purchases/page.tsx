@@ -1,7 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import { PageNav } from '../../components/PageNav';
 
 const ACCENT = '#BBA6FF';
@@ -19,30 +18,33 @@ interface Purchase {
 }
 
 type State =
-  | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'loaded'; purchases: Purchase[] }
   | { kind: 'error'; message: string };
 
 /**
- * The buyer's "my purchases" recovery view. Enter a buyer id and list every license issued to it
- * (`GET /api/purchases?subject=…`); each row carries the Bearer token to download again, so a lost
- * `/checkout/success` token isn't a dead end.
+ * The current browser's purchase-recovery view. `/api/purchases` authenticates the browser with the
+ * signed, HttpOnly buyer session established by checkout; there is deliberately no buyer-id lookup
+ * field because knowing an opaque database id is not proof that the licences belong to you.
  */
-function Purchases() {
-  const params = useSearchParams();
-  const [subject, setSubject] = useState(params.get('subject') ?? '');
-  const [state, setState] = useState<State>({ kind: 'idle' });
+export default function PurchasesPage() {
+  const [state, setState] = useState<State>({ kind: 'loading' });
   const [copied, setCopied] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
-  const load = useCallback(async (id: string) => {
-    if (!id) return;
+  const load = useCallback(async () => {
     setState({ kind: 'loading' });
     try {
-      const res = await fetch(`/api/purchases?subject=${encodeURIComponent(id)}`);
+      const res = await fetch('/api/purchases', { credentials: 'same-origin' });
       const data = await res.json();
       if (!res.ok) {
-        setState({ kind: 'error', message: data.error ?? `Lookup failed (${res.status})` });
+        setState({
+          kind: 'error',
+          message:
+            res.status === 401
+              ? 'No purchase history is attached to this browser yet.'
+              : data.error ?? `Lookup failed (${res.status})`,
+        });
         return;
       }
       setState({ kind: 'loaded', purchases: data.purchases ?? [] });
@@ -52,9 +54,8 @@ function Purchases() {
   }, []);
 
   useEffect(() => {
-    const id = params.get('subject');
-    if (id) load(id);
-  }, [params, load]);
+    void load();
+  }, [load]);
 
   const copy = useCallback(async (token: string, sessionId: string) => {
     try {
@@ -65,8 +66,6 @@ function Purchases() {
       /* clipboard unavailable */
     }
   }, []);
-
-  const [downloading, setDownloading] = useState<string | null>(null);
 
   // A real, authenticated download: a plain <a> click can't attach the Bearer token, so fetch the
   // gated bytes with the token and save the returned blob.
@@ -102,36 +101,24 @@ function Purchases() {
         <PageNav current="purchases" />
         <h1 style={{ marginTop: 16, fontSize: 28, fontWeight: 700 }}>Your purchases</h1>
         <p style={{ color: MUTED, marginTop: 8 }}>
-          Look up the licenses issued to your buyer id and recover a download token if you lost the one
-          shown at checkout.
+          Licences bought in this browser, plus purchases returned here from Stripe after a desktop checkout.
         </p>
-
-        <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
-          <input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="buyer_yourname"
-            onKeyDown={(e) => e.key === 'Enter' && load(subject.trim())}
-            style={{ flex: 1, padding: 12, background: SURFACE, color: ON, border: '1px solid #2a2436', borderRadius: 10, fontSize: 15 }}
-          />
-          <button
-            onClick={() => load(subject.trim())}
-            disabled={!subject.trim()}
-            style={{ padding: '10px 18px', background: subject.trim() ? ACCENT : IDLE, color: subject.trim() ? '#161221' : MUTED, border: 'none', borderRadius: 10, fontWeight: 600, cursor: subject.trim() ? 'pointer' : 'default' }}
-          >
-            Look up
-          </button>
-        </div>
 
         <div style={{ marginTop: 20 }}>
           {state.kind === 'loading' && <p style={{ color: MUTED }}>Loading…</p>}
           {state.kind === 'error' && (
             <div style={{ padding: 16, background: SURFACE, borderRadius: 12, border: '1px solid #2a2436' }}>
               <p style={{ color: MUTED, margin: 0 }}>{state.message}</p>
+              <button
+                onClick={() => void load()}
+                style={{ marginTop: 12, padding: '8px 14px', background: 'transparent', color: ON, border: `1px solid ${IDLE}`, borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+              >
+                Retry
+              </button>
             </div>
           )}
           {state.kind === 'loaded' && state.purchases.length === 0 && (
-            <p style={{ color: MUTED }}>No purchases found for that buyer id.</p>
+            <p style={{ color: MUTED }}>No purchases yet.</p>
           )}
           {state.kind === 'loaded' &&
             state.purchases.map((p) => (
@@ -161,13 +148,5 @@ function Purchases() {
         </div>
       </div>
     </main>
-  );
-}
-
-export default function PurchasesPage() {
-  return (
-    <Suspense fallback={<main style={{ minHeight: '100vh', background: BG }} />}>
-      <Purchases />
-    </Suspense>
   );
 }
