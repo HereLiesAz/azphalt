@@ -4,7 +4,8 @@
  * Written against what the code actually does rather than from a template. Every factual claim below
  * was checked against this repository before it was written down:
  *
- * - No cookies: production sets no `Set-Cookie` on the site or the API, and there is no
+ * - The web store uses one strictly necessary, signed HttpOnly cookie to recover paid purchases. It
+ *   carries only opaque buyer subjects, is SameSite=Lax, and expires after one year. There is no
  *   `localStorage` / `sessionStorage` / analytics call anywhere in `apps/storefront`.
  * - The Android app is the one exception, and it is stated as one. `apps/storefront-cmp` depends on
  *   `com.google.firebase:firebase-analytics`; the permissions it actually ships with are the merged
@@ -17,7 +18,8 @@
  *   with a download, and no device identifier exists anywhere in the protocol to accept.
  * - Ratings, reports and download tallies live in process memory and reset on redeploy — see the
  *   "Runtime-mutable state" note in `lib/baked.ts`.
- * - Checkout takes `{ packageId, buyerId }` and no name, email or address (`api/checkout/route.ts`).
+ * - Production checkout takes `{ packageId }`; the server derives or creates the opaque buyer subject
+ *   from the signed recovery session (`api/checkout/route.ts`, `lib/buyer-session.ts`).
  * - Entitlement `subject` is an opaque marketplace-side id; the registry is identity-agnostic
  *   (`packages/registry/src/entitlement.ts`).
  *
@@ -33,7 +35,7 @@ export const metadata: Metadata = {
   description: "What Azphalt collects, what it does not, and who else is involved.",
 };
 
-const UPDATED = "30 July 2026";
+const UPDATED = "15 September 2026";
 
 export default function Privacy() {
   return (
@@ -43,9 +45,10 @@ export default function Privacy() {
 
       <div className={styles.callout}>
         <p>
-          <strong>Azphalt has no user accounts and sets no cookies.</strong> You can browse the store
-          and download free extensions without identifying yourself in any way. The website runs no
-          analytics at all; the Android app includes Firebase Analytics, which is described{" "}
+          <strong>Azphalt has no user accounts and no tracking cookies.</strong> You can browse the
+          store and download free extensions without identifying yourself. If you buy something on
+          the web, Azphalt sets one signed, HttpOnly cookie so this browser can recover your licences.
+          The website runs no analytics; the Android app includes Firebase Analytics, described{" "}
           <a href="#app-analytics">below</a>.
         </p>
       </div>
@@ -59,8 +62,9 @@ export default function Privacy() {
       <h2>What we do not collect</h2>
       <ul>
         <li>
-          <strong>No cookies.</strong> The store and its API set no cookies at all — not for sessions,
-          not for preferences, not for tracking.
+          <strong>No tracking or preference cookies.</strong> The website uses no advertising,
+          analytics or preference cookies. The only web cookie is the strictly necessary purchase-
+          recovery session described under <a href="#purchases">Purchases</a>.
         </li>
         <li>
           <strong>No analytics on the website.</strong> There is no analytics SDK, tag manager,
@@ -81,8 +85,8 @@ export default function Privacy() {
           downloading free extensions require no identity.
         </li>
         <li>
-          <strong>No browser storage.</strong> The store does not write to <code>localStorage</code> or{" "}
-          <code>sessionStorage</code>.
+          <strong>No browser key-value storage.</strong> The store does not write to{" "}
+          <code>localStorage</code> or <code>sessionStorage</code>.
         </li>
         <li>
           <strong>No access to your work.</strong> Azphalt never receives the images, video, audio or
@@ -96,8 +100,8 @@ export default function Privacy() {
       <p>
         The store is hosted on Vercel, which keeps standard web-server logs of requests — including IP
         address, timestamp, requested URL and user-agent. These are operational records used to keep
-        the service running and to investigate abuse. They are not linked to an identity, because
-        there is no identity to link them to.
+        the service running and to investigate abuse. They are not linked to a profile, because
+        Azphalt has no user accounts.
       </p>
 
       <h3>Ratings, reports and download counts</h3>
@@ -200,7 +204,7 @@ export default function Privacy() {
         it: it only ever learns from an app that deliberately opens the store.
       </p>
 
-      <h3>Purchases</h3>
+      <h3 id="purchases">Purchases</h3>
       <p>
         Azphalt never sees or stores your payment-card details. Payment is handled entirely by a
         payment provider:
@@ -220,8 +224,16 @@ export default function Privacy() {
       </ul>
       <p>
         What Azphalt records for a purchase is a <strong>licence</strong>: which package was bought and
-        an opaque buyer identifier. Your name, email address and billing address are held by the
+        a random, opaque buyer identifier. Your name, email address and billing address are held by the
         payment provider, not by Azphalt.
+      </p>
+      <p>
+        On the web, this browser receives one signed, <strong>HttpOnly</strong> recovery cookie after
+        checkout. It contains only those opaque buyer identifiers, not your name, email, card details
+        or the licence tokens themselves. The cookie is SameSite=Lax, is Secure on HTTPS, expires
+        after one year, and exists only so <em>Your purchases</em> can prove which licences it may
+        return. Clearing it removes that browser&rsquo;s purchase-history lookup; the signed licence
+        tokens you already saved remain valid.
       </p>
       <p>
         Licences are issued as signed tokens your app can verify <strong>offline</strong>. Using a
@@ -297,8 +309,8 @@ export default function Privacy() {
       <h2>Your rights</h2>
       <p>
         Because there are no accounts and almost nothing is retained, most data-subject requests have
-        no data to act on — there is no profile to export or delete. Where something does exist, such
-        as a purchase licence or a claim you submitted, you can ask us to provide or remove it.
+        little data to act on — there is no profile to export or delete. Where something does exist,
+        such as a purchase licence or a claim you submitted, you can ask us to provide or remove it.
       </p>
       <p>
         For payment records, contact the payment provider directly; they hold that data and can act on
