@@ -21,12 +21,9 @@ actual suspend fun fetchRegistryList(): List<PackageSummary> {
 }
 
 actual suspend fun startCheckout(packageId: String): CheckoutResponse {
-    // Buyer identity is server-owned. The browser receives a signed HttpOnly recovery session; a
-    // caller-chosen `buyerId` would turn an opaque database key into an authentication credential.
-    val payload = "{\"packageId\":${json.encodeToString(packageId)}}"
     val response: Response = window.fetch(
         "/api/checkout",
-        RequestInit(method = "POST", body = payload.toJsString()),
+        RequestInit(method = "POST", body = checkoutRequestBody(packageId).toJsString()),
     ).await()
     val body: JsString = response.text().await()
     val checkout = json.decodeFromString<CheckoutResponse>(body.toString())
