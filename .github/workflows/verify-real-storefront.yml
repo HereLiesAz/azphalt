@@ -1,0 +1,41 @@
+name: Verify real storefront checkout
+
+on:
+  push:
+    branches: [real-storefront-checkout]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  storefront:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: corepack enable && corepack prepare pnpm@9.15.0 --activate
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @azphalt/storefront typecheck
+      - run: pnpm --filter @azphalt/storefront test
+      - run: pnpm --filter @azphalt/storefront-react build
+
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      AZPHALT_VERSION_FROZEN: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+      - name: Compile Compose web and desktop
+        working-directory: apps/storefront-cmp
+        run: |
+          chmod +x gradlew
+          ./gradlew compileKotlinWasmJs compileKotlinDesktop desktopTest --no-daemon --stacktrace
