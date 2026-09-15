@@ -70,7 +70,9 @@ export async function startCheckout(packageId: string): Promise<CheckoutResponse
   const res = await fetch(`${API_BASE}/api/checkout`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ packageId, buyerId: "buyer_web" }),
+    credentials: "same-origin",
+    // Buyer identity is server-owned and kept in a signed HttpOnly recovery session.
+    body: JSON.stringify({ packageId }),
   });
   const checkout = (await res.json()) as CheckoutResponse;
 
