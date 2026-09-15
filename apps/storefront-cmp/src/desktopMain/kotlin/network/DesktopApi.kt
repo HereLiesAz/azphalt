@@ -23,11 +23,10 @@ actual suspend fun fetchRegistryList(): List<PackageSummary> = withContext(Dispa
 }
 
 actual suspend fun startCheckout(packageId: String): CheckoutResponse = withContext(Dispatchers.IO) {
-    val payload = "{\"packageId\":\"$packageId\",\"buyerId\":\"buyer_web\"}"
     val request = HttpRequest.newBuilder()
         .uri(URI.create("$API_BASE/api/checkout"))
         .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(payload))
+        .POST(HttpRequest.BodyPublishers.ofString(checkoutRequestBody(packageId)))
         .build()
     val response = HttpClient.newBuilder().build().send(request, HttpResponse.BodyHandlers.ofString())
     val checkout = json.decodeFromString<CheckoutResponse>(response.body())
