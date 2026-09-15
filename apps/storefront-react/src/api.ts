@@ -44,10 +44,18 @@ export interface AppBlock {
   };
 }
 
+export interface CheckoutSession {
+  id: string;
+  url: string;
+  status: string;
+  amount?: Price;
+}
+
 export interface CheckoutResponse {
   stub?: boolean;
   message?: string;
   error?: string;
+  session?: CheckoutSession;
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
@@ -64,7 +72,16 @@ export async function startCheckout(packageId: string): Promise<CheckoutResponse
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ packageId, buyerId: "buyer_web" }),
   });
-  return (await res.json()) as CheckoutResponse;
+  const checkout = (await res.json()) as CheckoutResponse;
+
+  // Creating a real Stripe session is only step one. Continue the purchase on the hosted checkout
+  // page instead of treating session creation itself as a completed UI action.
+  const checkoutUrl = checkout.session?.url;
+  if (!checkout.stub && !checkout.error && checkoutUrl) {
+    window.location.assign(checkoutUrl);
+  }
+
+  return checkout;
 }
 
 export function priceLabel(p: PackageSummary): string {
