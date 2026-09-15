@@ -13,6 +13,7 @@ import { validatePackManifest } from "./pack.js";
 import { validateSkillManifest } from "./skill.js";
 import { validateScriptManifest } from "./script.js";
 import { validateComposableManifest } from "./composable.js";
+import { validateWorkflowManifest } from "./workflow.js";
 
 /**
  * Fixed archive timestamp for reproducible output. Built from LOCAL fields on purpose: fflate
@@ -169,6 +170,8 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     errors.push(...validateScriptManifest(manifest));
   } else if (manifest.kind === "composable") {
     errors.push(...validateComposableManifest(manifest));
+  } else if (manifest.kind === "workflow") {
+    errors.push(...validateWorkflowManifest(manifest));
   }
 
   // Signature (optional): validate an Ed25519 `signature.json` over the stored `manifest.json` bytes.
@@ -215,3 +218,4 @@ export { validatePackManifest } from "./pack.js";
 export { validateSkillManifest } from "./skill.js";
 export { validateScriptManifest } from "./script.js";
 export { validateComposableManifest } from "./composable.js";
+export { validateWorkflowManifest } from "./workflow.js";
