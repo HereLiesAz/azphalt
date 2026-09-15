@@ -23,14 +23,23 @@ actual suspend fun fetchRegistryList(): List<PackageSummary> = withContext(Dispa
 }
 
 actual suspend fun startCheckout(packageId: String): CheckoutResponse = withContext(Dispatchers.IO) {
-    val payload = "{\"packageId\":\"$packageId\",\"buyerId\":\"buyer_web\"}"
     val request = HttpRequest.newBuilder()
         .uri(URI.create("$API_BASE/api/checkout"))
         .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(payload))
+        .POST(HttpRequest.BodyPublishers.ofString(checkoutRequestBody(packageId)))
         .build()
     val response = HttpClient.newBuilder().build().send(request, HttpResponse.BodyHandlers.ofString())
-    json.decodeFromString<CheckoutResponse>(response.body())
+    val checkout = json.decodeFromString<CheckoutResponse>(response.body())
+
+    // Real checkout continues on Stripe's hosted page. The desktop storefront owns the user gesture,
+    // so it also owns opening the processor URL; returning a successful response without doing this
+    // would leave a paid purchase permanently stuck at "Checkout started".
+    val checkoutUrl = checkout.session?.url.orEmpty()
+    if (!checkout.stub && checkout.error == null && checkoutUrl.isNotBlank()) {
+        openExternal(checkoutUrl)
+    }
+
+    checkout
 }
 
 actual suspend fun httpPostJson(path: String, body: String): String = withContext(Dispatchers.IO) {

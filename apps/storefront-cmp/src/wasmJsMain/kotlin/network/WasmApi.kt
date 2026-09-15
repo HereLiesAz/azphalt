@@ -21,13 +21,22 @@ actual suspend fun fetchRegistryList(): List<PackageSummary> {
 }
 
 actual suspend fun startCheckout(packageId: String): CheckoutResponse {
-    val payload = "{\"packageId\":\"$packageId\",\"buyerId\":\"buyer_web\"}"
     val response: Response = window.fetch(
         "/api/checkout",
-        RequestInit(method = "POST", body = payload.toJsString()),
+        RequestInit(method = "POST", body = checkoutRequestBody(packageId).toJsString()),
     ).await()
     val body: JsString = response.text().await()
-    return json.decodeFromString<CheckoutResponse>(body.toString())
+    val checkout = json.decodeFromString<CheckoutResponse>(body.toString())
+
+    // A real Stripe checkout is not complete when the session is created. Leave this page for the
+    // processor-hosted checkout URL the server returned; assigning location (rather than window.open)
+    // also avoids popup blockers because the network request necessarily completes after the click.
+    val checkoutUrl = checkout.session?.url.orEmpty()
+    if (!checkout.stub && checkout.error == null && checkoutUrl.isNotBlank()) {
+        window.location.href = checkoutUrl
+    }
+
+    return checkout
 }
 
 actual suspend fun httpPostJson(path: String, body: String): String {

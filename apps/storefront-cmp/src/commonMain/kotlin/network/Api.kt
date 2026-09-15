@@ -12,8 +12,19 @@ val json = Json { ignoreUnknownKeys = true }
 
 expect suspend fun fetchRegistryList(): List<PackageSummary>
 
-/** Begin a consignment purchase for [packageId] (the paid lane). Stubbed server-side in the demo. */
+/** Begin a consignment purchase for [packageId]; production returns a real Stripe Checkout session. */
 expect suspend fun startCheckout(packageId: String): CheckoutResponse
+
+/**
+ * Checkout request shared by web/desktop.
+ *
+ * Buyer identity is intentionally absent. The server owns the accountless buyer session and binds it
+ * to a signed HttpOnly recovery cookie; accepting a client-chosen identity would make purchase
+ * recovery forgeable.
+ */
+internal fun checkoutRequestBody(packageId: String): String = buildJsonObject {
+    put("packageId", packageId)
+}.toString()
 
 /** POST [body] (a JSON string) to [path] on the storefront API and return the raw response text. */
 expect suspend fun httpPostJson(path: String, body: String): String
