@@ -675,10 +675,17 @@ async function adminUpload(req: Request, env: Env, id: string, version: string):
   if (!PACKAGE_ID.test(id) || !VERSION.test(version)) return json({ error: "invalid package coordinate" }, 400);
   const length = Number(req.headers.get("content-length") || "0");
   if (length > 100000000) return json({ error: "package exceeds the free-plan 100 MB request limit" }, 413);
+  const body = await req.arrayBuffer();
   return state(env).fetch(
     new Request(
       "https://state.internal/package/" + encodeURIComponent(id) + "/" + encodeURIComponent(version),
-      req,
+      {
+        method: "PUT",
+        headers: {
+          "content-type": req.headers.get("content-type") || "application/vnd.azphalt.package",
+        },
+        body,
+      },
     ),
   );
 }
