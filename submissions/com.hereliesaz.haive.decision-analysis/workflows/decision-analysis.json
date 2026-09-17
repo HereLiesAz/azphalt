@@ -1,0 +1,12 @@
+{
+  "id":{"value":"decision-analysis"},"name":"Decision Analysis","description":"Structure complex decisions with comparable evidence, scenarios, premortems, sensitivity analysis, and review triggers.",
+  "tasks":[
+    {"id":{"value":"frame"},"name":"Frame the decision","objective":"Define owner, deadline, options, objectives, constraints, reversibility, information value, stakeholders, and what happens if no decision is made.","roleId":{"value":"decision-analyst"}},
+    {"id":{"value":"criteria"},"name":"Build criteria and measures","objective":"Translate objectives into measurable criteria, distinguish must-haves from tradeoffs, define uncertainty ranges, and avoid double-counting correlated criteria.","roleId":{"value":"decision-analyst"},"dependsOn":[{"value":"frame"}]},
+    {"id":{"value":"evidence"},"name":"Collect option evidence","objective":"Gather comparable evidence for each option, base rates, costs, downside exposure, opportunity cost, implementation burden, and uncertainty. Record missing evidence explicitly.","roleId":{"value":"decision-analyst"},"dependsOn":[{"value":"criteria"}]},
+    {"id":{"value":"scenarios"},"name":"Model scenarios and second-order effects","objective":"Test best, base, worst, and plausible regime changes; map dependencies, option value, lock-in, externalities, and effects that appear only after the first-order outcome.","roleId":{"value":"decision-analyst"},"dependsOn":[{"value":"evidence"}]},
+    {"id":{"value":"premortem"},"name":"Run premortem and adversarial review","objective":"Assume each option failed. Identify mechanisms, hidden assumptions, incentive problems, tail risks, and signals that would reveal the failure early.","roleId":{"value":"decision-analyst"},"dependsOn":[{"value":"scenarios"}]},
+    {"id":{"value":"sensitivity"},"name":"Run sensitivity analysis","objective":"Vary uncertain inputs and criterion weights to identify decision pivots, robust regions, and assumptions doing most of the work.","roleId":{"value":"decision-analyst"},"dependsOn":[{"value":"premortem"}]},
+    {"id":{"value":"record"},"name":"Create decision record","objective":"Document options, evidence, assumptions, uncertainties, irreversible commitments, monitoring triggers, and review date. Present tradeoffs rather than hiding them behind a single score.","roleId":{"value":"decision-analyst"},"dependsOn":[{"value":"sensitivity"}]}
+  ],"integrationPolicy":"Manual","concurrencyPolicy":{"maxConcurrentTasks":2},"testDesignPolicy":"None","promptReusePolicy":"DisableCache"
+}
