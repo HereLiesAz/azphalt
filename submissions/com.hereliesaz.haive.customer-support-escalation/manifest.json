@@ -1,0 +1,4 @@
+{
+  "azphalt":"0.1","id":"com.hereliesaz.haive.customer-support-escalation","name":"Customer Support Escalation","version":"1.0.0","author":"HereLiesAz","description":"Move difficult support cases from triage through reproducibility, bounded resolution, engineering escalation, customer communication, and systemic learning.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"customer-support-escalation","name":"Customer Support Escalation","path":"workflows/customer-support-escalation.json"}],"agents":[{"id":"support-escalation-lead","name":"Support Escalation Lead","path":"agents/support-escalation-lead.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
+}
