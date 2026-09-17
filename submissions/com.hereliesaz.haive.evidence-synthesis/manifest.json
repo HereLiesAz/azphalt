@@ -1,0 +1,4 @@
+{
+  "azphalt":"0.1","id":"com.hereliesaz.haive.evidence-synthesis","name":"Evidence Synthesis","version":"1.0.0","author":"HereLiesAz","description":"Systematically synthesize a body of studies or reports through eligibility rules, structured extraction, quality appraisal, contradiction analysis, and conclusion-strength grading.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"evidence-synthesis","name":"Evidence Synthesis","path":"workflows/evidence-synthesis.json"}],"agents":[{"id":"evidence-synthesis-lead","name":"Evidence Synthesis Lead","path":"agents/synthesis-lead.json"},{"id":"methods-reviewer","name":"Methods Reviewer","path":"agents/methods-reviewer.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
+}

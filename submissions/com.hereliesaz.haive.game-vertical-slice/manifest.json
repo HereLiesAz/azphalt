@@ -1,0 +1,4 @@
+{
+  "azphalt":"0.1","id":"com.hereliesaz.haive.game-vertical-slice","name":"Game Vertical Slice","version":"1.0.0","author":"HereLiesAz","description":"Turn a game concept into a playable vertical slice through player fantasy, mechanics, prototype loops, art/audio direction, instrumentation, playtesting, and scope-controlled polish.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"game-vertical-slice","name":"Game Vertical Slice","path":"workflows/game-vertical-slice.json"}],"agents":[{"id":"game-director","name":"Game Director","path":"agents/game-director.json"},{"id":"playtest-analyst","name":"Playtest Analyst","path":"agents/playtest-analyst.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
+}
