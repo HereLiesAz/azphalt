@@ -30,6 +30,7 @@ for (const item of generated.packages ?? []) {
     maturity: manifest.maturity ?? "general",
     app: manifest.app,
     pack: manifest.pack,
+    manifest,
     preview: previews[manifest.id] ?? manifest.preview,
     integrity: item.integrity,
     file: item.file,
