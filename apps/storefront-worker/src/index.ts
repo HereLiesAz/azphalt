@@ -1353,8 +1353,24 @@ export default {
       if (req.method === "POST" && path === "/api/checkout") return checkout(req, env);
       if (req.method === "POST" && path === "/api/webhooks/stripe") return webhook(req, env);
       if (req.method === "GET" && path === "/api/purchases") return purchases(req, env);
+      if (req.method === "POST" && path === "/api/connect/onboard") return connectOnboard(req, env);
+      if (req.method === "GET" && path === "/api/connect/status") return connectStatus(req, env);
 
-      let match = path.match(/^\/api\/checkout\/session\/([^/]+)$/);
+      if (req.method === "GET" && path === "/packages") return repositoryPackages(req, env);
+      if (req.method === "GET" && path === "/revocations") return json({ revocations: [] });
+      if (req.method === "POST" && path === "/installs") {
+        return json({ error: { code: "not_implemented", message: "this repository does not keep install statistics" } }, 501);
+      }
+      if (req.method === "POST" && path === "/entitlements/play") {
+        return json({ error: { code: "not_implemented", message: "Play purchase verification is not configured" } }, 501);
+      }
+
+      let match = path.match(/^\/packages\/([^/]+)$/);
+      if (match && req.method === "GET") {
+        return repositoryDetail(req, env, decodeURIComponent(match[1]));
+      }
+
+      match = path.match(/^\/api\/checkout\/session\/([^/]+)$/);
       if (match && req.method === "GET") {
         return sessionResult(req, env, decodeURIComponent(match[1]));
       }
@@ -1387,11 +1403,15 @@ export default {
         return download(req, env, id, pkg.version);
       }
 
-      if (req.method === "GET" && path === "/.well-known/azphalt.json") {
+      if (
+        req.method === "GET" &&
+        (path === "/.well-known/azphalt.json" || path === "/.well-known/azphalt-repository.json")
+      ) {
         return json({
           name: "Azphalt",
           version: "0.1",
           repository: env.PUBLIC_ORIGIN,
+          baseUrl: env.PUBLIC_ORIGIN,
           signingKeys: env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64
             ? [{
                 keyId: "store-v1",
