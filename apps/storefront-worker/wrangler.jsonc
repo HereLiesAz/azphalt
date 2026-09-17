@@ -7,7 +7,7 @@
     "directory": "../storefront-react/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/packages/*", "/.well-known/*"]
+    "run_worker_first": ["/api/*", "/packages", "/packages/*", "/revocations", "/installs", "/entitlements/*", "/.well-known/*"]
   },
   "durable_objects": {
     "bindings": [
