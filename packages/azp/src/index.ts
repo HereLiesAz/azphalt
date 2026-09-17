@@ -14,6 +14,7 @@ import { validateSkillManifest } from "./skill.js";
 import { validateScriptManifest } from "./script.js";
 import { validateComposableManifest } from "./composable.js";
 import { validateWorkflowManifest } from "./workflow.js";
+import { validateRoleManifest } from "./role.js";
 
 /**
  * Fixed archive timestamp for reproducible output. Built from LOCAL fields on purpose: fflate
@@ -60,13 +61,8 @@ export function writeAzp(input: AzpInput): WriteResult {
     "manifest.json": strToU8(JSON.stringify(manifest, null, 2) + "\n"),
   };
 
-  // Deterministic entry order.
   const sorted: Record<string, Uint8Array> = {};
   for (const key of Object.keys(entries).sort()) sorted[key] = entries[key];
-
-  // Fixed timestamp so identical input yields identical bytes — reproducible signing
-  // (see spec/package-format.md § Signing). Without this, fflate stamps the current time.
-  // A Date (not epoch 0, which is outside ZIP's 1980–2099 range) keeps the value unambiguous.
   return { azp: zipSync(sorted, { mtime: EPOCH }), manifest };
 }
 
@@ -97,17 +93,11 @@ export interface VerifyResult {
   signed: boolean;
 }
 
-/**
- * Verify a `.azp`: reject unsafe paths, confirm every `manifest.files` digest, reject any payload
- * entry that has no digest in `manifest.files`, and — if a `signature.json` is present — confirm it
- * is a valid Ed25519 signature over the `manifest.json`. A valid signature is tamper-evidence, not
- * identity (spec/package-format.md § Signing); unsigned packages remain valid on integrity alone.
- */
+/** Verify archive integrity, kind-specific structure, and optional Ed25519 signature. */
 export function verifyAzp(bytes: Uint8Array): VerifyResult {
   const errors: string[] = [];
   let signed = false;
 
-  // Decompress once. (readAzp would decompress a second time — wasteful for large payloads.)
   let files: Record<string, Uint8Array>;
   try {
     files = unzipSync(bytes);
@@ -130,9 +120,7 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
   }
 
   for (const path of Object.keys(payload)) {
-    if (path.startsWith("/") || path.split("/").includes("..")) {
-      errors.push(`unsafe path: ${path}`);
-    }
+    if (path.startsWith("/") || path.split("/").includes("..")) errors.push(`unsafe path: ${path}`);
   }
 
   if (!manifest.files) {
@@ -147,17 +135,12 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     }
     if (digest(data) !== want) errors.push(`digest mismatch: ${path}`);
   }
-
-  // Completeness: every payload entry must be covered by a manifest digest. `hasOwn` avoids
-  // matching inherited keys (e.g. a file literally named `__proto__`). `signature.json` is the
-  // detached signature, not a signed payload file, so it is exempt.
   for (const path of Object.keys(payload)) {
     if (path !== "signature.json" && !Object.hasOwn(manifest.files, path)) {
       errors.push(`unlisted payload (no digest in manifest.files): ${path}`);
     }
   }
 
-  // Kind-specific structural rules; every other kind is unaffected.
   if (manifest.kind === "mcp") {
     errors.push(...validateMcpManifest(manifest));
   } else if (manifest.kind === "pack") {
@@ -172,9 +155,10 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     errors.push(...validateComposableManifest(manifest));
   } else if (manifest.kind === "workflow") {
     errors.push(...validateWorkflowManifest(manifest));
+  } else if (manifest.kind === "role") {
+    errors.push(...validateRoleManifest(manifest));
   }
 
-  // Signature (optional): validate an Ed25519 `signature.json` over the stored `manifest.json` bytes.
   const sigRaw = payload["signature.json"];
   if (sigRaw) {
     signed = true;
@@ -219,3 +203,4 @@ export { validateSkillManifest } from "./skill.js";
 export { validateScriptManifest } from "./script.js";
 export { validateComposableManifest } from "./composable.js";
 export { validateWorkflowManifest } from "./workflow.js";
+export { validateRoleManifest } from "./role.js";
