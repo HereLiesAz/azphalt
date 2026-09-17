@@ -71,6 +71,15 @@ export interface Purchase {
   token: string;
 }
 
+export interface SellerStatus {
+  onboarded: boolean;
+  accountId?: string;
+  chargesEnabled?: boolean;
+  payoutsEnabled?: boolean;
+  detailsSubmitted?: boolean;
+  error?: string;
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 export async function fetchPackages(): Promise<PackageSummary[]> {
@@ -136,6 +145,30 @@ export async function downloadPurchase(packageId: string, token: string): Promis
   } finally {
     window.setTimeout(() => URL.revokeObjectURL(href), 30_000);
   }
+}
+
+export async function startSellerOnboarding(input: {
+  sellerId: string;
+  email?: string;
+  country?: string;
+}): Promise<{ url?: string; accountId?: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/connect/onboard`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const body = (await res.json()) as { url?: string; accountId?: string; error?: string };
+  if (!res.ok && !body.error) body.error = `onboarding ${res.status}`;
+  return body;
+}
+
+export async function fetchSellerStatus(sellerId: string, refresh = false): Promise<SellerStatus> {
+  const query = new URLSearchParams({ sellerId });
+  if (refresh) query.set("refresh", "1");
+  const res = await fetch(`${API_BASE}/api/connect/status?${query.toString()}`, { cache: "no-store" });
+  const body = (await res.json()) as SellerStatus;
+  if (!res.ok && !body.error) body.error = `seller status ${res.status}`;
+  return body;
 }
 
 export function priceLabel(p: PackageSummary): string {
