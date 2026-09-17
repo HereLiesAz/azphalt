@@ -835,6 +835,20 @@ async function webhook(req: Request, env: Env): Promise<Response> {
       return json({ received: true, cancelled: true });
     }
 
+    if (event.type === "account.updated") {
+      const accountId = typeof object.id === "string" ? object.id : "";
+      if (accountId) {
+        const known = await state(env).fetch(
+          new Request("https://state.internal/seller-account/" + encodeURIComponent(accountId)),
+        );
+        if (known.ok) {
+          const seller = await known.json() as SellerAccount;
+          await storeSeller(env, sellerFromStripe(seller.sellerId, object));
+        }
+      }
+      return json({ received: true, refreshed: true });
+    }
+
     return json({ received: true });
   } catch (error) {
     console.error("webhook fulfilment failed", error);
