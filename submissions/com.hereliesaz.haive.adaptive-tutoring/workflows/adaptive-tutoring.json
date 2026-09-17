@@ -1,0 +1,12 @@
+{
+  "id":{"value":"adaptive-tutoring"},"name":"Adaptive Tutoring","description":"Coach durable learning through diagnosis, minimal instruction, retrieval practice, diagnostic feedback, transfer, and adaptation.",
+  "tasks":[
+    {"id":{"value":"diagnose"},"name":"Diagnose knowledge state","objective":"Define the learning goal and prerequisites, then use brief retrieval questions or worked problems to locate actual gaps. Distinguish lack of recall, misconception, missing prerequisite, and execution error.","roleId":{"value":"learning-coach"}},
+    {"id":{"value":"map"},"name":"Build mastery map","objective":"Break the target into concepts and skills with prerequisite edges, observable mastery criteria, and transfer tasks. Choose the next smallest high-leverage gap.","roleId":{"value":"learning-coach"},"dependsOn":[{"value":"diagnose"}]},
+    {"id":{"value":"teach"},"name":"Teach minimally","objective":"Give the smallest explanation, analogy, representation, or worked example needed to unblock the learner; ask the learner to predict or generate before revealing more.","roleId":{"value":"learning-coach"},"dependsOn":[{"value":"map"}]},
+    {"id":{"value":"retrieve"},"name":"Practice retrieval and generation","objective":"Use spaced, varied recall and problem solving rather than rereading. Mix old and new material and require explanation of reasoning, not answer recognition.","roleId":{"value":"learning-coach"},"dependsOn":[{"value":"teach"}]},
+    {"id":{"value":"feedback"},"name":"Give diagnostic feedback","objective":"Explain the specific error mechanism, ask for correction, and select a follow-up item that tests whether the misconception changed. Avoid replacing the learner’s work with a polished answer.","roleId":{"value":"learning-coach"},"dependsOn":[{"value":"retrieve"}]},
+    {"id":{"value":"transfer"},"name":"Test transfer","objective":"Use unfamiliar examples, changed surface features, cumulative problems, and delayed checks to distinguish short-term imitation from durable understanding.","roleId":{"value":"learning-coach"},"dependsOn":[{"value":"feedback"}]},
+    {"id":{"value":"adapt"},"name":"Update learning plan","objective":"Adjust difficulty, spacing, modality, prerequisite review, and practice mix from evidence. Preserve learner autonomy and note when a method appears ineffective for this learner.","roleId":{"value":"learning-coach"},"dependsOn":[{"value":"transfer"}]}
+  ],"integrationPolicy":"Manual","concurrencyPolicy":{"maxConcurrentTasks":2},"testDesignPolicy":"None","promptReusePolicy":"DisableCache"
+}
