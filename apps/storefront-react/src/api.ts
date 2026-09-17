@@ -58,6 +58,19 @@ export interface CheckoutResponse {
   session?: CheckoutSession;
 }
 
+export interface CheckoutStatus {
+  status: "pending" | "ready";
+  packageId?: string;
+  token?: string;
+}
+
+export interface Purchase {
+  packageId: string;
+  sessionId: string;
+  issuedAt: string;
+  token: string;
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 export async function fetchPackages(): Promise<PackageSummary[]> {
@@ -84,6 +97,45 @@ export async function startCheckout(packageId: string): Promise<CheckoutResponse
   }
 
   return checkout;
+}
+
+export async function fetchCheckoutStatus(sessionId: string): Promise<CheckoutStatus> {
+  const res = await fetch(`${API_BASE}/api/checkout/session/${encodeURIComponent(sessionId)}`, {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  if (res.status === 202) return { status: "pending" };
+  if (!res.ok) throw new Error(`checkout status ${res.status}`);
+  return (await res.json()) as CheckoutStatus;
+}
+
+export async function fetchPurchases(): Promise<Purchase[]> {
+  const res = await fetch(`${API_BASE}/api/purchases`, {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`purchases ${res.status}`);
+  return (await res.json()) as Purchase[];
+}
+
+export async function downloadPurchase(packageId: string, token: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/download/${encodeURIComponent(packageId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`download ${res.status}: ${await res.text()}`);
+  const blob = await res.blob();
+  const href = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = packageId + ".azp";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    window.setTimeout(() => URL.revokeObjectURL(href), 30_000);
+  }
 }
 
 export function priceLabel(p: PackageSummary): string {
