@@ -531,7 +531,7 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   }
 
   const knownSeller = await storedSeller(env, listing.sellerId);
-  const destination = knownSeller?.accountId || destination;
+  const destination = knownSeller?.accountId || listing.stripeAccountId;
   if (!destination) {
     return json({ error: "seller has not connected a Stripe payout account" }, 409);
   }
