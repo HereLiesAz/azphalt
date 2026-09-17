@@ -617,6 +617,82 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   }
 }
 
+async function connectOnboard(req: Request, env: Env): Promise<Response> {
+  if (!env.STRIPE_SECRET_KEY) return json({ error: "Stripe Connect onboarding is not configured" }, 404);
+
+  let body: { sellerId?: unknown; email?: unknown; country?: unknown };
+  try {
+    body = await req.json() as { sellerId?: unknown; email?: unknown; country?: unknown };
+  } catch {
+    return json({ error: "invalid JSON body" }, 400);
+  }
+
+  const sellerId = typeof body.sellerId === "string" ? body.sellerId.trim() : "";
+  if (!sellerId || sellerId.length > 128) return json({ error: "sellerId is required" }, 400);
+  const email = typeof body.email === "string" && body.email.trim() ? body.email.trim() : undefined;
+  const country = typeof body.country === "string" && body.country.trim() ? body.country.trim().toUpperCase() : undefined;
+
+  try {
+    let seller = await storedSeller(env, sellerId);
+    if (!seller) {
+      const account = await stripe(env, "/v1/accounts", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: urlForm({
+          type: "express",
+          "capabilities[transfers][requested]": "true",
+          "capabilities[card_payments][requested]": "true",
+          email,
+          country,
+        }),
+      });
+      seller = await storeSeller(env, sellerFromStripe(sellerId, account));
+    } else {
+      seller = await refreshSeller(env, sellerId, seller.accountId);
+    }
+
+    const origin = env.PUBLIC_ORIGIN.replace(/\/$/, "");
+    const back = origin + "/connect/onboard?sellerId=" + encodeURIComponent(sellerId);
+    const link = await stripe(env, "/v1/account_links", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: urlForm({
+        account: seller.accountId,
+        refresh_url: back,
+        return_url: back,
+        type: "account_onboarding",
+      }),
+    });
+    if (typeof link.url !== "string" || !link.url) throw new Error("Stripe returned no onboarding URL");
+    return json({ url: link.url, accountId: seller.accountId });
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : "onboarding failed" }, 502);
+  }
+}
+
+async function connectStatus(req: Request, env: Env): Promise<Response> {
+  const url = new URL(req.url);
+  const sellerId = (url.searchParams.get("sellerId") || "").trim();
+  if (!sellerId) return json({ error: "sellerId is required" }, 400);
+
+  try {
+    let seller = await storedSeller(env, sellerId);
+    if (!seller) return json({ onboarded: false });
+    if (url.searchParams.get("refresh") === "1") {
+      seller = await refreshSeller(env, sellerId, seller.accountId);
+    }
+    return json({
+      onboarded: true,
+      accountId: seller.accountId,
+      chargesEnabled: seller.chargesEnabled,
+      payoutsEnabled: seller.payoutsEnabled,
+      detailsSubmitted: seller.detailsSubmitted,
+    });
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : "seller status failed" }, 502);
+  }
+}
+
 function stripeSignature(header: string): { timestamp: string; signatures: string[] } | undefined {
   let timestamp = "";
   const signatures: string[] = [];
