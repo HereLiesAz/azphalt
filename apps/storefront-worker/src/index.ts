@@ -42,11 +42,20 @@ interface CatalogEntry {
 interface Listing {
   packageId: string;
   sellerId: string;
-  stripeAccountId: string;
+  stripeAccountId?: string;
   amountCents: number;
   currency: string;
   interval?: "month" | "year";
   status?: "active" | "paused";
+}
+
+interface SellerAccount {
+  sellerId: string;
+  accountId: string;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  detailsSubmitted: boolean;
+  updatedAt: string;
 }
 
 interface EntitlementClaims {
@@ -283,6 +292,41 @@ async function getListings(req: Request, env: Env): Promise<Listing[]> {
   const response = await env.ASSETS.fetch(new Request(url));
   if (!response.ok) return [];
   return response.json() as Promise<Listing[]>;
+}
+
+async function storedSeller(env: Env, sellerId: string): Promise<SellerAccount | undefined> {
+  const response = await state(env).fetch(
+    new Request("https://state.internal/seller/" + encodeURIComponent(sellerId)),
+  );
+  if (response.status === 404) return undefined;
+  if (!response.ok) throw new Error("seller lookup failed");
+  return response.json() as Promise<SellerAccount>;
+}
+
+async function storeSeller(env: Env, record: SellerAccount): Promise<SellerAccount> {
+  return stateJson<SellerAccount>(env, "/seller/" + encodeURIComponent(record.sellerId), {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(record),
+  });
+}
+
+function sellerFromStripe(sellerId: string, account: Record<string, unknown>): SellerAccount {
+  const accountId = typeof account.id === "string" ? account.id : "";
+  if (!accountId) throw new Error("Stripe response missing account id");
+  return {
+    sellerId,
+    accountId,
+    chargesEnabled: account.charges_enabled === true,
+    payoutsEnabled: account.payouts_enabled === true,
+    detailsSubmitted: account.details_submitted === true,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function refreshSeller(env: Env, sellerId: string, accountId: string): Promise<SellerAccount> {
+  const account = await stripe(env, "/v1/accounts/" + encodeURIComponent(accountId), { method: "GET" });
+  return storeSeller(env, sellerFromStripe(sellerId, account));
 }
 
 function activeListing(listings: Listing[], id: string): Listing | undefined {
