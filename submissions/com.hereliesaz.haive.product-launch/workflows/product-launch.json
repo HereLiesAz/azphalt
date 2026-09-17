@@ -1,0 +1,18 @@
+{
+  "id":{"value":"product-launch"},
+  "name":"Product Launch",
+  "description":"Plan and execute a product launch from market evidence through positioning, readiness, rollout, and learning.",
+  "tasks":[
+    {"id":{"value":"launch-contract"},"name":"Lock launch contract","objective":"Define target outcome, launch type, target segment/ICP, product readiness assumptions, geography, pricing/packaging constraints, success metrics, decision owners, launch window, and explicit non-goals.","roleId":{"value":"launch-strategist"}},
+    {"id":{"value":"market-evidence"},"name":"Build market and customer evidence","objective":"Synthesize customer interviews, usage/support data, win-loss, category dynamics, alternatives, purchase triggers, objections, and competitor positioning. Separate observed customer language from internal adjectives.","roleId":{"value":"launch-strategist"},"dependsOn":[{"value":"launch-contract"}]},
+    {"id":{"value":"positioning"},"name":"Create positioning and message architecture","objective":"Define target segment, problem, differentiated value, category/frame, proof, objections, messaging hierarchy, and claims that can be substantiated.","roleId":{"value":"launch-strategist"},"dependsOn":[{"value":"market-evidence"}]},
+    {"id":{"value":"gtm-plan"},"name":"Design go-to-market system","objective":"Choose channels, distribution, launch sequence, pricing/packaging expression, sales/customer-success enablement, lifecycle messaging, partnerships, content, and operational handoffs.","roleId":{"value":"launch-strategist"},"dependsOn":[{"value":"positioning"}]},
+    {"id":{"value":"readiness"},"name":"Run launch readiness review","objective":"Audit product stability, analytics, support, docs, legal/compliance, billing, enablement, localization, rollback/incident plans, and dependencies. Record blockers and owners.","roleId":{"value":"launch-strategist"},"dependsOn":[{"value":"gtm-plan"}]},
+    {"id":{"value":"launch"},"name":"Execute controlled launch","objective":"Ship according to the approved sequence; monitor activation, conversion, errors, support signals, qualitative feedback, and channel response. Keep a timestamped decision log.","roleId":{"value":"launch-strategist"},"dependsOn":[{"value":"readiness"}]},
+    {"id":{"value":"learn"},"name":"Post-launch learning loop","objective":"Compare outcomes to hypotheses, segment results, identify leading/lagging signals, separate channel execution from product/market mismatch, and produce keep/change/stop decisions.","roleId":{"value":"launch-strategist"},"dependsOn":[{"value":"launch"}]}
+  ],
+  "integrationPolicy":"Manual",
+  "concurrencyPolicy":{"maxConcurrentTasks":2},
+  "testDesignPolicy":"None",
+  "promptReusePolicy":"PreferCache"
+}
