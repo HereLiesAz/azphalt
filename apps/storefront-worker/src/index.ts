@@ -996,6 +996,11 @@ export class AzphaltState {
         "subscription_id TEXT PRIMARY KEY, package_id TEXT NOT NULL, subject TEXT NOT NULL, interval TEXT NOT NULL)"
       );
       sql.exec(
+        "CREATE TABLE IF NOT EXISTS seller_accounts (" +
+        "seller_id TEXT PRIMARY KEY, account_id TEXT NOT NULL UNIQUE, charges_enabled INTEGER NOT NULL, " +
+        "payouts_enabled INTEGER NOT NULL, details_submitted INTEGER NOT NULL, updated_at TEXT NOT NULL)"
+      );
+      sql.exec(
         "CREATE TABLE IF NOT EXISTS protected_packages (" +
         "package_id TEXT NOT NULL, version TEXT NOT NULL, total_bytes INTEGER NOT NULL, " +
         "chunks INTEGER NOT NULL, content_type TEXT NOT NULL, updated_at TEXT NOT NULL, " +
@@ -1096,6 +1101,62 @@ export class AzphaltState {
         token: JSON.parse(String(row.token_json)),
         issuedAt: String(row.issued_at),
       })));
+    }
+
+    match = path.match(/^\/seller\/([^/]+)$/);
+    if (match) {
+      const sellerId = decodeURIComponent(match[1]);
+      if (req.method === "GET") {
+        const row = first(sql.exec(
+          "SELECT seller_id,account_id,charges_enabled,payouts_enabled,details_submitted,updated_at " +
+          "FROM seller_accounts WHERE seller_id=?",
+          sellerId,
+        ));
+        if (!row) return json({ error: "not found" }, 404);
+        return json({
+          sellerId: String(row.seller_id),
+          accountId: String(row.account_id),
+          chargesEnabled: Number(row.charges_enabled) === 1,
+          payoutsEnabled: Number(row.payouts_enabled) === 1,
+          detailsSubmitted: Number(row.details_submitted) === 1,
+          updatedAt: String(row.updated_at),
+        });
+      }
+      if (req.method === "PUT") {
+        const seller = await req.json() as SellerAccount;
+        sql.exec(
+          "INSERT INTO seller_accounts(seller_id,account_id,charges_enabled,payouts_enabled,details_submitted,updated_at) " +
+          "VALUES(?,?,?,?,?,?) ON CONFLICT(seller_id) DO UPDATE SET account_id=excluded.account_id, " +
+          "charges_enabled=excluded.charges_enabled,payouts_enabled=excluded.payouts_enabled, " +
+          "details_submitted=excluded.details_submitted,updated_at=excluded.updated_at",
+          seller.sellerId,
+          seller.accountId,
+          seller.chargesEnabled ? 1 : 0,
+          seller.payoutsEnabled ? 1 : 0,
+          seller.detailsSubmitted ? 1 : 0,
+          seller.updatedAt,
+        );
+        return json(seller);
+      }
+    }
+
+    match = path.match(/^\/seller-account\/([^/]+)$/);
+    if (match && req.method === "GET") {
+      const accountId = decodeURIComponent(match[1]);
+      const row = first(sql.exec(
+        "SELECT seller_id,account_id,charges_enabled,payouts_enabled,details_submitted,updated_at " +
+        "FROM seller_accounts WHERE account_id=?",
+        accountId,
+      ));
+      if (!row) return json({ error: "not found" }, 404);
+      return json({
+        sellerId: String(row.seller_id),
+        accountId: String(row.account_id),
+        chargesEnabled: Number(row.charges_enabled) === 1,
+        payoutsEnabled: Number(row.payouts_enabled) === 1,
+        detailsSubmitted: Number(row.details_submitted) === 1,
+        updatedAt: String(row.updated_at),
+      });
     }
 
     match = path.match(/^\/subscription\/([^/]+)$/);
