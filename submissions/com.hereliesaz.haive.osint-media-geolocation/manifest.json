@@ -1,0 +1,4 @@
+{
+  "azphalt":"0.1","id":"com.hereliesaz.haive.osint-media-geolocation","name":"OSINT — Image & Video Geolocation","version":"1.0.0","author":"HereLiesAz","description":"Geolocate and, when evidence allows, chronolocate public-interest imagery using visual clues, maps, street/satellite imagery, terrain, sun/shadow geometry, weather, and independent falsification.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"osint-media-geolocation","name":"OSINT — Image & Video Geolocation","path":"workflows/osint-media-geolocation.json"}],"agents":[{"id":"osint-geolocation-analyst","name":"OSINT Geolocation Analyst","path":"agents/geolocation-analyst.json"},{"id":"osint-location-skeptic","name":"OSINT Location Skeptic","path":"agents/location-skeptic.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
+}

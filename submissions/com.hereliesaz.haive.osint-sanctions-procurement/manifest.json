@@ -1,0 +1,4 @@
+{
+  "azphalt":"0.1","id":"com.hereliesaz.haive.osint-sanctions-procurement","name":"OSINT — Sanctions & Procurement Exposure","version":"1.0.0","author":"HereLiesAz","description":"Research sanctions/watchlist exposure, public procurement, ownership links, counterparties, and temporal risk using official lists and provenance-rich entity graphs with aggressive false-positive control.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"osint-sanctions-procurement","name":"OSINT — Sanctions & Procurement Exposure","path":"workflows/osint-sanctions-procurement.json"}],"agents":[{"id":"osint-risk-researcher","name":"OSINT Risk Researcher","path":"agents/risk-researcher.json"},{"id":"osint-screening-auditor","name":"OSINT Screening Auditor","path":"agents/screening-auditor.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
+}
