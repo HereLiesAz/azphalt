@@ -3,6 +3,8 @@ import {
   fetchPackages,
   fetchCheckoutStatus,
   fetchPurchases,
+  fetchSellerStatus,
+  startSellerOnboarding,
   downloadPurchase,
   formatCount,
   formatRating,
@@ -688,6 +690,84 @@ function StorefrontApp() {
   );
 }
 
+function SellerOnboardingPage() {
+  const params = new URLSearchParams(window.location.search);
+  const initialSeller = params.get("sellerId") ?? "";
+  const [sellerId, setSellerId] = useState(initialSeller);
+  const [email, setEmail] = useState("");
+  const [country, setCountry] = useState("US");
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!initialSeller) return;
+    fetchSellerStatus(initialSeller, true)
+      .then((seller) => {
+        if (seller.error) setStatus(seller.error);
+        else if (!seller.onboarded) setStatus("Stripe account not started yet.");
+        else if (seller.chargesEnabled && seller.payoutsEnabled) setStatus("Ready to sell and receive payouts.");
+        else setStatus("Stripe still needs information before this seller can receive purchases.");
+      })
+      .catch((error) => setStatus(error instanceof Error ? error.message : "Could not check seller status."));
+  }, [initialSeller]);
+
+  const begin = async () => {
+    const id = sellerId.trim();
+    if (!id) {
+      setStatus("Enter a seller ID.");
+      return;
+    }
+    setBusy(true);
+    setStatus("");
+    try {
+      const result = await startSellerOnboarding({
+        sellerId: id,
+        email: email.trim() || undefined,
+        country: country.trim().toUpperCase() || undefined,
+      });
+      if (result.error) {
+        setStatus(result.error);
+        return;
+      }
+      if (result.url) {
+        window.location.assign(result.url);
+        return;
+      }
+      setStatus("Stripe returned no onboarding link.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not start onboarding.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 720, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <h1 style={{ fontSize: 44, marginTop: 32 }}>Sell on Azphalt</h1>
+      <p style={{ color: "var(--on-surface-variant)" }}>
+        Connect a Stripe Express account. Stripe handles identity verification and payout details; Azphalt stores only the connected-account id and readiness flags.
+      </p>
+      <label style={{ display: "block", marginTop: 22, fontWeight: 800 }}>Seller ID</label>
+      <input value={sellerId} onChange={(e) => setSellerId(e.target.value)} placeholder="seller_yourname" style={{ width: "100%", padding: 12, marginTop: 6 }} />
+      <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Email (optional)</label>
+      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" style={{ width: "100%", padding: 12, marginTop: 6 }} />
+      <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Country</label>
+      <input value={country} onChange={(e) => setCountry(e.target.value)} maxLength={2} style={{ width: 90, padding: 12, marginTop: 6 }} />
+      <div>
+        <button
+          onClick={() => void begin()}
+          disabled={busy}
+          style={{ marginTop: 22, border: 0, padding: "14px 24px", fontWeight: 800, background: "var(--primary)", color: "var(--on-primary)" }}
+        >
+          {busy ? "Opening Stripe…" : "Continue with Stripe"}
+        </button>
+      </div>
+      {status && <p style={{ marginTop: 18, color: "var(--on-surface-variant)" }}>{status}</p>}
+    </main>
+  );
+}
+
 function CheckoutSuccessPage() {
   const sessionId = new URLSearchParams(window.location.search).get("session_id") ?? "";
   const [status, setStatus] = useState(sessionId ? "Waiting for payment confirmation…" : "Missing checkout session.");
@@ -818,6 +898,7 @@ export function App() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   if (path === "/checkout/success") return <CheckoutSuccessPage />;
   if (path === "/purchases") return <PurchasesPage />;
+  if (path === "/connect/onboard") return <SellerOnboardingPage />;
   return <StorefrontApp />;
 }
 
