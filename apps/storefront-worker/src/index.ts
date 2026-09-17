@@ -530,10 +530,13 @@ async function checkout(req: Request, env: Env): Promise<Response> {
     return json({ error: "paid package bytes are not available in protected storage" }, 503);
   }
 
-  const account = await stripe(env, "/v1/accounts/" + encodeURIComponent(listing.stripeAccountId), {
-    method: "GET",
-  });
-  if (account.charges_enabled !== true || account.payouts_enabled !== true) {
+  const knownSeller = await storedSeller(env, listing.sellerId);
+  const destination = knownSeller?.accountId || destination;
+  if (!destination) {
+    return json({ error: "seller has not connected a Stripe payout account" }, 409);
+  }
+  const seller = await refreshSeller(env, listing.sellerId, destination);
+  if (!seller.chargesEnabled || !seller.payoutsEnabled) {
     return json({ error: "seller payout account is not ready" }, 409);
   }
 
@@ -560,11 +563,11 @@ async function checkout(req: Request, env: Env): Promise<Response> {
     fields.mode = "subscription";
     fields["line_items[0][price_data][recurring][interval]"] = listing.interval;
     fields["subscription_data[application_fee_percent]"] = ((applicationFee / listing.amountCents) * 100).toFixed(2);
-    fields["subscription_data[transfer_data][destination]"] = listing.stripeAccountId;
+    fields["subscription_data[transfer_data][destination]"] = destination;
   } else {
     fields.mode = "payment";
     fields["payment_intent_data[application_fee_amount]"] = String(applicationFee);
-    fields["payment_intent_data[transfer_data][destination]"] = listing.stripeAccountId;
+    fields["payment_intent_data[transfer_data][destination]"] = destination;
   }
 
   try {
