@@ -1,0 +1,3 @@
+{
+  "azphalt":"0.1","id":"com.hereliesaz.haive.role.feature-reviewer","name":"Role — Feature Reviewer","version":"1.0.0","author":"HereLiesAz","description":"A Company role for adversarial software review that traces callers, contracts, side effects, tests, migrations, integration wiring, and completion claims beyond the diff.","license":"MIT","compat":">=0.1","kind":"role","targetApps":["com.hereliesaz.haive"],"role":{"format":"haive.role.v1","roles":[{"id":"company-feature-reviewer","name":"Feature Reviewer","path":"roles/feature-reviewer.json"}]}
+}

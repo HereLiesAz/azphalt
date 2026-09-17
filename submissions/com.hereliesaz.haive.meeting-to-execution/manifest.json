@@ -1,0 +1,4 @@
+{
+  "azphalt":"0.1","id":"com.hereliesaz.haive.meeting-to-execution","name":"Meeting to Execution","version":"1.0.0","author":"HereLiesAz","description":"Turn meetings into explicit decisions, executable actions, reconciled project state, and verified follow-through.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"meeting-to-execution","name":"Meeting to Execution","path":"workflows/meeting-to-execution.json"}],"agents":[{"id":"execution-secretary","name":"Execution Secretary","path":"agents/execution-secretary.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
+}

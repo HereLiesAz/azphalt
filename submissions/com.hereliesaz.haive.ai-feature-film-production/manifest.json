@@ -1,0 +1,21 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.haive.ai-feature-film-production",
+  "name": "AI Feature Film Production",
+  "version": "1.0.0",
+  "author": "HereLiesAz",
+  "description": "Plan and produce a feature-length AI-assisted film through locked story architecture, continuity bibles, shot-level generation, layered audio, editorial assembly, and continuity QC.",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "workflow",
+  "targetApps": ["com.hereliesaz.haive"],
+  "workflow": {
+    "format": "haive.workflow.v1",
+    "definitions": [{"id":"ai-feature-film-production","name":"AI Feature Film Production","path":"workflows/ai-feature-film-production.json"}],
+    "agents": [
+      {"id":"film-showrunner","name":"Film Showrunner","path":"agents/showrunner.json"},
+      {"id":"film-continuity-supervisor","name":"Film Continuity Supervisor","path":"agents/continuity-supervisor.json"}
+    ],
+    "hostPermissions": ["WorkflowRegister","WorkflowLaunch"]
+  }
+}

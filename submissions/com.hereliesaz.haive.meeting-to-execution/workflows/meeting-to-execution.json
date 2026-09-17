@@ -1,0 +1,11 @@
+{
+  "id":{"value":"meeting-to-execution"},"name":"Meeting to Execution","description":"Turn meetings into explicit decisions, executable actions, reconciled project state, and verified follow-through.",
+  "tasks":[
+    {"id":{"value":"context"},"name":"Assemble meeting context","objective":"Collect agenda, objective, pre-reads, prior decisions, open actions, constraints, and attendee roles. Identify what must be decided versus discussed.","roleId":{"value":"execution-secretary"}},
+    {"id":{"value":"capture"},"name":"Capture decisions and evidence","objective":"Record decisions, options considered, rationale, dissent or uncertainty, commitments, unresolved questions, and exact material constraints. Do not turn discussion into a decision retroactively.","roleId":{"value":"execution-secretary"},"dependsOn":[{"value":"context"}]},
+    {"id":{"value":"actions"},"name":"Convert commitments into executable actions","objective":"Create one owner, deliverable, due date or trigger, dependencies, acceptance condition, and escalation path for every real commitment. Split vague multi-owner actions.","roleId":{"value":"execution-secretary"},"dependsOn":[{"value":"capture"}]},
+    {"id":{"value":"reconcile"},"name":"Reconcile with prior state","objective":"Compare against prior decisions, plans, docs, and tickets. Flag contradictions, superseded decisions, duplicate work, and overlooked dependencies.","roleId":{"value":"execution-secretary"},"dependsOn":[{"value":"actions"}]},
+    {"id":{"value":"publish"},"name":"Publish concise record","objective":"Produce decisions, action table, unresolved questions, parking lot, and evidence or pre-read links. Keep transcript detail out unless needed for accountability.","roleId":{"value":"execution-secretary"},"dependsOn":[{"value":"reconcile"}]},
+    {"id":{"value":"followthrough"},"name":"Close the execution loop","objective":"At the next checkpoint verify completion evidence, update blocks, surface missed commitments, and explicitly close or renegotiate dates rather than silently carrying them forever.","roleId":{"value":"execution-secretary"},"dependsOn":[{"value":"publish"}]}
+  ],"integrationPolicy":"Manual","concurrencyPolicy":{"maxConcurrentTasks":2},"testDesignPolicy":"None","promptReusePolicy":"PreferCache"
+}

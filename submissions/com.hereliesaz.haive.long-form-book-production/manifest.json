@@ -1,0 +1,4 @@
+{
+  "azphalt":"0.1","id":"com.hereliesaz.haive.long-form-book-production","name":"Long-Form Book Production","version":"1.0.0","author":"HereLiesAz","description":"Develop a book from premise through architecture, source/canon management, chapter drafting, structural revision, line editing, consistency checks, and publication-ready manuscript packaging.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"long-form-book-production","name":"Long-Form Book Production","path":"workflows/long-form-book-production.json"}],"agents":[{"id":"book-editor","name":"Book Editor","path":"agents/book-editor.json"},{"id":"manuscript-continuity-editor","name":"Manuscript Continuity Editor","path":"agents/continuity-editor.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
+}

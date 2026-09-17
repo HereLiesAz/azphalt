@@ -1,0 +1,57 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.haive.paperplanes-stratified-reconstruction",
+  "name": "PaperPlanes — Stratified Scene Reconstruction",
+  "version": "1.0.0",
+  "author": "HereLiesAz",
+  "description": "Turn a flat image or painting into coherent depth-ordered paper-theater layers using perspective normalization, semantic segmentation, depth fusion, occlusion reasoning, hidden-surface completion, adaptive plane allocation, and composite QC.",
+  "homepage": "https://github.com/HereLiesAz/PaperPlanes",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "workflow",
+  "targetApps": ["com.hereliesaz.haive"],
+  "workflow": {
+    "format": "haive.workflow.v1",
+    "definitions": [
+      {
+        "id": "paperplanes-stratified-reconstruction",
+        "name": "PaperPlanes — Stratified Scene Reconstruction",
+        "description": "Decompose a single image into production-ready layered planes while preserving source composition and explicit occlusion order.",
+        "path": "workflows/paperplanes-stratified-reconstruction.json"
+      }
+    ],
+    "agents": [
+      {
+        "id": "paperplanes-scene-director",
+        "name": "PaperPlanes Scene Director",
+        "description": "Owns source fidelity, intent, constraints, and final deliverable coherence.",
+        "path": "agents/scene-director.json"
+      },
+      {
+        "id": "paperplanes-geometry-engineer",
+        "name": "PaperPlanes Geometry Engineer",
+        "description": "Builds depth, segmentation, confidence, and plane-allocation evidence.",
+        "path": "agents/geometry-engineer.json"
+      },
+      {
+        "id": "paperplanes-occlusion-architect",
+        "name": "PaperPlanes Occlusion Architect",
+        "description": "Resolves front/back topology, overlapping objects, and hidden surfaces.",
+        "path": "agents/occlusion-architect.json"
+      },
+      {
+        "id": "paperplanes-layer-engineer",
+        "name": "PaperPlanes Layer Engineer",
+        "description": "Synthesizes clean RGBA strata, cut geometry, bleed, registration, and packaging artifacts.",
+        "path": "agents/layer-engineer.json"
+      },
+      {
+        "id": "paperplanes-visual-qc",
+        "name": "PaperPlanes Visual QC",
+        "description": "Attempts to falsify layer fidelity with composite and parallax checks.",
+        "path": "agents/visual-qc.json"
+      }
+    ],
+    "hostPermissions": ["WorkflowRegister", "WorkflowLaunch"]
+  }
+}

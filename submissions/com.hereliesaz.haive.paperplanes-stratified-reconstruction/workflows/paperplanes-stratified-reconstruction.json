@@ -1,0 +1,138 @@
+{
+  "id": {"value": "paperplanes-stratified-reconstruction"},
+  "name": "PaperPlanes — Stratified Scene Reconstruction",
+  "description": "Convert a single painting, illustration, or photograph into coherent depth-ordered paper-theater layers without treating a generated proxy as ground truth.",
+  "tasks": [
+    {
+      "id": {"value": "source-calibration"},
+      "name": "Calibrate source",
+      "objective": "Preserve the untouched source, identify the intended artwork/image boundary, correct perspective only when justified, record crop/warp transforms, target layer-count range, intended output use, and uncertainty. Prefer reversible geometry. If automatic boundary detection is ambiguous, surface the competing candidates and request a correction rather than silently choosing one.",
+      "roleId": {"value": "paperplanes-scene-director"},
+      "acceptanceCriteria": [
+        {"description": "An untouched source reference and a normalized working image are both preserved."},
+        {"description": "Every crop or perspective transform is explicit and reversible."},
+        {"description": "Ambiguous framing is identified instead of being hidden by an arbitrary crop."},
+        {"description": "The requested or inferred layer-count bounds and output medium are recorded."}
+      ]
+    },
+    {
+      "id": {"value": "semantic-decomposition"},
+      "name": "Parse semantic regions",
+      "objective": "Segment the normalized source into coherent objects and material regions using the strongest available promptable segmentation system. Preserve instance identity. Detect nested parts and thin structures. Record mask confidence and boundary uncertainty. Do not force a single object to remain indivisible when visible articulation or later depth evidence proves that different parts occupy materially different depths.",
+      "roleId": {"value": "paperplanes-geometry-engineer"},
+      "dependsOn": [{"value": "source-calibration"}],
+      "acceptanceCriteria": [
+        {"description": "Major foreground, midground, and background entities have masks or explicit unresolved regions."},
+        {"description": "Thin structures, holes, and overlapping instances are not silently merged into background."},
+        {"description": "Mask confidence or ambiguity is retained for downstream reconciliation."}
+      ]
+    },
+    {
+      "id": {"value": "depth-hypotheses"},
+      "name": "Estimate depth hypotheses",
+      "objective": "Estimate scene geometry directly from the normalized source with the strongest available depth model and retain confidence/uncertainty. For stylized paintings or illustrations, optionally create one or more structure-preserving proxy reconstructions solely as auxiliary depth evidence; never replace source geometry with a photorealistic hallucination. Compare direct-source and proxy depth order, flag disagreement, and preserve all useful hypotheses for reconciliation.",
+      "roleId": {"value": "paperplanes-geometry-engineer"},
+      "dependsOn": [{"value": "source-calibration"}],
+      "acceptanceCriteria": [
+        {"description": "A direct-source depth estimate exists and is never discarded in favor of a generated proxy."},
+        {"description": "Depth uncertainty and obvious failure regions such as reflections, flat graphic motifs, or impossible perspective are identified."},
+        {"description": "Any generated proxy is composition-locked and explicitly labeled auxiliary evidence."},
+        {"description": "Conflicting depth hypotheses are carried forward rather than averaged into false certainty."}
+      ]
+    },
+    {
+      "id": {"value": "spatial-reconciliation"},
+      "name": "Reconcile scene topology",
+      "objective": "Fuse semantic masks, depth hypotheses, edge/depth discontinuities, perspective cues, and visible overlap into a source-registered scene graph. Align any proxy-derived geometry back to the source with the least-distorting transform that works; escalate beyond affine alignment when local drift requires homography or dense correspondence. Build explicit front/behind occlusion relationships, split depth-spanning objects where necessary, and mark low-confidence ordering for correction.",
+      "roleId": {"value": "paperplanes-occlusion-architect"},
+      "dependsOn": [
+        {"value": "semantic-decomposition"},
+        {"value": "depth-hypotheses"}
+      ],
+      "acceptanceCriteria": [
+        {"description": "Every retained object/region has a source-space mask and depth/order evidence."},
+        {"description": "Foreground/background relationships are represented explicitly as an occlusion graph, not inferred only from grayscale bins."},
+        {"description": "Objects with significant intra-object depth span are split or otherwise represented without flattening contradictory geometry."},
+        {"description": "Low-confidence alignment or depth-order decisions are called out for human correction before destructive synthesis."}
+      ]
+    },
+    {
+      "id": {"value": "hidden-surface-completion"},
+      "name": "Complete hidden surfaces",
+      "objective": "Identify only the source regions that will become exposed when foreground planes are separated or shifted. Reconstruct missing background color and geometry behind those occluders with depth-aware inpainting or multi-view/de-occlusion methods. Keep visible pixels immutable. Constrain completions by surrounding texture, perspective, semantic identity, and neighboring depth so hidden content is plausible without rewriting the original image.",
+      "roleId": {"value": "paperplanes-occlusion-architect"},
+      "dependsOn": [{"value": "spatial-reconciliation"}],
+      "acceptanceCriteria": [
+        {"description": "Visible source pixels remain unchanged."},
+        {"description": "Only disocclusion regions needed by the planned plane separation are synthesized."},
+        {"description": "Completed regions include compatible depth/order information, not color alone."},
+        {"description": "Completion seams are outside or beneath foreground silhouettes where practical."}
+      ]
+    },
+    {
+      "id": {"value": "plane-optimization"},
+      "name": "Optimize plane allocation",
+      "objective": "Choose the discrete layer count and assign scene regions to planes using semantic cohesion, occlusion constraints, perceptual depth error, silhouette preservation, and output constraints. Treat the requested layer count as a bound or preference unless explicitly fixed. Prefer constrained clustering or optimization over equal-width depth bins. Never place mutually occluding regions on the same plane when doing so destroys the intended overlap.",
+      "roleId": {"value": "paperplanes-geometry-engineer"},
+      "dependsOn": [
+        {"value": "spatial-reconciliation"},
+        {"value": "hidden-surface-completion"}
+      ],
+      "acceptanceCriteria": [
+        {"description": "The selected plane count is justified by scene complexity and user constraints rather than a hard-coded default."},
+        {"description": "Plane ordering satisfies the occlusion graph."},
+        {"description": "Semantic objects remain intact unless a deliberate depth split improves geometric fidelity."},
+        {"description": "No plane is empty or redundant without an explicit production reason."}
+      ]
+    },
+    {
+      "id": {"value": "draft-layer-synthesis"},
+      "name": "Synthesize draft layers",
+      "objective": "Render each optimized plane as a source-registered RGBA layer. Use completed hidden surfaces where separation exposes them. Preserve source color for visible content. Produce clean alpha masks, anti-aliased edges, and—when the target is physical fabrication—cut contours, bleed/trap margins, registration marks, scale metadata, and safe bridges/tabs for fragile islands. Also emit a machine-readable layer manifest containing order and representative depth.",
+      "roleId": {"value": "paperplanes-layer-engineer"},
+      "dependsOn": [{"value": "plane-optimization"}],
+      "acceptanceCriteria": [
+        {"description": "Every plane is source-registered and composable at the original dimensions."},
+        {"description": "Visible source content is reproduced without color or composition drift."},
+        {"description": "Alpha edges are clean enough for both digital compositing and cut-path derivation."},
+        {"description": "A deterministic layer order and depth manifest accompanies the images."}
+      ]
+    },
+    {
+      "id": {"value": "adversarial-composite-qc"},
+      "name": "Falsify the draft",
+      "objective": "Reconstruct the source from the draft planes and render small parallax/plane-separation previews. Attempt to falsify correctness: inspect silhouette seams, halos, missing thin structures, impossible front/back order, holes revealed behind foregrounds, duplicated content, depth reversals, warped geometry, invented visible content, and needless planes. Return a concrete repair ledger tied to regions/layers; do not praise or hand-wave.",
+      "roleId": {"value": "paperplanes-visual-qc"},
+      "dependsOn": [{"value": "draft-layer-synthesis"}],
+      "acceptanceCriteria": [
+        {"description": "A zero-offset recomposite is compared against the normalized source."},
+        {"description": "At least one small positive and negative parallax preview is inspected for disocclusion failures."},
+        {"description": "Every finding names the affected layer/region and a concrete repair."},
+        {"description": "Unresolved ambiguity is distinguished from confirmed defect."}
+      ]
+    },
+    {
+      "id": {"value": "repair-and-package"},
+      "name": "Repair and package",
+      "objective": "Apply the QC repair ledger to the smallest affected masks, completions, assignments, or edge treatments. Re-run the relevant composite/parallax checks after each material repair. Package the final transparent planes, optional SVG/PDF cut paths for physical fabrication, layer-order/depth manifest, normalized source reference, composite proof, parallax proof, and concise assembly/use instructions. Preserve intermediate provenance so a user can revise one plane without regenerating the entire scene.",
+      "roleId": {"value": "paperplanes-layer-engineer"},
+      "dependsOn": [
+        {"value": "draft-layer-synthesis"},
+        {"value": "adversarial-composite-qc"}
+      ],
+      "acceptanceCriteria": [
+        {"description": "All confirmed QC findings are either repaired or explicitly documented as accepted limitations."},
+        {"description": "The zero-offset final composite preserves the source composition and visible content."},
+        {"description": "Small parallax motion does not expose unfilled holes or obvious layer-order contradictions."},
+        {"description": "The deliverable includes ordered RGBA planes plus a machine-readable manifest; fabrication outputs are included when requested."},
+        {"description": "Intermediate masks, transforms, depth evidence, and plane assignments remain available for surgical revision."}
+      ]
+    }
+  ],
+  "integrationPolicy": "Manual",
+  "concurrencyPolicy": {
+    "maxConcurrentTasks": 2
+  },
+  "testDesignPolicy": "None",
+  "promptReusePolicy": "PreferCache"
+}
