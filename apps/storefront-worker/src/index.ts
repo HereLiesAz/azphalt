@@ -345,6 +345,108 @@ async function apiPackages(req: Request, env: Env): Promise<Response> {
   }));
 }
 
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function sortPackages(packages: CatalogEntry[], sort: string | null): CatalogEntry[] {
+  const out = [...packages];
+  if (sort === "name") out.sort((a, b) => a.name.localeCompare(b.name));
+  else if (sort === "recent") {
+    out.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+  } else if (sort === "rating") {
+    out.sort((a, b) => Number(b.rating || -1) - Number(a.rating || -1));
+  } else if (sort === "popular") {
+    out.sort((a, b) => Number(b.downloads || 0) - Number(a.downloads || 0));
+  }
+  return out;
+}
+
+async function repositoryPackages(req: Request, env: Env): Promise<Response> {
+  const url = new URL(req.url);
+  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  const listingById = new Map(
+    listings.filter((l) => (l.status || "active") === "active").map((l) => [l.packageId, l]),
+  );
+  let packages = catalog.map((pkg) => {
+    const listing = listingById.get(pkg.id);
+    return {
+      ...pkg,
+      price: listing ? { amountCents: listing.amountCents, currency: listing.currency } : null,
+      priceStatus: listing ? "paid" : "free",
+      latest: pkg.version,
+    };
+  });
+
+  const q = (url.searchParams.get("q") || "").trim().toLowerCase();
+  if (q) {
+    packages = packages.filter((pkg) =>
+      [pkg.id, pkg.name, String(pkg.description || ""), String(pkg.author || "")]
+        .some((value) => value.toLowerCase().includes(q)),
+    );
+  }
+
+  const app = (url.searchParams.get("app") || "").trim();
+  if (app) {
+    packages = packages.filter((pkg) => {
+      const targets = strings(pkg.targetApps);
+      return targets.length === 0 || targets.includes(app);
+    });
+  }
+
+  const kindParam = url.searchParams.get("kind") || url.searchParams.get("kinds");
+  if (kindParam) {
+    const want = new Set(kindParam.split(",").map((x) => x.trim()).filter(Boolean));
+    packages = packages.filter((pkg) => want.has(pkg.kind));
+  }
+
+  const typesParam = url.searchParams.get("types");
+  if (typesParam) {
+    const want = new Set(typesParam.split(",").map((x) => x.trim()).filter(Boolean));
+    packages = packages.filter((pkg) => strings(pkg.types).some((type) => want.has(type)));
+  }
+
+  const mediaParam = url.searchParams.get("mediaDomains");
+  if (mediaParam) {
+    const want = new Set(mediaParam.split(",").map((x) => x.trim()).filter(Boolean));
+    packages = packages.filter((pkg) => strings(pkg.mediaDomains).some((domain) => want.has(domain)));
+  }
+
+  const capabilitiesParam = url.searchParams.get("capabilities");
+  if (capabilitiesParam) {
+    const supported = new Set(capabilitiesParam.split(",").map((x) => x.trim()).filter(Boolean));
+    packages = packages.filter((pkg) => strings(pkg.capabilities).every((cap) => supported.has(cap)));
+  }
+
+  packages = sortPackages(packages, url.searchParams.get("sort"));
+  const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") || "20") || 20));
+  const total = packages.length;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(pages, Math.max(1, Number(url.searchParams.get("page") || "1") || 1));
+  const start = (page - 1) * pageSize;
+  return json({ packages: packages.slice(start, start + pageSize), total, page, pages });
+}
+
+async function repositoryDetail(req: Request, env: Env, id: string): Promise<Response> {
+  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  const pkg = catalog.find((entry) => entry.id === id);
+  if (!pkg) return json({ error: { code: "not_found", message: "unknown package: " + id } }, 404);
+  const listing = activeListing(listings, id);
+  return json({
+    ...pkg,
+    latest: pkg.version,
+    price: listing ? { amountCents: listing.amountCents, currency: listing.currency } : null,
+    priceStatus: listing ? "paid" : "free",
+    versions: [{
+      version: pkg.version,
+      integrity: pkg.integrity,
+      digest: pkg.integrity,
+      size: pkg.bytes,
+      yanked: false,
+    }],
+  });
+}
+
 async function packageProtected(env: Env, id: string, version: string): Promise<boolean> {
   const response = await state(env).fetch(
     new Request(
