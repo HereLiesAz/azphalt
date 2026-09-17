@@ -131,8 +131,7 @@
   ],
   "integrationPolicy": "Manual",
   "concurrencyPolicy": {
-    "maxConcurrentTasks": 2,
-    "perProviderLimits": {}
+    "maxConcurrentTasks": 2
   },
   "testDesignPolicy": "None",
   "promptReusePolicy": "PreferCache"
