@@ -1,4 +1,4 @@
 {
-  "azphalt":"0.1","id":"com.hereliesaz.haive.structured-hiring","name":"Structured Hiring","version":"1.0.0","author":"HereLiesAz","description":"Design and run job-related, standardized candidate assessment with work samples, structured interviews, anchored scoring, and fairness auditing.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "azphalt":"0.1","id":"com.hereliesaz.haive.structured-hiring","name":"Structured Hiring","version":"1.0.0","author":"HereLiesAz","description":"Design and run job-related, standardized candidate assessment with work samples, structured interviews, anchored scoring, and fairness auditing.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"structured-hiring","name":"Structured Hiring","path":"workflows/structured-hiring.json"}],"agents":[{"id":"selection-designer","name":"Selection Designer","path":"agents/selection-designer.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
 }

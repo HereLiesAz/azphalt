@@ -1,4 +1,4 @@
 {
-  "azphalt":"0.1","id":"com.hereliesaz.haive.adaptive-tutoring","name":"Adaptive Tutoring","version":"1.0.0","author":"HereLiesAz","description":"Coach durable learning through diagnosis, minimal instruction, retrieval practice, diagnostic feedback, transfer, and adaptation.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "azphalt":"0.1","id":"com.hereliesaz.haive.adaptive-tutoring","name":"Adaptive Tutoring","version":"1.0.0","author":"HereLiesAz","description":"Coach durable learning through diagnosis, minimal instruction, retrieval practice, diagnostic feedback, transfer, and adaptation.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"adaptive-tutoring","name":"Adaptive Tutoring","path":"workflows/adaptive-tutoring.json"}],"agents":[{"id":"learning-coach","name":"Learning Coach","path":"agents/learning-coach.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
 }

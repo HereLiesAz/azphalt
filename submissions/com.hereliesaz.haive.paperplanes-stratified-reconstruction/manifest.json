@@ -9,7 +9,7 @@
   "license": "MIT",
   "compat": ">=0.1",
   "kind": "workflow",
-  "targetApps": ["com.hereliesaz.haive"],
+  "targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow": {
     "format": "haive.workflow.v1",
     "definitions": [

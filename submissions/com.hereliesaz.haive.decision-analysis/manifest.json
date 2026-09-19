@@ -1,4 +1,4 @@
 {
-  "azphalt":"0.1","id":"com.hereliesaz.haive.decision-analysis","name":"Decision Analysis","version":"1.0.0","author":"HereLiesAz","description":"Structure complex decisions with comparable evidence, scenarios, premortems, sensitivity analysis, and review triggers.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "azphalt":"0.1","id":"com.hereliesaz.haive.decision-analysis","name":"Decision Analysis","version":"1.0.0","author":"HereLiesAz","description":"Structure complex decisions with comparable evidence, scenarios, premortems, sensitivity analysis, and review triggers.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"decision-analysis","name":"Decision Analysis","path":"workflows/decision-analysis.json"}],"agents":[{"id":"decision-analyst","name":"Decision Analyst","path":"agents/decision-analyst.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
 }
