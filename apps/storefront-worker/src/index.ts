@@ -158,15 +158,37 @@ function newBuyerSubject(): string {
   return "buyer_" + b64url(bytes);
 }
 
+interface RuntimeSecrets {
+  buyerSessionSecret: string;
+  entitlementPrivateKeyPkcs8B64: string;
+  entitlementPublicKeySpkiB64: string;
+}
+
+async function runtimeSecrets(env: Env): Promise<RuntimeSecrets> {
+  if (
+    env.BUYER_SESSION_SECRET &&
+    env.ENTITLEMENT_PRIVATE_KEY_PKCS8_B64 &&
+    env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64
+  ) {
+    return {
+      buyerSessionSecret: env.BUYER_SESSION_SECRET,
+      entitlementPrivateKeyPkcs8B64: env.ENTITLEMENT_PRIVATE_KEY_PKCS8_B64,
+      entitlementPublicKeySpkiB64: env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64,
+    };
+  }
+  return stateJson<RuntimeSecrets>(env, "/system-secrets");
+}
+
 async function readBuyerSubjects(req: Request, env: Env): Promise<string[]> {
   const value = cookieValue(req, BUYER_COOKIE);
-  if (!value || !env.BUYER_SESSION_SECRET) return [];
+  if (!value) return [];
+  const secret = (await runtimeSecrets(env)).buyerSessionSecret;
   const dot = value.indexOf(".");
   if (dot < 1) return [];
   const payload = value.slice(0, dot);
   const signature = value.slice(dot + 1);
   try {
-    if (!constantEqual(await hmac(env.BUYER_SESSION_SECRET, payload), fromB64url(signature))) return [];
+    if (!constantEqual(await hmac(secret, payload), fromB64url(signature))) return [];
     const parsed = JSON.parse(dec.decode(fromB64url(payload))) as { v?: number; subjects?: unknown };
     if (parsed.v !== 1 || !Array.isArray(parsed.subjects)) return [];
     return parsed.subjects
@@ -178,11 +200,12 @@ async function readBuyerSubjects(req: Request, env: Env): Promise<string[]> {
 }
 
 async function makeBuyerCookie(req: Request, subject: string, env: Env): Promise<string | undefined> {
-  if (!env.BUYER_SESSION_SECRET || !BUYER_SUBJECT.test(subject)) return undefined;
+  if (!BUYER_SUBJECT.test(subject)) return undefined;
+  const secret = (await runtimeSecrets(env)).buyerSessionSecret;
   const existing = await readBuyerSubjects(req, env);
   const subjects = [subject, ...existing.filter((x) => x !== subject)].slice(0, 12);
   const payload = b64url(enc.encode(JSON.stringify({ v: 1, subjects })));
-  const signature = b64url(await hmac(env.BUYER_SESSION_SECRET, payload));
+  const signature = b64url(await hmac(secret, payload));
   return [
     BUYER_COOKIE + "=" + payload + "." + signature,
     "Path=/",
@@ -206,12 +229,10 @@ function canonicalClaims(claims: EntitlementClaims): string {
 }
 
 async function issueEntitlement(env: Env, claims: EntitlementClaims): Promise<EntitlementToken> {
-  if (!env.ENTITLEMENT_PRIVATE_KEY_PKCS8_B64 || !env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64) {
-    throw new Error("entitlement signing is not configured");
-  }
+  const secrets = await runtimeSecrets(env);
   const key = await crypto.subtle.importKey(
     "pkcs8",
-    base64ToBytes(env.ENTITLEMENT_PRIVATE_KEY_PKCS8_B64),
+    base64ToBytes(secrets.entitlementPrivateKeyPkcs8B64),
     { name: "Ed25519" },
     false,
     ["sign"],
@@ -222,12 +243,13 @@ async function issueEntitlement(env: Env, claims: EntitlementClaims): Promise<En
   return {
     claims,
     signature: bytesToBase64(sig),
-    publicKey: env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64,
+    publicKey: secrets.entitlementPublicKeySpkiB64,
   };
 }
 
 async function verifyEntitlement(env: Env, token: EntitlementToken, packageId: string): Promise<boolean> {
-  if (!env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64 || token.publicKey !== env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64) return false;
+  const publicKey = (await runtimeSecrets(env)).entitlementPublicKeySpkiB64;
+  if (token.publicKey !== publicKey) return false;
   if (!token.claims || token.claims.packageId !== packageId) return false;
   if (token.claims.expiresAt && new Date(token.claims.expiresAt).getTime() <= Date.now()) return false;
   try {
@@ -502,13 +524,7 @@ async function packageProtected(env: Env, id: string, version: string): Promise<
 }
 
 async function checkout(req: Request, env: Env): Promise<Response> {
-  if (
-    !env.STRIPE_SECRET_KEY ||
-    !env.STRIPE_WEBHOOK_SECRET ||
-    !env.BUYER_SESSION_SECRET ||
-    !env.ENTITLEMENT_PRIVATE_KEY_PKCS8_B64 ||
-    !env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64
-  ) {
+  if (!env.STRIPE_SECRET_KEY) {
     return json({ error: "Checkout is temporarily unavailable." }, 503);
   }
 
