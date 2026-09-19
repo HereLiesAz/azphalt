@@ -1,10 +1,8 @@
 import { defineConfig } from 'vitepress'
 
-// Served at azphalt.org, at the domain root — base stays '/'. Primary hosting is the storefront's own
-// Vercel deployment (azphalt.org and azphalt.store share it; the storefront maps the org host onto the
-// docs it embeds — see apps/storefront/middleware.ts + scripts/embed-docs.mjs). GitHub Pages
-// (docs/public/CNAME + the deploy-docs workflow) is the standalone alternative. azphalt.store is the
-// live storefront/registry the docs teach apps to consume.
+// Served at azphalt.org, at the domain root — base stays '/'. The docs use GitHub Pages; the live
+// storefront/registry at azphalt.store is deployed separately as a Cloudflare Worker + static assets.
+// Keeping them separate means both hosting paths can remain on free tiers.
 export default defineConfig({
   title: "azphalt",
   description: "The open standard for portable digital-art, motion-graphics, and video extensions — and the marketplace at azphalt.store.",

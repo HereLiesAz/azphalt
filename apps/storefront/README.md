@@ -1,5 +1,11 @@
 # @azphalt/storefront
 
+> **Production note (2026-09):** the flagship `azphalt.store` deployment has moved to
+> [`apps/storefront-react`](../storefront-react) + [`apps/storefront-worker`](../storefront-worker)
+> on Cloudflare Workers/static assets. This Next.js app remains the reference/self-hosted implementation
+> and test bed; it is no longer the production deployment path and no longer requires Vercel/Neon for
+> the flagship store.
+
 The **azphalt consignment storefront** — a Next.js (App Router) app that sits on top of the open azphalt standard, the way a store sits on Open VSX. It consumes the `@azphalt/registry` package directly and demonstrates both lanes of the marketplace model (see [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) § _The marketplace — consignment model_):
 
 - **The registry lane** — free, open distribution. Browse, search, and download `.azp` packages. No payment rails, no fee. This is the layer other apps adopt, and it is self-hostable and neutral by construction.

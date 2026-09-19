@@ -1,6 +1,11 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   fetchPackages,
+  fetchCheckoutStatus,
+  fetchPurchases,
+  fetchSellerStatus,
+  startSellerOnboarding,
+  downloadPurchase,
   formatCount,
   formatRating,
   isMature,
@@ -8,6 +13,7 @@ import {
   priceLabel,
   startCheckout,
   type PackageSummary,
+  type Purchase,
 } from "./api";
 import { drawPreview, paletteFor, rgba } from "./preview";
 import {
@@ -554,7 +560,7 @@ function NoHostSheet({
 
 /* ─────────────── app ─────────────── */
 
-export function App() {
+function StorefrontApp() {
   const [packages, setPackages] = useState<PackageSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -621,6 +627,10 @@ export function App() {
     <div style={{ minHeight: "100%", paddingBottom: 96 }}>
       <div style={{ padding: "0 24px" }}>
         <Hero total={packages.length} />
+        <nav style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "-6px 0 22px" }} aria-label="Store account actions">
+          <a className="chip" href="/purchases" style={{ textDecoration: "none" }}>Purchases</a>
+          <a className="chip" href="/connect/onboard" style={{ textDecoration: "none" }}>Sell</a>
+        </nav>
         <div style={{ marginBottom: 24 }}>
           <input
             value={query}
@@ -683,3 +693,216 @@ export function App() {
     </InventoryContext.Provider>
   );
 }
+
+function SellerOnboardingPage() {
+  const params = new URLSearchParams(window.location.search);
+  const initialSeller = params.get("sellerId") ?? "";
+  const [sellerId, setSellerId] = useState(initialSeller);
+  const [email, setEmail] = useState("");
+  const [country, setCountry] = useState("US");
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!initialSeller) return;
+    fetchSellerStatus(initialSeller, true)
+      .then((seller) => {
+        if (seller.error) setStatus(seller.error);
+        else if (!seller.onboarded) setStatus("Stripe account not started yet.");
+        else if (seller.chargesEnabled && seller.payoutsEnabled) setStatus("Ready to sell and receive payouts.");
+        else setStatus("Stripe still needs information before this seller can receive purchases.");
+      })
+      .catch((error) => setStatus(error instanceof Error ? error.message : "Could not check seller status."));
+  }, [initialSeller]);
+
+  const begin = async () => {
+    const id = sellerId.trim();
+    if (!id) {
+      setStatus("Enter a seller ID.");
+      return;
+    }
+    setBusy(true);
+    setStatus("");
+    try {
+      const result = await startSellerOnboarding({
+        sellerId: id,
+        email: email.trim() || undefined,
+        country: country.trim().toUpperCase() || undefined,
+      });
+      if (result.error) {
+        setStatus(result.error);
+        return;
+      }
+      if (result.url) {
+        window.location.assign(result.url);
+        return;
+      }
+      setStatus("Stripe returned no onboarding link.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not start onboarding.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 720, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <h1 style={{ fontSize: 44, marginTop: 32 }}>Sell on Azphalt</h1>
+      <p style={{ color: "var(--on-surface-variant)" }}>
+        Connect a Stripe Express account. Stripe handles identity verification and payout details; Azphalt stores only the connected-account id and readiness flags.
+      </p>
+      <label style={{ display: "block", marginTop: 22, fontWeight: 800 }}>Seller ID</label>
+      <input value={sellerId} onChange={(e) => setSellerId(e.target.value)} placeholder="seller_yourname" style={{ width: "100%", padding: 12, marginTop: 6 }} />
+      <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Email (optional)</label>
+      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" style={{ width: "100%", padding: 12, marginTop: 6 }} />
+      <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Country</label>
+      <input value={country} onChange={(e) => setCountry(e.target.value)} maxLength={2} style={{ width: 90, padding: 12, marginTop: 6 }} />
+      <div>
+        <button
+          onClick={() => void begin()}
+          disabled={busy}
+          style={{ marginTop: 22, border: 0, padding: "14px 24px", fontWeight: 800, background: "var(--primary)", color: "var(--on-primary)" }}
+        >
+          {busy ? "Opening Stripe…" : "Continue with Stripe"}
+        </button>
+      </div>
+      {status && <p style={{ marginTop: 18, color: "var(--on-surface-variant)" }}>{status}</p>}
+    </main>
+  );
+}
+
+function CheckoutSuccessPage() {
+  const sessionId = new URLSearchParams(window.location.search).get("session_id") ?? "";
+  const [status, setStatus] = useState(sessionId ? "Waiting for payment confirmation…" : "Missing checkout session.");
+  const [packageId, setPackageId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    let attempts = 0;
+    let timer = 0;
+
+    const poll = async () => {
+      attempts += 1;
+      try {
+        const result = await fetchCheckoutStatus(sessionId);
+        if (cancelled) return;
+        if (result.status === "ready" && result.packageId && result.token) {
+          setPackageId(result.packageId);
+          setToken(result.token);
+          setStatus("Purchase ready.");
+          return;
+        }
+        setStatus("Payment received. Preparing your license…");
+      } catch (error) {
+        if (!cancelled) setStatus(error instanceof Error ? error.message : "Could not check purchase.");
+      }
+      if (!cancelled && attempts < 60) timer = window.setTimeout(poll, 1500);
+      else if (!cancelled && attempts >= 60) setStatus("Still waiting for fulfilment. Your purchase remains recoverable from Purchases.");
+    };
+
+    void poll();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [sessionId]);
+
+  const download = async () => {
+    if (!packageId || !token) return;
+    setBusy(true);
+    try {
+      await downloadPurchase(packageId, token);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Download failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 720, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <h1 style={{ fontSize: 44, marginTop: 32 }}>Purchase</h1>
+      <p style={{ fontSize: 18, color: "var(--on-surface-variant)" }}>{status}</p>
+      {packageId && token && (
+        <>
+          <div style={{ marginTop: 24, fontWeight: 800 }}>{packageId}</div>
+          <button
+            onClick={download}
+            disabled={busy}
+            style={{ marginTop: 18, border: 0, padding: "14px 24px", fontWeight: 800, background: "var(--primary)", color: "var(--on-primary)" }}
+          >
+            {busy ? "Downloading…" : "Download .azp"}
+          </button>
+        </>
+      )}
+      <div style={{ marginTop: 24 }}>
+        <a href="/purchases">Recover all purchases</a>
+      </div>
+    </main>
+  );
+}
+
+function PurchasesPage() {
+  const [items, setItems] = useState<Purchase[]>([]);
+  const [status, setStatus] = useState("Loading purchases…");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPurchases()
+      .then((purchases) => {
+        setItems(purchases);
+        setStatus(purchases.length ? "" : "No purchases are linked to this browser yet.");
+      })
+      .catch((error) => setStatus(error instanceof Error ? error.message : "Could not load purchases."));
+  }, []);
+
+  const download = async (purchase: Purchase) => {
+    setBusy(purchase.sessionId);
+    try {
+      await downloadPurchase(purchase.packageId, purchase.token);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Download failed.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 820, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <h1 style={{ fontSize: 44, marginTop: 32 }}>Purchases</h1>
+      {status && <p style={{ color: "var(--on-surface-variant)" }}>{status}</p>}
+      <div style={{ display: "grid", gap: 12, marginTop: 24 }}>
+        {items.map((purchase) => (
+          <div key={purchase.sessionId} style={{ padding: 18, background: "var(--surface-highest)", borderRadius: 20 }}>
+            <div style={{ fontWeight: 850 }}>{purchase.packageId}</div>
+            <div style={{ fontSize: 13, marginTop: 4, color: "var(--on-surface-variant)" }}>
+              {new Date(purchase.issuedAt).toLocaleString()}
+            </div>
+            <button
+              onClick={() => void download(purchase)}
+              disabled={busy === purchase.sessionId}
+              style={{ marginTop: 12, border: 0, padding: "10px 18px", fontWeight: 800, background: "var(--primary)", color: "var(--on-primary)" }}
+            >
+              {busy === purchase.sessionId ? "Downloading…" : "Download .azp"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
+
+export function App() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  if (path === "/checkout/success") return <CheckoutSuccessPage />;
+  if (path === "/purchases") return <PurchasesPage />;
+  if (path === "/connect/onboard") return <SellerOnboardingPage />;
+  return <StorefrontApp />;
+}
+

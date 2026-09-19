@@ -1,0 +1,27 @@
+{
+  "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
+  "name": "azphalt-store",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-17",
+  "assets": {
+    "directory": "../storefront-react/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/packages", "/packages/*", "/revocations", "/installs", "/entitlements/*", "/.well-known/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "STATE", "class_name": "AzphaltState" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["AzphaltState"] }
+  ],
+  "vars": {
+    "PUBLIC_ORIGIN": "https://azphalt.store",
+    "GITHUB_RAW_BASE": "https://raw.githubusercontent.com/HereLiesAz/azphalt/main/apps/storefront/registry",
+    "PLATFORM_FEE_BPS": "1500",
+    "PROCESSOR_PCT_BPS": "290",
+    "PROCESSOR_FLAT_CENTS": "30"
+  }
+}

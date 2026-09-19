@@ -1,5 +1,5 @@
 // Minimal offline shell cache. Network-first for /api (fresh catalog), cache-first for the app shell.
-const CACHE = "azphalt-react-v1";
+const CACHE = "azphalt-react-v2";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (e) => {
@@ -14,7 +14,7 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (url.pathname.startsWith("/api/")) return; // always hit the network for API calls
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/packages/")) return; // purchases/downloads must never use the shell cache
   e.respondWith(
     caches.match(e.request).then((hit) => hit || fetch(e.request).catch(() => caches.match("/index.html"))),
   );
