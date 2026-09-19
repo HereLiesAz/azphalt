@@ -1008,6 +1008,10 @@ export class AzphaltState {
     void ctx.blockConcurrencyWhile(async () => {
       const sql = ctx.storage.sql;
       sql.exec(
+        "CREATE TABLE IF NOT EXISTS system_secrets (" +
+        "name TEXT PRIMARY KEY, value TEXT NOT NULL)"
+      );
+      sql.exec(
         "CREATE TABLE IF NOT EXISTS sessions (" +
         "id TEXT PRIMARY KEY, package_id TEXT NOT NULL, buyer_id TEXT NOT NULL, interval TEXT, " +
         "status TEXT NOT NULL, created_at TEXT NOT NULL)"
@@ -1050,9 +1054,77 @@ export class AzphaltState {
     const sql = this.ctx.storage.sql;
     let match: RegExpMatchArray | null;
 
+    if (req.method === "GET" && path === "/system-secrets") {
+      const existing = Object.fromEntries(
+        rows(sql.exec("SELECT name,value FROM system_secrets")).map((row) => [
+          String(row.name),
+          String(row.value),
+        ]),
+      );
+      let buyerSessionSecret = existing.buyer_session;
+      let entitlementPrivateKeyPkcs8B64 = existing.entitlement_private;
+      let entitlementPublicKeySpkiB64 = existing.entitlement_public;
+
+      if (!buyerSessionSecret) {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        buyerSessionSecret = bytesToBase64(bytes);
+        sql.exec(
+          "INSERT OR REPLACE INTO system_secrets(name,value) VALUES(?,?)",
+          "buyer_session",
+          buyerSessionSecret,
+        );
+      }
+
+      if (!entitlementPrivateKeyPkcs8B64 || !entitlementPublicKeySpkiB64) {
+        const pair = await crypto.subtle.generateKey(
+          { name: "Ed25519" },
+          true,
+          ["sign", "verify"],
+        ) as CryptoKeyPair;
+        entitlementPrivateKeyPkcs8B64 = bytesToBase64(
+          new Uint8Array(await crypto.subtle.exportKey("pkcs8", pair.privateKey)),
+        );
+        entitlementPublicKeySpkiB64 = bytesToBase64(
+          new Uint8Array(await crypto.subtle.exportKey("spki", pair.publicKey)),
+        );
+        sql.exec(
+          "INSERT OR REPLACE INTO system_secrets(name,value) VALUES(?,?)",
+          "entitlement_private",
+          entitlementPrivateKeyPkcs8B64,
+        );
+        sql.exec(
+          "INSERT OR REPLACE INTO system_secrets(name,value) VALUES(?,?)",
+          "entitlement_public",
+          entitlementPublicKeySpkiB64,
+        );
+      }
+
+      return json({
+        buyerSessionSecret,
+        entitlementPrivateKeyPkcs8B64,
+        entitlementPublicKeySpkiB64,
+      });
+    }
+
     match = path.match(/^\/session\/([^/]+)$/);
     if (match) {
       const id = decodeURIComponent(match[1]);
+      if (req.method === "GET") {
+        const row = first(sql.exec(
+          "SELECT id,package_id,buyer_id,interval,status,created_at FROM sessions WHERE id=?",
+          id,
+        ));
+        if (!row) return json({ error: "not found" }, 404);
+        return json({
+          id: String(row.id),
+          packageId: String(row.package_id),
+          buyerId: String(row.buyer_id),
+          interval: row.interval === null || row.interval === undefined ? undefined : String(row.interval),
+          status: String(row.status),
+          createdAt: String(row.created_at),
+        });
+      }
       if (req.method === "PUT") {
         const session = await req.json() as {
           id: string;
