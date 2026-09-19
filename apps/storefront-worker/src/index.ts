@@ -542,6 +542,9 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   const pkg = catalog.find((p) => p.id === packageId);
   const listing = activeListing(listings, packageId);
   if (!pkg || !listing) return json({ error: "package is not listed for sale" }, 404);
+  if (listing.interval && !env.STRIPE_WEBHOOK_SECRET) {
+    return json({ error: "subscription checkout is unavailable until Stripe webhooks are configured" }, 503);
+  }
   if (!(await packageProtected(env, packageId, pkg.version))) {
     return json({ error: "paid package bytes are not available in protected storage" }, 503);
   }
@@ -873,12 +876,70 @@ async function webhook(req: Request, env: Env): Promise<Response> {
 }
 
 async function sessionResult(req: Request, env: Env, id: string): Promise<Response> {
-  const response = await state(env).fetch(
+  const existing = await state(env).fetch(
     new Request("https://state.internal/entitlement/" + encodeURIComponent(id)),
   );
-  if (response.status === 404) return json({ status: "pending" }, 202);
-  if (!response.ok) return json({ error: "entitlement lookup failed" }, 500);
-  const record = await response.json() as EntitlementRecord;
+  if (existing.ok) {
+    const record = await existing.json() as EntitlementRecord;
+    const cookie = await makeBuyerCookie(req, record.subject, env);
+    return json(
+      {
+        status: "ready",
+        packageId: record.packageId,
+        token: encodeToken(record.token),
+      },
+      200,
+      cookie ? { "set-cookie": cookie } : {},
+    );
+  }
+  if (existing.status !== 404) return json({ error: "entitlement lookup failed" }, 500);
+  if (!env.STRIPE_SECRET_KEY) return json({ status: "pending" }, 202);
+
+  const stored = await state(env).fetch(
+    new Request("https://state.internal/session/" + encodeURIComponent(id)),
+  );
+  if (!stored.ok) return json({ status: "pending" }, 202);
+  const session = await stored.json() as {
+    packageId: string;
+    buyerId: string;
+    interval?: "month" | "year";
+  };
+
+  let remote: Record<string, unknown>;
+  try {
+    remote = await stripe(env, "/v1/checkout/sessions/" + encodeURIComponent(id), { method: "GET" });
+  } catch {
+    return json({ status: "pending" }, 202);
+  }
+
+  const paymentStatus = typeof remote.payment_status === "string" ? remote.payment_status : "";
+  const status = typeof remote.status === "string" ? remote.status : "";
+  if (paymentStatus !== "paid" && paymentStatus !== "no_payment_required" && status !== "complete") {
+    return json({ status: "pending" }, 202);
+  }
+
+  const record = await entitlementFor(
+    env,
+    id,
+    session.packageId,
+    session.buyerId,
+    session.interval,
+  );
+
+  const subscriptionId = objectId(remote.subscription);
+  if (subscriptionId && session.interval) {
+    await stateJson(env, "/subscription/" + encodeURIComponent(subscriptionId), {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        subscriptionId,
+        packageId: session.packageId,
+        subject: session.buyerId,
+        interval: session.interval,
+      }),
+    });
+  }
+
   const cookie = await makeBuyerCookie(req, record.subject, env);
   return json(
     {
@@ -1495,18 +1556,17 @@ export default {
         req.method === "GET" &&
         (path === "/.well-known/azphalt.json" || path === "/.well-known/azphalt-repository.json")
       ) {
+        const publicKey = (await runtimeSecrets(env)).entitlementPublicKeySpkiB64;
         return json({
           name: "Azphalt",
           version: "0.1",
           repository: env.PUBLIC_ORIGIN,
           baseUrl: env.PUBLIC_ORIGIN,
-          signingKeys: env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64
-            ? [{
-                keyId: "store-v1",
-                algorithm: "ed25519",
-                publicKey: env.ENTITLEMENT_PUBLIC_KEY_SPKI_B64,
-              }]
-            : [],
+          signingKeys: [{
+            keyId: "store-v1",
+            algorithm: "ed25519",
+            publicKey,
+          }],
         });
       }
 
