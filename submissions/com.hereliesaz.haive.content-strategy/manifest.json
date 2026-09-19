@@ -1,4 +1,4 @@
 {
-  "azphalt":"0.1","id":"com.hereliesaz.haive.content-strategy","name":"Content Strategy","version":"1.0.0","author":"HereLiesAz","description":"Create a durable, evidence-backed content system tied to audience needs and business outcomes rather than an endless post treadmill.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "azphalt":"0.1","id":"com.hereliesaz.haive.content-strategy","name":"Content Strategy","version":"1.0.0","author":"HereLiesAz","description":"Create a durable, evidence-backed content system tied to audience needs and business outcomes rather than an endless post treadmill.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"content-strategy","name":"Content Strategy","path":"workflows/content-strategy.json"}],"agents":[{"id":"content-strategist","name":"Content Strategist","path":"agents/content-strategist.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
 }

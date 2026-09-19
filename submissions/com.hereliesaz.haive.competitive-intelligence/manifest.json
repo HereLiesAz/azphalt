@@ -1,4 +1,4 @@
 {
-  "azphalt":"0.1","id":"com.hereliesaz.haive.competitive-intelligence","name":"Competitive Intelligence","version":"1.0.0","author":"HereLiesAz","description":"Build a source-dated, buyer-centered competitive picture without laundering marketing claims into facts.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "azphalt":"0.1","id":"com.hereliesaz.haive.competitive-intelligence","name":"Competitive Intelligence","version":"1.0.0","author":"HereLiesAz","description":"Build a source-dated, buyer-centered competitive picture without laundering marketing claims into facts.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"competitive-intelligence","name":"Competitive Intelligence","path":"workflows/competitive-intelligence.json"}],"agents":[{"id":"competitive-analyst","name":"Competitive Analyst","path":"agents/competitive-analyst.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
 }

@@ -1,4 +1,4 @@
 {
-  "azphalt":"0.1","id":"com.hereliesaz.haive.crisis-communications","name":"Crisis Communications","version":"1.0.0","author":"HereLiesAz","description":"Communicate rapidly and accurately during a fast-moving crisis using a known/unknown/action ledger, coordinated channels, and explicit corrections.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "azphalt":"0.1","id":"com.hereliesaz.haive.crisis-communications","name":"Crisis Communications","version":"1.0.0","author":"HereLiesAz","description":"Communicate rapidly and accurately during a fast-moving crisis using a known/unknown/action ledger, coordinated channels, and explicit corrections.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"crisis-communications","name":"Crisis Communications","path":"workflows/crisis-communications.json"}],"agents":[{"id":"crisis-communicator","name":"Crisis Communicator","path":"agents/crisis-communicator.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
 }

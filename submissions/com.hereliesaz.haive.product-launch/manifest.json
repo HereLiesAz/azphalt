@@ -8,6 +8,6 @@
   "license":"MIT",
   "compat":">=0.1",
   "kind":"workflow",
-  "targetApps":["com.hereliesaz.haive"],
+  "targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"product-launch","name":"Product Launch","path":"workflows/product-launch.json"}],"agents":[{"id":"launch-strategist","name":"Launch Strategist","path":"agents/launch-strategist.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
 }

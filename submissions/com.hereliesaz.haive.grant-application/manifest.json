@@ -1,4 +1,4 @@
 {
-  "azphalt":"0.1","id":"com.hereliesaz.haive.grant-application","name":"Grant Application","version":"1.0.0","author":"HereLiesAz","description":"Build a compliant, scoreable grant application directly from the funding opportunity, work plan, budget, and review rubric.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps":["com.hereliesaz.haive"],
+  "azphalt":"0.1","id":"com.hereliesaz.haive.grant-application","name":"Grant Application","version":"1.0.0","author":"HereLiesAz","description":"Build a compliant, scoreable grant application directly from the funding opportunity, work plan, budget, and review rubric.","license":"MIT","compat":">=0.1","kind":"workflow","targetApps": ["com.hereliesaz.aive", "com.hereliesaz.haive"],
   "workflow":{"format":"haive.workflow.v1","definitions":[{"id":"grant-application","name":"Grant Application","path":"workflows/grant-application.json"}],"agents":[{"id":"grant-strategist","name":"Grant Strategist","path":"agents/grant-strategist.json"}],"hostPermissions":["WorkflowRegister","WorkflowLaunch"]}
 }
