@@ -190,6 +190,9 @@ importers:
 
   apps/storefront-react:
     dependencies:
+      '@azphalt/azp':
+        specifier: workspace:*
+        version: link:../../packages/azp
       '@azphalt/web-handoff':
         specifier: workspace:*
         version: link:../../packages/web-handoff
