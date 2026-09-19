@@ -1029,9 +1029,29 @@ function adminAuthorized(req: Request, env: Env): boolean {
 async function adminUpload(req: Request, env: Env, id: string, version: string): Promise<Response> {
   if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
   if (!PACKAGE_ID.test(id) || !VERSION.test(version)) return json({ error: "invalid package coordinate" }, 400);
+
+  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  if (catalog.some((pkg) => pkg.id === id)) {
+    return json({ error: "paid package id is already publicly downloadable from the git catalog" }, 409);
+  }
+  const listing = listings.find((entry) => entry.packageId === id);
+  if (!listing) return json({ error: "paid listing metadata is missing" }, 404);
+  if (listing.package.version !== version) {
+    return json({ error: "uploaded version does not match the reviewed paid listing" }, 409);
+  }
+
   const length = Number(req.headers.get("content-length") || "0");
   if (length > 100000000) return json({ error: "package exceeds the free-plan 100 MB request limit" }, 413);
-  const body = await req.arrayBuffer();
+  const body = new Uint8Array(await req.arrayBuffer());
+  if (body.byteLength > 100000000) return json({ error: "package exceeds the free-plan 100 MB request limit" }, 413);
+  if (typeof listing.package.bytes === "number" && listing.package.bytes !== body.byteLength) {
+    return json({ error: "uploaded byte size does not match the reviewed paid listing" }, 409);
+  }
+  const integrity = await sha256Integrity(body);
+  if (integrity !== listing.package.integrity) {
+    return json({ error: "uploaded package digest does not match the reviewed paid listing" }, 409);
+  }
+
   return state(env).fetch(
     new Request(
       "https://state.internal/package/" + encodeURIComponent(id) + "/" + encodeURIComponent(version),
@@ -1048,16 +1068,18 @@ async function adminUpload(req: Request, env: Env, id: string, version: string):
 
 async function download(req: Request, env: Env, id: string, version: string): Promise<Response> {
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  const pkg = catalog.find((p) => p.id === id && p.version === version);
-  if (!pkg) return json({ error: "package version not found" }, 404);
-  const listing = activeListing(listings, id);
-
-  if (!listing) {
-    if (!pkg.file) return json({ error: "package file unavailable" }, 404);
+  const publicPkg = catalog.find((p) => p.id === id && p.version === version);
+  if (publicPkg) {
+    if (!publicPkg.file) return json({ error: "package file unavailable" }, 404);
     return Response.redirect(
-      env.GITHUB_RAW_BASE.replace(/\/$/, "") + "/packages/" + encodeURIComponent(pkg.file),
+      env.GITHUB_RAW_BASE.replace(/\/$/, "") + "/packages/" + encodeURIComponent(publicPkg.file),
       302,
     );
+  }
+
+  const listing = activeListing(listings, id);
+  if (!listing || listing.package.version !== version) {
+    return json({ error: "package version not found" }, 404);
   }
 
   const auth = req.headers.get("authorization") || "";
