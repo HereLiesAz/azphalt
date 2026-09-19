@@ -451,15 +451,7 @@ function urlForm(fields: Record<string, string | undefined>): string {
 
 async function apiPackages(req: Request, env: Env): Promise<Response> {
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  const byId = new Map(listings.filter((l) => (l.status || "active") === "active").map((l) => [l.packageId, l]));
-  return json(catalog.map((pkg) => {
-    const listing = byId.get(pkg.id);
-    return {
-      ...pkg,
-      price: listing ? { amountCents: listing.amountCents, currency: listing.currency } : null,
-      priceStatus: listing ? "paid" : "free",
-    };
-  }));
+  return json(marketplaceCatalog(catalog, listings));
 }
 
 function strings(value: unknown): string[] {
@@ -482,18 +474,10 @@ function sortPackages(packages: CatalogEntry[], sort: string | null): CatalogEnt
 async function repositoryPackages(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  const listingById = new Map(
-    listings.filter((l) => (l.status || "active") === "active").map((l) => [l.packageId, l]),
-  );
-  let packages = catalog.map((pkg) => {
-    const listing = listingById.get(pkg.id);
-    return {
-      ...pkg,
-      price: listing ? { amountCents: listing.amountCents, currency: listing.currency } : null,
-      priceStatus: listing ? "paid" : "free",
-      latest: pkg.version,
-    };
-  });
+  let packages = marketplaceCatalog(catalog, listings).map((pkg) => ({
+    ...pkg,
+    latest: pkg.version,
+  }));
 
   const q = (url.searchParams.get("q") || "").trim().toLowerCase();
   if (q) {
@@ -546,14 +530,16 @@ async function repositoryPackages(req: Request, env: Env): Promise<Response> {
 
 async function repositoryDetail(req: Request, env: Env, id: string): Promise<Response> {
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  const pkg = catalog.find((entry) => entry.id === id);
-  if (!pkg) return json({ error: { code: "not_found", message: "unknown package: " + id } }, 404);
+  const publicPkg = catalog.find((entry) => entry.id === id);
   const listing = activeListing(listings, id);
+  const pkg = publicPkg || (listing ? listedPackage(listing) : undefined);
+  if (!pkg) return json({ error: { code: "not_found", message: "unknown package: " + id } }, 404);
+  const paid = !publicPkg && !!listing;
   return json({
     ...pkg,
     latest: pkg.version,
-    price: listing ? { amountCents: listing.amountCents, currency: listing.currency } : null,
-    priceStatus: listing ? "paid" : "free",
+    price: paid ? { amountCents: listing!.amountCents, currency: listing!.currency } : null,
+    priceStatus: paid ? "paid" : "free",
     versions: [{
       version: pkg.version,
       integrity: pkg.integrity,
@@ -590,9 +576,12 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   if (!PACKAGE_ID.test(packageId)) return json({ error: "packageId is required" }, 400);
 
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  const pkg = catalog.find((p) => p.id === packageId);
   const listing = activeListing(listings, packageId);
-  if (!pkg || !listing) return json({ error: "package is not listed for sale" }, 404);
+  if (!listing) return json({ error: "package is not listed for sale" }, 404);
+  if (catalog.some((p) => p.id === packageId)) {
+    return json({ error: "this paid listing conflicts with publicly downloadable package bytes" }, 409);
+  }
+  const pkg = listedPackage(listing);
   if (listing.interval && !env.STRIPE_WEBHOOK_SECRET) {
     return json({ error: "subscription checkout is unavailable until Stripe webhooks are configured" }, 503);
   }
