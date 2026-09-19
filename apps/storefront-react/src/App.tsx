@@ -627,6 +627,10 @@ function StorefrontApp() {
     <div style={{ minHeight: "100%", paddingBottom: 96 }}>
       <div style={{ padding: "0 24px" }}>
         <Hero total={packages.length} />
+        <nav style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "-6px 0 22px" }} aria-label="Store account actions">
+          <a className="chip" href="/purchases" style={{ textDecoration: "none" }}>Purchases</a>
+          <a className="chip" href="/connect/onboard" style={{ textDecoration: "none" }}>Sell</a>
+        </nav>
         <div style={{ marginBottom: 24 }}>
           <input
             value={query}
