@@ -47,6 +47,25 @@ interface Listing {
   currency: string;
   interval?: "month" | "year";
   status?: "active" | "paused";
+  /** Public metadata for a paid-only package. The .azp bytes themselves must never be committed. */
+  package: {
+    version: string;
+    name: string;
+    kind: string;
+    description?: string;
+    author?: string;
+    capabilities?: string[];
+    targetApps?: string[];
+    mediaDomains?: string[];
+    types?: string[];
+    maturity?: string;
+    app?: unknown;
+    pack?: unknown;
+    manifest?: unknown;
+    bytes?: number;
+    integrity: string;
+    updatedAt?: string;
+  };
 }
 
 interface SellerAccount {
@@ -353,6 +372,38 @@ async function refreshSeller(env: Env, sellerId: string, accountId: string): Pro
 
 function activeListing(listings: Listing[], id: string): Listing | undefined {
   return listings.find((l) => l.packageId === id && (l.status || "active") === "active");
+}
+
+function listedPackage(listing: Listing): CatalogEntry {
+  return {
+    id: listing.packageId,
+    ...listing.package,
+    price: { amountCents: listing.amountCents, currency: listing.currency },
+    priceStatus: "paid",
+    downloads: 0,
+    ratingCount: 0,
+  };
+}
+
+function publicPackageIds(catalog: CatalogEntry[]): Set<string> {
+  return new Set(catalog.map((pkg) => pkg.id));
+}
+
+function marketplaceCatalog(catalog: CatalogEntry[], listings: Listing[]): CatalogEntry[] {
+  const publicIds = publicPackageIds(catalog);
+  const free = catalog.map((pkg) => ({ ...pkg, price: null, priceStatus: "free" }));
+  const paid = listings
+    .filter((listing) =>
+      (listing.status || "active") === "active" &&
+      !publicIds.has(listing.packageId)
+    )
+    .map(listedPackage);
+  return [...free, ...paid];
+}
+
+async function sha256Integrity(bytes: Uint8Array): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return "sha256-" + Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function quote(amountCents: number, currency: string, env: Env) {
