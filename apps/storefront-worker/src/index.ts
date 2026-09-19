@@ -1609,9 +1609,12 @@ export default {
       match = path.match(/^\/api\/download\/([^/]+)$/);
       if (match && req.method === "GET") {
         const id = decodeURIComponent(match[1]);
-        const pkg = (await getCatalog(req, env)).find((p) => p.id === id);
-        if (!pkg) return json({ error: "package not found" }, 404);
-        return download(req, env, id, pkg.version);
+        const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+        const publicPkg = catalog.find((p) => p.id === id);
+        const listing = activeListing(listings, id);
+        const version = publicPkg?.version || listing?.package.version;
+        if (!version) return json({ error: "package not found" }, 404);
+        return download(req, env, id, version);
       }
 
       if (
