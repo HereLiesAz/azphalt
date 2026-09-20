@@ -31,4 +31,8 @@ features:
     details: "The standard is open and the Repository API is self-hostable — azphalt.store is one repository, not a gatekeeper. Run your own catalog with @azphalt/repository-server and the same client works against it."
     link: /specs/repository-api
     linkText: Read the spec
+  - title: Verified production catalog
+    details: "azphalt.store is deployed from the git-backed registry through the centralized workflow controller. Deployment verifies the exported catalog and then proves the live Repository API exposes known app-scoped workflow/role packages instead of silently shipping an empty store."
+    link: /OPERATIONS
+    linkText: Production operations
 ---

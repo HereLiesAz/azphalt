@@ -59,6 +59,7 @@ LICENSE         MIT
 - **Normative specs:** [`spec/`](spec) — capability model, package format, manifest, UI schema, repository API
 - **Publishing a package:** [`submissions/README.md`](submissions) — submit a plugin, extension, or asset by pull request
 - **Releasing:** [`RELEASING.md`](RELEASING.md)
+- **Production storefront operations:** [`docs/OPERATIONS.md`](docs/OPERATIONS.md)
 
 The `docs/` tree also builds as a VitePress site (`pnpm --filter docs build`).
 
@@ -66,7 +67,7 @@ The `docs/` tree also builds as a VitePress site (`pnpm --filter docs build`).
 
 Spec-first, and now substantially built: the SDK, the `.azp` container with signing and a trust model, a wide importer family, both runtimes (the reference contract and the QuickJS-in-WASM / raw-WASM sandbox), a conformance suite, and the registry with its consignment marketplace and a reference repository backend. The marketplace's paid lane runs end to end — real Stripe Connect split-payout checkout with self-service seller onboarding, signed buy-once entitlements that gate downloads and are recoverable by the buyer, and a zero-fixed-cost production backend on Cloudflare Workers + SQLite Durable Objects. The storefront's signing/session keys self-provision into the Durable Object; Stripe credentials remain Cloudflare secrets.
 
-The store's **catalog** is git, not a database: [`apps/storefront/registry/sources.json`](apps/storefront/registry/sources.json) pins every extension to one commit, the built `.azp` bytes are committed alongside it, and every serverless instance reconstructs an identical catalog at cold start. Changing what the store serves therefore takes a merged PR — there is no runtime write path and nothing to drift. It currently carries **120 packages** — 109 extensions plus nine app packs and two header packages.
+The store's **catalog** is git, not a database: [`apps/storefront/registry/sources.json`](apps/storefront/registry/sources.json) pins every extension to one commit, the built `.azp` bytes are committed alongside it, and every production deployment exports that registry into the static catalog served by the Cloudflare storefront worker. Changing what the store serves therefore takes a merged PR — there is no runtime write path. The deployment is not considered healthy until the centralized workflow verifies both the generated catalog and the live `/packages` endpoint, including known app-scoped Aive workflow/role packages. It currently carries **120 packages** — 109 extensions plus nine app packs and two header packages.
 
 The first conforming native hosts are [Graffux](https://github.com/HereLiesAz/Graffux) (paint / AR) and [Guillotine](https://github.com/HereLiesAz/Guillotine) (video / audio, temporal), which adopt azphalt across their own engine boundaries. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and its reasoning.
 

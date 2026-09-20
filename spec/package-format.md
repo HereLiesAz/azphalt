@@ -44,10 +44,12 @@ README.md         optional
 Every package MUST contain `manifest.json` and `LICENSE`. `assets/` and/or `code/` are present per `kind`.
 
 ## Package kind
-Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app` | `mcp` | `pack` | `skill` | `script`.
+Declared in the manifest as `kind`: `asset` | `code` | `mixed` | `app` | `mcp` | `pack` | `skill` | `script` | `composable` | `workflow` | `role`.
 - `asset` — data only (brushes, LUTs, patterns). No executable code; a host MAY load it with no runtime. This is what importers produce.
 - `code` — one or more extensions on the sandbox (JS on QuickJS-in-WASM, or raw WASM).
 - `mixed` — both (e.g. a filter shipping its own LUTs).
+- `workflow` — signed declarative workflow/orchestration data for a workflow-aware host; no downloaded runtime/UI code (see `workflow.md`).
+- `role` — declarative host role/persona data; no downloaded runtime code or Azphalt capabilities.
 - `app` — an **external OS-level app**: a **companion** (an Android app or PWA the host launches via a declared handoff) and/or a **host** (an app that runs extensions, listed so a storefront can point users at it). Carries **no** `/code` payload and **no** `capabilities` — just an `app` header declaring `platforms`, `roles`, and per-role `hostId` / `handoffs` (see extension-manifest.md § app, companion-app.md, and web-handoff.md § Host directory). The tree is `manifest.json` + `LICENSE` (+ optional `preview`).
 - `mcp` — an **MCP server** a host's MCP client connects to. A header (an `mcp` block) that declares how to reach the server; no `/code`, no `capabilities` (see extension-manifest.md § mcp and mcp-server.md).
 - `pack` — an **extension pack**: a curated set that **references** other packages by id (a recommended bundle or an app's base set). A header (a `pack` block); no `/code`, no `capabilities`, no assets. Each member is resolved and free/paid-gated individually (see extension-manifest.md § pack and pack.md).
