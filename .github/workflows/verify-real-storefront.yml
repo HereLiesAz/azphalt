@@ -1,43 +1,27 @@
+# centralized-by: HereLiesAz/workflows
+# central-source-path: .github/workflows/verify-real-storefront.yml
+# central-source-sha256: 017d62d87125c0ab5caa3f3d421dadf3091bf8f04533b54a6240cf4b57d34bc0
+# This file intentionally contains no repository secrets.
 name: Verify real storefront checkout
-
 on:
   push:
     branches: [real-storefront-checkout]
   workflow_dispatch:
-
 permissions:
   contents: read
-
+  id-token: write
 jobs:
-  storefront:
+  central-dispatch:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - run: corepack enable && corepack prepare pnpm@9.15.0 --activate
-      - run: pnpm install --frozen-lockfile
-      - name: Build storefront dependency graph
-        run: pnpm --filter @azphalt/storefront... build
-      - run: pnpm --filter @azphalt/storefront test
-      - name: Build React storefront dependency graph
-        run: pnpm --filter @azphalt/storefront-react... build
-
-  compose:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      AZPHALT_VERSION_FROZEN: '1'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: temurin
-      - name: Compile Compose web and desktop
-        working-directory: apps/storefront-cmp
-        run: |
-          chmod +x gradlew
-          ./gradlew compileKotlinWasmJs compileKotlinDesktop desktopTest --no-daemon --stacktrace
+      - name: Dispatch to HereLiesAz/workflows
+        env:
+          WORKFLOWS_GATEWAY_URL: ${{ vars.WORKFLOWS_GATEWAY_URL }}
+          EVENT_JSON: ${{ toJSON(github.event) }}
+          INPUTS_JSON: ${{ toJSON(inputs) }}
+          VARS_JSON: ${{ toJSON(vars) }}
+          SOURCE_WORKFLOW_PATH: .github/workflows/verify-real-storefront.yml
+          SOURCE_SHA256: 017d62d87125c0ab5caa3f3d421dadf3091bf8f04533b54a6240cf4b57d34bc0
+        shell: bash
+        run: "set -euo pipefail\n[[ -n \"${WORKFLOWS_GATEWAY_URL:-}\" ]] || { echo \"Repository variable WORKFLOWS_GATEWAY_URL is not configured.\" >&2; exit 1; }\noidc_response=\"$(curl --fail-with-body --silent --show-error -H \"Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}\" \"${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=hereliesaz-workflows\")\"\noidc_token=\"$(jq -r '.value // empty' <<<\"$oidc_response\")\"\n[[ -n \"$oidc_token\" ]] || { echo \"GitHub did not issue an OIDC token.\" >&2; exit 1; }\necho \"::add-mask::$oidc_token\"\nif [[ \"$GITHUB_EVENT_NAME\" == \"pull_request\" || \"$GITHUB_EVENT_NAME\" == \"pull_request_target\" ]]; then\n  DISPATCH_EVENT_JSON=\"$(jq -c '{\n    action,\n    number,\n    pull_request: {\n      number: .pull_request.number,\n      base: {\n        ref: .pull_request.base.ref,\n        sha: .pull_request.base.sha\n      },\n      head: {\n        ref: .pull_request.head.ref,\n        sha: .pull_request.head.sha,\n        repo: {\n          full_name: .pull_request.head.repo.full_name,\n          fork: (.pull_request.head.repo.fork // false)\n        }\n      }\n    }\n  }' <<<\"$EVENT_JSON\")\"\nelse\n  DISPATCH_EVENT_JSON=\"$EVENT_JSON\"\nfi\npayload=\"$(jq -n   --arg repository \"$GITHUB_REPOSITORY\" --arg repository_id \"$GITHUB_REPOSITORY_ID\"   --arg repository_owner \"$GITHUB_REPOSITORY_OWNER\" --arg repository_owner_id \"$GITHUB_REPOSITORY_OWNER_ID\"   --arg sha \"$GITHUB_SHA\" --arg ref \"$GITHUB_REF\" --arg ref_name \"$GITHUB_REF_NAME\" --arg ref_type \"$GITHUB_REF_TYPE\"   --arg head_ref \"$GITHUB_HEAD_REF\" --arg base_ref \"$GITHUB_BASE_REF\" --arg actor \"$GITHUB_ACTOR\" --arg actor_id \"$GITHUB_ACTOR_ID\"   --arg event_name \"$GITHUB_EVENT_NAME\" --arg run_id \"$GITHUB_RUN_ID\" --arg run_number \"$GITHUB_RUN_NUMBER\" --arg run_attempt \"$GITHUB_RUN_ATTEMPT\"   --arg workflow_ref \"$GITHUB_WORKFLOW_REF\" --arg workflow_name \"$GITHUB_WORKFLOW\" --arg source_workflow_path \"$SOURCE_WORKFLOW_PATH\"   --arg source_sha256 \"$SOURCE_SHA256\" --argjson event \"$DISPATCH_EVENT_JSON\" --argjson inputs \"$INPUTS_JSON\" --argjson vars \"$VARS_JSON\"   '{repository:$repository,repository_id:$repository_id,repository_owner:$repository_owner,repository_owner_id:$repository_owner_id,sha:$sha,check_sha:($event.pull_request.head.sha // $sha),ref:$ref,ref_name:$ref_name,ref_type:$ref_type,head_ref:$head_ref,base_ref:$base_ref,actor:$actor,actor_id:$actor_id,event_name:$event_name,event:$event,inputs:$inputs,vars:$vars,run_id:$run_id,run_number:$run_number,run_attempt:$run_attempt,workflow_ref:$workflow_ref,workflow_name:$workflow_name,source_workflow_path:$source_workflow_path,source_sha256:$source_sha256}')\"\ncurl --fail-with-body --silent --show-error -X POST \"${WORKFLOWS_GATEWAY_URL%/}/dispatch\" -H \"Authorization: Bearer ${oidc_token}\" -H \"Content-Type: application/json\" --data-binary \"$payload\""
+    name: Dispatch
