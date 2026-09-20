@@ -31,6 +31,9 @@ console.log(`Found ${brushes.total} matching packs.`);
 
 // `kind` narrows by package kind. A host with no code sandbox takes only data:
 const assetsOnly = await store.search({ kind: ["asset"] });
+
+// A workflow-aware host can browse its declarative package lanes directly:
+const workflowsAndRoles = await store.search({ kind: ["workflow", "role"] });
 ```
 
 Each result carries ranking and preview metadata (`downloads`, `rating`, `priceStatus`, `preview`, …)
@@ -44,11 +47,28 @@ const detail = await store.getPackage("com.foldlab.filmluts");
 ### Scope the catalog to your app
 
 If you pass your app's reverse-DNS id, the store returns **global** packages plus those an author scoped
-to your app (`targetApps`) — the mechanism companions and app-specific extensions use:
+to your app (`targetApps`) — the mechanism companions, app-specific extensions, workflows, and roles
+use:
 
 ```typescript
 const store = new RepositoryClient({ url: "https://azphalt.store", app: "com.hereliesaz.graffux" });
 ```
+
+### Workflow and role hosts
+
+`kind:"workflow"` and `kind:"role"` are declarative package lanes. Do not hand them to the code
+extension runtime.
+
+For a workflow package, verify the `.azp` container first, then check `workflow.format`, resolve
+dependencies, evaluate symbolic host-permission requests, and only then import/launch the definitions
+through your own workflow engine. Declarative screens are rendered by your host's already-compiled UI;
+the package may not ship executable UI/runtime payloads.
+
+For a role package, verify the container and `role.format`, then import the declared role payload only
+through your host's explicit role/persona model. Installation is not a permission grant.
+
+Use the package `kind` and your app-scoped catalog query to decide whether these packages belong in
+your host at all. See [Workflow packages](/specs/workflow) and [Role packages](/specs/role).
 
 ## 3. Download a free package
 
@@ -144,6 +164,7 @@ or adopt the standard directly — see [Adopting the Standard](/ADOPTION).
 - Run extension **code** safely in your app: the [Capability model](/specs/capability-model) and
   [UI schema](/specs/ui-schema).
 - Launch external **companion apps** over a handoff: [Companion Apps](/specs/companion-app).
+- Import declarative **workflows** and **roles** safely: [Workflow packages](/specs/workflow) and [Role packages](/specs/role).
 - Let a **web storefront hand your app a package**: [Web Handoff](/specs/web-handoff). Claiming
   `azphalt://install` and accepting the `.azp` media type is what makes "Install" on a web page reach
   your app instead of dead-ending — and listing your app puts it in the storefront's "get a host"
