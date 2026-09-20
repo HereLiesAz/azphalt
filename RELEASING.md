@@ -7,6 +7,12 @@ There are **two independent version schemes** in this repository, and they are n
 
 Nothing links the two. A package release does not move `version.properties`, and a build does not move a package version.
 
+The production `azphalt.store` Cloudflare deployment is a third concern: its deployment workflow is
+centrally owned by `HereLiesAz/workflows`. It builds the storefront from this repository, verifies
+the exported git-backed catalog, deploys the Worker/static assets, and then verifies the live
+Repository API exposes known app-scoped workflow/role packages. See
+[`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+
 ## Versioning the apps
 
 `version.properties` at the repository root is the single source of truth. Format `a.b.c.d`:
