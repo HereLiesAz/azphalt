@@ -24,6 +24,7 @@ export default defineConfig({
       { text: 'Build Extensions', link: '/creators/getting-started' },
       { text: 'Specs', link: '/specs/repository-api' },
       { text: 'Design', link: '/ARCHITECTURE' },
+      { text: 'Operations', link: '/OPERATIONS' },
       { text: 'Store ↗', link: 'https://azphalt.store' }
     ],
     sidebar: {
@@ -78,7 +79,8 @@ export default defineConfig({
           items: [
             { text: 'Architecture', link: '/ARCHITECTURE' },
             { text: 'Rationale', link: '/RATIONALE' },
-            { text: 'Governance', link: '/GOVERNANCE' }
+            { text: 'Governance', link: '/GOVERNANCE' },
+            { text: 'Production Operations', link: '/OPERATIONS' }
           ]
         },
         {
