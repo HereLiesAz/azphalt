@@ -1,11 +1,14 @@
 # Getting Started for Creators
 
-`azphalt` lets you build two kinds of thing that run across every conforming host:
+`azphalt` packages portable host-facing functionality and data into one signed `.azp` format. That
+includes sandboxed **code extensions**, **asset packs**, companion apps, MCP servers, packs, skills,
+scripts, composables, and declarative **workflow** and **role** packages.
 
-- a **code extension** — a sandboxed **filter, transition, tool, or command** (JS or WASM), or
-- an **asset pack** — brushes, LUTs, shaders, sound effects, fonts, 3D models, and the like,
+The important distinction is not "plugin versus not-plugin"; it is the package `kind`, because each
+kind has its own trust/runtime rules. Workflow and role packages, for example, are signed declarative
+data and never receive the code-extension sandbox's capabilities.
 
-…bundled into a single `.azp` file. The fastest start for either is the scaffolding tool:
+The fastest start for scaffolded package kinds is:
 
 ~~~bash
 npm create azphalt@latest
@@ -234,7 +237,67 @@ each package a signed header rather than sandboxed code. Scaffold one with `npm 
 
 Publish it like any other package. See the [composable spec](/specs/composable).
 
+## Building a Workflow Package
+
+A **workflow package** (`kind: "workflow"`) carries signed orchestration data for a workflow-aware host.
+It does not ship executable runtime/UI code. The host decides whether it understands the declared
+`workflow.format`, resolves dependencies, asks the user about any symbolic `hostPermissions`, and
+renders any declarative screens with its own compiled UI.
+
+A minimal manifest looks like:
+
+```jsonc
+{
+  "kind": "workflow",
+  "targetApps": ["com.example.workflowhost"],
+  "workflow": {
+    "format": "example.workflow.v1",
+    "definitions": [
+      { "id": "release", "path": "workflows/release.json" }
+    ],
+    "hostPermissions": ["WorkflowRegister", "WorkflowLaunch"]
+  },
+  "files": {
+    "workflows/release.json": "sha256-…"
+  }
+}
+```
+
+`targetApps` is discovery scoping, not authority. A matching host still verifies the package and makes
+its own permission/execution decision. Dependencies keep their own signatures, entitlements, permissions,
+and update lifecycle.
+
+See the [workflow package spec](/specs/workflow).
+
+## Building a Role Package
+
+A **role package** (`kind: "role"`) carries declarative persona/role definitions for a host that supports
+that role format. Like workflow packages, it contains no downloaded executable code and receives no
+Azphalt sandbox capabilities.
+
+```jsonc
+{
+  "kind": "role",
+  "targetApps": ["com.example.workflowhost"],
+  "role": {
+    "format": "example.role.v1",
+    "roles": [
+      { "id": "researcher", "name": "Researcher", "path": "roles/researcher.json" }
+    ]
+  },
+  "files": {
+    "roles/researcher.json": "sha256-…"
+  }
+}
+```
+
+Installing a role package does not grant that role authority. The host decides how the payload maps into
+its own role/company model and what permissions a resulting host-owned role may later receive.
+
+See the [role package spec](/specs/role).
+
 ## What's Next?
-- Check out the [Manifest Schema](/specs/extension-manifest) to see how you can manually write a complex `manifest.json` for multi-asset packs.
+- Check out the [Manifest Schema](/specs/extension-manifest) and [Package Format](/specs/package-format) for the common envelope shared by every package kind.
+- For agentic hosts, see [Workflow packages](/specs/workflow) and [Role packages](/specs/role).
 - See how apps will **consume** what you publish: [Use the Store from Your App](/hosts/getting-started).
 - Understand the trust and moderation model your package lives under: [Marketplace Integrity](/specs/marketplace-integrity).
