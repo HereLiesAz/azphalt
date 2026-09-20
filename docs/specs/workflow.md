@@ -32,7 +32,7 @@ A workflow host resolves and installs dependencies through the normal repository
   "kind": "workflow",
   "license": "MIT",
   "compat": ">=0.1",
-  "targetApps": ["com.hereliesaz.haive"],
+  "targetApps": ["com.example.workflowhost"],
   "workflow": {
     "format": "haive.workflow.v1",
     "definitions": [
@@ -70,8 +70,8 @@ A workflow host resolves and installs dependencies through the normal repository
 }
 ```
 
-The ordinary `targetApps` rule applies. Absent/empty is global; a package targeting Haive uses
-`"com.hereliesaz.haive"`. Scoping is discovery metadata, not a permission grant.
+The ordinary `targetApps` rule applies. Absent/empty is global; a host-specific package lists the
+reverse-DNS id of each compatible host. Scoping is discovery metadata, not a permission grant.
 
 ### `workflow.format`
 

@@ -70,3 +70,13 @@ IDs. This is discovery filtering, not access control; see [`repository-api.md`](
 A conforming verifier validates the structural rules above in addition to the normal package
 integrity/signature rules. The reference validator is `validateRoleManifest` in
 `@azphalt/azp`.
+
+## Repository and conformance profile
+
+Browse/search summaries carry `kind:"role"` and the ordinary `targetApps` metadata. Package detail
+carries the full `role` block. A repository that intentionally carries role packages may advertise
+`"role"` in its `/.well-known/azphalt-repository.json` `profiles` array.
+
+A role-aware host verifies the package and checks `role.format` before offering import. Conformance
+means the host can surface and safely import the declarative role payload; it does not imply that the
+role receives permissions or becomes globally active merely because the package was installed.

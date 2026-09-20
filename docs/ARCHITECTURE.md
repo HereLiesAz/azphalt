@@ -25,7 +25,8 @@ Keeping these separable is the core constraint: anyone can implement azphalt and
 
 | Component | Stack | React? |
 |---|---|---|
-| The marketplace storefront | Next.js + TS | **Yes** — textbook fit |
+| Production marketplace storefront | React + Vite static export behind a Cloudflare Worker | **Yes** |
+| Reference storefront | Next.js + TS | **Yes** — retained as a reference implementation |
 | The registry (host/version/search/serve packages) | Node/TS service + API | No — its browse UI can reuse the storefront's React |
 | The SDK (what authors build against) | TS | No — it's a library, not a UI |
 | Extension **UI** | **Declarative schema**, host-rendered | **No** — see below |
@@ -47,6 +48,8 @@ The native host that embeds the engine and renders the schema is **each app's ow
   capability-model.md       what an extension may touch: layers, bitmaps, canvas — and nothing else
   ui-schema.md              the declarative UI controls hosts render natively
   repository-api.md         the HTTP interface a discovery/distribution repository exposes
+  workflow.md               declarative workflow/orchestration packages
+  role.md                   declarative role/persona packages
 /packages/
   sdk/                      TS SDK authors build against (typed editor extension points)
   azp/                      read/write/verify/sign .azp containers (Ed25519 + trust store)
@@ -59,7 +62,9 @@ The native host that embeds the engine and renders the schema is **each app's ow
   mcp/                      an MCP server exposing azp verify/inspect/extract to any MCP host
   create-azphalt/           scaffolder for a new extension package
 /apps/
-  storefront/               the marketplace — Next.js consignment store (the business layer)
+  storefront-react/         production marketplace UI; statically exports the git-backed catalog
+  storefront-worker/        Cloudflare Worker serving the production storefront + Repository API
+  storefront/               legacy/reference Next.js storefront
   repository-server/        a reference Repository API backend over @azphalt/registry
 /examples/                  sample extensions; double as reference templates
 /docs/                      the docs site (VitePress) + these design/adoption guides
@@ -119,7 +124,8 @@ So: keep the standard open and self-hostable, require nobody to touch the store 
 2. **SDK + first importers** — `.abr` and `.cube` first; now a wide importer family targeting `.azp`. *(built)*
 3. **Reference runtime + real sandbox** — `runtime-reference` proves the contract; `runtime-wasm` runs it under QuickJS-in-WASM and raw WebAssembly. *(built)*
 4. **Native hosts** — embed the engine, render the UI schema natively. Graffux (paint/AR) is the first real consumer; Guillotine (video/audio) is the second, adopting the same `.azp` loader + Ed25519 trust on-device. These live outside this repo, behind their own engine boundaries.
-5. **Registry + marketplace** — `registry` (open lane) and its consignment overlay + `repository-server` are built; the hosted marketplace grows once there's an audience.
+5. **Registry + marketplace** — `registry` (open lane), its consignment overlay, and `repository-server` are built; production `azphalt.store` deploys the React static storefront plus Cloudflare Worker from the git-backed registry and verifies live app-scoped catalog freshness after deploy.
+6. **Declarative agentic package lanes** — `kind:"workflow"` and `kind:"role"` are first-class signed data packages. They reuse repository discovery, signatures, entitlements, and `targetApps` scoping without inheriting the code-extension sandbox or granting host authority merely by installation.
 
 ## Execution engine — decided
 
