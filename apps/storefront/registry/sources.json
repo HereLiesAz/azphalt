@@ -16,126 +16,126 @@
     {
       "id": "com.hereliesaz.azphalt.3d-protrusion",
       "repo": "HereLiesAz/azphalt-3d-protrusion",
-      "ref": "fe41bb006bb3017f762c50adb1e5d6637129c772",
+      "ref": "845f2b6479d5901d302d48145e41efacb7e8312f",
       "version": "1.0.0",
       "integrity": "sha256-DIR24Z5iOngdaERffo3BiW+WrlQBmN+UQJAKCHLTtwA="
     },
     {
       "id": "com.hereliesaz.azphalt.3d-word-flip",
       "repo": "HereLiesAz/azphalt-3d-word-flip",
-      "ref": "47f167971bc2798305a48dcb22dd97635b8f6638",
+      "ref": "4649fe79962bea3b3e479637dce3ccb1e2adc649",
       "version": "1.2.0",
       "integrity": "sha256-ju7HAegzcMJqXc1CcYR3MhVVMVu7FCbRqtIw0LwBVOk="
     },
     {
       "id": "com.hereliesaz.azphalt.action-glitch",
       "repo": "HereLiesAz/azphalt-action-glitch",
-      "ref": "ef7e5162f655eaa0dcc29c6c8d56cc66c2a9b27f",
+      "ref": "673bb502669ac1b0d24b0a97c57cde47b7a95231",
       "version": "2.0.0",
       "integrity": "sha256-JIXSc89Mex7dls1v+NbBfzkBP7eVUFsp4RNVxOY+dxg="
     },
     {
       "id": "com.hereliesaz.azphalt.active-camouflage",
       "repo": "HereLiesAz/azphalt-active-camouflage",
-      "ref": "f3ca40b734f33db4e6d2169fb55c136e67694f0e",
+      "ref": "f466872c027166046b6fe8fa4235cc995447349d",
       "version": "1.0.0",
       "integrity": "sha256-t6v6UB1WaczVmn+ikkhdPYLsW0sEyc1XQyfhmkwB7aI="
     },
     {
       "id": "com.hereliesaz.azphalt.anamorphic-flare",
       "repo": "HereLiesAz/azphalt-anamorphic-flare",
-      "ref": "d5001b411513abba401993c0006cfd068e256e14",
+      "ref": "09dd3bdb3b939137245f667690f45b1bb46d1c4f",
       "version": "1.0.0",
       "integrity": "sha256-q+B5dARiFhgb5c6s1HsqXYvQAK7QVIISJnR8wF7nhBA="
     },
     {
       "id": "com.hereliesaz.azphalt.anger-jiggle",
       "repo": "HereLiesAz/azphalt-anger-jiggle",
-      "ref": "0274f96e60af9e67be818d38b9a1d4386025e3d4",
+      "ref": "a9518f195cf621ddcdb50b05221116508ba1c8b7",
       "version": "2.0.0",
       "integrity": "sha256-VaWEtEjgoCb7iBM/En457ftF8SHgVgGGTF4wgHCkjJk="
     },
     {
       "id": "com.hereliesaz.azphalt.atmospheric-fog",
       "repo": "HereLiesAz/azphalt-atmospheric-fog",
-      "ref": "06ddac87842b50225ed95c16032d062664219627",
+      "ref": "03fe707584f23ed30a7a0c4fdb1082377586f078",
       "version": "1.0.0",
       "integrity": "sha256-EDz138+Bj8u2rWfuvXaoRApvrIRjYOBl8+iz+3xIgbs="
     },
     {
       "id": "com.hereliesaz.azphalt.audio-skew",
       "repo": "HereLiesAz/azphalt-audio-skew",
-      "ref": "1de08a227a628e94fef9d8ee33198b2583537166",
+      "ref": "362cb5aa99c388da851297d5c0d1edbfb8b0a960",
       "version": "2.0.0",
       "integrity": "sha256-wNIj9GnOJhuCTfT61CqSGR8BWmcwM8GQnJAkhhEgP+U="
     },
     {
       "id": "com.hereliesaz.azphalt.auto-reframe",
       "repo": "HereLiesAz/azphalt-auto-reframe",
-      "ref": "e50491f017fd5320b90624e8f3b44182bc232ee9",
+      "ref": "5537d8d075ef35c4ad139e390cf7ccffd09a0546",
       "version": "1.0.0",
       "integrity": "sha256-Gf2EXka1gLcnj61G5Jj8eTqkmX5thjsBQ5WHpmRrF+A="
     },
     {
       "id": "com.hereliesaz.azphalt.auto-stagger",
       "repo": "HereLiesAz/azphalt-auto-stagger",
-      "ref": "5c565cbbf015fa479eaf8a9ec37f1918395081d9",
+      "ref": "afee93fd01739261a9eefd638b7dbb95c1fba3d9",
       "version": "2.0.0",
       "integrity": "sha256-xtnSe37bwK7fNwqP1GPwFkHWp9uAGcId8kbcnAdwx30="
     },
     {
       "id": "com.hereliesaz.azphalt.baby-bloom",
       "repo": "HereLiesAz/azphalt-baby-bloom",
-      "ref": "ff8e14c396427a3367580a31db1696cbddf67c0a",
+      "ref": "a23fc41a6cd7f984cc1a024ffce607e229be966e",
       "version": "1.0.0",
       "integrity": "sha256-IUD+amNgbum2aLLDEtXp3lg4y0h3byTOb2x49tYqNzw="
     },
     {
       "id": "com.hereliesaz.azphalt.beast-shake",
       "repo": "HereLiesAz/azphalt-beast-shake",
-      "ref": "aceecbc4ffad7a51d88e261c0b432bb0ea2f8538",
+      "ref": "df090e6c6e0463161957f3fb16de9ac1a2ee0a4b",
       "version": "1.2.0",
       "integrity": "sha256-YtitW5E8Izt7/YUL6I8K0YJXYPzkRDcA4Cko1DuKrNQ="
     },
     {
       "id": "com.hereliesaz.azphalt.beat-pulse",
       "repo": "HereLiesAz/azphalt-beat-pulse",
-      "ref": "2035b79a48a9fbe67c345e3e34d0fe5867c7d4a0",
+      "ref": "7853d53421b726285481cdec9a93441aa678f42c",
       "version": "1.0.0",
       "integrity": "sha256-y8ixWT7u5TWlM1+xv/meDTJM6xUw15iGLWD0yTrmd1M="
     },
     {
       "id": "com.hereliesaz.azphalt.bevel-emboss",
       "repo": "HereLiesAz/azphalt-bevel-emboss",
-      "ref": "9223da74973b1313ee09d23c321ba6381caefcfa",
+      "ref": "e74c4e3b3bd9ec98c859dddc90404c3f6f3544e8",
       "version": "1.0.0",
       "integrity": "sha256-OcjWfyDqxMQntTtJ/anOyZHpSdDoSmEDDVDzm38vbU8="
     },
     {
       "id": "com.hereliesaz.azphalt.blur-reveal",
       "repo": "HereLiesAz/azphalt-blur-reveal",
-      "ref": "8c99ccbf28c056c3c01cc31ba8fa191856618693",
+      "ref": "64104cc5525597933c56d23b201b026512bb7cd2",
       "version": "1.2.0",
       "integrity": "sha256-CRNLh/8R9rRUbkz4NnnRAbMuulWRHbdK4j2ar62QNeg="
     },
     {
       "id": "com.hereliesaz.azphalt.bounce",
       "repo": "HereLiesAz/azphalt-bounce",
-      "ref": "161b14bff065558766e5ae357c9dbafdbcc10c0b",
+      "ref": "fab419bd1c4bf8b90ef258e4fe6ccbf3dbfe811f",
       "version": "1.2.0",
       "integrity": "sha256-fQ/XYtvSFDrL8lkrEKd4vXclhoydK2PIJYIRunv15rM="
     },
     {
       "id": "com.hereliesaz.azphalt.breathe-scale",
       "repo": "HereLiesAz/azphalt-breathe-scale",
-      "ref": "06c099ef57a4a75804d744e059be51a5ffe9391c",
+      "ref": "85933e827b85a03b59fd91ba0b5bef05dde80dbf",
       "version": "2.0.0",
       "integrity": "sha256-WgvQj5zdwrJCxxJy9GkxfTqi1LxHaUS3KmDZpGa6V6I="
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-angular-shader",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
+      "ref": "f199bc3f5ffb2ab7c21b95c81dad8a6fb3d54412",
       "version": "1.0.0",
       "path": "brushes/acrylic-angular-shader",
       "integrity": "sha256-a7qWA0S8cLG7c2U10UN4L1q/kwRTzqeu4S+nOEpaDyw="
@@ -143,7 +143,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-flat",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
+      "ref": "f199bc3f5ffb2ab7c21b95c81dad8a6fb3d54412",
       "version": "1.0.0",
       "path": "brushes/acrylic-flat",
       "integrity": "sha256-JQCcy8Dr4ROuw+KPU39cv77Kcq6C2pM2oy3SmNvWgrk="
@@ -151,7 +151,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-round",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
+      "ref": "f199bc3f5ffb2ab7c21b95c81dad8a6fb3d54412",
       "version": "1.0.0",
       "path": "brushes/acrylic-round",
       "integrity": "sha256-FXpEkKMRiZ6wkrLx34nYZHSxX3O8ShBXSEMcMk7jisw="
@@ -159,7 +159,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
+      "ref": "f199bc3f5ffb2ab7c21b95c81dad8a6fb3d54412",
       "version": "1.0.0",
       "path": "brushes/acrylic-sponge-dab",
       "integrity": "sha256-0hA6qJUTtPYZzWEaUnIr9tdXM+N4Px6QEhKergoAwHk="
@@ -167,7 +167,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-china-marker",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
       "version": "1.0.0",
       "path": "brushes/china-marker",
       "integrity": "sha256-fVloee4PcTg4j6iA1T4szQkPXmF9u1CcGz7dSYlfH70="
@@ -175,7 +175,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-chisel-marker",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
       "version": "1.0.0",
       "path": "brushes/chisel-marker",
       "integrity": "sha256-J01zE3apL3uNGeNR4Pa4uVASU2EDJLYcw1E13vQhnHs="
@@ -183,7 +183,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-conte-crayon",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
+      "ref": "6775976398cef552b864b47bfeb6546e89230b4f",
       "version": "1.0.0",
       "path": "brushes/conte-crayon",
       "integrity": "sha256-XeUzsyccRwgQoOBGI//d8q8lik82Pm5S0ECVlG5meQo="
@@ -191,7 +191,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-hard-chalk",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
+      "ref": "6775976398cef552b864b47bfeb6546e89230b4f",
       "version": "1.0.0",
       "path": "brushes/hard-chalk",
       "integrity": "sha256-uE3EmUUCwk7uwRxCxpyBau9LAtlVK7coSz/+gQAwNeA="
@@ -199,7 +199,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-ink-sumi",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
       "version": "1.0.0",
       "path": "brushes/ink-sumi",
       "integrity": "sha256-+D+MZvzTAL/v6UwA2FK9PgjdVLIV49lHFMIP5xsULXU="
@@ -207,7 +207,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush",
       "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
+      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
       "version": "1.0.0",
       "path": "brushes/oil-bristle-drybrush",
       "integrity": "sha256-pAAN/4cWQ2GB8CZREkU8prtYIPGl9NqMoRK7hAshlaI="
@@ -215,7 +215,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-oil-fan-blade",
       "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
+      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
       "version": "1.0.0",
       "path": "brushes/oil-fan-blade",
       "integrity": "sha256-pqjKQnludymv5T4lIz4EAT3cTF1NzuCERwQBlMDk7O4="
@@ -223,7 +223,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-oil-filbert",
       "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
+      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
       "version": "1.0.0",
       "path": "brushes/oil-filbert",
       "integrity": "sha256-dw08H2J8Z1q1M9tE1Uv1pQrUhdPlKW4Y9hugqfQsKDc="
@@ -231,7 +231,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-oil-palette-knife",
       "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
+      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
       "version": "1.0.0",
       "path": "brushes/oil-palette-knife",
       "integrity": "sha256-la1g5BOi2zFCUMCSDvyIjcqkukr77Z5/VPgVcknSGjI="
@@ -239,7 +239,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-paint-pen",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
       "version": "1.0.0",
       "path": "brushes/paint-pen",
       "integrity": "sha256-ZpIEcQhK3Yn/9GmGOe8aqaxINpu/o754R0isuFiNK8Y="
@@ -247,7 +247,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-paw-print",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
       "version": "1.0.0",
       "path": "brushes/paw-print",
       "integrity": "sha256-Vl/i3IizxmTpY/yU2/g8jbCMlAKMebftMCnt5qz8br4="
@@ -255,7 +255,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-pointed-triangle",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
       "version": "1.0.0",
       "path": "brushes/pointed-triangle",
       "integrity": "sha256-pt8AIzcwvoa4SCL5Wy3otKxi/8to2rSs14AM4bj62Mg="
@@ -263,7 +263,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-smudge-stick",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
+      "ref": "6775976398cef552b864b47bfeb6546e89230b4f",
       "version": "1.0.0",
       "path": "brushes/smudge-stick",
       "integrity": "sha256-Sa8Tmvm28IVg3E1IqUFf5akTomo4kxNFWDJ2j8r1YCE="
@@ -271,7 +271,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-soft-charcoal",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
+      "ref": "6775976398cef552b864b47bfeb6546e89230b4f",
       "version": "1.0.0",
       "path": "brushes/soft-charcoal",
       "integrity": "sha256-jWycM9OXRpWd73s+0q9QQ9SNuwpX+nl+YnpI61ZHQEk="
@@ -279,7 +279,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-spray-fade",
       "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
+      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
       "version": "1.0.0",
       "path": "brushes/spray-fade",
       "integrity": "sha256-NsmSzgmu2EZiZTQWKTdcxLcyxEpRu4qjU7v27lZP4ko="
@@ -287,7 +287,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-spray-fat-cap",
       "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
+      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
       "version": "1.0.0",
       "path": "brushes/spray-fat-cap",
       "integrity": "sha256-D92JIWVNHRYwyd0c1X4cGhP2HmqzR4/8GZ0Fej9pL90="
@@ -295,7 +295,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-spray-halo",
       "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
+      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
       "version": "1.0.0",
       "path": "brushes/spray-halo",
       "integrity": "sha256-JmOjkcbd7xXme8yt1/YUbkDpP5vsFuqkE3x9EUci4zM="
@@ -303,7 +303,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-spray-skinny-cap",
       "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
+      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
       "version": "1.0.0",
       "path": "brushes/spray-skinny-cap",
       "integrity": "sha256-VTNwNhWlxVth2s+2g6h1Z2TNYQ4f4cWWptTfWo/zm4E="
@@ -311,7 +311,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
+      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
       "version": "1.0.0",
       "path": "brushes/watercolor-dry-edge-bleed",
       "integrity": "sha256-KeBm8lm9LcxiExH8FG4GcDFfbIHnd83yDM95z0pH8GU="
@@ -319,7 +319,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-salt-texture",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
+      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
       "version": "1.0.0",
       "path": "brushes/watercolor-salt-texture",
       "integrity": "sha256-xgCHXRuPzYol78E3/uxTxf+GDvR48eS8n/wEj35Qm/w="
@@ -327,7 +327,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-wash-flat",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
+      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
       "version": "1.0.0",
       "path": "brushes/watercolor-wash-flat",
       "integrity": "sha256-UbloGjccRY4t0KbJOJQQeGhoWqt2cHeFD8MOO9w1Gv8="
@@ -335,7 +335,7 @@
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
+      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
       "version": "1.0.0",
       "path": "brushes/watercolor-wet-on-wet",
       "integrity": "sha256-9RwUkJEE8MXrntx2t071sak4OD+0neIFIqutydTPxDI="
@@ -343,777 +343,777 @@
     {
       "id": "com.hereliesaz.azphalt.camera-controller",
       "repo": "HereLiesAz/azphalt-camera-controller",
-      "ref": "d4bf62a45039b412ffe4dcabb175d23f8c497f8a",
+      "ref": "07a3512f80fcb10af86a5ef17cfc3e68fc14edac",
       "version": "1.0.0",
       "integrity": "sha256-qzuVIKRbIW79wCLE6YGyzCDzxrQtds15/cj4gMjrGzw="
     },
     {
       "id": "com.hereliesaz.azphalt.character-stagger",
       "repo": "HereLiesAz/azphalt-character-stagger",
-      "ref": "65af373bb28775cceecbcc0dc1ac2ed87a73418e",
+      "ref": "4ec0da4fe780f2faa1bcc620a002d230d825a4aa",
       "version": "1.2.0",
       "integrity": "sha256-FyA78I4IPULibrzcVSR4cZM6Se+6/DxTJLZDC1y6HRg="
     },
     {
       "id": "com.hereliesaz.azphalt.checkerboard",
       "repo": "HereLiesAz/azphalt-checkerboard",
-      "ref": "2bc936d0dd748a5233d20e7cdc5223a7f2591a7a",
+      "ref": "c53be8a1a1457ce27a92e5e61e416e2e6680ba6a",
       "version": "1.0.0",
       "integrity": "sha256-K2wxBlOnRGB/W+30Voo9K5Xd4m/NxXC3Z6bV8vFV//8="
     },
     {
       "id": "com.hereliesaz.azphalt.chromatic-pulse",
       "repo": "HereLiesAz/azphalt-chromatic-pulse",
-      "ref": "563d3169afedc89872f3db347da1747daf140dae",
+      "ref": "df42334e36bd7232f33bb8b2f4af5316b32af14e",
       "version": "1.0.0",
       "integrity": "sha256-tU6dqqQ/WmXcTpS24VQ2Iuhw+CSDnBBkOY+hf/yRlVU="
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-glow",
       "repo": "HereLiesAz/azphalt-cinematic-glow",
-      "ref": "794347c0804c9e63f6e930b5d4657e6eba78794c",
+      "ref": "f6551dfe5e0054f5e1ca89d86e3ef0a3232e9076",
       "version": "1.0.0",
       "integrity": "sha256-l75d53HjUTDqodEnG6+5KavVEgbgKH5JOb8aW1C+6aU="
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-pan",
       "repo": "HereLiesAz/azphalt-cinematic-pan",
-      "ref": "1fb5cdadd75e5323251496a04826140cc65584ff",
+      "ref": "e7988074dfc2bb04c1fae33b151604c279e1b273",
       "version": "1.2.0",
       "integrity": "sha256-yP5gjEIYyVxQddl//M+gp06tCTgHS5dX6gIOx9b5/ls="
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-rise",
       "repo": "HereLiesAz/azphalt-cinematic-rise",
-      "ref": "8de7e94567072a984538ce1d37b7d58e06dce1ce",
+      "ref": "79401cf7d9a38488b6a16010694229e0d4dce38d",
       "version": "1.2.0",
       "integrity": "sha256-Z90Ezb8Sq9S7dW6yAvDFvAjzXNnVEb/EJitTKL/qyoI="
     },
     {
       "id": "com.hereliesaz.azphalt.collision-dodge",
       "repo": "HereLiesAz/azphalt-collision-dodge",
-      "ref": "6fd735d485c1317cba449b9b7b35afeef5dc39b4",
+      "ref": "302b291c539a94699d8601d8dd3e542cbd5c68aa",
       "version": "1.0.0",
       "integrity": "sha256-VrewUTsNd8grgGZ9+/Lmt0ZPKV+C8+8eWCm0uBMieTE="
     },
     {
       "id": "com.hereliesaz.azphalt.comic-edge",
       "repo": "HereLiesAz/azphalt-comic-edge",
-      "ref": "aded60df524cc7dee96c95d85c1d25737f92c9bc",
+      "ref": "5d18379c4936bd30d200fb04a141f81496063879",
       "version": "1.0.0",
       "integrity": "sha256-0y3RNynVc9OkDbvO53JnCsEAYjExW6DA/BtbPXZKHxg="
     },
     {
       "id": "com.hereliesaz.azphalt.countdown",
       "repo": "HereLiesAz/azphalt-countdown",
-      "ref": "7338c87ab5a15957a6f96d9e13d60f4a2f099c9e",
+      "ref": "38e3bb071b4a54b07726268c88275d17350d18a5",
       "version": "1.0.0",
       "integrity": "sha256-0Ru1/jIlk+EVT4cFPrvXA6VkcVrMEREJSHKPY0pTX50="
     },
     {
       "id": "com.hereliesaz.azphalt.cyber-glitch",
       "repo": "HereLiesAz/azphalt-cyber-glitch",
-      "ref": "f14f3eae656334a8f534dd64b5e53d7ef613e950",
+      "ref": "b24e5b980be6fdb79c552cd2297501c811d9b5c3",
       "version": "1.0.0",
       "integrity": "sha256-z42VS6eRyY2w9lQAcsjI98DeGBOCDsYigtL9cehI3DE="
     },
     {
       "id": "com.hereliesaz.azphalt.depth-hide",
       "repo": "HereLiesAz/azphalt-depth-hide",
-      "ref": "702ae4695e770c4b2d46d81f0d01c6e071c72da9",
+      "ref": "122c37f22beaed9ceba5340a1ad74870fa4414dc",
       "version": "2.0.0",
       "integrity": "sha256-GHIu9IOvtQ2FWrv6drupO2r0zdSJojj6nLrnrCl5lQ4="
     },
     {
       "id": "com.hereliesaz.azphalt.diarization-box",
       "repo": "HereLiesAz/azphalt-diarization-box",
-      "ref": "10820a457bee894eeca034c8db3a5343e5455c53",
+      "ref": "9a62801e268d7cd24711320f18367a6a10bd78a3",
       "version": "2.0.0",
       "integrity": "sha256-gAyWTdRxsT4iH/UcsRZ5nSVRYArE72k6TXdlcZOHdS4="
     },
     {
       "id": "com.hereliesaz.azphalt.diarization-flip",
       "repo": "HereLiesAz/azphalt-diarization-flip",
-      "ref": "f4f337c502a788ea4974199f9d7cb981c5e93971",
+      "ref": "d44cc82472693dfc1d1a1f93f344041008589f03",
       "version": "2.0.0",
       "integrity": "sha256-YwJ819Zw1I3ebjsg5G1koiK/Dl9xIq1pApTGA004jtY="
     },
     {
       "id": "com.hereliesaz.azphalt.dreamy-glow",
       "repo": "HereLiesAz/azphalt-dreamy-glow",
-      "ref": "de75ead8f601146609c9e3f2a37a3d363c9592a6",
+      "ref": "963b16fea254d5d628a8c9062b11ff7ea78e07dd",
       "version": "1.0.0",
       "integrity": "sha256-/Mp+5/28MdN/LUVXFPFoY7/YCd/9o1Vb9BqipbEMPik="
     },
     {
       "id": "com.hereliesaz.azphalt.duotone",
       "repo": "HereLiesAz/azphalt-duotone",
-      "ref": "150071958a1f849985f549d96adee825ecb6f495",
+      "ref": "f447a6fbd688fe018994748779450d69cfccc3cb",
       "version": "1.0.0",
       "integrity": "sha256-gJY3Beb2EuaHOYqEIwG5TX2F9LnIGePLy05vuj9dmaY="
     },
     {
       "id": "com.hereliesaz.azphalt.elastic-drop",
       "repo": "HereLiesAz/azphalt-elastic-drop",
-      "ref": "020394a0c2b860405542b91348ec69ba2ab8e0c4",
+      "ref": "fdbad490f7a292059fd986c780a054e5a835e4af",
       "version": "1.2.0",
       "integrity": "sha256-QI8Skbu9RYHp3D6BZ3bWkv+BTIoTplK/Fgrzs9tD7Ds="
     },
     {
       "id": "com.hereliesaz.azphalt.emphasis-stroke",
       "repo": "HereLiesAz/azphalt-emphasis-stroke",
-      "ref": "91659d0649741f13dcf7e08366ae053c3d66ce56",
+      "ref": "60a1bcb4510514b8d2f3708624b7e6a3a7602473",
       "version": "2.0.0",
       "integrity": "sha256-rIdsyKx4SSdmvhCbCKykGV1dW+65tIS2HGLso3JWB8g="
     },
     {
       "id": "com.hereliesaz.azphalt.environment-bleed",
       "repo": "HereLiesAz/azphalt-environment-bleed",
-      "ref": "895bbd53b990517c53d727748be135feefb6fb8b",
+      "ref": "2de0e1cd783f9c2ca603a6b8e282cd452d5332c5",
       "version": "1.0.0",
       "integrity": "sha256-DNCJ6ltkvCB+fSQQxgBXST5+C/+mJkqP/UZfo402ZxM="
     },
     {
       "id": "com.hereliesaz.azphalt.face-anchor",
       "repo": "HereLiesAz/azphalt-face-anchor",
-      "ref": "22f127783719ff4a0dfd973a422ed64b3620fe7d",
+      "ref": "94dde077f3a5683b964c9c5f3dc6ff33a2864265",
       "version": "2.0.0",
       "integrity": "sha256-5MbkHzI+n8KmTZle1gpY1bQ5b4lrpWMX080C56bg0xs="
     },
     {
       "id": "com.hereliesaz.azphalt.face-scale",
       "repo": "HereLiesAz/azphalt-face-scale",
-      "ref": "72aebc15835a56d7e64793c20550e3bd3c180ec7",
+      "ref": "8eb78d7c36b2c4ef7a5c1467560c7256b8f63ece",
       "version": "2.0.0",
       "integrity": "sha256-tqKxtl+jytVnt79f6UCfXP5hn5K2cLMkGEM435hKpD8="
     },
     {
       "id": "com.hereliesaz.azphalt.fade-up",
       "repo": "HereLiesAz/azphalt-fade-up",
-      "ref": "ef5a1f055e41ed88ce92b652f9e13eb0e3fab9aa",
+      "ref": "618ed6610a13810b0692db82cceb07d8eb5df4e1",
       "version": "1.2.0",
       "integrity": "sha256-E6x9ibVlK7hIyWItFD/iyaemky0lDxceMuptwv29iKQ="
     },
     {
       "id": "com.hereliesaz.azphalt.fast-neural-style",
       "repo": "HereLiesAz/azphalt-fast-neural-style",
-      "ref": "d5f4403f4b5c91713630040bb90fc08fe81d0c08",
+      "ref": "6372eebc91be923b50de543353f21a94663e9239",
       "version": "1.0.0",
       "integrity": "sha256-3XQ9R8qMnVHHIlq8LNJ3BJko9n+mrDdppPrQA337/LA="
     },
     {
       "id": "com.hereliesaz.azphalt.film-burn",
       "repo": "HereLiesAz/azphalt-film-burn",
-      "ref": "4ebe7b785da8084abf5e58f245aa7a1bc847e320",
+      "ref": "726c7b72682f06481b1ea3d4fc6f8995cb6a49e6",
       "version": "1.0.0",
       "integrity": "sha256-yQp1jqlJ5EqKgeip1qxcBuxU/UvzKmTKG0WetmzTlLU="
     },
     {
       "id": "com.hereliesaz.azphalt.film-damage",
       "repo": "HereLiesAz/azphalt-film-damage",
-      "ref": "8b1bf43b1d404c05e8d17ec05852717a44cc9b94",
+      "ref": "1c5dddd7a6d4ca6fa8401d3fb033714a982d9a80",
       "version": "1.0.0",
       "integrity": "sha256-ffqGzcIWTqSXzpmjMdSqJ/ZBmrGv1oDSFy3ykUXFMHw="
     },
     {
       "id": "com.hereliesaz.azphalt.floor-reflection",
       "repo": "HereLiesAz/azphalt-floor-reflection",
-      "ref": "da57b0a2a947485e05e8249e552a80a67d514d90",
+      "ref": "7124a87173f1053df0f556bf0a8aa6cf91f8e12d",
       "version": "1.0.0",
       "integrity": "sha256-Q7VozO+cSi02SkKklBmiX0txRGSu50sfBqJRynmV4SU="
     },
     {
       "id": "com.hereliesaz.azphalt.focus-match",
       "repo": "HereLiesAz/azphalt-focus-match",
-      "ref": "8b2d59530408c2631348d32a0bce3f2427c33028",
+      "ref": "c93f4450ad6f55f5200b5d964313cb2ece19a56b",
       "version": "2.0.0",
       "integrity": "sha256-nroxmGAHWgFDwfTMQ/pwdJVAyXl9KIQc2pzAM5ObCAA="
     },
     {
       "id": "com.hereliesaz.azphalt.frost-glass",
       "repo": "HereLiesAz/azphalt-frost-glass",
-      "ref": "5d38edef27db95d6a4c5f8bc0416dbf10827971b",
+      "ref": "ae4bb4505fc02df7d245037437767310a6c0fca9",
       "version": "1.0.0",
       "integrity": "sha256-sHQZbeQ68Y5+nxgOVi7YLZa+uHXJpjzVO5S1A84BILo="
     },
     {
       "id": "com.hereliesaz.azphalt.gaze-dodge",
       "repo": "HereLiesAz/azphalt-gaze-dodge",
-      "ref": "fef9c593f36b01285c504ff1be3765b8ea412ee0",
+      "ref": "6346cc5a58fb0b313525dd6266cbd3fd2d3761aa",
       "version": "2.0.0",
       "integrity": "sha256-1hKwvKyp+oy4/0WbzJxACDSzv0jryFAMtPZXQ2W4kuQ="
     },
     {
       "id": "com.hereliesaz.azphalt.glass-refraction",
       "repo": "HereLiesAz/azphalt-glass-refraction",
-      "ref": "226af868f07ec334e6a8a224cb3f3e583beb0056",
+      "ref": "d88cdfaeac35aee56e4ebc503ab61d3dab886eee",
       "version": "1.0.0",
       "integrity": "sha256-eRKFgVhahc5W6cZkRkU0huq1ZEuls0QEhpWRqHALOwg="
     },
     {
       "id": "com.hereliesaz.azphalt.glitch-decode",
       "repo": "HereLiesAz/azphalt-glitch-decode",
-      "ref": "86ea9c8f7f667907cfbee2e703199fba841b5665",
+      "ref": "8748402afbd3ea01ee726547be3feeb51f043405",
       "version": "1.2.0",
       "integrity": "sha256-b96i7JINrZMC3cBXM/hgZ3bzLvMu008jq5Cz1pOQOSM="
     },
     {
       "id": "com.hereliesaz.azphalt.glitch-slice",
       "repo": "HereLiesAz/azphalt-glitch-slice",
-      "ref": "70a0427abe325851f0be61298b242b081ba2c1c1",
+      "ref": "fcaf9ddaaf5384dc3aee9ef47c3211ad33887c59",
       "version": "1.0.0",
       "integrity": "sha256-PlmFzmHYeMmkuSYevOWLMwgr7r5D4TYDNBBrFByENUc="
     },
     {
       "id": "com.hereliesaz.azphalt.gradients",
       "repo": "HereLiesAz/azphalt-gradients",
-      "ref": "2bee8f22076dbf77d90578b540bbfcffe013c3e4",
+      "ref": "59af2b9e2896f3ee9766be4cf188dcec6769a89d",
       "version": "1.0.0",
       "integrity": "sha256-SP4JnpvI8wHMHHkSwuhoaxCYQtiITU3Goa7Dsjxsvaw="
     },
     {
       "id": "com.hereliesaz.azphalt.grid-guide",
       "repo": "HereLiesAz/azphalt-grid-guide",
-      "ref": "8f285b55ffc051119f7a769afac9672dcd8b8a9f",
+      "ref": "7a969fe0d76cd7e89b9bfdde63f2505cf9794238",
       "version": "1.0.0",
       "integrity": "sha256-+tfG+3OZ4eFlnMwGAoyCOGYwaiGRIOZQlbhAZQCYeJw="
     },
     {
       "id": "com.hereliesaz.azphalt.gtcrn",
       "repo": "HereLiesAz/azphalt-gtcrn",
-      "ref": "2d614ce57121308b714575555660788b9d8c9bd7",
+      "ref": "bc8b8eb2d7e3dce164bab9fbb3578c54aa1dee36",
       "version": "1.0.0",
       "integrity": "sha256-DFmw6DsQ8PQ02r2qnoBflAgp7ke2gh5aMkBgBjzI3eo="
     },
     {
       "id": "com.hereliesaz.azphalt.halftone",
       "repo": "HereLiesAz/azphalt-halftone",
-      "ref": "6db9fea56adf61f11f7f499659e23f0a874421b2",
+      "ref": "893d96dc4d0c24dd7579dac93940a24b8989461b",
       "version": "1.0.0",
       "integrity": "sha256-ihY4ZEeUd8Zb0ihUXp/zoqPeuULyPx/agIc5SMpn3/Y="
     },
     {
       "id": "com.hereliesaz.azphalt.hop-in",
       "repo": "HereLiesAz/azphalt-hop-in",
-      "ref": "409c489ed13363cf935ea359b2655f796379d520",
+      "ref": "c0affb5e3ca8f5ccd02b896527dcdcb04b578f6e",
       "version": "1.2.0",
       "integrity": "sha256-/tHvmt6771FCTHLqf/UTo+1GOvSyKSG72q9atnvKEFY="
     },
     {
       "id": "com.hereliesaz.azphalt.hormozi-pop",
       "repo": "HereLiesAz/azphalt-hormozi-pop",
-      "ref": "72eb63eb66c79c077cc29e52aa6cc0998bc63267",
+      "ref": "419bd872f3adce81aa2317309e90c425a4b7d15e",
       "version": "1.2.0",
       "integrity": "sha256-2UoapPaQ2qXii+ySzhylJFJUdZaH0Vt4K6AHR8cbqrU="
     },
     {
       "id": "com.hereliesaz.azphalt.isolate-glow",
       "repo": "HereLiesAz/azphalt-isolate-glow",
-      "ref": "eb74ded2412a69573f015d0faf55fae2bcbf8ff0",
+      "ref": "23ff277255f08d354a5691ce81cdde9c4891887a",
       "version": "1.0.0",
       "integrity": "sha256-4ryILEvQUj/ETDJV4Ehiz5bhbfeOcULAm8JbMwfr/6o="
     },
     {
       "id": "com.hereliesaz.azphalt.joy-pop",
       "repo": "HereLiesAz/azphalt-joy-pop",
-      "ref": "c842af9f9ca0ae06a659bc6e593052d2d41b3535",
+      "ref": "a5fbc7d7b580a61291f2da6c2bb800b57feb7215",
       "version": "2.0.0",
       "integrity": "sha256-Ft6DkLLkXtrAqUwK2l/FAD2VTOZOckw1ISS+SgSw+/0="
     },
     {
       "id": "com.hereliesaz.azphalt.kaleidoscope-spin",
       "repo": "HereLiesAz/azphalt-kaleidoscope-spin",
-      "ref": "89d0b5303ecfc8e71152ac48a0624a3ea5fa9788",
+      "ref": "f8a05a5d2697da78e1401530bbe913bbfdebd09d",
       "version": "1.0.0",
       "integrity": "sha256-wlXR8RbHmC0w8i/pGDB9Rh9FTJLRotD5BMO9PsQr6ZA="
     },
     {
       "id": "com.hereliesaz.azphalt.karaoke-sweep",
       "repo": "HereLiesAz/azphalt-karaoke-sweep",
-      "ref": "c5923c447b73b4b35fdf7b799f041aaf28c44ddd",
+      "ref": "8b536909fa859e0b73d5afe3124b87d45e4194cd",
       "version": "1.2.0",
       "integrity": "sha256-rGa8OVFkUNg+hOm5N2xyzddfwq0V1I2WzTzTGMrfExA="
     },
     {
       "id": "com.hereliesaz.azphalt.lama",
       "repo": "HereLiesAz/azphalt-lama",
-      "ref": "77700485706cab5d98b0801387e0a30ae7c3adb4",
+      "ref": "7b5f5c41957b46cc2eda4bcc40ab1268e48f5d5f",
       "version": "1.0.0",
       "integrity": "sha256-7g7Vqb/EtsafFc1mCjXAo5DoS/azTv4s6nsDhxMsV9U="
     },
     {
       "id": "com.hereliesaz.azphalt.lensflare",
       "repo": "HereLiesAz/azphalt-lensflare",
-      "ref": "e4c2fc1e55b9a81dd8f88b5c4ef44e2dba45c466",
+      "ref": "e136c863ec319c9c8f24b32d9ce07235d76ec54c",
       "version": "1.0.0",
       "integrity": "sha256-Krbw3fFyx9gdv3TSrGwNe9GCcA2+ebQrujRpqqEm+uQ="
     },
     {
       "id": "com.hereliesaz.azphalt.light-leak-sweep",
       "repo": "HereLiesAz/azphalt-light-leak-sweep",
-      "ref": "0028cb810b034b81bdce84ca2dcba49e45270876",
+      "ref": "da00e6e79a6ac6acb2f790a431a6e8b82cfcfe1c",
       "version": "1.0.0",
       "integrity": "sha256-SLaZJYjevxMu7oFdhYn8bZKxWUT32bpxIxIXCBfmekU="
     },
     {
       "id": "com.hereliesaz.azphalt.liquid-chrome",
       "repo": "HereLiesAz/azphalt-liquid-chrome",
-      "ref": "988fff42ea9fc760b738aefff377364b7cf748c0",
+      "ref": "78f53178b45b5134725f0aa84f168aff82cd761c",
       "version": "1.0.0",
       "integrity": "sha256-e7OzesYLsprlWozCWr02Z+OxZPfy4j/lZXJP5O7FfVU="
     },
     {
       "id": "com.hereliesaz.azphalt.loudness-color",
       "repo": "HereLiesAz/azphalt-loudness-color",
-      "ref": "c247ca3206bcdab371828a20fc171077f75d67bb",
+      "ref": "3168b0d0b6212f56f2f3493ce3e5bc98f454fb06",
       "version": "2.0.0",
       "integrity": "sha256-CEu95Xs/CQJt31iqp7EwAHyXpx5z4GhScpDc7cnzkzc="
     },
     {
       "id": "com.hereliesaz.azphalt.midas",
       "repo": "HereLiesAz/azphalt-midas",
-      "ref": "f35e5a067655940000ba6c8574bd23e774c4cec5",
+      "ref": "4e4c839958db1b043652e9d7a6426912dbfe8b61",
       "version": "1.0.0",
       "integrity": "sha256-9PKLneDu67QOn60I+nybMRGRSRp3U4NE3+mXoyCCKPs="
     },
     {
       "id": "com.hereliesaz.azphalt.mirnet",
       "repo": "HereLiesAz/azphalt-mirnet",
-      "ref": "e2829b97457b750826184e4187ef40af10594ea6",
+      "ref": "2d10dc326ab5d4bafb2f123f9596a3f1da6d7db9",
       "version": "1.0.0",
       "integrity": "sha256-sePePy840JEtnbxoFnXMjh14UhsPxCqSXs1/j43qyLQ="
     },
     {
       "id": "com.hereliesaz.azphalt.mobilefacenet",
       "repo": "HereLiesAz/azphalt-mobilefacenet",
-      "ref": "7d181b399d3ddec26f87014cefa9f7e55bbf924d",
+      "ref": "3de45a813bcf6b57f95e42cb390b71f36c9ff273",
       "version": "1.0.0",
       "integrity": "sha256-RDcXH5UF4YQF8FFv46H58LSqdPca3V/K1pdgFaisRBw="
     },
     {
       "id": "com.hereliesaz.azphalt.mobilenet",
       "repo": "HereLiesAz/azphalt-mobilenet",
-      "ref": "4e998139340fa9a6c9067c073638706e70b8a4d1",
+      "ref": "37a9ed10f2442d6e8fbeaa6bd85bf3642e3525f2",
       "version": "1.0.0",
       "integrity": "sha256-Zq/RqKV5p31y729GD+GKQZvamq6Od9WYOMMrszkm9is="
     },
     {
       "id": "com.hereliesaz.azphalt.moondream",
       "repo": "HereLiesAz/azphalt-moondream",
-      "ref": "49466d6ea12a82ae685fe204c64b107ab50a9fdf",
+      "ref": "758b0c8f69ad4b1013504060dcfe984007282110",
       "version": "1.0.0",
       "integrity": "sha256-stzzIiwrapd/IyoEU20zIcu7PDH25qPnucn1S6s6Vro="
     },
     {
       "id": "com.hereliesaz.azphalt.motion-blur",
       "repo": "HereLiesAz/azphalt-motion-blur",
-      "ref": "3198bb7d0dcf468021712bc8c29d2b37d4723626",
+      "ref": "c56198515dff341dab1342ce0ac0b31b5321a607",
       "version": "1.0.0",
       "integrity": "sha256-Yeqo7/6J0oDaVI9v+4hqe5Xve4dCDnX22cjprIju8mM="
     },
     {
       "id": "com.hereliesaz.azphalt.motion-tracking",
       "repo": "HereLiesAz/azphalt-motion-tracking",
-      "ref": "b01ba0fe3764c048678f2cf165a11f2c951e0a04",
+      "ref": "7ab4c269706438599850219278b6e739257b06c4",
       "version": "1.0.0",
       "integrity": "sha256-0OzBqVMCO0ZaxK4UsjLVwyO6V+oRcH0gAD8/w8tUmJE="
     },
     {
       "id": "com.hereliesaz.azphalt.motion-wind-warp",
       "repo": "HereLiesAz/azphalt-motion-wind-warp",
-      "ref": "3849e6f05c47bf647ed0cfc10c6843e4d30a74c5",
+      "ref": "fb6bf23baecf4e21f9b6769dbce9bd65b7b7a818",
       "version": "1.0.0",
       "integrity": "sha256-dh2cA9Uo5vQyxuUxCd3/BLqd5Z+cmjxLe4cCl94B/Rw="
     },
     {
       "id": "com.hereliesaz.azphalt.neon-pulse",
       "repo": "HereLiesAz/azphalt-neon-pulse",
-      "ref": "1ebdbe72397922bb43ec56985e188265e18750d3",
+      "ref": "c6c89b788d66fc9c666a1d38dcd730c5f4bfd290",
       "version": "1.2.0",
       "integrity": "sha256-S422h8mqUBQpGl4xvIBYgaZkGvAd7OXjU4S6OuBouhg="
     },
     {
       "id": "com.hereliesaz.azphalt.neon-rim-pulse",
       "repo": "HereLiesAz/azphalt-neon-rim-pulse",
-      "ref": "d7137c538ade090629b58c3a695a7e510046e98c",
+      "ref": "044e26574205e90d4f01e7cb3847a12d61ef1a60",
       "version": "1.0.0",
       "integrity": "sha256-4u+W+cg1yfPoeKEPp8Ac8d8KhSYplOGUO/TvDFZ3BDc="
     },
     {
       "id": "com.hereliesaz.azphalt.noise",
       "repo": "HereLiesAz/azphalt-noise",
-      "ref": "5011a697348b2e8a011a23cc528ab462da7af332",
+      "ref": "f5b1b7bf1dff198bf5fca735db498a4117d4c302",
       "version": "1.0.0",
       "integrity": "sha256-1lmLNWVXEn38DybE/8w86S4KbyN4mFj9/TrFWhNcn58="
     },
     {
       "id": "com.hereliesaz.azphalt.object-tracking",
       "repo": "HereLiesAz/azphalt-object-tracking",
-      "ref": "4395f69804a04f9b0d27da874d0aaca53e1c89e8",
+      "ref": "c6b418026740615321e0d863163b96f77963681c",
       "version": "1.0.0",
       "integrity": "sha256-Q80keWJBLIjW/tJYRmNfHKxsZLF4KZTQermiuZ86SAA="
     },
     {
       "id": "com.hereliesaz.azphalt.optical-timeramp",
       "repo": "HereLiesAz/azphalt-.optical-timeramp",
-      "ref": "f043bea3194d116c379489be3d306148a3558da8",
+      "ref": "08dc5118078b55a4fa30d20f1aada8c4e0423287",
       "version": "1.0.0",
       "integrity": "sha256-JDYASlYPK0BBkoTaKEF6KanQLoZ0m0j/XlWswkll7E4="
     },
     {
       "id": "com.hereliesaz.azphalt.page-curl",
       "repo": "HereLiesAz/azphalt-page-curl",
-      "ref": "8419bbca5a4ed352cc3099ace247c9da7ebb7a82",
+      "ref": "1400d348b573e89dbf31eb9040a468a68c1c56b3",
       "version": "1.0.0",
       "integrity": "sha256-KPNCIspytXxoPhlZbSZ6kwBbNBv5XbkBaqfwUj5F49M="
     },
     {
       "id": "com.hereliesaz.azphalt.parallax-depth",
       "repo": "HereLiesAz/azphalt-parallax-depth",
-      "ref": "187749ed89d8187b8cbb500e59b6e083455260bd",
+      "ref": "a5aaf294ca1ce5804e121d8d7fb070ad628dfe4d",
       "version": "1.0.0",
       "integrity": "sha256-LbFl3AUQ0t6LU94hm4hUsV0FFup6bC/1/eBesx9ChZw="
     },
     {
       "id": "com.hereliesaz.azphalt.particle-shatter",
       "repo": "HereLiesAz/azphalt-particle-shatter",
-      "ref": "0dd9c1ee957c417ce8b8a3ffb3970e2c0f36d643",
+      "ref": "474c019e402ce8f92920af8328825e406e15cf3a",
       "version": "1.0.0",
       "integrity": "sha256-X39iUuAspKNabLi62+GlqOU0n18shBcRm4bmNaH6q48="
     },
     {
       "id": "com.hereliesaz.azphalt.particles",
       "repo": "HereLiesAz/azphalt-particles",
-      "ref": "150fb2475bddf491c19fed60a6fda4626c36cc19",
+      "ref": "dff9f44314eb85bce9eff57f7eeff029eac147c3",
       "version": "1.0.0",
       "integrity": "sha256-rA5I7/L5pIFC/WwOhaxNSDqsWh4n4hl3haIIA5bsQiA="
     },
     {
       "id": "com.hereliesaz.azphalt.pip",
       "repo": "HereLiesAz/azphalt-pip",
-      "ref": "db412229a675385c67e626bf42939d65e0330188",
+      "ref": "c1e57ccbe085ec2ba595f6fb286c942b7bd28c55",
       "version": "1.0.0",
       "integrity": "sha256-x5cBg3yuq7Nqx795iAL2ZWgiGzXdNo0FaXio81OUS58="
     },
     {
       "id": "com.hereliesaz.azphalt.piper-en",
       "repo": "HereLiesAz/azphalt-piper-en",
-      "ref": "ad6eaa57ac4fe7a4232d304dff5f62747d3d0a22",
+      "ref": "42ce1db4d68ff906363e782df538b32f85547245",
       "version": "1.0.0",
       "integrity": "sha256-PvLhfHnMzU0nRsTCuTEZvlpuX6YNiU/rviSQQgFYBYs="
     },
     {
       "id": "com.hereliesaz.azphalt.pitch-rotation",
       "repo": "HereLiesAz/azphalt-pitch-rotation",
-      "ref": "2f68019cecd31f818f7374f68fc2d43a52a6d101",
+      "ref": "f17c628898b4bcbf6117295e19a5915fe710bbff",
       "version": "2.0.0",
       "integrity": "sha256-iZ5Q+ZpjY85tsgidUybU/GCbKQzmr3DRjQRRNm3md3s="
     },
     {
       "id": "com.hereliesaz.azphalt.pitch-tracker",
       "repo": "HereLiesAz/azphalt-pitch-tracker",
-      "ref": "e9c7a946da8b18106238066c92fd5a7aa1ab43f2",
+      "ref": "bd69be2f8346df2e987da0870fd478dd2b9939f1",
       "version": "2.0.0",
       "integrity": "sha256-0+zqbwvtYArtjG0gtiDBK976VjNnpfaOPSBwCXuCL4g="
     },
     {
       "id": "com.hereliesaz.azphalt.planar-tracking",
       "repo": "HereLiesAz/azphalt-planar-tracking",
-      "ref": "32f7d34aeabb554035c20d7b56d1d3aa66a9948a",
+      "ref": "810e5485f59efed10bb686cc9394b2ef2f199f6f",
       "version": "1.0.0",
       "integrity": "sha256-HAndTAbGBxvvmtmnj/R6FnfLzNX/+jsvBS2RJedSyh8="
     },
     {
       "id": "com.hereliesaz.azphalt.pop-in",
       "repo": "HereLiesAz/azphalt-pop-in",
-      "ref": "7e1ae895cc6244bcdc9b357f5e432e414eafd619",
+      "ref": "0cc6149f82f892dfdae6e21746adb2637c940cb4",
       "version": "1.2.0",
       "integrity": "sha256-R7MhvU/FiyhGGWRhcOAt/H7iBIxp5jt4XA8eLI4ZeyU="
     },
     {
       "id": "com.hereliesaz.azphalt.prism-flare",
       "repo": "HereLiesAz/azphalt-prism-flare",
-      "ref": "f5c08f335250f5ef526b37a50f5563da8ff3a6b0",
+      "ref": "58765260c03ba4347d2bea9323e8354db99a05b9",
       "version": "1.0.0",
       "integrity": "sha256-cXLOI0oYgud0UXvHP5yScYeaxZKkZHBWPbRBLeHAs4g="
     },
     {
       "id": "com.hereliesaz.azphalt.pyannote-segmentation",
       "repo": "HereLiesAz/azphalt-pyannote-segmentation",
-      "ref": "905b84535e0126a29c7a8fbe82ee5bbed147967c",
+      "ref": "52292d937f43317f0d4af632b0e85a1902c1eed3",
       "version": "1.0.0",
       "integrity": "sha256-W3k7oXt96lqaQKVVC4v8zpx/77srIFh8VJmtB9WtmPE="
     },
     {
       "id": "com.hereliesaz.azphalt.real-esrgan",
       "repo": "HereLiesAz/azphalt-real-esrgan",
-      "ref": "8deae1c905dbe19042f1c6c4b9710732419ebb1c",
+      "ref": "546d51600d8b76b52728a932687f486fbbd57965",
       "version": "1.0.0",
       "integrity": "sha256-++xdtRoftL0Bmsh5aPTaj8+AwtKBIN7f2nyXHjnH/e0="
     },
     {
       "id": "com.hereliesaz.azphalt.rotate-snap",
       "repo": "HereLiesAz/azphalt-rotate-snap",
-      "ref": "72453af239d06007ce401e2cc7a65675e10d172d",
+      "ref": "d1e09d6afd5285ef420ed409c83553ffa8d7c3dd",
       "version": "1.2.0",
       "integrity": "sha256-hbRvdxpE0seSZ1R5Ik1Oy4git/EmUCFJDzceoGdHgOA="
     },
     {
       "id": "com.hereliesaz.azphalt.rsvp-delivery",
       "repo": "HereLiesAz/azphalt-rsvp-delivery",
-      "ref": "3299bbc67a5b8cd48304990bbb98d01d61f7c449",
+      "ref": "b0df640f1e89b97f469605ea4e4074c8eb6e4b4e",
       "version": "1.2.0",
       "integrity": "sha256-1OO8/CFg5MfHRvpUmYoG2DCeIf6sBhzRwemepTeEE+Y="
     },
     {
       "id": "com.hereliesaz.azphalt.scale-stagger",
       "repo": "HereLiesAz/azphalt-scale-stagger",
-      "ref": "0fbd94719cff34b5f2974edf5cda4ad1248779e3",
+      "ref": "5e73774215e79c6a965acce968904e45d62aaef3",
       "version": "1.2.0",
       "integrity": "sha256-cVpg7dHqdbF9Qf8g7MJ+94tsr4MtVUozdcRbuHVt7UQ="
     },
     {
       "id": "com.hereliesaz.azphalt.scene-lit-shadow",
       "repo": "HereLiesAz/azphalt-scene-lit-shadow",
-      "ref": "535e9e7c95509030c3888c8b2c8039b34c5ed32f",
+      "ref": "656e3684c6862ddb94f135fb77a42fb7040dd6d7",
       "version": "1.0.0",
       "integrity": "sha256-VTc5ZDLDrnHHBPq0Kam6OTCUTRYMSWlQ4G8uBnpmXZM="
     },
     {
       "id": "com.hereliesaz.azphalt.selfie-segmentation",
       "repo": "HereLiesAz/azphalt-selfie-segmentation",
-      "ref": "481259c71ed8526da354300d4704e6f006e1764f",
+      "ref": "15ecb4f4ef3bb48f0439fbef90b671f06f3d7960",
       "version": "1.0.0",
       "integrity": "sha256-lynlvB6loBq5no5p4muB+1YaYccxpLIFmqJWA8132Ek="
     },
     {
       "id": "com.hereliesaz.azphalt.sentiment-hue",
       "repo": "HereLiesAz/azphalt-sentiment-hue",
-      "ref": "ae1266aacd39c50c94ea12a50bb774dca97a1100",
+      "ref": "bf4a72eb5cac3c1cfd9744f070f32ba883f36c2d",
       "version": "2.0.0",
       "integrity": "sha256-Gd4KW+tq4Ez9wCNwnPLphvEFGs19sUc/h0q3P2M7v1o="
     },
     {
       "id": "com.hereliesaz.azphalt.slide-right",
       "repo": "HereLiesAz/azphalt-slide-right",
-      "ref": "6c51019d78cad53263e1d1ad2ec0a0be43a6f7e0",
+      "ref": "395104e22129d7876653ef3173e0de0fcad3b98c",
       "version": "1.2.0",
       "integrity": "sha256-uTMxrpdbsr37wjxspXuWMw/qke7BiqucTOCIhl5jrd4="
     },
     {
       "id": "com.hereliesaz.azphalt.slump-disappointment",
       "repo": "HereLiesAz/azphalt-slump-disappointment",
-      "ref": "c92b90ad3f0c39be9839be65eebabb0612fb2b0a",
+      "ref": "14b24b44bf99389a23263e1c9d44385cf227af0f",
       "version": "1.2.0",
       "integrity": "sha256-qtEKgnQhsbSmutjs5JpG8u0PS/7o0pQAB7x3pW21kHI="
     },
     {
       "id": "com.hereliesaz.azphalt.smpte",
       "repo": "HereLiesAz/azphalt-smpte",
-      "ref": "99e93b739a6fe480c06eda22be9abee37591e6d7",
+      "ref": "a4a0fdd79a60adae37b88f903332cbff9ff8fca7",
       "version": "1.0.0",
       "integrity": "sha256-0nVLEjvBRy6nKYp+c/icL96QJpv7L0WbSpaoZjj+VL8="
     },
     {
       "id": "com.hereliesaz.azphalt.solid",
       "repo": "HereLiesAz/azphalt-solid",
-      "ref": "6a4baeba697ede1f67a1126d7a51c78b91327595",
+      "ref": "5ec465ac87ba24d9220f1243e7408a0a3001f3a6",
       "version": "1.0.0",
       "integrity": "sha256-xABDV7Ll1Az2lKEqXERJi9aZ2QWteyZL7Wr4RaB940c="
     },
     {
       "id": "com.hereliesaz.azphalt.speaker-drop",
       "repo": "HereLiesAz/azphalt-speaker-drop",
-      "ref": "d458ab0f9a5faf4d2c80618e9a90840b5dfb98c1",
+      "ref": "4154154fd58c66af26ea25d1fc8817a57e45e1ef",
       "version": "2.0.0",
       "integrity": "sha256-yGEbI6EX5bpOyYuHNZsEmFc3yMdWP94IQ3LRlyUYDwo="
     },
     {
       "id": "com.hereliesaz.azphalt.speaker-pan",
       "repo": "HereLiesAz/azphalt-speaker-pan",
-      "ref": "4f727a205b3b00990889d739a06172c4cf17a4bd",
+      "ref": "a75d39caa746a8130d9963d46a13f6cd8d4d6727",
       "version": "2.0.0",
       "integrity": "sha256-2ieNngBzw5u3NhhD6flzEDsk6QnscFqcP5HpZc7tD7Y="
     },
     {
       "id": "com.hereliesaz.azphalt.speed-blur",
       "repo": "HereLiesAz/azphalt-speed-blur",
-      "ref": "85b9b64c1d52bda6d6336ed19a02e7681b141e99",
+      "ref": "6f7b9115872348c90270b89872e4b4b15eeb9d85",
       "version": "2.0.0",
       "integrity": "sha256-GHep06W4WxTCB4BB/+eKGZveUgsDm40lRXUmkpzHeVA="
     },
     {
       "id": "com.hereliesaz.azphalt.spotlights",
       "repo": "HereLiesAz/azphalt-spotlights",
-      "ref": "003c69c8a858406bed23b5265fa4b33ec335ec24",
+      "ref": "ed25a2b383c253fc0e7762e0f67e85f63585b26a",
       "version": "1.0.0",
       "integrity": "sha256-noOkWFRXSkSZREsPDy5EbmuvXRXHH93efzHkKnLHRcw="
     },
     {
       "id": "com.hereliesaz.azphalt.stabilize-actioncam",
       "repo": "HereLiesAz/azphalt-stabilize-actioncam",
-      "ref": "fa7278e99532bf6bced58a879659421695bb489e",
+      "ref": "784cb29a29697be41f131352e99a64dd9846cc74",
       "version": "1.0.0",
       "integrity": "sha256-qUooof3satYbrsrVDo8wkVf5zM5YSO2dJaG5oIxm8e0="
     },
     {
       "id": "com.hereliesaz.azphalt.stabilizer",
       "repo": "HereLiesAz/azphalt-stabilizer",
-      "ref": "69fbc1d6fbe2cbe23a138f65af429f7165e79e89",
+      "ref": "5f301ac581e7fa20d1df9d8f3d8687a207ff9648",
       "version": "1.0.0",
       "integrity": "sha256-xm81gIx8Jd3RqUx4Ppkes4ttOmNEsp0xrlQc0rL5Vzg="
     },
     {
       "id": "com.hereliesaz.azphalt.stencil-layers",
       "repo": "HereLiesAz/azphalt-stencil-layers",
-      "ref": "f1435a8aeda885cdb83a7761742d4e632fe9718a",
+      "ref": "91d0e246bd5d5eb542e12df813248de9756f341a",
       "version": "1.0.0",
       "integrity": "sha256-7r4pAbvksokmv2u2Kdd92aaHr0vTS2ecoeohWwDYHR8="
     },
     {
       "id": "com.hereliesaz.azphalt.subject-orbit",
       "repo": "HereLiesAz/azphalt-subject-orbit",
-      "ref": "bb019dd477f9b58059fd4fa8bd41f58be15f091a",
+      "ref": "c348cc2c392b4621a73a1a303f66e3b65a017d23",
       "version": "1.0.0",
       "integrity": "sha256-2oaDENd20dQbO80OPBjLcNYLm6KKH8Sg+dSMoHOvOYc="
     },
     {
       "id": "com.hereliesaz.azphalt.subject-track",
       "repo": "HereLiesAz/azphalt-subject-track",
-      "ref": "c6a16d4663000f2973181c202f3e56e903e75df6",
+      "ref": "80dc5623f80499b373db1b91249767f4cca5df10",
       "version": "2.0.0",
       "integrity": "sha256-NDwY+HUsyIfUZ0jh0iFtM8xa6K1BIQBEGgmByhcbYr4="
     },
     {
       "id": "com.hereliesaz.azphalt.terrain-puddle",
       "repo": "HereLiesAz/azphalt-terrain-puddle",
-      "ref": "d0fc9c2a089d3166691ed01360426e0e318ac79e",
+      "ref": "7c11cc24d3a6b389359240e22ecadc74d6f1cf60",
       "version": "1.0.0",
       "integrity": "sha256-xmIKvDJfg1pokVNgBBbIQPXmHNLdmMmDzkmr+jLTr10="
     },
     {
       "id": "com.hereliesaz.azphalt.timecode",
       "repo": "HereLiesAz/azphalt-timecode",
-      "ref": "a7ec3e27c318763bd4c3b4bb9ae63c69dd9dfa4f",
+      "ref": "40ccaec2fdb3f3dfb2d54f1ca158e801619ffdf8",
       "version": "1.0.0",
       "integrity": "sha256-0GJsbpF0rjkD5mxXZPs0HUGi01rGq9RW53c50WpNfEA="
     },
     {
       "id": "com.hereliesaz.azphalt.tremble-arousal",
       "repo": "HereLiesAz/azphalt-tremble-arousal",
-      "ref": "3d66a06b597a7ca9405ad653b29a95b5db75a739",
+      "ref": "291a8a457243f31df0e31206a30a5e561e2383b8",
       "version": "1.2.0",
       "integrity": "sha256-J3wwTnj8atnG3qXDfxxI1j5QW93Qqz+NjkSjGFJDHuw="
     },
     {
       "id": "com.hereliesaz.azphalt.tripod-stabilizer",
       "repo": "HereLiesAz/azphalt-tripod-stabilizer",
-      "ref": "4da4aaf17122d539d47c764a208dc8d18c6eb961",
+      "ref": "1df725875f9f4d3688194ce2e2c533e6b8d09a55",
       "version": "1.0.0",
       "integrity": "sha256-cPwPzbLB4O9jz0yGzAFTjwg1rtaByp2ys4UeURgWCy4="
     },
     {
       "id": "com.hereliesaz.azphalt.typewriter",
       "repo": "HereLiesAz/azphalt-typewriter",
-      "ref": "077946f2151984e2d94d2b5b47b969ecab436452",
+      "ref": "589340c43452675b8c669ec1dac0cdd092125e65",
       "version": "1.2.0",
       "integrity": "sha256-2MJvmSqHgCwapj2i52ERVabDji6IB4rfJF4S/shjHto="
     },
     {
       "id": "com.hereliesaz.azphalt.typewriter-cursor",
       "repo": "HereLiesAz/azphalt-typewriter-cursor",
-      "ref": "bc62fae0f3a5770b4b18812e512453f5c2e7ecd6",
+      "ref": "9b22456498c4bed302e9ec1fe68d37438779ca00",
       "version": "1.2.0",
       "integrity": "sha256-YIMfxchLFoZztVXUaWa2uqAtYl3p4t/qwekY3vcpF7w="
     },
     {
       "id": "com.hereliesaz.azphalt.ultraface",
       "repo": "HereLiesAz/azphalt-ultraface",
-      "ref": "ee2c9a5d8d490916dcb39ad0aa03aeb55119ddf1",
+      "ref": "11d9178e0daa9964c646b4d21a794f296ca9c1c0",
       "version": "1.0.0",
       "integrity": "sha256-H9l0NLLEP54H3WZLgQMe9l/cHGLvyTPSJBQpaunyitQ="
     },
     {
       "id": "com.hereliesaz.azphalt.vhs-retro",
       "repo": "HereLiesAz/azphalt-vhs-retro",
-      "ref": "bd41fa2041a5305791ec4730081c66513a434daf",
+      "ref": "cade7354864d5fb7da8298787a2ff483ae6aee22",
       "version": "1.0.0",
       "integrity": "sha256-1NmE/fUh676k5+4dRbRBiS6kvXEdyTLygvR8mecR6D0="
     },
     {
       "id": "com.hereliesaz.azphalt.vintage-grain-halation",
       "repo": "HereLiesAz/azphalt-vintage-grain-halation",
-      "ref": "b702bc9134ed4947374bca83ca5d99a5ef7b4bcc",
+      "ref": "917d861dddd7e3751d25eafb68f9f7cd11b373b2",
       "version": "1.0.0",
       "integrity": "sha256-TMtOFCmSWAhSP+Zb4ZT2c3vgmmBCm2DiZkVi5ZcN+OU="
     },
     {
       "id": "com.hereliesaz.azphalt.volume-bulge",
       "repo": "HereLiesAz/azphalt-volume-bulge",
-      "ref": "3d72a8c065ccac385f3ff83d6490bf57fef9e98d",
+      "ref": "36589b007bf16354d3086a13673fda709fd1a57a",
       "version": "2.0.0",
       "integrity": "sha256-Z5jxdMM+XGt6PdH75tOGcSfOsSF2ioJNXyBHYuf1FLk="
     },
     {
       "id": "com.hereliesaz.azphalt.warpflow",
       "repo": "HereLiesAz/azphalt-warpflow",
-      "ref": "244a68ae123771e6c6226cf5d44af6021212094d",
+      "ref": "fbe76e30a7ffb17a46a15a3697994d8b5e1309be",
       "version": "1.0.0",
       "integrity": "sha256-hjpA6KXEvls0rPdtsd/0udWWoIPojjBy2FHa7lEhieg="
     },
     {
       "id": "com.hereliesaz.azphalt.wespeaker",
       "repo": "HereLiesAz/azphalt-wespeaker",
-      "ref": "2e25e536b8dd9bf5848806e6ffceb20ca3faa8ae",
+      "ref": "586fa289583d97f8778d8d7f436cf9f0426786ce",
       "version": "1.0.0",
       "integrity": "sha256-OjG9WJV25l78lCGtzCywzUHRA5kIqO9IJ3sakeezxVk="
     },
     {
       "id": "com.hereliesaz.azphalt.whisper",
       "repo": "HereLiesAz/azphalt-whisper",
-      "ref": "755b2b88da00ecaf7332e30e93a910d97ecadd58",
+      "ref": "99048b8fdf70f442521ae3a39de012e32e048713",
       "version": "1.0.0",
       "integrity": "sha256-Gqo1yJnoilf/QmeeEtl8Xgro19rMsSfrwGvzg3qNamE="
     },
     {
       "id": "com.hereliesaz.azphalt.whisper-blur",
       "repo": "HereLiesAz/azphalt-whisper-blur",
-      "ref": "86ec922ab2718d89719cb59465bd67ca18570f16",
+      "ref": "dae8f32973e75bf8e3f8522794d697171ac88696",
       "version": "2.0.0",
       "integrity": "sha256-+txxQlXPAECiDhBQ1K0XqCpyJORv3ufz2xZYHJ++Yms="
     },
     {
       "id": "com.hereliesaz.azphalt.word-stagger",
       "repo": "HereLiesAz/azphalt-word-stagger",
-      "ref": "de1fa88664c15b57103efe5ebb093fcc7dd8cbd5",
+      "ref": "49d46db820a19ed216a469c70962dff68676c3c8",
       "version": "1.2.0",
       "integrity": "sha256-PhWMkAyuqz5QNZUNT9yVfdVNPFSxqPyaERvzKnakbuw="
     },
     {
       "id": "com.hereliesaz.azphalt.yamnet",
       "repo": "HereLiesAz/azphalt-yamnet",
-      "ref": "1d7b03c595153d08388b905c30248aa49f81e61a",
+      "ref": "b044d7b8e9fee8b5e4531e3609cb71fb80636590",
       "version": "1.0.0",
       "integrity": "sha256-LJVBPzM24lXGde5LnRftVto4hrhD54zLcMDJRtrpRTA="
     },
     {
       "id": "com.hereliesaz.azphalt.yell-shake",
       "repo": "HereLiesAz/azphalt-yell-shake",
-      "ref": "42982d6097fed4214e6248cc687030e0b50aa01f",
+      "ref": "5a635087aee834a70c1221deae48e6c0a7f68536",
       "version": "2.0.0",
       "integrity": "sha256-Az0kJSOZe7iXfgcF+LyplgbpR8OU5ViaOqvYJ9maiOw="
     },
     {
       "id": "com.hereliesaz.azphalt.zdepth",
       "repo": "HereLiesAz/azphalt-zdepth",
-      "ref": "ce9ad39363799c26a77c8456996bbced756926dd",
+      "ref": "5d944e9721d72431a7eea86761deba29958d804d",
       "version": "1.0.0",
       "integrity": "sha256-TggoREhLi51okFKfv2HESk++s8iNhM88WKjy0RloFkU="
     },
     {
       "id": "com.hereliesaz.azphalt.zoom-punch",
       "repo": "HereLiesAz/azphalt-zoom-punch",
-      "ref": "134e7d506fcc0a01be26d3efe2c4c2ca9cd78581",
+      "ref": "89178fef3f69591e02564247e77e4536d0c8d6db",
       "version": "1.0.0",
       "integrity": "sha256-7OLGpAiolFisgzKZvuJJ74G+4bRms5vaxAmHhmvJxaQ="
     }
