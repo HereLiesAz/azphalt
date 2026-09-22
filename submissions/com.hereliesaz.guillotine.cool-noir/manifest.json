@@ -9,7 +9,6 @@
   "description": "A moody, high-contrast black-and-white-leaning grade: heavy desaturation, a cool blue cast, and crushed shadows. A 17x17x17 3D LUT.",
   "author": "Az",
   "homepage": "https://github.com/HereLiesAz/Guillotine",
-  "capabilities": ["assets", "bitmap"],
   "assets": [
     { "type": "lut", "path": "assets/cool-noir.cube", "tags": ["color-grade", "noir", "desaturated", "moody"] }
   ]
