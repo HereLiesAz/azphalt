@@ -1,0 +1,502 @@
+{
+  "id": {
+    "value": "node-creature-rig-pipeline"
+  },
+  "name": "Node Creature Rig Pipeline",
+  "description": "Azphalt workflow for exact source-backed Node Creature rigging. Before Run, set Run objective / inputs like: workflow: My New Workflow\\nroles: Quality Guardian; Test Explorer; Deployment Pilot. Choose 1-10 roles. Each role is generated separately from its real supplied crop, inspected before the next begins, then all selected creatures are shown on one final overview sheet.",
+  "tasks": [
+    {
+      "id": {
+        "value": "preflight"
+      },
+      "name": "Validate source-backed batch",
+      "objective": "Parse the launch input, resolve 1-10 requested roles against the canonical supplied Node Creature source library, reject unknown or ambiguous roles, and create the exact batch plan. Never invent a stand-in.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "preflight|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0"
+      },
+      "acceptanceCriteria": [
+        {
+          "description": "Every requested role resolves to exactly one real supplied source character."
+        },
+        {
+          "description": "The batch contains no more than 10 characters."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "batch-review"
+      },
+      "name": "Review batch provenance",
+      "objective": "Review the preflight batch plan. Confirm every selected entry is source-backed, uniquely identified, and within the ten-character limit. Flag ambiguity or substitution; do not redesign characters.",
+      "roleId": {
+        "value": "node-creature-batch-controller"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "The review confirms one canonical source crop per selected character and no invented stand-ins."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-01"
+      },
+      "name": "Generate and inspect rig sheet 1",
+      "objective": "Process only batch slot 1. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|1"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "batch-review"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-02"
+      },
+      "name": "Generate and inspect rig sheet 2",
+      "objective": "Process only batch slot 2. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|2"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-01"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-03"
+      },
+      "name": "Generate and inspect rig sheet 3",
+      "objective": "Process only batch slot 3. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|3"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-02"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-04"
+      },
+      "name": "Generate and inspect rig sheet 4",
+      "objective": "Process only batch slot 4. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|4"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-03"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-05"
+      },
+      "name": "Generate and inspect rig sheet 5",
+      "objective": "Process only batch slot 5. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|5"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-04"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-06"
+      },
+      "name": "Generate and inspect rig sheet 6",
+      "objective": "Process only batch slot 6. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|6"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-05"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-07"
+      },
+      "name": "Generate and inspect rig sheet 7",
+      "objective": "Process only batch slot 7. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|7"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-06"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-08"
+      },
+      "name": "Generate and inspect rig sheet 8",
+      "objective": "Process only batch slot 8. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|8"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-07"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-09"
+      },
+      "name": "Generate and inspect rig sheet 9",
+      "objective": "Process only batch slot 9. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|9"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-08"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "rig-10"
+      },
+      "name": "Generate and inspect rig sheet 10",
+      "objective": "Process only batch slot 10. Give image generation only that slot's canonical character crop plus its approved prompt and accepted rig-sheet rules. Generate one rig sheet, visually inspect it, correct failures if needed, and complete before the next slot can begin. If this slot is unused, skip it cleanly.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "slot|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0|10"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-09"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "At most one character is generated in this task."
+        },
+        {
+          "description": "A used slot returns the exact source crop, approved prompt, one transparent flat 2D rig sheet, and a PASS visual-QC artifact."
+        },
+        {
+          "description": "No combined image, invented stand-in, appendage-end sockets, pseudo-3D exploded construction, cast shadow, labels, or presentation board is accepted."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "qc-audit"
+      },
+      "name": "Audit completed rig batch",
+      "objective": "Audit the preflight plan and all ten slot results. For every assigned slot, require a passing visual-QC artifact and verify the pipeline processed one source-backed creature at a time. Unused slots may be skipped. Report any missing or failed assigned slot.",
+      "roleId": {
+        "value": "node-creature-rig-qc-auditor"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-01"
+        },
+        {
+          "value": "rig-02"
+        },
+        {
+          "value": "rig-03"
+        },
+        {
+          "value": "rig-04"
+        },
+        {
+          "value": "rig-05"
+        },
+        {
+          "value": "rig-06"
+        },
+        {
+          "value": "rig-07"
+        },
+        {
+          "value": "rig-08"
+        },
+        {
+          "value": "rig-09"
+        },
+        {
+          "value": "rig-10"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "Every assigned character has a PASS visual-QC result before overview generation."
+        },
+        {
+          "description": "The audit confirms separate per-character generations rather than a combined rig output."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    },
+    {
+      "id": {
+        "value": "overview"
+      },
+      "name": "Create workflow Node Creature sheet",
+      "objective": "Create the final workflow overview sheet using only the exact approved source creatures from this batch. Display all selected creatures together with their role names. This is the only combined multi-character output; it is an overview sheet, not a rig sheet.",
+      "roleId": null,
+      "executor": {
+        "type": "com.hereliesaz.geministrator.domain.TaskExecutor.ExternalService",
+        "service": "azphalt-node-character-rig-pipeline",
+        "operation": "overview|com.hereliesaz.aive.node-creature-rig-pipeline|1.0.0"
+      },
+      "dependsOn": [
+        {
+          "value": "preflight"
+        },
+        {
+          "value": "rig-01"
+        },
+        {
+          "value": "rig-02"
+        },
+        {
+          "value": "rig-03"
+        },
+        {
+          "value": "rig-04"
+        },
+        {
+          "value": "rig-05"
+        },
+        {
+          "value": "rig-06"
+        },
+        {
+          "value": "rig-07"
+        },
+        {
+          "value": "rig-08"
+        },
+        {
+          "value": "rig-09"
+        },
+        {
+          "value": "rig-10"
+        },
+        {
+          "value": "qc-audit"
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "description": "The overview contains exactly the selected source-backed creatures and no invented additions."
+        },
+        {
+          "description": "Every selected role name is displayed with its exact creature."
+        }
+      ],
+      "environmentPlanningPolicy": "NotRequired"
+    }
+  ],
+  "integrationPolicy": "Manual",
+  "concurrencyPolicy": {
+    "maxConcurrentTasks": 1
+  },
+  "testDesignPolicy": "None",
+  "promptReusePolicy": "PreferCache"
+}
