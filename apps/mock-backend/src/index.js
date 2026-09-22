@@ -70,6 +70,15 @@ app.get("/packages", (req, res) => {
     results = results.filter(p => p.types.some(t => types.includes(t)));
   }
 
+  if (req.query.q) {
+    const q = String(req.query.q).toLowerCase();
+    results = results.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.id.toLowerCase().includes(q) ||
+      p.author.toLowerCase().includes(q)
+    );
+  }
+
   res.json({
     packages: results,
     total: results.length,

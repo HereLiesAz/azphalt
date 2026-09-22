@@ -302,7 +302,12 @@ function decodeToken(value: string): EntitlementToken | undefined {
   }
 }
 
-function periodEnd(iso: string, interval: "month" | "year"): string {
+// Exported so `packages/registry/test/storefront-worker-parity.test.ts` can assert this copy stays
+// byte-for-byte identical to `packages/registry/src/consignment.ts`'s `periodEnd`/`quote` — this
+// Worker is deliberately dependency-free (see README § Zero-fixed-cost design) and can't import a
+// Node package at runtime, so the fee-split and billing-period math is a second, hand-kept-in-sync
+// copy rather than a shared import. The test is what keeps the two from drifting.
+export function periodEnd(iso: string, interval: "month" | "year"): string {
   const d = new Date(iso);
   const day = d.getUTCDate();
   if (interval === "year") d.setUTCFullYear(d.getUTCFullYear() + 1);
@@ -406,7 +411,7 @@ async function sha256Integrity(bytes: Uint8Array): Promise<string> {
   return "sha256-" + Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function quote(amountCents: number, currency: string, env: Env) {
+export function quote(amountCents: number, currency: string, env: Env) {
   const processorPctBps = Number(env.PROCESSOR_PCT_BPS || "290");
   const processorFlatCents = Number(env.PROCESSOR_FLAT_CENTS || "30");
   const platformFeeBps = Number(env.PLATFORM_FEE_BPS || "1500");
