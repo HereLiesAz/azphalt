@@ -26,3 +26,17 @@ Two rules that apply to you:
 
 The npm packages (`@azphalt/*`) are a separate scheme owned by Changesets — a package release does
 not move `version.properties`, and a build does not move a package version.
+
+## Dependencies
+
+Everything uses its **latest stable release, at minimum**: npm packages, pnpm, the Node floor (current
+LTS), GitHub Actions, Gradle, Kotlin, AGP, Compose, and Android/Java libraries. A newer pre-release is
+acceptable; an older release is not. Dependabot (`.github/dependabot.yml`) proposes updates weekly for
+the npm workspace, `apps/storefront-cmp` and the Actions.
+
+- When you add a dependency, add its latest stable version. When you touch a manifest, bring what you
+  touched up to date.
+- pnpm 11+ reads settings only from `pnpm-workspace.yaml`. Security `overrides` and `allowBuilds` live
+  there; a `"pnpm"` field in `package.json` is silently ignored.
+- The `create-azphalt` templates are dependencies too: keep their ranges and the release workflow they
+  generate on the same versions as the repository.

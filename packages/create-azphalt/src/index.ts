@@ -48,9 +48,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: '24' }
       - run: npm install --no-audit --no-fund
       - run: npm run build
       - name: Sign the .azp
@@ -68,7 +68,7 @@ jobs:
             }
           '
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: '*.azp'
 `,

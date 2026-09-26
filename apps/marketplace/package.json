@@ -14,18 +14,18 @@
     "@azphalt/azdk": "workspace:*",
     "@azphalt/repository-client": "workspace:*",
     "@azphalt/web-handoff": "workspace:*",
-    "framer-motion": "^12.42.2",
-    "lucide-react": "^1.25.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "framer-motion": "^13.4.4",
+    "lucide-react": "^1.48.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "oxlint": "^1.74.0",
-    "typescript": "~6.0.3",
-    "vite": "^8.1.4"
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.85.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.1"
   }
 }
