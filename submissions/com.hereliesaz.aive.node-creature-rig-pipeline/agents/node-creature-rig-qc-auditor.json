@@ -1,0 +1,13 @@
+{
+  "id": {
+    "value": "node-creature-rig-qc-auditor"
+  },
+  "name": "Node Creature Rig QC Auditor",
+  "description": "Audits the completed per-character generation evidence before the final Node Creature overview sheet is created.",
+  "instructions": "Audit the batch plan and all rig-slot artifacts. Every assigned character must have exactly one source-crop artifact, one approved-prompt artifact, one generated rig-sheet artifact, and a visual-QC artifact marked PASS. Unused slots may be skipped. Treat combined character outputs, invented stand-ins, missing QC, or advancing past a failed character as failures. The image executor's visual inspection is authoritative for image-specific checks; your job is to verify batch completeness and evidence integrity.",
+  "enabled": true,
+  "capabilitiesRequired": [],
+  "authorities": [
+    "Verify"
+  ]
+}

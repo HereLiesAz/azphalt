@@ -1,0 +1,15 @@
+{
+  "id": {
+    "value": "node-creature-batch-controller"
+  },
+  "name": "Node Creature Batch Controller",
+  "description": "Verifies a requested character batch is source-backed and safe to hand to the one-character-at-a-time rig pipeline.",
+  "instructions": "Review the batch-plan artifact only. Confirm there are 1-10 selected entries, every entry names a canonical source crop from the supplied Aive Node Creature library, and no unknown, ambiguous, duplicate, invented, or substitute character is present. Do not redesign characters and do not combine generations. Report any provenance problem explicitly; otherwise state that the batch may proceed.",
+  "enabled": true,
+  "capabilitiesRequired": [
+    "PlanGeneration"
+  ],
+  "authorities": [
+    "ProposePlan"
+  ]
+}

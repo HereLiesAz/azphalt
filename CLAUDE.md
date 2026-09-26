@@ -20,6 +20,9 @@ Two rules that apply to you:
    Gradle, `readVersion()` from `tools/version.mjs` in Node) rather than writing a number down.
    Anything built from one commit must report the same version as everything else built from it, which
    is why `app-release.yml` bumps once and every build job checks out the commit that bump produced.
+   That workflow (and the npm `release.yml`/`publish-package.yml`) is now centrally maintained in
+   `HereLiesAz/workflows` and synced in rather than hand-authored here — see RELEASING.md — so it will
+   not show up under `.github/workflows/` in a local search of this repo.
 
 The npm packages (`@azphalt/*`) are a separate scheme owned by Changesets — a package release does
 not move `version.properties`, and a build does not move a package version.

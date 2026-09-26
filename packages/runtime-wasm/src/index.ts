@@ -20,7 +20,7 @@
  */
 import { getQuickJS, type QuickJSContext, type QuickJSHandle } from "quickjs-emscripten";
 import { readAzp, verifyAzp } from "@azphalt/azp";
-import { bytesPerChannel, type BitDepth, type Capability, type Manifest } from "@azphalt/azdk";
+import { bytesPerChannel, FORMAT_VERSION, type BitDepth, type Capability, type Manifest } from "@azphalt/azdk";
 
 /**
  * A bitmap marshaled across the sandbox boundary. 4 channels per pixel, so `data.length ===
@@ -140,7 +140,7 @@ const SDK_SHIM = `
   export function defineTool(fn) { fn[KIND] = "tool"; return fn; }
   export function defineCommand(fn) { fn[KIND] = "command"; return fn; }
   export function defineTransition(fn) { fn[KIND] = "transition"; return fn; }
-  export const FORMAT_VERSION = "0.1";
+  export const FORMAT_VERSION = ${JSON.stringify(FORMAT_VERSION)};
 `;
 
 /* ───────────────────────── internal world ───────────────────────── */

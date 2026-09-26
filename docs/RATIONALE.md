@@ -96,10 +96,10 @@ Concretely, for the first host: GraffitiXR's relocalization / teleological engin
 
 ### 2.3 Mechanics worth carrying
 
-- **Licensing is per-file, not per-repo.** Precedence, most-specific first: per-file SPDX header > module `LICENSE` > root `LICENSE`. Mark the open layer explicitly:
+- **Treat licensing as per-file, not per-repo, the moment a repo mixes licenses.** Precedence, most-specific first: per-file SPDX header > module `LICENSE` > root `LICENSE`. azphalt itself is uniformly MIT under the root `LICENSE` today, so no file carries its own header yet — but the moment any part of this repo (or a fork of it) needs a different license, mark that layer explicitly rather than leaving it to the root file to imply:
 
 ~~~
-// SPDX-License-Identifier: MIT      (every file in azphalt)
+// SPDX-License-Identifier: MIT
 ~~~
 
 - **Contributions / CLA.** Outside contributions are owned by their authors; if you may ever dual-license or commercialize a part, take a CLA (or don't accept outside contributions to that part).
