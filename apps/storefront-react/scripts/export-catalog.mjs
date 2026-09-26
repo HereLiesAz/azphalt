@@ -7,7 +7,7 @@ const root = resolve(here, "../../..");
 const registryDir = resolve(root, "apps/storefront/registry");
 const outDir = resolve(root, "apps/storefront-react/public");
 
-const { readAzp } = await import(resolve(root, "packages/azp/dist/index.js"));
+const { readAzp } = await import("@azphalt/azp");
 const generated = JSON.parse(await readFile(resolve(registryDir, "catalog.json"), "utf8"));
 const previewsDoc = JSON.parse(await readFile(resolve(registryDir, "previews.json"), "utf8").catch(() => '{"previews":{}}'));
 const previews = previewsDoc.previews ?? {};
