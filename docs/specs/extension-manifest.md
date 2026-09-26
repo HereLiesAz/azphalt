@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script` \| `composable`. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script` \| `composable` \| `llm` *(proposed)*. |
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
@@ -281,6 +281,9 @@ For a `kind: "script"` **native script** (bash, Python, PowerShell, …) a host 
 
 ## `composable`
 For a `kind: "composable"` **composable set** (one or more UI element *descriptions* a host's own already-compiled renderer interprets), the manifest carries a `composable` block instead of `assets`/`entry`/`capabilities`/`app`/`mcp`/`pack`/`skill`/`script`. Unlike every other real-payload kind (`skill`, `script`), `composable` is a **pure header** like `app`/`mcp`/`pack` — no bundled file at all, since every field is inline data in the manifest. `composable.library` names the build-time-resolved template library (`group`/`artifact`/`version`) this package's `templateId` values are drawn from — purely descriptive; azphalt never fetches or resolves it. `composable.elements[]` (≥ 1) each declare a `templateId` from that library plus a host's own token values (`hue`, `surface`, `scale`), an `act` (what it does), and `jobs[]` (a checkable declaration of what it's *for*). It grants **no** azphalt capabilities and ships **no** `/code` sandbox `entry`/`runtime` — there is no bytecode here at all, only values a host's own compiled code switches on, so this can never become dynamic code loading. The full contract (packaging, discovery, verification) is normative in **composable.md**.
+
+## `llm` *(proposed)*
+For a `kind: "llm"` **off-device language model**, the manifest carries an `llm` block instead of `assets`/`entry`/`capabilities`/`app`/`mcp`. It is not a model asset: a model asset is weights a host runs on-device, while an `llm` package declares a model the host reaches off the device — a hosted endpoint (`tier: "endpoint"`) or checksum-pinned open weights run in a private sandbox (`tier: "sandbox-weights"`). The block declares a mandatory `setup` (a bundled script a host runs only in the named off-device `sandbox`, the GitHub token permissions it needs, and checksum-pinned `fetches`), an `endpoint` (`openai-chat` and/or `github-actions-runner`), the run job's `permissions`, prompt-handling disclosure (`dataHandling`), and `inputs` for keys (never stored). The full contract is in **llm.md**.
 
 ## Example
 ~~~
