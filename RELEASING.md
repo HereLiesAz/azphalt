@@ -7,6 +7,21 @@ There are **two independent version schemes** in this repository, and they are n
 
 Nothing links the two. A package release does not move `version.properties`, and a build does not move a package version.
 
+The production `azphalt.store` Cloudflare deployment is a third concern: its deployment workflow is
+centrally owned by `HereLiesAz/workflows`. It builds the storefront from this repository, verifies
+the exported git-backed catalog, deploys the Worker/static assets, and then verifies the live
+Repository API exposes known app-scoped workflow/role packages. See
+[`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+
+**All release automation described below — `app-release.yml`, `release.yml`, and
+`publish-package.yml` — is likewise centrally owned by `HereLiesAz/workflows` and synced into this
+repo's Actions runs rather than committed as source under `.github/workflows/`.** Searching this repo
+for those filenames will not find them; this document describes their behavior as configured in that
+shared catalog, and that is the repo to check or change if the behavior described here and what
+actually runs disagree — as they currently do for the versioning loop below, which has been observed
+freezing `d` (build/`versionCode`) instead of bumping it. Treat that gap as a known open issue, not a
+error in the description.
+
 ## Versioning the apps
 
 `version.properties` at the repository root is the single source of truth. Format `a.b.c.d`:

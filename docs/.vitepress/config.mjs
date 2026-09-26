@@ -24,6 +24,7 @@ export default defineConfig({
       { text: 'Build Extensions', link: '/creators/getting-started' },
       { text: 'Specs', link: '/specs/repository-api' },
       { text: 'Design', link: '/ARCHITECTURE' },
+      { text: 'Operations', link: '/OPERATIONS' },
       { text: 'Store ↗', link: 'https://azphalt.store' }
     ],
     sidebar: {
@@ -42,7 +43,9 @@ export default defineConfig({
             { text: 'Companion Apps (RFC)', link: '/specs/companion-app' },
             { text: 'Store App (RFC)', link: '/specs/store-app' },
             { text: 'Web Handoff (RFC)', link: '/specs/web-handoff' },
-            { text: 'State Reporting', link: '/specs/state-reporting' }
+            { text: 'State Reporting', link: '/specs/state-reporting' },
+            { text: 'Workflow Packages', link: '/specs/workflow' },
+            { text: 'Role Packages', link: '/specs/role' }
           ]
         }
       ],
@@ -78,7 +81,8 @@ export default defineConfig({
           items: [
             { text: 'Architecture', link: '/ARCHITECTURE' },
             { text: 'Rationale', link: '/RATIONALE' },
-            { text: 'Governance', link: '/GOVERNANCE' }
+            { text: 'Governance', link: '/GOVERNANCE' },
+            { text: 'Production Operations', link: '/OPERATIONS' }
           ]
         },
         {

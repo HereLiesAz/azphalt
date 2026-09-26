@@ -315,3 +315,18 @@ For a `kind: "composable"` **composable set** (one or more UI element *descripti
 
 ## Open
 - Localization of `name` / `description` / UI labels (the registry surface is tracked in the repository-API discussion; the manifest/UI surface is still open).
+
+
+## `workflow`
+
+A `kind:"workflow"` package is declarative orchestration data for workflow-aware hosts. Its
+normative structure, security boundary, dependencies, package-local agents/roles, host permissions,
+and native-screen data are defined in [`workflow.md`](workflow.md). It executes no downloaded UI or
+runtime code.
+
+## `role`
+
+A `kind:"role"` package contains declarative host role/persona definitions. It executes no code and
+receives no Azphalt sandbox capabilities. A compatible host decides how installed roles are mapped
+into its own role/company model. Like workflow packages, role packages may use `targetApps` for
+discovery scoping.

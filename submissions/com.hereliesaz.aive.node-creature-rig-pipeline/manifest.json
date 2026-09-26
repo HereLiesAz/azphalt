@@ -1,0 +1,40 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.aive.node-creature-rig-pipeline",
+  "name": "Node Creature Rig Pipeline",
+  "version": "1.0.0",
+  "author": "HereLiesAz",
+  "description": "Generate flat 2D puppet rig sprite sheets from the exact supplied Aive Node Creature source crops, one character at a time, with visual inspection before advancing and a final workflow creature overview sheet.",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "kind": "workflow",
+  "targetApps": [
+    "com.hereliesaz.aive"
+  ],
+  "workflow": {
+    "format": "haive.workflow.v1",
+    "definitions": [
+      {
+        "id": "node-creature-rig-pipeline",
+        "name": "Node Creature Rig Pipeline",
+        "path": "workflows/node-creature-rig-pipeline.json"
+      }
+    ],
+    "agents": [
+      {
+        "id": "node-creature-batch-controller",
+        "name": "Node Creature Batch Controller",
+        "path": "agents/node-creature-batch-controller.json"
+      },
+      {
+        "id": "node-creature-rig-qc-auditor",
+        "name": "Node Creature Rig QC Auditor",
+        "path": "agents/node-creature-rig-qc-auditor.json"
+      }
+    ],
+    "hostPermissions": [
+      "WorkflowRegister",
+      "WorkflowLaunch"
+    ]
+  }
+}

@@ -14,6 +14,17 @@
       "bytes": 1270
     },
     {
+      "id": "com.hereliesaz.aive.node-creature-rig-pipeline",
+      "version": "1.0.0",
+      "name": "Node Creature Rig Pipeline",
+      "kind": "workflow",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-5vY+Z/Pjeghtv4Hf2cDF48bKt1NqR1pFjYQmiKvOGUI=",
+      "file": "com.hereliesaz.aive.node-creature-rig-pipeline-1.0.0.azp",
+      "bytes": 16768
+    },
+    {
       "id": "com.hereliesaz.azphalt.3d-protrusion",
       "version": "1.0.0",
       "name": "3D Protrusion",

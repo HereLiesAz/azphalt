@@ -4,6 +4,13 @@
 
 > **Only consuming assets?** If your app just wants portable **assets** — LUTs, shaders, transitions, brushes — and runs no extension code (e.g. a video editor like Guillotine), you need a much lighter profile: verify, read, and apply. See [`ADOPTION_ASSET_HOST.md`](ADOPTION_ASSET_HOST.md).
 
+
+> **Hosting workflows or roles?** `kind:"workflow"` and `kind:"role"` are declarative data lanes, not
+> code extensions. A workflow/role-aware host verifies the package, filters by its own app id when
+> appropriate, checks the host-defined `workflow.format` / `role.format`, and imports through its own
+> orchestration or role model. Do **not** route these package kinds through the code-extension runtime.
+> See [Workflow packages](specs/workflow) and [Role packages](specs/role).
+
 ## What a host is responsible for
 
 A host embeds a runtime and takes on six jobs. The first five are non-negotiable for conformance; the sixth is the ABI you must match exactly.
@@ -47,7 +54,7 @@ to *hand* your app one. Two small additions close that, and neither touches the 
    vouches for one, so nothing in your trust model changes.
 
 **List yourself so users can find you.** Publish a `kind: "app"` package whose `app` block sets
-`roles: ["host"]` and a `hostId` — the reverse-DNS id extensions name in their `targetApps`. That is
+`roles: ["host"]` and a `hostId` — the reverse-DNS id packages name in their `targetApps`. That is
 what puts your app in a storefront's "get a host" fallback for someone who has none installed
 ([`spec/web-handoff.md`](specs/web-handoff) § Host directory). It goes through the ordinary submission
 path, the same as any extension.

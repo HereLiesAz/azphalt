@@ -8,6 +8,5 @@
   "compat": ">=0.1",
   "description": "A minimal example submission: a neutral pass-through .cube LUT.",
   "author": "azphalt",
-  "capabilities": ["assets", "bitmap"],
   "assets": [{ "type": "lut", "path": "assets/hello.cube", "tags": ["example"] }]
 }

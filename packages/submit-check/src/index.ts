@@ -35,7 +35,7 @@ const REQUIRED = ["azphalt", "name", "version", "kind", "license", "compat"] as 
  * script file respectively) — see `spec/skill.md` and `spec/script.md`. `composable` is a header kind
  * like `app`/`mcp`/`pack` — see `spec/composable.md`.
  */
-const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable"];
+const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable", "workflow", "role"];
 
 /** All files under `dir`, as `/`-separated paths relative to `dir`. */
 function walk(dir: string, prefix = ""): string[] {
