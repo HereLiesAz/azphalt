@@ -11,7 +11,7 @@
       "ref": "(local)",
       "integrity": "sha256-T7djN/vXG0/4YEFLeMjJpmaALBvkqFZVES0Jp+bv0NY=",
       "file": "com.azphalt.example.hello-lut-1.0.0.azp",
-      "bytes": 976
+      "bytes": 1270
     },
     {
       "id": "com.hereliesaz.aive.node-creature-rig-pipeline",
@@ -33,7 +33,7 @@
       "ref": "fe41bb006bb3017f762c50adb1e5d6637129c772",
       "integrity": "sha256-DIR24Z5iOngdaERffo3BiW+WrlQBmN+UQJAKCHLTtwA=",
       "file": "com.hereliesaz.azphalt.3d-protrusion-1.0.0.azp",
-      "bytes": 1174
+      "bytes": 1472
     },
     {
       "id": "com.hereliesaz.azphalt.3d-word-flip",
@@ -44,7 +44,7 @@
       "ref": "47f167971bc2798305a48dcb22dd97635b8f6638",
       "integrity": "sha256-ju7HAegzcMJqXc1CcYR3MhVVMVu7FCbRqtIw0LwBVOk=",
       "file": "com.hereliesaz.azphalt.3d-word-flip-1.2.0.azp",
-      "bytes": 1114
+      "bytes": 1411
     },
     {
       "id": "com.hereliesaz.azphalt.action-glitch",
@@ -55,7 +55,7 @@
       "ref": "ef7e5162f655eaa0dcc29c6c8d56cc66c2a9b27f",
       "integrity": "sha256-JIXSc89Mex7dls1v+NbBfzkBP7eVUFsp4RNVxOY+dxg=",
       "file": "com.hereliesaz.azphalt.action-glitch-2.0.0.azp",
-      "bytes": 1150
+      "bytes": 1446
     },
     {
       "id": "com.hereliesaz.azphalt.active-camouflage",
@@ -66,7 +66,7 @@
       "ref": "f3ca40b734f33db4e6d2169fb55c136e67694f0e",
       "integrity": "sha256-t6v6UB1WaczVmn+ikkhdPYLsW0sEyc1XQyfhmkwB7aI=",
       "file": "com.hereliesaz.azphalt.active-camouflage-1.0.0.azp",
-      "bytes": 1115
+      "bytes": 1412
     },
     {
       "id": "com.hereliesaz.azphalt.anamorphic-flare",
@@ -77,7 +77,7 @@
       "ref": "d5001b411513abba401993c0006cfd068e256e14",
       "integrity": "sha256-q+B5dARiFhgb5c6s1HsqXYvQAK7QVIISJnR8wF7nhBA=",
       "file": "com.hereliesaz.azphalt.anamorphic-flare-1.0.0.azp",
-      "bytes": 1991
+      "bytes": 2287
     },
     {
       "id": "com.hereliesaz.azphalt.anger-jiggle",
@@ -88,7 +88,7 @@
       "ref": "0274f96e60af9e67be818d38b9a1d4386025e3d4",
       "integrity": "sha256-VaWEtEjgoCb7iBM/En457ftF8SHgVgGGTF4wgHCkjJk=",
       "file": "com.hereliesaz.azphalt.anger-jiggle-2.0.0.azp",
-      "bytes": 1098
+      "bytes": 1393
     },
     {
       "id": "com.hereliesaz.azphalt.atmospheric-fog",
@@ -99,7 +99,7 @@
       "ref": "06ddac87842b50225ed95c16032d062664219627",
       "integrity": "sha256-EDz138+Bj8u2rWfuvXaoRApvrIRjYOBl8+iz+3xIgbs=",
       "file": "com.hereliesaz.azphalt.atmospheric-fog-1.0.0.azp",
-      "bytes": 1088
+      "bytes": 1382
     },
     {
       "id": "com.hereliesaz.azphalt.audio-skew",
@@ -110,7 +110,7 @@
       "ref": "1de08a227a628e94fef9d8ee33198b2583537166",
       "integrity": "sha256-wNIj9GnOJhuCTfT61CqSGR8BWmcwM8GQnJAkhhEgP+U=",
       "file": "com.hereliesaz.azphalt.audio-skew-2.0.0.azp",
-      "bytes": 1097
+      "bytes": 1392
     },
     {
       "id": "com.hereliesaz.azphalt.auto-reframe",
@@ -121,7 +121,7 @@
       "ref": "e50491f017fd5320b90624e8f3b44182bc232ee9",
       "integrity": "sha256-Gf2EXka1gLcnj61G5Jj8eTqkmX5thjsBQ5WHpmRrF+A=",
       "file": "com.hereliesaz.azphalt.auto-reframe-1.0.0.azp",
-      "bytes": 1056
+      "bytes": 1352
     },
     {
       "id": "com.hereliesaz.azphalt.auto-stagger",
@@ -132,7 +132,7 @@
       "ref": "5c565cbbf015fa479eaf8a9ec37f1918395081d9",
       "integrity": "sha256-xtnSe37bwK7fNwqP1GPwFkHWp9uAGcId8kbcnAdwx30=",
       "file": "com.hereliesaz.azphalt.auto-stagger-2.0.0.azp",
-      "bytes": 1105
+      "bytes": 1400
     },
     {
       "id": "com.hereliesaz.azphalt.baby-bloom",
@@ -143,7 +143,7 @@
       "ref": "ff8e14c396427a3367580a31db1696cbddf67c0a",
       "integrity": "sha256-IUD+amNgbum2aLLDEtXp3lg4y0h3byTOb2x49tYqNzw=",
       "file": "com.hereliesaz.azphalt.baby-bloom-1.0.0.azp",
-      "bytes": 1961
+      "bytes": 2258
     },
     {
       "id": "com.hereliesaz.azphalt.beast-shake",
@@ -154,7 +154,7 @@
       "ref": "aceecbc4ffad7a51d88e261c0b432bb0ea2f8538",
       "integrity": "sha256-YtitW5E8Izt7/YUL6I8K0YJXYPzkRDcA4Cko1DuKrNQ=",
       "file": "com.hereliesaz.azphalt.beast-shake-1.2.0.azp",
-      "bytes": 1224
+      "bytes": 1519
     },
     {
       "id": "com.hereliesaz.azphalt.beat-pulse",
@@ -165,7 +165,7 @@
       "ref": "2035b79a48a9fbe67c345e3e34d0fe5867c7d4a0",
       "integrity": "sha256-y8ixWT7u5TWlM1+xv/meDTJM6xUw15iGLWD0yTrmd1M=",
       "file": "com.hereliesaz.azphalt.beat-pulse-1.0.0.azp",
-      "bytes": 2067
+      "bytes": 2363
     },
     {
       "id": "com.hereliesaz.azphalt.bevel-emboss",
@@ -176,7 +176,7 @@
       "ref": "9223da74973b1313ee09d23c321ba6381caefcfa",
       "integrity": "sha256-OcjWfyDqxMQntTtJ/anOyZHpSdDoSmEDDVDzm38vbU8=",
       "file": "com.hereliesaz.azphalt.bevel-emboss-1.0.0.azp",
-      "bytes": 1144
+      "bytes": 1439
     },
     {
       "id": "com.hereliesaz.azphalt.blur-reveal",
@@ -187,7 +187,7 @@
       "ref": "8c99ccbf28c056c3c01cc31ba8fa191856618693",
       "integrity": "sha256-CRNLh/8R9rRUbkz4NnnRAbMuulWRHbdK4j2ar62QNeg=",
       "file": "com.hereliesaz.azphalt.blur-reveal-1.2.0.azp",
-      "bytes": 1075
+      "bytes": 1372
     },
     {
       "id": "com.hereliesaz.azphalt.bounce",
@@ -198,7 +198,7 @@
       "ref": "161b14bff065558766e5ae357c9dbafdbcc10c0b",
       "integrity": "sha256-fQ/XYtvSFDrL8lkrEKd4vXclhoydK2PIJYIRunv15rM=",
       "file": "com.hereliesaz.azphalt.bounce-1.2.0.azp",
-      "bytes": 1124
+      "bytes": 1418
     },
     {
       "id": "com.hereliesaz.azphalt.breathe-scale",
@@ -209,7 +209,7 @@
       "ref": "06c099ef57a4a75804d744e059be51a5ffe9391c",
       "integrity": "sha256-WgvQj5zdwrJCxxJy9GkxfTqi1LxHaUS3KmDZpGa6V6I=",
       "file": "com.hereliesaz.azphalt.breathe-scale-2.0.0.azp",
-      "bytes": 1093
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-angular-shader",
@@ -220,7 +220,7 @@
       "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
       "integrity": "sha256-a7qWA0S8cLG7c2U10UN4L1q/kwRTzqeu4S+nOEpaDyw=",
       "file": "com.hereliesaz.azphalt.brush-acrylic-angular-shader-1.0.0.azp",
-      "bytes": 16571
+      "bytes": 16869
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-flat",
@@ -231,7 +231,7 @@
       "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
       "integrity": "sha256-JQCcy8Dr4ROuw+KPU39cv77Kcq6C2pM2oy3SmNvWgrk=",
       "file": "com.hereliesaz.azphalt.brush-acrylic-flat-1.0.0.azp",
-      "bytes": 10963
+      "bytes": 11259
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-round",
@@ -242,7 +242,7 @@
       "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
       "integrity": "sha256-FXpEkKMRiZ6wkrLx34nYZHSxX3O8ShBXSEMcMk7jisw=",
       "file": "com.hereliesaz.azphalt.brush-acrylic-round-1.0.0.azp",
-      "bytes": 1772
+      "bytes": 2067
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab",
@@ -253,7 +253,7 @@
       "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
       "integrity": "sha256-0hA6qJUTtPYZzWEaUnIr9tdXM+N4Px6QEhKergoAwHk=",
       "file": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab-1.0.0.azp",
-      "bytes": 161745
+      "bytes": 162039
     },
     {
       "id": "com.hereliesaz.azphalt.brush-china-marker",
@@ -264,7 +264,7 @@
       "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
       "integrity": "sha256-fVloee4PcTg4j6iA1T4szQkPXmF9u1CcGz7dSYlfH70=",
       "file": "com.hereliesaz.azphalt.brush-china-marker-1.0.0.azp",
-      "bytes": 4688
+      "bytes": 4983
     },
     {
       "id": "com.hereliesaz.azphalt.brush-chisel-marker",
@@ -275,7 +275,7 @@
       "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
       "integrity": "sha256-J01zE3apL3uNGeNR4Pa4uVASU2EDJLYcw1E13vQhnHs=",
       "file": "com.hereliesaz.azphalt.brush-chisel-marker-1.0.0.azp",
-      "bytes": 6105
+      "bytes": 6402
     },
     {
       "id": "com.hereliesaz.azphalt.brush-conte-crayon",
@@ -286,7 +286,7 @@
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
       "integrity": "sha256-XeUzsyccRwgQoOBGI//d8q8lik82Pm5S0ECVlG5meQo=",
       "file": "com.hereliesaz.azphalt.brush-conte-crayon-1.0.0.azp",
-      "bytes": 5347
+      "bytes": 5643
     },
     {
       "id": "com.hereliesaz.azphalt.brush-hard-chalk",
@@ -297,7 +297,7 @@
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
       "integrity": "sha256-uE3EmUUCwk7uwRxCxpyBau9LAtlVK7coSz/+gQAwNeA=",
       "file": "com.hereliesaz.azphalt.brush-hard-chalk-1.0.0.azp",
-      "bytes": 50804
+      "bytes": 51099
     },
     {
       "id": "com.hereliesaz.azphalt.brush-ink-sumi",
@@ -308,7 +308,7 @@
       "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
       "integrity": "sha256-+D+MZvzTAL/v6UwA2FK9PgjdVLIV49lHFMIP5xsULXU=",
       "file": "com.hereliesaz.azphalt.brush-ink-sumi-1.0.0.azp",
-      "bytes": 129158
+      "bytes": 129453
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush",
@@ -319,7 +319,7 @@
       "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
       "integrity": "sha256-pAAN/4cWQ2GB8CZREkU8prtYIPGl9NqMoRK7hAshlaI=",
       "file": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush-1.0.0.azp",
-      "bytes": 6394
+      "bytes": 6691
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-fan-blade",
@@ -330,7 +330,7 @@
       "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
       "integrity": "sha256-pqjKQnludymv5T4lIz4EAT3cTF1NzuCERwQBlMDk7O4=",
       "file": "com.hereliesaz.azphalt.brush-oil-fan-blade-1.0.0.azp",
-      "bytes": 5489
+      "bytes": 5786
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-filbert",
@@ -341,7 +341,7 @@
       "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
       "integrity": "sha256-dw08H2J8Z1q1M9tE1Uv1pQrUhdPlKW4Y9hugqfQsKDc=",
       "file": "com.hereliesaz.azphalt.brush-oil-filbert-1.0.0.azp",
-      "bytes": 49252
+      "bytes": 49547
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-palette-knife",
@@ -352,7 +352,7 @@
       "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
       "integrity": "sha256-la1g5BOi2zFCUMCSDvyIjcqkukr77Z5/VPgVcknSGjI=",
       "file": "com.hereliesaz.azphalt.brush-oil-palette-knife-1.0.0.azp",
-      "bytes": 8113
+      "bytes": 8410
     },
     {
       "id": "com.hereliesaz.azphalt.brush-paint-pen",
@@ -363,7 +363,7 @@
       "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
       "integrity": "sha256-ZpIEcQhK3Yn/9GmGOe8aqaxINpu/o754R0isuFiNK8Y=",
       "file": "com.hereliesaz.azphalt.brush-paint-pen-1.0.0.azp",
-      "bytes": 6169
+      "bytes": 6463
     },
     {
       "id": "com.hereliesaz.azphalt.brush-paw-print",
@@ -374,7 +374,7 @@
       "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
       "integrity": "sha256-Vl/i3IizxmTpY/yU2/g8jbCMlAKMebftMCnt5qz8br4=",
       "file": "com.hereliesaz.azphalt.brush-paw-print-1.0.0.azp",
-      "bytes": 3963
+      "bytes": 4258
     },
     {
       "id": "com.hereliesaz.azphalt.brush-pointed-triangle",
@@ -385,7 +385,7 @@
       "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
       "integrity": "sha256-pt8AIzcwvoa4SCL5Wy3otKxi/8to2rSs14AM4bj62Mg=",
       "file": "com.hereliesaz.azphalt.brush-pointed-triangle-1.0.0.azp",
-      "bytes": 3021
+      "bytes": 3317
     },
     {
       "id": "com.hereliesaz.azphalt.brush-smudge-stick",
@@ -396,7 +396,7 @@
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
       "integrity": "sha256-Sa8Tmvm28IVg3E1IqUFf5akTomo4kxNFWDJ2j8r1YCE=",
       "file": "com.hereliesaz.azphalt.brush-smudge-stick-1.0.0.azp",
-      "bytes": 60358
+      "bytes": 60654
     },
     {
       "id": "com.hereliesaz.azphalt.brush-soft-charcoal",
@@ -407,7 +407,7 @@
       "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
       "integrity": "sha256-jWycM9OXRpWd73s+0q9QQ9SNuwpX+nl+YnpI61ZHQEk=",
       "file": "com.hereliesaz.azphalt.brush-soft-charcoal-1.0.0.azp",
-      "bytes": 36862
+      "bytes": 37159
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-fade",
@@ -418,7 +418,7 @@
       "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
       "integrity": "sha256-NsmSzgmu2EZiZTQWKTdcxLcyxEpRu4qjU7v27lZP4ko=",
       "file": "com.hereliesaz.azphalt.brush-spray-fade-1.0.0.azp",
-      "bytes": 5419
+      "bytes": 5714
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-fat-cap",
@@ -429,7 +429,7 @@
       "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
       "integrity": "sha256-D92JIWVNHRYwyd0c1X4cGhP2HmqzR4/8GZ0Fej9pL90=",
       "file": "com.hereliesaz.azphalt.brush-spray-fat-cap-1.0.0.azp",
-      "bytes": 2890
+      "bytes": 3188
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-halo",
@@ -440,7 +440,7 @@
       "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
       "integrity": "sha256-JmOjkcbd7xXme8yt1/YUbkDpP5vsFuqkE3x9EUci4zM=",
       "file": "com.hereliesaz.azphalt.brush-spray-halo-1.0.0.azp",
-      "bytes": 27365
+      "bytes": 27660
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-skinny-cap",
@@ -451,7 +451,7 @@
       "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
       "integrity": "sha256-VTNwNhWlxVth2s+2g6h1Z2TNYQ4f4cWWptTfWo/zm4E=",
       "file": "com.hereliesaz.azphalt.brush-spray-skinny-cap-1.0.0.azp",
-      "bytes": 5503
+      "bytes": 5798
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed",
@@ -462,7 +462,7 @@
       "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
       "integrity": "sha256-KeBm8lm9LcxiExH8FG4GcDFfbIHnd83yDM95z0pH8GU=",
       "file": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed-1.0.0.azp",
-      "bytes": 2132
+      "bytes": 2427
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-salt-texture",
@@ -473,7 +473,7 @@
       "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
       "integrity": "sha256-xgCHXRuPzYol78E3/uxTxf+GDvR48eS8n/wEj35Qm/w=",
       "file": "com.hereliesaz.azphalt.brush-watercolor-salt-texture-1.0.0.azp",
-      "bytes": 3362
+      "bytes": 3657
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-wash-flat",
@@ -484,7 +484,7 @@
       "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
       "integrity": "sha256-UbloGjccRY4t0KbJOJQQeGhoWqt2cHeFD8MOO9w1Gv8=",
       "file": "com.hereliesaz.azphalt.brush-watercolor-wash-flat-1.0.0.azp",
-      "bytes": 19831
+      "bytes": 20125
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet",
@@ -495,7 +495,7 @@
       "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
       "integrity": "sha256-9RwUkJEE8MXrntx2t071sak4OD+0neIFIqutydTPxDI=",
       "file": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet-1.0.0.azp",
-      "bytes": 4700
+      "bytes": 4994
     },
     {
       "id": "com.hereliesaz.azphalt.camera-controller",
@@ -506,7 +506,7 @@
       "ref": "d4bf62a45039b412ffe4dcabb175d23f8c497f8a",
       "integrity": "sha256-qzuVIKRbIW79wCLE6YGyzCDzxrQtds15/cj4gMjrGzw=",
       "file": "com.hereliesaz.azphalt.camera-controller-1.0.0.azp",
-      "bytes": 1160
+      "bytes": 1457
     },
     {
       "id": "com.hereliesaz.azphalt.character-stagger",
@@ -517,7 +517,7 @@
       "ref": "65af373bb28775cceecbcc0dc1ac2ed87a73418e",
       "integrity": "sha256-FyA78I4IPULibrzcVSR4cZM6Se+6/DxTJLZDC1y6HRg=",
       "file": "com.hereliesaz.azphalt.character-stagger-1.2.0.azp",
-      "bytes": 1089
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.checkerboard",
@@ -528,7 +528,7 @@
       "ref": "2bc936d0dd748a5233d20e7cdc5223a7f2591a7a",
       "integrity": "sha256-K2wxBlOnRGB/W+30Voo9K5Xd4m/NxXC3Z6bV8vFV//8=",
       "file": "com.hereliesaz.azphalt.checkerboard-1.0.0.azp",
-      "bytes": 13975
+      "bytes": 14270
     },
     {
       "id": "com.hereliesaz.azphalt.chromatic-pulse",
@@ -539,7 +539,7 @@
       "ref": "563d3169afedc89872f3db347da1747daf140dae",
       "integrity": "sha256-tU6dqqQ/WmXcTpS24VQ2Iuhw+CSDnBBkOY+hf/yRlVU=",
       "file": "com.hereliesaz.azphalt.chromatic-pulse-1.0.0.azp",
-      "bytes": 1900
+      "bytes": 2195
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-glow",
@@ -550,7 +550,7 @@
       "ref": "794347c0804c9e63f6e930b5d4657e6eba78794c",
       "integrity": "sha256-l75d53HjUTDqodEnG6+5KavVEgbgKH5JOb8aW1C+6aU=",
       "file": "com.hereliesaz.azphalt.cinematic-glow-1.0.0.azp",
-      "bytes": 2118
+      "bytes": 2413
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-pan",
@@ -561,7 +561,7 @@
       "ref": "1fb5cdadd75e5323251496a04826140cc65584ff",
       "integrity": "sha256-yP5gjEIYyVxQddl//M+gp06tCTgHS5dX6gIOx9b5/ls=",
       "file": "com.hereliesaz.azphalt.cinematic-pan-1.2.0.azp",
-      "bytes": 1136
+      "bytes": 1431
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-rise",
@@ -572,7 +572,7 @@
       "ref": "8de7e94567072a984538ce1d37b7d58e06dce1ce",
       "integrity": "sha256-Z90Ezb8Sq9S7dW6yAvDFvAjzXNnVEb/EJitTKL/qyoI=",
       "file": "com.hereliesaz.azphalt.cinematic-rise-1.2.0.azp",
-      "bytes": 1175
+      "bytes": 1469
     },
     {
       "id": "com.hereliesaz.azphalt.collision-dodge",
@@ -583,7 +583,7 @@
       "ref": "6fd735d485c1317cba449b9b7b35afeef5dc39b4",
       "integrity": "sha256-VrewUTsNd8grgGZ9+/Lmt0ZPKV+C8+8eWCm0uBMieTE=",
       "file": "com.hereliesaz.azphalt.collision-dodge-1.0.0.azp",
-      "bytes": 1089
+      "bytes": 1387
     },
     {
       "id": "com.hereliesaz.azphalt.comic-edge",
@@ -594,7 +594,7 @@
       "ref": "aded60df524cc7dee96c95d85c1d25737f92c9bc",
       "integrity": "sha256-0y3RNynVc9OkDbvO53JnCsEAYjExW6DA/BtbPXZKHxg=",
       "file": "com.hereliesaz.azphalt.comic-edge-1.0.0.azp",
-      "bytes": 1947
+      "bytes": 2242
     },
     {
       "id": "com.hereliesaz.azphalt.countdown",
@@ -605,7 +605,7 @@
       "ref": "7338c87ab5a15957a6f96d9e13d60f4a2f099c9e",
       "integrity": "sha256-0Ru1/jIlk+EVT4cFPrvXA6VkcVrMEREJSHKPY0pTX50=",
       "file": "com.hereliesaz.azphalt.countdown-1.0.0.azp",
-      "bytes": 13984
+      "bytes": 14279
     },
     {
       "id": "com.hereliesaz.azphalt.cyber-glitch",
@@ -616,7 +616,7 @@
       "ref": "f14f3eae656334a8f534dd64b5e53d7ef613e950",
       "integrity": "sha256-z42VS6eRyY2w9lQAcsjI98DeGBOCDsYigtL9cehI3DE=",
       "file": "com.hereliesaz.azphalt.cyber-glitch-1.0.0.azp",
-      "bytes": 1166
+      "bytes": 1461
     },
     {
       "id": "com.hereliesaz.azphalt.depth-hide",
@@ -627,7 +627,7 @@
       "ref": "702ae4695e770c4b2d46d81f0d01c6e071c72da9",
       "integrity": "sha256-GHIu9IOvtQ2FWrv6drupO2r0zdSJojj6nLrnrCl5lQ4=",
       "file": "com.hereliesaz.azphalt.depth-hide-2.0.0.azp",
-      "bytes": 1094
+      "bytes": 1389
     },
     {
       "id": "com.hereliesaz.azphalt.dev-workflow-skills",
@@ -638,7 +638,7 @@
       "ref": "(local)",
       "integrity": "sha256-xlXkUK70jA9qcQFB1yt7nf+P0yEonJs1ngz1K9JrhiM=",
       "file": "com.hereliesaz.azphalt.dev-workflow-skills-1.0.0.azp",
-      "bytes": 13969
+      "bytes": 14264
     },
     {
       "id": "com.hereliesaz.azphalt.diarization-box",
@@ -649,7 +649,7 @@
       "ref": "10820a457bee894eeca034c8db3a5343e5455c53",
       "integrity": "sha256-gAyWTdRxsT4iH/UcsRZ5nSVRYArE72k6TXdlcZOHdS4=",
       "file": "com.hereliesaz.azphalt.diarization-box-2.0.0.azp",
-      "bytes": 1084
+      "bytes": 1380
     },
     {
       "id": "com.hereliesaz.azphalt.diarization-flip",
@@ -660,7 +660,7 @@
       "ref": "f4f337c502a788ea4974199f9d7cb981c5e93971",
       "integrity": "sha256-YwJ819Zw1I3ebjsg5G1koiK/Dl9xIq1pApTGA004jtY=",
       "file": "com.hereliesaz.azphalt.diarization-flip-2.0.0.azp",
-      "bytes": 1085
+      "bytes": 1380
     },
     {
       "id": "com.hereliesaz.azphalt.dreamy-glow",
@@ -671,7 +671,7 @@
       "ref": "de75ead8f601146609c9e3f2a37a3d363c9592a6",
       "integrity": "sha256-/Mp+5/28MdN/LUVXFPFoY7/YCd/9o1Vb9BqipbEMPik=",
       "file": "com.hereliesaz.azphalt.dreamy-glow-1.0.0.azp",
-      "bytes": 1956
+      "bytes": 2250
     },
     {
       "id": "com.hereliesaz.azphalt.duotone",
@@ -682,7 +682,7 @@
       "ref": "150071958a1f849985f549d96adee825ecb6f495",
       "integrity": "sha256-gJY3Beb2EuaHOYqEIwG5TX2F9LnIGePLy05vuj9dmaY=",
       "file": "com.hereliesaz.azphalt.duotone-1.0.0.azp",
-      "bytes": 1864
+      "bytes": 2159
     },
     {
       "id": "com.hereliesaz.azphalt.elastic-drop",
@@ -693,7 +693,7 @@
       "ref": "020394a0c2b860405542b91348ec69ba2ab8e0c4",
       "integrity": "sha256-QI8Skbu9RYHp3D6BZ3bWkv+BTIoTplK/Fgrzs9tD7Ds=",
       "file": "com.hereliesaz.azphalt.elastic-drop-1.2.0.azp",
-      "bytes": 1133
+      "bytes": 1431
     },
     {
       "id": "com.hereliesaz.azphalt.emphasis-stroke",
@@ -704,7 +704,7 @@
       "ref": "91659d0649741f13dcf7e08366ae053c3d66ce56",
       "integrity": "sha256-rIdsyKx4SSdmvhCbCKykGV1dW+65tIS2HGLso3JWB8g=",
       "file": "com.hereliesaz.azphalt.emphasis-stroke-2.0.0.azp",
-      "bytes": 1135
+      "bytes": 1432
     },
     {
       "id": "com.hereliesaz.azphalt.environment-bleed",
@@ -715,7 +715,7 @@
       "ref": "895bbd53b990517c53d727748be135feefb6fb8b",
       "integrity": "sha256-DNCJ6ltkvCB+fSQQxgBXST5+C/+mJkqP/UZfo402ZxM=",
       "file": "com.hereliesaz.azphalt.environment-bleed-1.0.0.azp",
-      "bytes": 1099
+      "bytes": 1395
     },
     {
       "id": "com.hereliesaz.azphalt.face-anchor",
@@ -726,7 +726,7 @@
       "ref": "22f127783719ff4a0dfd973a422ed64b3620fe7d",
       "integrity": "sha256-5MbkHzI+n8KmTZle1gpY1bQ5b4lrpWMX080C56bg0xs=",
       "file": "com.hereliesaz.azphalt.face-anchor-2.0.0.azp",
-      "bytes": 1031
+      "bytes": 1327
     },
     {
       "id": "com.hereliesaz.azphalt.face-scale",
@@ -737,7 +737,7 @@
       "ref": "72aebc15835a56d7e64793c20550e3bd3c180ec7",
       "integrity": "sha256-tqKxtl+jytVnt79f6UCfXP5hn5K2cLMkGEM435hKpD8=",
       "file": "com.hereliesaz.azphalt.face-scale-2.0.0.azp",
-      "bytes": 1082
+      "bytes": 1380
     },
     {
       "id": "com.hereliesaz.azphalt.fade-up",
@@ -748,7 +748,7 @@
       "ref": "ef5a1f055e41ed88ce92b652f9e13eb0e3fab9aa",
       "integrity": "sha256-E6x9ibVlK7hIyWItFD/iyaemky0lDxceMuptwv29iKQ=",
       "file": "com.hereliesaz.azphalt.fade-up-1.2.0.azp",
-      "bytes": 1094
+      "bytes": 1390
     },
     {
       "id": "com.hereliesaz.azphalt.fast-neural-style",
@@ -759,7 +759,7 @@
       "ref": "d5f4403f4b5c91713630040bb90fc08fe81d0c08",
       "integrity": "sha256-3XQ9R8qMnVHHIlq8LNJ3BJko9n+mrDdppPrQA337/LA=",
       "file": "com.hereliesaz.azphalt.fast-neural-style-1.0.0.azp",
-      "bytes": 1211
+      "bytes": 1507
     },
     {
       "id": "com.hereliesaz.azphalt.film-burn",
@@ -770,7 +770,7 @@
       "ref": "4ebe7b785da8084abf5e58f245aa7a1bc847e320",
       "integrity": "sha256-yQp1jqlJ5EqKgeip1qxcBuxU/UvzKmTKG0WetmzTlLU=",
       "file": "com.hereliesaz.azphalt.film-burn-1.0.0.azp",
-      "bytes": 1955
+      "bytes": 2251
     },
     {
       "id": "com.hereliesaz.azphalt.film-damage",
@@ -781,7 +781,7 @@
       "ref": "8b1bf43b1d404c05e8d17ec05852717a44cc9b94",
       "integrity": "sha256-ffqGzcIWTqSXzpmjMdSqJ/ZBmrGv1oDSFy3ykUXFMHw=",
       "file": "com.hereliesaz.azphalt.film-damage-1.0.0.azp",
-      "bytes": 1183
+      "bytes": 1481
     },
     {
       "id": "com.hereliesaz.azphalt.floor-reflection",
@@ -792,7 +792,7 @@
       "ref": "da57b0a2a947485e05e8249e552a80a67d514d90",
       "integrity": "sha256-Q7VozO+cSi02SkKklBmiX0txRGSu50sfBqJRynmV4SU=",
       "file": "com.hereliesaz.azphalt.floor-reflection-1.0.0.azp",
-      "bytes": 1053
+      "bytes": 1350
     },
     {
       "id": "com.hereliesaz.azphalt.focus-match",
@@ -803,7 +803,7 @@
       "ref": "8b2d59530408c2631348d32a0bce3f2427c33028",
       "integrity": "sha256-nroxmGAHWgFDwfTMQ/pwdJVAyXl9KIQc2pzAM5ObCAA=",
       "file": "com.hereliesaz.azphalt.focus-match-2.0.0.azp",
-      "bytes": 1087
+      "bytes": 1382
     },
     {
       "id": "com.hereliesaz.azphalt.frost-glass",
@@ -814,7 +814,7 @@
       "ref": "5d38edef27db95d6a4c5f8bc0416dbf10827971b",
       "integrity": "sha256-sHQZbeQ68Y5+nxgOVi7YLZa+uHXJpjzVO5S1A84BILo=",
       "file": "com.hereliesaz.azphalt.frost-glass-1.0.0.azp",
-      "bytes": 2022
+      "bytes": 2320
     },
     {
       "id": "com.hereliesaz.azphalt.gaze-dodge",
@@ -825,7 +825,7 @@
       "ref": "fef9c593f36b01285c504ff1be3765b8ea412ee0",
       "integrity": "sha256-1hKwvKyp+oy4/0WbzJxACDSzv0jryFAMtPZXQ2W4kuQ=",
       "file": "com.hereliesaz.azphalt.gaze-dodge-2.0.0.azp",
-      "bytes": 1090
+      "bytes": 1384
     },
     {
       "id": "com.hereliesaz.azphalt.glass-refraction",
@@ -836,7 +836,7 @@
       "ref": "226af868f07ec334e6a8a224cb3f3e583beb0056",
       "integrity": "sha256-eRKFgVhahc5W6cZkRkU0huq1ZEuls0QEhpWRqHALOwg=",
       "file": "com.hereliesaz.azphalt.glass-refraction-1.0.0.azp",
-      "bytes": 1050
+      "bytes": 1347
     },
     {
       "id": "com.hereliesaz.azphalt.glitch-decode",
@@ -847,7 +847,7 @@
       "ref": "86ea9c8f7f667907cfbee2e703199fba841b5665",
       "integrity": "sha256-b96i7JINrZMC3cBXM/hgZ3bzLvMu008jq5Cz1pOQOSM=",
       "file": "com.hereliesaz.azphalt.glitch-decode-1.2.0.azp",
-      "bytes": 1165
+      "bytes": 1460
     },
     {
       "id": "com.hereliesaz.azphalt.glitch-slice",
@@ -858,7 +858,7 @@
       "ref": "70a0427abe325851f0be61298b242b081ba2c1c1",
       "integrity": "sha256-PlmFzmHYeMmkuSYevOWLMwgr7r5D4TYDNBBrFByENUc=",
       "file": "com.hereliesaz.azphalt.glitch-slice-1.0.0.azp",
-      "bytes": 2059
+      "bytes": 2353
     },
     {
       "id": "com.hereliesaz.azphalt.gradients",
@@ -869,7 +869,7 @@
       "ref": "2bee8f22076dbf77d90578b540bbfcffe013c3e4",
       "integrity": "sha256-SP4JnpvI8wHMHHkSwuhoaxCYQtiITU3Goa7Dsjxsvaw=",
       "file": "com.hereliesaz.azphalt.gradients-1.0.0.azp",
-      "bytes": 13928
+      "bytes": 14224
     },
     {
       "id": "com.hereliesaz.azphalt.graffitixr",
@@ -880,7 +880,7 @@
       "ref": "(local)",
       "integrity": "sha256-vij9TJDx6APe9AfBPNqsepWod5GJoJKvvRtb3KkIVdk=",
       "file": "com.hereliesaz.azphalt.graffitixr-1.0.0.azp",
-      "bytes": 900
+      "bytes": 1198
     },
     {
       "id": "com.hereliesaz.azphalt.graffux",
@@ -891,7 +891,7 @@
       "ref": "(local)",
       "integrity": "sha256-CUJNKS9zae3fidB7knzU85eprpuHJsh5YHNGT5ocN4M=",
       "file": "com.hereliesaz.azphalt.graffux-1.0.0.azp",
-      "bytes": 841
+      "bytes": 1136
     },
     {
       "id": "com.hereliesaz.azphalt.grid-guide",
@@ -902,7 +902,7 @@
       "ref": "8f285b55ffc051119f7a769afac9672dcd8b8a9f",
       "integrity": "sha256-+tfG+3OZ4eFlnMwGAoyCOGYwaiGRIOZQlbhAZQCYeJw=",
       "file": "com.hereliesaz.azphalt.grid-guide-1.0.0.azp",
-      "bytes": 14907
+      "bytes": 15202
     },
     {
       "id": "com.hereliesaz.azphalt.gtcrn",
@@ -913,7 +913,7 @@
       "ref": "2d614ce57121308b714575555660788b9d8c9bd7",
       "integrity": "sha256-DFmw6DsQ8PQ02r2qnoBflAgp7ke2gh5aMkBgBjzI3eo=",
       "file": "com.hereliesaz.azphalt.gtcrn-1.0.0.azp",
-      "bytes": 1136
+      "bytes": 1430
     },
     {
       "id": "com.hereliesaz.azphalt.guillotine",
@@ -924,7 +924,7 @@
       "ref": "(local)",
       "integrity": "sha256-brujkmGtsq6jId6+r87NzVIJYzKaSoEEjySt1k2AJgg=",
       "file": "com.hereliesaz.azphalt.guillotine-1.0.0.azp",
-      "bytes": 852
+      "bytes": 1147
     },
     {
       "id": "com.hereliesaz.azphalt.halftone",
@@ -935,7 +935,7 @@
       "ref": "6db9fea56adf61f11f7f499659e23f0a874421b2",
       "integrity": "sha256-ihY4ZEeUd8Zb0ihUXp/zoqPeuULyPx/agIc5SMpn3/Y=",
       "file": "com.hereliesaz.azphalt.halftone-1.0.0.azp",
-      "bytes": 15180
+      "bytes": 15479
     },
     {
       "id": "com.hereliesaz.azphalt.hop-in",
@@ -946,7 +946,7 @@
       "ref": "409c489ed13363cf935ea359b2655f796379d520",
       "integrity": "sha256-/tHvmt6771FCTHLqf/UTo+1GOvSyKSG72q9atnvKEFY=",
       "file": "com.hereliesaz.azphalt.hop-in-1.2.0.azp",
-      "bytes": 1235
+      "bytes": 1532
     },
     {
       "id": "com.hereliesaz.azphalt.hormozi-pop",
@@ -957,7 +957,7 @@
       "ref": "72eb63eb66c79c077cc29e52aa6cc0998bc63267",
       "integrity": "sha256-2UoapPaQ2qXii+ySzhylJFJUdZaH0Vt4K6AHR8cbqrU=",
       "file": "com.hereliesaz.azphalt.hormozi-pop-1.2.0.azp",
-      "bytes": 1218
+      "bytes": 1514
     },
     {
       "id": "com.hereliesaz.azphalt.isolate-glow",
@@ -968,7 +968,7 @@
       "ref": "eb74ded2412a69573f015d0faf55fae2bcbf8ff0",
       "integrity": "sha256-4ryILEvQUj/ETDJV4Ehiz5bhbfeOcULAm8JbMwfr/6o=",
       "file": "com.hereliesaz.azphalt.isolate-glow-1.0.0.azp",
-      "bytes": 1104
+      "bytes": 1399
     },
     {
       "id": "com.hereliesaz.azphalt.joy-pop",
@@ -979,7 +979,7 @@
       "ref": "c842af9f9ca0ae06a659bc6e593052d2d41b3535",
       "integrity": "sha256-Ft6DkLLkXtrAqUwK2l/FAD2VTOZOckw1ISS+SgSw+/0=",
       "file": "com.hereliesaz.azphalt.joy-pop-2.0.0.azp",
-      "bytes": 1098
+      "bytes": 1396
     },
     {
       "id": "com.hereliesaz.azphalt.kaleidoscope-spin",
@@ -990,7 +990,7 @@
       "ref": "89d0b5303ecfc8e71152ac48a0624a3ea5fa9788",
       "integrity": "sha256-wlXR8RbHmC0w8i/pGDB9Rh9FTJLRotD5BMO9PsQr6ZA=",
       "file": "com.hereliesaz.azphalt.kaleidoscope-spin-1.0.0.azp",
-      "bytes": 1811
+      "bytes": 2107
     },
     {
       "id": "com.hereliesaz.azphalt.karaoke-sweep",
@@ -1001,7 +1001,7 @@
       "ref": "c5923c447b73b4b35fdf7b799f041aaf28c44ddd",
       "integrity": "sha256-rGa8OVFkUNg+hOm5N2xyzddfwq0V1I2WzTzTGMrfExA=",
       "file": "com.hereliesaz.azphalt.karaoke-sweep-1.2.0.azp",
-      "bytes": 1166
+      "bytes": 1461
     },
     {
       "id": "com.hereliesaz.azphalt.lama",
@@ -1012,7 +1012,7 @@
       "ref": "77700485706cab5d98b0801387e0a30ae7c3adb4",
       "integrity": "sha256-7g7Vqb/EtsafFc1mCjXAo5DoS/azTv4s6nsDhxMsV9U=",
       "file": "com.hereliesaz.azphalt.lama-1.0.0.azp",
-      "bytes": 1118
+      "bytes": 1415
     },
     {
       "id": "com.hereliesaz.azphalt.lensflare",
@@ -1023,7 +1023,7 @@
       "ref": "e4c2fc1e55b9a81dd8f88b5c4ef44e2dba45c466",
       "integrity": "sha256-Krbw3fFyx9gdv3TSrGwNe9GCcA2+ebQrujRpqqEm+uQ=",
       "file": "com.hereliesaz.azphalt.lensflare-1.0.0.azp",
-      "bytes": 14003
+      "bytes": 14298
     },
     {
       "id": "com.hereliesaz.azphalt.light-leak-sweep",
@@ -1034,7 +1034,7 @@
       "ref": "0028cb810b034b81bdce84ca2dcba49e45270876",
       "integrity": "sha256-SLaZJYjevxMu7oFdhYn8bZKxWUT32bpxIxIXCBfmekU=",
       "file": "com.hereliesaz.azphalt.light-leak-sweep-1.0.0.azp",
-      "bytes": 1873
+      "bytes": 2168
     },
     {
       "id": "com.hereliesaz.azphalt.liquid-chrome",
@@ -1045,7 +1045,7 @@
       "ref": "988fff42ea9fc760b738aefff377364b7cf748c0",
       "integrity": "sha256-e7OzesYLsprlWozCWr02Z+OxZPfy4j/lZXJP5O7FfVU=",
       "file": "com.hereliesaz.azphalt.liquid-chrome-1.0.0.azp",
-      "bytes": 1919
+      "bytes": 2215
     },
     {
       "id": "com.hereliesaz.azphalt.loudness-color",
@@ -1056,7 +1056,7 @@
       "ref": "c247ca3206bcdab371828a20fc171077f75d67bb",
       "integrity": "sha256-CEu95Xs/CQJt31iqp7EwAHyXpx5z4GhScpDc7cnzkzc=",
       "file": "com.hereliesaz.azphalt.loudness-color-2.0.0.azp",
-      "bytes": 1081
+      "bytes": 1378
     },
     {
       "id": "com.hereliesaz.azphalt.mcpserved",
@@ -1067,7 +1067,7 @@
       "ref": "(local)",
       "integrity": "sha256-VFTwYL2UEJCYPc1SjvgMiyRvdmTxIcxvWLQqLXOqjg0=",
       "file": "com.hereliesaz.azphalt.mcpserved-1.0.0.azp",
-      "bytes": 842
+      "bytes": 1137
     },
     {
       "id": "com.hereliesaz.azphalt.midas",
@@ -1078,7 +1078,7 @@
       "ref": "f35e5a067655940000ba6c8574bd23e774c4cec5",
       "integrity": "sha256-9PKLneDu67QOn60I+nybMRGRSRp3U4NE3+mXoyCCKPs=",
       "file": "com.hereliesaz.azphalt.midas-1.0.0.azp",
-      "bytes": 1090
+      "bytes": 1384
     },
     {
       "id": "com.hereliesaz.azphalt.mirnet",
@@ -1089,7 +1089,7 @@
       "ref": "e2829b97457b750826184e4187ef40af10594ea6",
       "integrity": "sha256-sePePy840JEtnbxoFnXMjh14UhsPxCqSXs1/j43qyLQ=",
       "file": "com.hereliesaz.azphalt.mirnet-1.0.0.azp",
-      "bytes": 1136
+      "bytes": 1432
     },
     {
       "id": "com.hereliesaz.azphalt.mobilefacenet",
@@ -1100,7 +1100,7 @@
       "ref": "7d181b399d3ddec26f87014cefa9f7e55bbf924d",
       "integrity": "sha256-RDcXH5UF4YQF8FFv46H58LSqdPca3V/K1pdgFaisRBw=",
       "file": "com.hereliesaz.azphalt.mobilefacenet-1.0.0.azp",
-      "bytes": 1146
+      "bytes": 1440
     },
     {
       "id": "com.hereliesaz.azphalt.mobilenet",
@@ -1111,7 +1111,7 @@
       "ref": "4e998139340fa9a6c9067c073638706e70b8a4d1",
       "integrity": "sha256-Zq/RqKV5p31y729GD+GKQZvamq6Od9WYOMMrszkm9is=",
       "file": "com.hereliesaz.azphalt.mobilenet-1.0.0.azp",
-      "bytes": 1253
+      "bytes": 1548
     },
     {
       "id": "com.hereliesaz.azphalt.moondream",
@@ -1122,7 +1122,7 @@
       "ref": "49466d6ea12a82ae685fe204c64b107ab50a9fdf",
       "integrity": "sha256-stzzIiwrapd/IyoEU20zIcu7PDH25qPnucn1S6s6Vro=",
       "file": "com.hereliesaz.azphalt.moondream-1.0.0.azp",
-      "bytes": 1160
+      "bytes": 1456
     },
     {
       "id": "com.hereliesaz.azphalt.motion-blur",
@@ -1133,7 +1133,7 @@
       "ref": "3198bb7d0dcf468021712bc8c29d2b37d4723626",
       "integrity": "sha256-Yeqo7/6J0oDaVI9v+4hqe5Xve4dCDnX22cjprIju8mM=",
       "file": "com.hereliesaz.azphalt.motion-blur-1.0.0.azp",
-      "bytes": 1068
+      "bytes": 1365
     },
     {
       "id": "com.hereliesaz.azphalt.motion-tracking",
@@ -1144,7 +1144,7 @@
       "ref": "b01ba0fe3764c048678f2cf165a11f2c951e0a04",
       "integrity": "sha256-0OzBqVMCO0ZaxK4UsjLVwyO6V+oRcH0gAD8/w8tUmJE=",
       "file": "com.hereliesaz.azphalt.motion-tracking-1.0.0.azp",
-      "bytes": 14033
+      "bytes": 14329
     },
     {
       "id": "com.hereliesaz.azphalt.motion-wind-warp",
@@ -1155,7 +1155,7 @@
       "ref": "3849e6f05c47bf647ed0cfc10c6843e4d30a74c5",
       "integrity": "sha256-dh2cA9Uo5vQyxuUxCd3/BLqd5Z+cmjxLe4cCl94B/Rw=",
       "file": "com.hereliesaz.azphalt.motion-wind-warp-1.0.0.azp",
-      "bytes": 1095
+      "bytes": 1391
     },
     {
       "id": "com.hereliesaz.azphalt.neon-pulse",
@@ -1166,7 +1166,7 @@
       "ref": "1ebdbe72397922bb43ec56985e188265e18750d3",
       "integrity": "sha256-S422h8mqUBQpGl4xvIBYgaZkGvAd7OXjU4S6OuBouhg=",
       "file": "com.hereliesaz.azphalt.neon-pulse-1.2.0.azp",
-      "bytes": 1191
+      "bytes": 1486
     },
     {
       "id": "com.hereliesaz.azphalt.neon-rim-pulse",
@@ -1177,7 +1177,7 @@
       "ref": "d7137c538ade090629b58c3a695a7e510046e98c",
       "integrity": "sha256-4u+W+cg1yfPoeKEPp8Ac8d8KhSYplOGUO/TvDFZ3BDc=",
       "file": "com.hereliesaz.azphalt.neon-rim-pulse-1.0.0.azp",
-      "bytes": 1970
+      "bytes": 2267
     },
     {
       "id": "com.hereliesaz.azphalt.noise",
@@ -1188,7 +1188,7 @@
       "ref": "5011a697348b2e8a011a23cc528ab462da7af332",
       "integrity": "sha256-1lmLNWVXEn38DybE/8w86S4KbyN4mFj9/TrFWhNcn58=",
       "file": "com.hereliesaz.azphalt.noise-1.0.0.azp",
-      "bytes": 13960
+      "bytes": 14256
     },
     {
       "id": "com.hereliesaz.azphalt.object-tracking",
@@ -1199,7 +1199,7 @@
       "ref": "4395f69804a04f9b0d27da874d0aaca53e1c89e8",
       "integrity": "sha256-Q80keWJBLIjW/tJYRmNfHKxsZLF4KZTQermiuZ86SAA=",
       "file": "com.hereliesaz.azphalt.object-tracking-1.0.0.azp",
-      "bytes": 1070
+      "bytes": 1365
     },
     {
       "id": "com.hereliesaz.azphalt.optical-timeramp",
@@ -1210,7 +1210,7 @@
       "ref": "f043bea3194d116c379489be3d306148a3558da8",
       "integrity": "sha256-JDYASlYPK0BBkoTaKEF6KanQLoZ0m0j/XlWswkll7E4=",
       "file": "com.hereliesaz.azphalt.optical-timeramp-1.0.0.azp",
-      "bytes": 1097
+      "bytes": 1391
     },
     {
       "id": "com.hereliesaz.azphalt.pack.3d-environment",
@@ -1221,7 +1221,7 @@
       "ref": "(local)",
       "integrity": "sha256-/9d4rJPo7zKr8AhU+NzcO/Skzjonbi7CeB2ZTFoITYg=",
       "file": "com.hereliesaz.azphalt.pack.3d-environment-1.0.0.azp",
-      "bytes": 1045
+      "bytes": 1342
     },
     {
       "id": "com.hereliesaz.azphalt.pack.acrylic",
@@ -1232,7 +1232,7 @@
       "ref": "(local)",
       "integrity": "sha256-RXcdB86Vf77Y+iLxr4ho1hxkbkEcFdSbKmWUojGyHZQ=",
       "file": "com.hereliesaz.azphalt.pack.acrylic-1.0.0.azp",
-      "bytes": 816
+      "bytes": 1110
     },
     {
       "id": "com.hereliesaz.azphalt.pack.audio-reactive",
@@ -1243,7 +1243,7 @@
       "ref": "(local)",
       "integrity": "sha256-6ymAhtU90poIcp910PoynpaJ+y6Go2okdXtfiepmV9M=",
       "file": "com.hereliesaz.azphalt.pack.audio-reactive-1.0.0.azp",
-      "bytes": 987
+      "bytes": 1282
     },
     {
       "id": "com.hereliesaz.azphalt.pack.auto-kinetic-typography",
@@ -1254,7 +1254,7 @@
       "ref": "(local)",
       "integrity": "sha256-q85MfRtLcJzTOFGe/XG0E8GqIeVwyW4mzqCOtOsNZ7s=",
       "file": "com.hereliesaz.azphalt.pack.auto-kinetic-typography-1.0.0.azp",
-      "bytes": 1094
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.pack.broadcast-toolkit",
@@ -1265,7 +1265,7 @@
       "ref": "(local)",
       "integrity": "sha256-5/nPNKFreGX0ToV0q4vrwnvcIOrkAbi0tXjMehgL/p0=",
       "file": "com.hereliesaz.azphalt.pack.broadcast-toolkit-1.0.0.azp",
-      "bytes": 878
+      "bytes": 1174
     },
     {
       "id": "com.hereliesaz.azphalt.pack.camera-and-stabilization",
@@ -1276,7 +1276,7 @@
       "ref": "(local)",
       "integrity": "sha256-xNarldfQFRxYOMucAiXzLfOnkg7PfoW2N3lh0YQAccw=",
       "file": "com.hereliesaz.azphalt.pack.camera-and-stabilization-1.0.0.azp",
-      "bytes": 968
+      "bytes": 1264
     },
     {
       "id": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
@@ -1287,7 +1287,7 @@
       "ref": "(local)",
       "integrity": "sha256-tLrwXEhK137dX0pmSXUYFDBIjbGP+R2IeW8YCpobk18=",
       "file": "com.hereliesaz.azphalt.pack.charcoal-and-chalk-1.0.0.azp",
-      "bytes": 859
+      "bytes": 1153
     },
     {
       "id": "com.hereliesaz.azphalt.pack.glitch-and-damage",
@@ -1298,7 +1298,7 @@
       "ref": "(local)",
       "integrity": "sha256-bnisYlixAE+r/uIJPKM4pRyUYogDyhlaqoMsVzTm6yc=",
       "file": "com.hereliesaz.azphalt.pack.glitch-and-damage-1.0.0.azp",
-      "bytes": 926
+      "bytes": 1220
     },
     {
       "id": "com.hereliesaz.azphalt.pack.ink-and-marker",
@@ -1309,7 +1309,7 @@
       "ref": "(local)",
       "integrity": "sha256-gInM1s/6THRqTLKLH5z4fzfhaccdreLJFNbrf7ezZKM=",
       "file": "com.hereliesaz.azphalt.pack.ink-and-marker-1.1.0.azp",
-      "bytes": 893
+      "bytes": 1188
     },
     {
       "id": "com.hereliesaz.azphalt.pack.kinetic-type",
@@ -1320,7 +1320,7 @@
       "ref": "(local)",
       "integrity": "sha256-tIgjfStxC1nes+q0P+J8aOWV5g1ChZpFbmOSQrTnnYc=",
       "file": "com.hereliesaz.azphalt.pack.kinetic-type-1.0.0.azp",
-      "bytes": 936
+      "bytes": 1232
     },
     {
       "id": "com.hereliesaz.azphalt.pack.layout-and-emphasis",
@@ -1331,7 +1331,7 @@
       "ref": "(local)",
       "integrity": "sha256-z8gX0t/sQ74++g5rDiA4aP6uU3WCZ+fXBz667/zFEpg=",
       "file": "com.hereliesaz.azphalt.pack.layout-and-emphasis-1.0.0.azp",
-      "bytes": 937
+      "bytes": 1233
     },
     {
       "id": "com.hereliesaz.azphalt.pack.light-and-atmosphere",
@@ -1342,7 +1342,7 @@
       "ref": "(local)",
       "integrity": "sha256-WW/QdezQ3sG7JnE4lzXrZ9MhKqQbe2EwDhMarW+vaws=",
       "file": "com.hereliesaz.azphalt.pack.light-and-atmosphere-1.0.0.azp",
-      "bytes": 940
+      "bytes": 1233
     },
     {
       "id": "com.hereliesaz.azphalt.pack.oil",
@@ -1353,7 +1353,7 @@
       "ref": "(local)",
       "integrity": "sha256-i/Ef7Y/1/NglcNl6h8oV/+ugjcC+s+/+TqdWkH0UhiU=",
       "file": "com.hereliesaz.azphalt.pack.oil-1.0.0.azp",
-      "bytes": 832
+      "bytes": 1129
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-cleanup",
@@ -1364,7 +1364,7 @@
       "ref": "(local)",
       "integrity": "sha256-n6TrVmzSqOLV+8mpe3QOLVZGTGDuqL6Md78UTI4tTjI=",
       "file": "com.hereliesaz.azphalt.pack.one-click-cleanup-1.0.0.azp",
-      "bytes": 825
+      "bytes": 1121
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-neon",
@@ -1375,7 +1375,7 @@
       "ref": "(local)",
       "integrity": "sha256-0mKrk4dMNXE7I9uNrIAi2SS623wbCJ6gD+hQheHwCBg=",
       "file": "com.hereliesaz.azphalt.pack.one-click-neon-1.0.0.azp",
-      "bytes": 812
+      "bytes": 1110
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-punch",
@@ -1386,7 +1386,7 @@
       "ref": "(local)",
       "integrity": "sha256-2+9paKN5UtS78H5qqc/P2gCzpJTZ30qsmPJO49T/u4g=",
       "file": "com.hereliesaz.azphalt.pack.one-click-punch-1.0.0.azp",
-      "bytes": 826
+      "bytes": 1122
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-retro",
@@ -1397,7 +1397,7 @@
       "ref": "(local)",
       "integrity": "sha256-ab7J5Gqb+2naabWuk8H2rtL95E9DzKL3eHzECLOIvoE=",
       "file": "com.hereliesaz.azphalt.pack.one-click-retro-1.0.0.azp",
-      "bytes": 818
+      "bytes": 1114
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-speed",
@@ -1408,7 +1408,7 @@
       "ref": "(local)",
       "integrity": "sha256-WYYnCvMcxuaC83w7YgyGtTWlxScdoq8x3J8J3wtCSwc=",
       "file": "com.hereliesaz.azphalt.pack.one-click-speed-1.0.0.azp",
-      "bytes": 815
+      "bytes": 1112
     },
     {
       "id": "com.hereliesaz.azphalt.pack.restore-and-upscale",
@@ -1419,7 +1419,7 @@
       "ref": "(local)",
       "integrity": "sha256-AigiqHGGwXHvToWqgiMouTMDWhvR+Iw5w13uft+08ow=",
       "file": "com.hereliesaz.azphalt.pack.restore-and-upscale-1.0.0.azp",
-      "bytes": 837
+      "bytes": 1134
     },
     {
       "id": "com.hereliesaz.azphalt.pack.speech-and-captions",
@@ -1430,7 +1430,7 @@
       "ref": "(local)",
       "integrity": "sha256-VgjozWM2AeqItOLV9sLqVAGmCOyPYFgSpOnTreHdSq8=",
       "file": "com.hereliesaz.azphalt.pack.speech-and-captions-1.0.0.azp",
-      "bytes": 956
+      "bytes": 1251
     },
     {
       "id": "com.hereliesaz.azphalt.pack.spray-kit",
@@ -1441,7 +1441,7 @@
       "ref": "(local)",
       "integrity": "sha256-4Zbn9OzYqTzji1xH4CP8psTv3LYy/vyoP3yODM+q0uQ=",
       "file": "com.hereliesaz.azphalt.pack.spray-kit-1.0.0.azp",
-      "bytes": 823
+      "bytes": 1117
     },
     {
       "id": "com.hereliesaz.azphalt.pack.stencil-studio",
@@ -1452,7 +1452,7 @@
       "ref": "(local)",
       "integrity": "sha256-F7n+pZBgkE7dyNr/djvKG73jlxbaT47OCGP5DYqIemQ=",
       "file": "com.hereliesaz.azphalt.pack.stencil-studio-1.0.0.azp",
-      "bytes": 926
+      "bytes": 1224
     },
     {
       "id": "com.hereliesaz.azphalt.pack.subject-and-depth",
@@ -1463,7 +1463,7 @@
       "ref": "(local)",
       "integrity": "sha256-gfcjChU7OM6V9t19IJtn3d0ZbEgHuouHoZ/uR6IJ0xM=",
       "file": "com.hereliesaz.azphalt.pack.subject-and-depth-1.0.0.azp",
-      "bytes": 942
+      "bytes": 1237
     },
     {
       "id": "com.hereliesaz.azphalt.pack.surface-and-light",
@@ -1474,7 +1474,7 @@
       "ref": "(local)",
       "integrity": "sha256-udDfnTw0Z6yiSFFhdbTNX0jUO5MaC1kXfZCsVgYplLc=",
       "file": "com.hereliesaz.azphalt.pack.surface-and-light-1.0.0.azp",
-      "bytes": 937
+      "bytes": 1234
     },
     {
       "id": "com.hereliesaz.azphalt.pack.texture-and-wear",
@@ -1485,7 +1485,7 @@
       "ref": "(local)",
       "integrity": "sha256-+xcHdD6qf1a126rlyPP8jq8K+Fb17+/MQokdVyW+dEc=",
       "file": "com.hereliesaz.azphalt.pack.texture-and-wear-1.0.0.azp",
-      "bytes": 866
+      "bytes": 1160
     },
     {
       "id": "com.hereliesaz.azphalt.pack.transitions-and-physics",
@@ -1496,7 +1496,7 @@
       "ref": "(local)",
       "integrity": "sha256-VOtRkH/0Lugq9F5kimNHRdtCJTxJSDW9rL2n1zbFsoU=",
       "file": "com.hereliesaz.azphalt.pack.transitions-and-physics-1.0.0.azp",
-      "bytes": 931
+      "bytes": 1225
     },
     {
       "id": "com.hereliesaz.azphalt.pack.vision-and-masking",
@@ -1507,7 +1507,7 @@
       "ref": "(local)",
       "integrity": "sha256-S32BGk2H774EeFSKzdGOUEc0IMes6ot5bu7hGShM7j0=",
       "file": "com.hereliesaz.azphalt.pack.vision-and-masking-1.0.0.azp",
-      "bytes": 937
+      "bytes": 1234
     },
     {
       "id": "com.hereliesaz.azphalt.pack.watercolor",
@@ -1518,7 +1518,7 @@
       "ref": "(local)",
       "integrity": "sha256-rE4KvWS2l9+abxtOAIOa3SQPeqJd0K7Jx4aiTeiLB7A=",
       "file": "com.hereliesaz.azphalt.pack.watercolor-1.0.0.azp",
-      "bytes": 843
+      "bytes": 1139
     },
     {
       "id": "com.hereliesaz.azphalt.page-curl",
@@ -1529,7 +1529,7 @@
       "ref": "8419bbca5a4ed352cc3099ace247c9da7ebb7a82",
       "integrity": "sha256-KPNCIspytXxoPhlZbSZ6kwBbNBv5XbkBaqfwUj5F49M=",
       "file": "com.hereliesaz.azphalt.page-curl-1.0.0.azp",
-      "bytes": 1095
+      "bytes": 1389
     },
     {
       "id": "com.hereliesaz.azphalt.parallax-depth",
@@ -1540,7 +1540,7 @@
       "ref": "187749ed89d8187b8cbb500e59b6e083455260bd",
       "integrity": "sha256-LbFl3AUQ0t6LU94hm4hUsV0FFup6bC/1/eBesx9ChZw=",
       "file": "com.hereliesaz.azphalt.parallax-depth-1.0.0.azp",
-      "bytes": 1095
+      "bytes": 1391
     },
     {
       "id": "com.hereliesaz.azphalt.particle-shatter",
@@ -1551,7 +1551,7 @@
       "ref": "0dd9c1ee957c417ce8b8a3ffb3970e2c0f36d643",
       "integrity": "sha256-X39iUuAspKNabLi62+GlqOU0n18shBcRm4bmNaH6q48=",
       "file": "com.hereliesaz.azphalt.particle-shatter-1.0.0.azp",
-      "bytes": 1047
+      "bytes": 1344
     },
     {
       "id": "com.hereliesaz.azphalt.particles",
@@ -1562,7 +1562,7 @@
       "ref": "150fb2475bddf491c19fed60a6fda4626c36cc19",
       "integrity": "sha256-rA5I7/L5pIFC/WwOhaxNSDqsWh4n4hl3haIIA5bsQiA=",
       "file": "com.hereliesaz.azphalt.particles-1.0.0.azp",
-      "bytes": 13972
+      "bytes": 14267
     },
     {
       "id": "com.hereliesaz.azphalt.pip",
@@ -1573,7 +1573,7 @@
       "ref": "db412229a675385c67e626bf42939d65e0330188",
       "integrity": "sha256-x5cBg3yuq7Nqx795iAL2ZWgiGzXdNo0FaXio81OUS58=",
       "file": "com.hereliesaz.azphalt.pip-1.0.0.azp",
-      "bytes": 1182
+      "bytes": 1479
     },
     {
       "id": "com.hereliesaz.azphalt.piper-en",
@@ -1584,7 +1584,7 @@
       "ref": "ad6eaa57ac4fe7a4232d304dff5f62747d3d0a22",
       "integrity": "sha256-PvLhfHnMzU0nRsTCuTEZvlpuX6YNiU/rviSQQgFYBYs=",
       "file": "com.hereliesaz.azphalt.piper-en-1.0.0.azp",
-      "bytes": 1131
+      "bytes": 1430
     },
     {
       "id": "com.hereliesaz.azphalt.pitch-rotation",
@@ -1595,7 +1595,7 @@
       "ref": "2f68019cecd31f818f7374f68fc2d43a52a6d101",
       "integrity": "sha256-iZ5Q+ZpjY85tsgidUybU/GCbKQzmr3DRjQRRNm3md3s=",
       "file": "com.hereliesaz.azphalt.pitch-rotation-2.0.0.azp",
-      "bytes": 1080
+      "bytes": 1376
     },
     {
       "id": "com.hereliesaz.azphalt.pitch-tracker",
@@ -1606,7 +1606,7 @@
       "ref": "e9c7a946da8b18106238066c92fd5a7aa1ab43f2",
       "integrity": "sha256-0+zqbwvtYArtjG0gtiDBK976VjNnpfaOPSBwCXuCL4g=",
       "file": "com.hereliesaz.azphalt.pitch-tracker-2.0.0.azp",
-      "bytes": 1095
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.planar-tracking",
@@ -1617,7 +1617,7 @@
       "ref": "32f7d34aeabb554035c20d7b56d1d3aa66a9948a",
       "integrity": "sha256-HAndTAbGBxvvmtmnj/R6FnfLzNX/+jsvBS2RJedSyh8=",
       "file": "com.hereliesaz.azphalt.planar-tracking-1.0.0.azp",
-      "bytes": 1072
+      "bytes": 1367
     },
     {
       "id": "com.hereliesaz.azphalt.pop-in",
@@ -1628,7 +1628,7 @@
       "ref": "7e1ae895cc6244bcdc9b357f5e432e414eafd619",
       "integrity": "sha256-R7MhvU/FiyhGGWRhcOAt/H7iBIxp5jt4XA8eLI4ZeyU=",
       "file": "com.hereliesaz.azphalt.pop-in-1.2.0.azp",
-      "bytes": 1095
+      "bytes": 1393
     },
     {
       "id": "com.hereliesaz.azphalt.prism-flare",
@@ -1639,7 +1639,7 @@
       "ref": "f5c08f335250f5ef526b37a50f5563da8ff3a6b0",
       "integrity": "sha256-cXLOI0oYgud0UXvHP5yScYeaxZKkZHBWPbRBLeHAs4g=",
       "file": "com.hereliesaz.azphalt.prism-flare-1.0.0.azp",
-      "bytes": 2088
+      "bytes": 2381
     },
     {
       "id": "com.hereliesaz.azphalt.pyannote-segmentation",
@@ -1650,7 +1650,7 @@
       "ref": "905b84535e0126a29c7a8fbe82ee5bbed147967c",
       "integrity": "sha256-W3k7oXt96lqaQKVVC4v8zpx/77srIFh8VJmtB9WtmPE=",
       "file": "com.hereliesaz.azphalt.pyannote-segmentation-1.0.0.azp",
-      "bytes": 1101
+      "bytes": 1395
     },
     {
       "id": "com.hereliesaz.azphalt.real-esrgan",
@@ -1661,7 +1661,7 @@
       "ref": "8deae1c905dbe19042f1c6c4b9710732419ebb1c",
       "integrity": "sha256-++xdtRoftL0Bmsh5aPTaj8+AwtKBIN7f2nyXHjnH/e0=",
       "file": "com.hereliesaz.azphalt.real-esrgan-1.0.0.azp",
-      "bytes": 1209
+      "bytes": 1504
     },
     {
       "id": "com.hereliesaz.azphalt.rotate-snap",
@@ -1672,7 +1672,7 @@
       "ref": "72453af239d06007ce401e2cc7a65675e10d172d",
       "integrity": "sha256-hbRvdxpE0seSZ1R5Ik1Oy4git/EmUCFJDzceoGdHgOA=",
       "file": "com.hereliesaz.azphalt.rotate-snap-1.2.0.azp",
-      "bytes": 1172
+      "bytes": 1469
     },
     {
       "id": "com.hereliesaz.azphalt.rsvp-delivery",
@@ -1683,7 +1683,7 @@
       "ref": "3299bbc67a5b8cd48304990bbb98d01d61f7c449",
       "integrity": "sha256-1OO8/CFg5MfHRvpUmYoG2DCeIf6sBhzRwemepTeEE+Y=",
       "file": "com.hereliesaz.azphalt.rsvp-delivery-1.2.0.azp",
-      "bytes": 1128
+      "bytes": 1425
     },
     {
       "id": "com.hereliesaz.azphalt.scale-stagger",
@@ -1694,7 +1694,7 @@
       "ref": "0fbd94719cff34b5f2974edf5cda4ad1248779e3",
       "integrity": "sha256-cVpg7dHqdbF9Qf8g7MJ+94tsr4MtVUozdcRbuHVt7UQ=",
       "file": "com.hereliesaz.azphalt.scale-stagger-1.2.0.azp",
-      "bytes": 1074
+      "bytes": 1372
     },
     {
       "id": "com.hereliesaz.azphalt.scene-lit-shadow",
@@ -1705,7 +1705,7 @@
       "ref": "535e9e7c95509030c3888c8b2c8039b34c5ed32f",
       "integrity": "sha256-VTc5ZDLDrnHHBPq0Kam6OTCUTRYMSWlQ4G8uBnpmXZM=",
       "file": "com.hereliesaz.azphalt.scene-lit-shadow-1.0.0.azp",
-      "bytes": 1144
+      "bytes": 1440
     },
     {
       "id": "com.hereliesaz.azphalt.selfie-segmentation",
@@ -1716,7 +1716,7 @@
       "ref": "481259c71ed8526da354300d4704e6f006e1764f",
       "integrity": "sha256-lynlvB6loBq5no5p4muB+1YaYccxpLIFmqJWA8132Ek=",
       "file": "com.hereliesaz.azphalt.selfie-segmentation-1.0.0.azp",
-      "bytes": 1160
+      "bytes": 1458
     },
     {
       "id": "com.hereliesaz.azphalt.sentiment-hue",
@@ -1727,7 +1727,7 @@
       "ref": "ae1266aacd39c50c94ea12a50bb774dca97a1100",
       "integrity": "sha256-Gd4KW+tq4Ez9wCNwnPLphvEFGs19sUc/h0q3P2M7v1o=",
       "file": "com.hereliesaz.azphalt.sentiment-hue-2.0.0.azp",
-      "bytes": 1078
+      "bytes": 1373
     },
     {
       "id": "com.hereliesaz.azphalt.slide-right",
@@ -1738,7 +1738,7 @@
       "ref": "6c51019d78cad53263e1d1ad2ec0a0be43a6f7e0",
       "integrity": "sha256-uTMxrpdbsr37wjxspXuWMw/qke7BiqucTOCIhl5jrd4=",
       "file": "com.hereliesaz.azphalt.slide-right-1.2.0.azp",
-      "bytes": 1099
+      "bytes": 1394
     },
     {
       "id": "com.hereliesaz.azphalt.slump-disappointment",
@@ -1749,7 +1749,7 @@
       "ref": "c92b90ad3f0c39be9839be65eebabb0612fb2b0a",
       "integrity": "sha256-qtEKgnQhsbSmutjs5JpG8u0PS/7o0pQAB7x3pW21kHI=",
       "file": "com.hereliesaz.azphalt.slump-disappointment-1.2.0.azp",
-      "bytes": 1163
+      "bytes": 1457
     },
     {
       "id": "com.hereliesaz.azphalt.smpte",
@@ -1760,7 +1760,7 @@
       "ref": "99e93b739a6fe480c06eda22be9abee37591e6d7",
       "integrity": "sha256-0nVLEjvBRy6nKYp+c/icL96QJpv7L0WbSpaoZjj+VL8=",
       "file": "com.hereliesaz.azphalt.smpte-1.0.0.azp",
-      "bytes": 13959
+      "bytes": 14254
     },
     {
       "id": "com.hereliesaz.azphalt.solid",
@@ -1771,7 +1771,7 @@
       "ref": "6a4baeba697ede1f67a1126d7a51c78b91327595",
       "integrity": "sha256-xABDV7Ll1Az2lKEqXERJi9aZ2QWteyZL7Wr4RaB940c=",
       "file": "com.hereliesaz.azphalt.solid-1.0.0.azp",
-      "bytes": 13893
+      "bytes": 14191
     },
     {
       "id": "com.hereliesaz.azphalt.speaker-drop",
@@ -1782,7 +1782,7 @@
       "ref": "d458ab0f9a5faf4d2c80618e9a90840b5dfb98c1",
       "integrity": "sha256-yGEbI6EX5bpOyYuHNZsEmFc3yMdWP94IQ3LRlyUYDwo=",
       "file": "com.hereliesaz.azphalt.speaker-drop-2.0.0.azp",
-      "bytes": 1080
+      "bytes": 1378
     },
     {
       "id": "com.hereliesaz.azphalt.speaker-pan",
@@ -1793,7 +1793,7 @@
       "ref": "4f727a205b3b00990889d739a06172c4cf17a4bd",
       "integrity": "sha256-2ieNngBzw5u3NhhD6flzEDsk6QnscFqcP5HpZc7tD7Y=",
       "file": "com.hereliesaz.azphalt.speaker-pan-2.0.0.azp",
-      "bytes": 1087
+      "bytes": 1381
     },
     {
       "id": "com.hereliesaz.azphalt.speed-blur",
@@ -1804,7 +1804,7 @@
       "ref": "85b9b64c1d52bda6d6336ed19a02e7681b141e99",
       "integrity": "sha256-GHep06W4WxTCB4BB/+eKGZveUgsDm40lRXUmkpzHeVA=",
       "file": "com.hereliesaz.azphalt.speed-blur-2.0.0.azp",
-      "bytes": 1080
+      "bytes": 1378
     },
     {
       "id": "com.hereliesaz.azphalt.spotlights",
@@ -1815,7 +1815,7 @@
       "ref": "003c69c8a858406bed23b5265fa4b33ec335ec24",
       "integrity": "sha256-noOkWFRXSkSZREsPDy5EbmuvXRXHH93efzHkKnLHRcw=",
       "file": "com.hereliesaz.azphalt.spotlights-1.0.0.azp",
-      "bytes": 1132
+      "bytes": 1427
     },
     {
       "id": "com.hereliesaz.azphalt.stabilize-actioncam",
@@ -1826,7 +1826,7 @@
       "ref": "fa7278e99532bf6bced58a879659421695bb489e",
       "integrity": "sha256-qUooof3satYbrsrVDo8wkVf5zM5YSO2dJaG5oIxm8e0=",
       "file": "com.hereliesaz.azphalt.stabilize-actioncam-1.0.0.azp",
-      "bytes": 1147
+      "bytes": 1440
     },
     {
       "id": "com.hereliesaz.azphalt.stabilizer",
@@ -1837,7 +1837,7 @@
       "ref": "69fbc1d6fbe2cbe23a138f65af429f7165e79e89",
       "integrity": "sha256-xm81gIx8Jd3RqUx4Ppkes4ttOmNEsp0xrlQc0rL5Vzg=",
       "file": "com.hereliesaz.azphalt.stabilizer-1.0.0.azp",
-      "bytes": 14002
+      "bytes": 14298
     },
     {
       "id": "com.hereliesaz.azphalt.stencil-layers",
@@ -1848,7 +1848,7 @@
       "ref": "f1435a8aeda885cdb83a7761742d4e632fe9718a",
       "integrity": "sha256-7r4pAbvksokmv2u2Kdd92aaHr0vTS2ecoeohWwDYHR8=",
       "file": "com.hereliesaz.azphalt.stencil-layers-1.0.0.azp",
-      "bytes": 14588
+      "bytes": 14884
     },
     {
       "id": "com.hereliesaz.azphalt.subject-orbit",
@@ -1859,7 +1859,7 @@
       "ref": "bb019dd477f9b58059fd4fa8bd41f58be15f091a",
       "integrity": "sha256-2oaDENd20dQbO80OPBjLcNYLm6KKH8Sg+dSMoHOvOYc=",
       "file": "com.hereliesaz.azphalt.subject-orbit-1.0.0.azp",
-      "bytes": 1188
+      "bytes": 1486
     },
     {
       "id": "com.hereliesaz.azphalt.subject-track",
@@ -1870,7 +1870,7 @@
       "ref": "c6a16d4663000f2973181c202f3e56e903e75df6",
       "integrity": "sha256-NDwY+HUsyIfUZ0jh0iFtM8xa6K1BIQBEGgmByhcbYr4=",
       "file": "com.hereliesaz.azphalt.subject-track-2.0.0.azp",
-      "bytes": 1030
+      "bytes": 1325
     },
     {
       "id": "com.hereliesaz.azphalt.terrain-puddle",
@@ -1881,7 +1881,7 @@
       "ref": "d0fc9c2a089d3166691ed01360426e0e318ac79e",
       "integrity": "sha256-xmIKvDJfg1pokVNgBBbIQPXmHNLdmMmDzkmr+jLTr10=",
       "file": "com.hereliesaz.azphalt.terrain-puddle-1.0.0.azp",
-      "bytes": 1095
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.timecode",
@@ -1892,7 +1892,7 @@
       "ref": "a7ec3e27c318763bd4c3b4bb9ae63c69dd9dfa4f",
       "integrity": "sha256-0GJsbpF0rjkD5mxXZPs0HUGi01rGq9RW53c50WpNfEA=",
       "file": "com.hereliesaz.azphalt.timecode-1.0.0.azp",
-      "bytes": 14059
+      "bytes": 14356
     },
     {
       "id": "com.hereliesaz.azphalt.tremble-arousal",
@@ -1903,7 +1903,7 @@
       "ref": "3d66a06b597a7ca9405ad653b29a95b5db75a739",
       "integrity": "sha256-J3wwTnj8atnG3qXDfxxI1j5QW93Qqz+NjkSjGFJDHuw=",
       "file": "com.hereliesaz.azphalt.tremble-arousal-1.2.0.azp",
-      "bytes": 1155
+      "bytes": 1449
     },
     {
       "id": "com.hereliesaz.azphalt.tripod-stabilizer",
@@ -1914,7 +1914,7 @@
       "ref": "4da4aaf17122d539d47c764a208dc8d18c6eb961",
       "integrity": "sha256-cPwPzbLB4O9jz0yGzAFTjwg1rtaByp2ys4UeURgWCy4=",
       "file": "com.hereliesaz.azphalt.tripod-stabilizer-1.0.0.azp",
-      "bytes": 1161
+      "bytes": 1458
     },
     {
       "id": "com.hereliesaz.azphalt.typewriter",
@@ -1925,7 +1925,7 @@
       "ref": "077946f2151984e2d94d2b5b47b969ecab436452",
       "integrity": "sha256-2MJvmSqHgCwapj2i52ERVabDji6IB4rfJF4S/shjHto=",
       "file": "com.hereliesaz.azphalt.typewriter-1.2.0.azp",
-      "bytes": 1042
+      "bytes": 1340
     },
     {
       "id": "com.hereliesaz.azphalt.typewriter-cursor",
@@ -1936,7 +1936,7 @@
       "ref": "bc62fae0f3a5770b4b18812e512453f5c2e7ecd6",
       "integrity": "sha256-YIMfxchLFoZztVXUaWa2uqAtYl3p4t/qwekY3vcpF7w=",
       "file": "com.hereliesaz.azphalt.typewriter-cursor-1.2.0.azp",
-      "bytes": 1114
+      "bytes": 1410
     },
     {
       "id": "com.hereliesaz.azphalt.ultraface",
@@ -1947,7 +1947,7 @@
       "ref": "ee2c9a5d8d490916dcb39ad0aa03aeb55119ddf1",
       "integrity": "sha256-H9l0NLLEP54H3WZLgQMe9l/cHGLvyTPSJBQpaunyitQ=",
       "file": "com.hereliesaz.azphalt.ultraface-1.0.0.azp",
-      "bytes": 1191
+      "bytes": 1487
     },
     {
       "id": "com.hereliesaz.azphalt.vhs-retro",
@@ -1958,7 +1958,7 @@
       "ref": "bd41fa2041a5305791ec4730081c66513a434daf",
       "integrity": "sha256-1NmE/fUh676k5+4dRbRBiS6kvXEdyTLygvR8mecR6D0=",
       "file": "com.hereliesaz.azphalt.vhs-retro-1.0.0.azp",
-      "bytes": 2050
+      "bytes": 2344
     },
     {
       "id": "com.hereliesaz.azphalt.vintage-grain-halation",
@@ -1969,7 +1969,7 @@
       "ref": "b702bc9134ed4947374bca83ca5d99a5ef7b4bcc",
       "integrity": "sha256-TMtOFCmSWAhSP+Zb4ZT2c3vgmmBCm2DiZkVi5ZcN+OU=",
       "file": "com.hereliesaz.azphalt.vintage-grain-halation-1.0.0.azp",
-      "bytes": 2053
+      "bytes": 2349
     },
     {
       "id": "com.hereliesaz.azphalt.volume-bulge",
@@ -1980,7 +1980,7 @@
       "ref": "3d72a8c065ccac385f3ff83d6490bf57fef9e98d",
       "integrity": "sha256-Z5jxdMM+XGt6PdH75tOGcSfOsSF2ioJNXyBHYuf1FLk=",
       "file": "com.hereliesaz.azphalt.volume-bulge-2.0.0.azp",
-      "bytes": 1098
+      "bytes": 1393
     },
     {
       "id": "com.hereliesaz.azphalt.warpflow",
@@ -1991,7 +1991,7 @@
       "ref": "244a68ae123771e6c6226cf5d44af6021212094d",
       "integrity": "sha256-hjpA6KXEvls0rPdtsd/0udWWoIPojjBy2FHa7lEhieg=",
       "file": "com.hereliesaz.azphalt.warpflow-1.0.0.azp",
-      "bytes": 1101
+      "bytes": 1398
     },
     {
       "id": "com.hereliesaz.azphalt.wespeaker",
@@ -2002,7 +2002,7 @@
       "ref": "2e25e536b8dd9bf5848806e6ffceb20ca3faa8ae",
       "integrity": "sha256-OjG9WJV25l78lCGtzCywzUHRA5kIqO9IJ3sakeezxVk=",
       "file": "com.hereliesaz.azphalt.wespeaker-1.0.0.azp",
-      "bytes": 1136
+      "bytes": 1434
     },
     {
       "id": "com.hereliesaz.azphalt.whisper",
@@ -2013,7 +2013,7 @@
       "ref": "755b2b88da00ecaf7332e30e93a910d97ecadd58",
       "integrity": "sha256-Gqo1yJnoilf/QmeeEtl8Xgro19rMsSfrwGvzg3qNamE=",
       "file": "com.hereliesaz.azphalt.whisper-1.0.0.azp",
-      "bytes": 1154
+      "bytes": 1451
     },
     {
       "id": "com.hereliesaz.azphalt.whisper-blur",
@@ -2024,7 +2024,7 @@
       "ref": "86ec922ab2718d89719cb59465bd67ca18570f16",
       "integrity": "sha256-+txxQlXPAECiDhBQ1K0XqCpyJORv3ufz2xZYHJ++Yms=",
       "file": "com.hereliesaz.azphalt.whisper-blur-2.0.0.azp",
-      "bytes": 1053
+      "bytes": 1350
     },
     {
       "id": "com.hereliesaz.azphalt.word-stagger",
@@ -2035,7 +2035,7 @@
       "ref": "de1fa88664c15b57103efe5ebb093fcc7dd8cbd5",
       "integrity": "sha256-PhWMkAyuqz5QNZUNT9yVfdVNPFSxqPyaERvzKnakbuw=",
       "file": "com.hereliesaz.azphalt.word-stagger-1.2.0.azp",
-      "bytes": 1084
+      "bytes": 1379
     },
     {
       "id": "com.hereliesaz.azphalt.yamnet",
@@ -2046,7 +2046,7 @@
       "ref": "1d7b03c595153d08388b905c30248aa49f81e61a",
       "integrity": "sha256-LJVBPzM24lXGde5LnRftVto4hrhD54zLcMDJRtrpRTA=",
       "file": "com.hereliesaz.azphalt.yamnet-1.0.0.azp",
-      "bytes": 1180
+      "bytes": 1476
     },
     {
       "id": "com.hereliesaz.azphalt.yell-shake",
@@ -2057,7 +2057,7 @@
       "ref": "42982d6097fed4214e6248cc687030e0b50aa01f",
       "integrity": "sha256-Az0kJSOZe7iXfgcF+LyplgbpR8OU5ViaOqvYJ9maiOw=",
       "file": "com.hereliesaz.azphalt.yell-shake-2.0.0.azp",
-      "bytes": 1098
+      "bytes": 1394
     },
     {
       "id": "com.hereliesaz.azphalt.zdepth",
@@ -2068,7 +2068,7 @@
       "ref": "ce9ad39363799c26a77c8456996bbced756926dd",
       "integrity": "sha256-TggoREhLi51okFKfv2HESk++s8iNhM88WKjy0RloFkU=",
       "file": "com.hereliesaz.azphalt.zdepth-1.0.0.azp",
-      "bytes": 1136
+      "bytes": 1432
     },
     {
       "id": "com.hereliesaz.azphalt.zoom-punch",
@@ -2079,7 +2079,7 @@
       "ref": "134e7d506fcc0a01be26d3efe2c4c2ca9cd78581",
       "integrity": "sha256-7OLGpAiolFisgzKZvuJJ74G+4bRms5vaxAmHhmvJxaQ=",
       "file": "com.hereliesaz.azphalt.zoom-punch-1.0.0.azp",
-      "bytes": 1985
+      "bytes": 2281
     },
     {
       "id": "com.hereliesaz.guillotine.cool-noir",
@@ -2090,7 +2090,7 @@
       "ref": "(local)",
       "integrity": "sha256-8nB8Z0o7oiN7D90N22AfQH26p68MRyAJrfxF8eTiS4s=",
       "file": "com.hereliesaz.guillotine.cool-noir-1.0.0.azp",
-      "bytes": 57641
+      "bytes": 57936
     },
     {
       "id": "com.hereliesaz.guillotine.teal-orange",
@@ -2101,7 +2101,7 @@
       "ref": "(local)",
       "integrity": "sha256-TgEk16L3IE/EFApbmY9V2S714xTuVmEZrogMS+yVuNY=",
       "file": "com.hereliesaz.guillotine.teal-orange-1.0.0.azp",
-      "bytes": 49544
+      "bytes": 49840
     },
     {
       "id": "com.hereliesaz.haive.accessibility-audit",
