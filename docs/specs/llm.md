@@ -90,6 +90,52 @@ carries the setup script (integrity-covered by `manifest.files`).
 }
 ~~~
 
+A `sandbox-weights` package runs open weights in the sandbox with llama.cpp. It is keyless, so it
+declares no inputs or secrets:
+
+~~~jsonc
+{
+  "azphalt": "0.1",
+  "id": "com.example.azphalt.qwen2-5-1-5b-sandbox",
+  "name": "Qwen2.5 1.5B Instruct (private sandbox)",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "llm": {
+    "tier": "sandbox-weights",
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "requires": { "githubToken": ["contents:write", "actions:write", "checks:write", "workflows:write"] },
+      "fetches": [
+        // A pinned llama.cpp release build; never "latest".
+        { "url": "https://github.com/ggml-org/llama.cpp/releases/download/bNNNN/llama-bNNNN-bin-ubuntu-x64.zip",
+          "checksum": "sha256-…" }
+      ]
+    },
+    "weights": {
+      "runtime": "llama.cpp",
+      "files": [
+        { "name": "model.gguf",
+          "remoteUrl": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+          "checksum": "sha256-…", "byteSize": 1120000000, "supportsRange": true }
+      ],
+      "modelLicense": { "spdx": "Apache-2.0", "commercialUse": true },
+      "requirements": { "accelerator": "cpu", "quantization": "int4", "minRamMB": 3072,
+                        "minDiskMB": 2048, "minCpuCores": 2, "contextTokens": 4096 }
+    },
+    "endpoint": { "protocols": ["github-actions-runner"], "defaultModel": "model.gguf", "auth": "none" },
+    "run": { "permissions": { "contents": "write", "checks": "write" } },
+    "dataHandling": { "prompts": "not-retained", "modelPinned": true, "operator": "GitHub (sandbox runner only)" },
+    "role": "text-generation"
+  },
+  "files": { "setup/setup.sh": "sha256-…" }
+}
+~~~
+
+The weights are cached between runs (§ Sandbox); the Actions cache needs no entry in `permissions`.
+
 ### `llm` block fields
 
 - **`tier`** — `endpoint` | `sandbox-weights` (§ Tiers). Required.
@@ -97,11 +143,16 @@ carries the setup script (integrity-covered by `manifest.files`).
   package. Same shape and `${input:<id>}` substitution as `mcp-server.md § Inputs & secrets`, plus
   `optional: true` for a key the model works without.
 - **`setup`** — required, for every tier (§ Setup).
-- **`weights`** — required for `sandbox-weights`, forbidden for `endpoint`. `{ runtime, files[] }`:
-  `runtime` names the inference runtime the setup script installs (open vocabulary, e.g. `llama.cpp`,
-  `onnxruntime-genai`); `files[]` uses the multi-file member shape of
-  `extension-manifest.md § Multi-file model bundles` — every member remote, each with `remoteUrl` and
-  `checksum`.
+- **`weights`** — required for `sandbox-weights`, forbidden for `endpoint`.
+  `{ runtime, files[], requirements?, modelLicense? }`:
+  - `runtime` names the inference runtime the setup script installs (open vocabulary, e.g.
+    `llama.cpp`, `onnxruntime-genai`).
+  - `files[]` uses the multi-file member shape of `extension-manifest.md § Multi-file model bundles`,
+    with every member remote: `remoteUrl`, `checksum`, and `byteSize` (required here, since the host
+    budgets disk and cache with it).
+  - `requirements` is what the sandbox runner must provide (§ Runner requirements).
+  - `modelLicense` carries the weights' own terms, in the shape of
+    `extension-manifest.md § Model license`; a host MUST surface it before install.
 - **`endpoint`** — how the host talks to the model once set up (§ Protocols). Required.
   - `protocols` — a non-empty subset of `openai-chat`, `github-actions-runner`. `sandbox-weights`
     permits only `github-actions-runner`.
@@ -158,9 +209,38 @@ with the needed permissions exists. Setup is **off-device only**.
 - **Egress.** A runner SHOULD restrict outbound network to the declared `endpoint.baseUrl` and
   `setup.fetches` (for example with an egress-allowlist step). GitHub-hosted runners provide no native
   restriction, so this is SHOULD, not MUST.
+- **Weight caching.** A `sandbox-weights` runner SHOULD cache the weights with the Actions cache, keyed
+  by the weights' checksums (for example `azphalt-llm-weights-` followed by the SHA-256 of the sorted
+  member checksums), so a run does not download multi-gigabyte files again. A restored cache is
+  untrusted storage: the runner MUST re-verify every member against its `checksum` before loading it,
+  and discard the cache on mismatch. The Actions cache is bounded per repository (10 GB) and evicts
+  entries unused for 7 days; when the weights' total `byteSize` exceeds the bound, the host SHOULD
+  tell the user that each run downloads them afresh.
 - **Shared IP pools.** Keyless tiers rate-limit by IP address, and hosted runners share addresses with
   every other Actions user, so an anonymous quota may already be spent. A package whose model is
   keyless SHOULD offer an optional key via `inputs` and `setup.secrets` for runner use.
+
+### Runner requirements
+
+`weights.requirements` extends the model-asset `requirements` block
+(`extension-manifest.md § Model requirements`) with what a sandbox runner must supply. All fields are
+optional; a host uses what it understands.
+
+~~~jsonc
+"requirements": {
+  "accelerator": "cpu",     // "cpu" | "gpu"; "gpu" needs a runner that has one
+  "quantization": "int4",   // as for model assets, plus "int4" for 4-bit formats such as GGUF Q4
+  "minRamMB": 4096,         // resident memory for weights + context
+  "minDiskMB": 3072,        // weights + runtime + scratch
+  "minCpuCores": 2,
+  "contextTokens": 8192     // the context length the RAM figure assumes
+}
+~~~
+
+A host compares these with the runner it will use (the standard hosted runner for a private repository
+unless the user chose a larger one) and MUST NOT offer the install when the runner cannot meet them.
+A registry MAY filter on them. As with model assets, they gate the install and never change how the
+model runs.
 
 ## Protocols
 
@@ -222,7 +302,8 @@ and signature checks:
 - The manifest has an `llm` block and no `entry` / `runtime`, `capabilities`, `assets`, `app`, or
   `mcp` block.
 - `llm.tier` is `endpoint` or `sandbox-weights`; `weights` is present exactly when the tier is
-  `sandbox-weights`, and every `weights.files[]` member has `remoteUrl` and a `sha256-` `checksum`.
+  `sandbox-weights`, and every `weights.files[]` member has `remoteUrl`, a `sha256-` `checksum`, and
+  `byteSize`.
 - `llm.setup` is present; `setup.sandbox` is a known value; `setup.script` names a path in
   `manifest.files`; every `setup.fetches[]` entry has `url` and a `sha256-` `checksum`.
 - `llm.endpoint.protocols` is non-empty and allowed for the tier; `openai-chat` requires an `https://`
