@@ -15,6 +15,7 @@ import type {
   Kind as LegacyKind,
   Manifest as LegacyManifest,
   PackageSummary as LegacyPackageSummary,
+  PackageSearchResponse as LegacyPackageSearchResponse,
 } from "./index.js";
 import type { WorkflowManifest } from "./workflow.js";
 import type { RoleManifest } from "./role.js";
@@ -36,4 +37,9 @@ export type Manifest = Omit<LegacyManifest, "kind"> & {
 /** Browse/search summary widened to include orchestration-data kinds. */
 export type PackageSummary = Omit<LegacyPackageSummary, "kind"> & {
   kind?: Kind;
+};
+
+/** Search page whose summaries include orchestration-data kinds. */
+export type PackageSearchResponse = Omit<LegacyPackageSearchResponse, "packages"> & {
+  packages: PackageSummary[];
 };
