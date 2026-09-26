@@ -1,10 +1,10 @@
 plugins {
-    kotlin("multiplatform") version "2.4.0"
-    kotlin("plugin.serialization") version "2.4.0"
+    kotlin("multiplatform") version "2.4.20"
+    kotlin("plugin.serialization") version "2.4.20"
     // Kotlin 2.0+ split the Compose compiler into its own plugin, versioned with Kotlin.
-    id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
-    id("org.jetbrains.compose") version "1.12.0-beta02"
-    id("com.android.application") version "9.3.1"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.20"
+    id("org.jetbrains.compose") version "1.12.1"
+    id("com.android.application") version "9.4.1"
     // Applied conditionally below — it hard-fails when google-services.json is absent, and that file
     // is a secret this repository does not carry. See `firebaseConfigured`.
     id("com.google.gms.google-services") version "4.5.0" apply false
@@ -143,14 +143,14 @@ kotlin {
                 // Bundles src/commonMain/composeResources — the Jost typeface the Capsule system specifies.
                 implementation(compose.components.resources)
                 implementation(compose.ui)
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
             }
         }
         val wasmJsMain by getting
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
             }
         }
         // The one test source set for the shared module. `desktopTest` rather than `commonTest`
@@ -164,16 +164,16 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
-                implementation("androidx.activity:activity-compose:1.9.3")
-                implementation("androidx.core:core-ktx:1.13.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+                implementation("androidx.activity:activity-compose:1.13.0")
+                implementation("androidx.core:core-ktx:1.19.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
                 // The verifier. The store app checks a package before handing it over, and
                 // spec/store-app.md requires the host to check it again — this is the same code both
                 // sides run, so "verified" means the same thing on each.
                 implementation(project(":azp"))
                 // Play Billing: a Play-distributed app selling digital goods cannot send the user to a
                 // web checkout for them (spec/store-app.md § Paid packages).
-                implementation("com.android.billingclient:billing-ktx:7.1.1")
+                implementation("com.android.billingclient:billing-ktx:9.1.0")
 
                 // Firebase, only when it can actually be configured. The BoM pins one compatible set
                 // of versions, so the individual artifacts below carry none of their own.
@@ -185,7 +185,7 @@ kotlin {
                     // `project.dependencies.platform(...)`, not a bare `platform(...)`: a multiplatform
                     // source set's dependency block is a KotlinDependencyHandler, which has no
                     // platform() of its own, so the BOM has to be built through the project's handler.
-                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:34.16.0"))
+                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:34.19.0"))
                     implementation("com.google.firebase:firebase-analytics")
                 }
             }
@@ -203,7 +203,7 @@ android {
         // at 33), so the verifier does not dictate the floor. 26 is where adaptive icons land, which
         // avoids shipping a rasterised legacy icon per density for the sake of pre-Oreo devices.
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = azphaltVersionCode
         versionName = azphaltVersion
     }
