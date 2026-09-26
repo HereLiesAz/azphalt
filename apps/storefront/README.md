@@ -256,7 +256,7 @@ location /azphalt/ {
 
 For a domain root or sub-domain (e.g. `azphalt.store`), build **without** `NEXT_BASE_PATH` and proxy `location /`.
 
-*(Hosted alternative: this is a standard Next.js app, so it also deploys to Vercel/Netlify unchanged — set the project root to `apps/storefront` and the build to `pnpm --filter @azphalt/storefront... build`.)*
+*(Hosted alternative: this is a standard Next.js app, so it also deploys to Vercel/Netlify unchanged — set the project root to `apps/storefront`. The build command, `pnpm --filter @azphalt/storefront... build`, is set by [`vercel.json`](vercel.json): it compiles the workspace packages the storefront imports from their `dist/` before `next build`, which fails with `Module not found` without them.)*
 
 ## License
 
