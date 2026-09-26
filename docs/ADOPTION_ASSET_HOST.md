@@ -44,7 +44,9 @@ standard: it never touches azphalt's editor surface, only its packages.
    - **Traditional:** `brush` · `lut` · `pattern` · `stamp` · `shader` · `transition` · `mesh` ·
      `material` · `hdri` · `motion` · `palette` · `image` · `video` · `font` · `audio` · `vector` ·
      `template` · `overlay`.
-   - **AI models:** `tflite` · `litert` · `onnx` · `sherpa-bundle`.
+   - **AI models:** `tflite` · `litert` · `onnx` · `sherpa-bundle` · `model` · `task` · `vosk-bundle`
+     (`model` = a generic/other on-device model; `task` = a TFLite Task-Library bundle;
+     `vosk-bundle` = a Vosk speech model directory).
 
    The ones with importers + a pinned wire format today:
    - `lut` — a `.cube` color transform → your color pipeline (Guillotine: the `apply_lut` path).

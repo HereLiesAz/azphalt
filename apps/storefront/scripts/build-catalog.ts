@@ -597,6 +597,43 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  if (!check && !signingKey) {
+    // A missing signing key must never silently strip signatures from packages that are already
+    // committed. The unsigned digest (integrity) deliberately ignores the detached signature, so an
+    // unchanged id/version/integrity tuple is proof that the package payload is identical. Reuse the
+    // committed bytes for those entries and only emit unsigned bytes for genuinely new/changed
+    // packages. This keeps publisher continuity intact even when a registry-sync environment is
+    // temporarily missing AZPHALT_PACKAGE_SIGNING_KEY.
+    const committedCatalogPath = join(registryDir, "catalog.json");
+    if (existsSync(committedCatalogPath)) {
+      const committed = JSON.parse(readFileSync(committedCatalogPath, "utf8")) as {
+        packages?: { id: string; version: string; integrity: string; file: string }[];
+      };
+      const committedById = new Map((committed.packages ?? []).map((p) => [p.id, p]));
+      let reused = 0;
+      for (const b of built) {
+        const previous = committedById.get(b.source.id);
+        if (
+          !previous ||
+          previous.version !== b.source.version ||
+          previous.integrity !== b.integrity
+        ) {
+          continue;
+        }
+        const previousFile = join(packagesDir, previous.file);
+        if (!existsSync(previousFile)) continue;
+        b.bytes = new Uint8Array(readFileSync(previousFile));
+        b.file = previous.file;
+        reused += 1;
+      }
+      if (reused) {
+        console.log(
+          `build-catalog: reused ${reused} unchanged committed package(s) because the signing key is unavailable.`,
+        );
+      }
+    }
+  }
+
   if (check) {
     // Re-deriving from the lockfile proves the *pins* are intact. It says nothing about the packages
     // actually committed under `registry/packages/`, and those are what a deployment serves.

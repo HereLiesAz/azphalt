@@ -7,12 +7,18 @@
  * applies an asset, only reports on and extracts from the container. That keeps it inside the
  * standard's moat — an MCP client gets data, never the host engine.
  */
+import { readFileSync } from "node:fs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { verifyPackage, inspectPackage, extractAsset } from "./tools.js";
 
 const NAME = "azphalt-mcp";
-const VERSION = "0.1.0";
+// Read from package.json rather than hand-typing a second copy — `src/server.ts` and the built
+// `dist/server.js` are both one level under the package root, so `../package.json` resolves the
+// same way in either location, and npm always ships package.json regardless of the `files` field.
+const VERSION: string = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+).version;
 
 /** Decode a base64 `.azp` payload to bytes. Thrown errors surface to the client as `isError`. */
 function decode(azpBase64: string): Uint8Array {

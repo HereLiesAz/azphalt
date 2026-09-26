@@ -33,8 +33,10 @@ import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
+import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
+import com.android.billingclient.api.queryPurchasesAsync
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 import network.exchangePlayPurchase
@@ -141,7 +143,18 @@ public class Billing(private val context: Context) {
                 )
                 .build()
 
-            val purchase = awaitPurchase(c, activity, flow) ?: return PurchaseOutcome.Cancelled
+            val purchase = when (val awaited = awaitPurchase(c, activity, flow)) {
+                is AwaitedPurchase.Got -> awaited.purchase
+                AwaitedPurchase.Cancelled -> return PurchaseOutcome.Cancelled
+                // `launchBillingFlow` returned ITEM_ALREADY_OWNED without the purchase in tow — Play
+                // does that when the flow never actually ran (e.g. a reinstall), rather than always
+                // handing the existing purchase back through the listener. Look it up instead of
+                // treating the missing record as a cancellation.
+                AwaitedPurchase.AlreadyOwnedElsewhere ->
+                    queryOwnedPurchase(c, productId) ?: return PurchaseOutcome.Failed(
+                        "Already owned, but Play did not return the purchase record. Try again after restarting the app.",
+                    )
+            }
 
             if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) {
                 // PENDING is a real outcome, not a failure: the user has committed but Play has not
@@ -176,27 +189,49 @@ public class Billing(private val context: Context) {
         }
     }
 
-    /** Bridge the `PurchasesUpdatedListener` callback into the suspending flow. Null means cancelled. */
+    /** What `awaitPurchase` resolved to. */
+    private sealed interface AwaitedPurchase {
+        data class Got(val purchase: Purchase) : AwaitedPurchase
+        data object Cancelled : AwaitedPurchase
+        /** ITEM_ALREADY_OWNED, but the listener didn't hand back the purchase itself. */
+        data object AlreadyOwnedElsewhere : AwaitedPurchase
+    }
+
+    /** Bridge the `PurchasesUpdatedListener` callback into the suspending flow. */
     private suspend fun awaitPurchase(
         c: BillingClient,
         activity: Activity,
         flow: BillingFlowParams,
-    ): Purchase? = suspendCancellableCoroutine { cont ->
+    ): AwaitedPurchase = suspendCancellableCoroutine { cont ->
         pending = { purchases, result ->
             pending = null
             if (cont.isActive) {
                 when (result.responseCode) {
-                    BillingClient.BillingResponseCode.OK -> cont.resume(purchases?.firstOrNull())
-                    BillingClient.BillingResponseCode.USER_CANCELED -> cont.resume(null)
+                    BillingClient.BillingResponseCode.OK ->
+                        cont.resume(purchases?.firstOrNull()?.let { AwaitedPurchase.Got(it) } ?: AwaitedPurchase.Cancelled)
+                    BillingClient.BillingResponseCode.USER_CANCELED -> cont.resume(AwaitedPurchase.Cancelled)
                     // Already owned is a success from the user's point of view — they paid before, on
                     // this device or another. Treating it as an error would make a reinstall look like
-                    // a broken purchase.
-                    BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> cont.resume(purchases?.firstOrNull())
+                    // a broken purchase. Play does not always hand the purchase back here (it commonly
+                    // doesn't when the flow never actually ran), so fall back to a lookup rather than
+                    // treating a missing record as a cancellation.
+                    BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED ->
+                        cont.resume(purchases?.firstOrNull()?.let { AwaitedPurchase.Got(it) } ?: AwaitedPurchase.AlreadyOwnedElsewhere)
                     else -> cont.cancel(IllegalStateException("Play Billing: ${result.debugMessage}"))
                 }
             }
         }
         c.launchBillingFlow(activity, flow)
         cont.invokeOnCancellation { pending = null }
+    }
+
+    /** Look up an existing owned purchase of [productId] via `queryPurchasesAsync`, Play's documented
+     *  remediation for `ITEM_ALREADY_OWNED` when the billing flow itself didn't return the purchase. */
+    private suspend fun queryOwnedPurchase(c: BillingClient, productId: String): Purchase? {
+        val result = c.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
+        )
+        if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) return null
+        return result.purchasesList.firstOrNull { productId in it.products }
     }
 }
