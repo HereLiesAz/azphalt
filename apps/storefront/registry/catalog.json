@@ -11,7 +11,18 @@
       "ref": "(local)",
       "integrity": "sha256-T7djN/vXG0/4YEFLeMjJpmaALBvkqFZVES0Jp+bv0NY=",
       "file": "com.azphalt.example.hello-lut-1.0.0.azp",
-      "bytes": 976
+      "bytes": 1270
+    },
+    {
+      "id": "com.hereliesaz.aive.node-creature-rig-pipeline",
+      "version": "1.0.0",
+      "name": "Node Creature Rig Pipeline",
+      "kind": "workflow",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-5vY+Z/Pjeghtv4Hf2cDF48bKt1NqR1pFjYQmiKvOGUI=",
+      "file": "com.hereliesaz.aive.node-creature-rig-pipeline-1.0.0.azp",
+      "bytes": 16768
     },
     {
       "id": "com.hereliesaz.azphalt.3d-protrusion",
@@ -19,10 +30,10 @@
       "name": "3D Protrusion",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-3d-protrusion",
-      "ref": "fe41bb006bb3017f762c50adb1e5d6637129c772",
+      "ref": "f92d25474b8726ace7f34ec59d5ec3bda229447d",
       "integrity": "sha256-DIR24Z5iOngdaERffo3BiW+WrlQBmN+UQJAKCHLTtwA=",
       "file": "com.hereliesaz.azphalt.3d-protrusion-1.0.0.azp",
-      "bytes": 1174
+      "bytes": 1472
     },
     {
       "id": "com.hereliesaz.azphalt.3d-word-flip",
@@ -30,10 +41,10 @@
       "name": "3D Word Flip",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-3d-word-flip",
-      "ref": "47f167971bc2798305a48dcb22dd97635b8f6638",
+      "ref": "5b8b06cc8c21fcd3321aa2475ae0a2ecc25aea54",
       "integrity": "sha256-ju7HAegzcMJqXc1CcYR3MhVVMVu7FCbRqtIw0LwBVOk=",
       "file": "com.hereliesaz.azphalt.3d-word-flip-1.2.0.azp",
-      "bytes": 1114
+      "bytes": 1411
     },
     {
       "id": "com.hereliesaz.azphalt.action-glitch",
@@ -41,10 +52,10 @@
       "name": "Action Glitch",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-action-glitch",
-      "ref": "ef7e5162f655eaa0dcc29c6c8d56cc66c2a9b27f",
+      "ref": "c33af40694a3a1fbc4a3ca9fcf9e6a1e65185436",
       "integrity": "sha256-JIXSc89Mex7dls1v+NbBfzkBP7eVUFsp4RNVxOY+dxg=",
       "file": "com.hereliesaz.azphalt.action-glitch-2.0.0.azp",
-      "bytes": 1150
+      "bytes": 1446
     },
     {
       "id": "com.hereliesaz.azphalt.active-camouflage",
@@ -52,10 +63,10 @@
       "name": "Active Camouflage",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-active-camouflage",
-      "ref": "f3ca40b734f33db4e6d2169fb55c136e67694f0e",
+      "ref": "526c2a73bd40aed40350cc8214cf610a6c371bba",
       "integrity": "sha256-t6v6UB1WaczVmn+ikkhdPYLsW0sEyc1XQyfhmkwB7aI=",
       "file": "com.hereliesaz.azphalt.active-camouflage-1.0.0.azp",
-      "bytes": 1115
+      "bytes": 1412
     },
     {
       "id": "com.hereliesaz.azphalt.anamorphic-flare",
@@ -63,10 +74,10 @@
       "name": "Anamorphic Flare",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-anamorphic-flare",
-      "ref": "d5001b411513abba401993c0006cfd068e256e14",
+      "ref": "09dd3bdb3b939137245f667690f45b1bb46d1c4f",
       "integrity": "sha256-q+B5dARiFhgb5c6s1HsqXYvQAK7QVIISJnR8wF7nhBA=",
       "file": "com.hereliesaz.azphalt.anamorphic-flare-1.0.0.azp",
-      "bytes": 1991
+      "bytes": 2287
     },
     {
       "id": "com.hereliesaz.azphalt.anger-jiggle",
@@ -74,10 +85,10 @@
       "name": "Anger Jiggle",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-anger-jiggle",
-      "ref": "0274f96e60af9e67be818d38b9a1d4386025e3d4",
+      "ref": "a9518f195cf621ddcdb50b05221116508ba1c8b7",
       "integrity": "sha256-VaWEtEjgoCb7iBM/En457ftF8SHgVgGGTF4wgHCkjJk=",
       "file": "com.hereliesaz.azphalt.anger-jiggle-2.0.0.azp",
-      "bytes": 1098
+      "bytes": 1393
     },
     {
       "id": "com.hereliesaz.azphalt.atmospheric-fog",
@@ -85,10 +96,10 @@
       "name": "Atmospheric Fog Submersion",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-atmospheric-fog",
-      "ref": "06ddac87842b50225ed95c16032d062664219627",
+      "ref": "03fe707584f23ed30a7a0c4fdb1082377586f078",
       "integrity": "sha256-EDz138+Bj8u2rWfuvXaoRApvrIRjYOBl8+iz+3xIgbs=",
       "file": "com.hereliesaz.azphalt.atmospheric-fog-1.0.0.azp",
-      "bytes": 1088
+      "bytes": 1382
     },
     {
       "id": "com.hereliesaz.azphalt.audio-skew",
@@ -96,10 +107,10 @@
       "name": "Audio Skew",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-audio-skew",
-      "ref": "1de08a227a628e94fef9d8ee33198b2583537166",
+      "ref": "362cb5aa99c388da851297d5c0d1edbfb8b0a960",
       "integrity": "sha256-wNIj9GnOJhuCTfT61CqSGR8BWmcwM8GQnJAkhhEgP+U=",
       "file": "com.hereliesaz.azphalt.audio-skew-2.0.0.azp",
-      "bytes": 1097
+      "bytes": 1392
     },
     {
       "id": "com.hereliesaz.azphalt.auto-reframe",
@@ -107,10 +118,10 @@
       "name": "Smart Auto-Reframe",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-auto-reframe",
-      "ref": "e50491f017fd5320b90624e8f3b44182bc232ee9",
+      "ref": "5537d8d075ef35c4ad139e390cf7ccffd09a0546",
       "integrity": "sha256-Gf2EXka1gLcnj61G5Jj8eTqkmX5thjsBQ5WHpmRrF+A=",
       "file": "com.hereliesaz.azphalt.auto-reframe-1.0.0.azp",
-      "bytes": 1056
+      "bytes": 1352
     },
     {
       "id": "com.hereliesaz.azphalt.auto-stagger",
@@ -118,10 +129,10 @@
       "name": "Auto-Stagger",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-auto-stagger",
-      "ref": "5c565cbbf015fa479eaf8a9ec37f1918395081d9",
+      "ref": "afee93fd01739261a9eefd638b7dbb95c1fba3d9",
       "integrity": "sha256-xtnSe37bwK7fNwqP1GPwFkHWp9uAGcId8kbcnAdwx30=",
       "file": "com.hereliesaz.azphalt.auto-stagger-2.0.0.azp",
-      "bytes": 1105
+      "bytes": 1400
     },
     {
       "id": "com.hereliesaz.azphalt.baby-bloom",
@@ -129,10 +140,10 @@
       "name": "Baby Bloom",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-baby-bloom",
-      "ref": "ff8e14c396427a3367580a31db1696cbddf67c0a",
+      "ref": "a23fc41a6cd7f984cc1a024ffce607e229be966e",
       "integrity": "sha256-IUD+amNgbum2aLLDEtXp3lg4y0h3byTOb2x49tYqNzw=",
       "file": "com.hereliesaz.azphalt.baby-bloom-1.0.0.azp",
-      "bytes": 1961
+      "bytes": 2258
     },
     {
       "id": "com.hereliesaz.azphalt.beast-shake",
@@ -140,10 +151,10 @@
       "name": "Beast Shake",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-beast-shake",
-      "ref": "aceecbc4ffad7a51d88e261c0b432bb0ea2f8538",
+      "ref": "df090e6c6e0463161957f3fb16de9ac1a2ee0a4b",
       "integrity": "sha256-YtitW5E8Izt7/YUL6I8K0YJXYPzkRDcA4Cko1DuKrNQ=",
       "file": "com.hereliesaz.azphalt.beast-shake-1.2.0.azp",
-      "bytes": 1224
+      "bytes": 1519
     },
     {
       "id": "com.hereliesaz.azphalt.beat-pulse",
@@ -151,10 +162,10 @@
       "name": "Beat Pulse",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-beat-pulse",
-      "ref": "2035b79a48a9fbe67c345e3e34d0fe5867c7d4a0",
+      "ref": "7853d53421b726285481cdec9a93441aa678f42c",
       "integrity": "sha256-y8ixWT7u5TWlM1+xv/meDTJM6xUw15iGLWD0yTrmd1M=",
       "file": "com.hereliesaz.azphalt.beat-pulse-1.0.0.azp",
-      "bytes": 2067
+      "bytes": 2363
     },
     {
       "id": "com.hereliesaz.azphalt.bevel-emboss",
@@ -162,10 +173,10 @@
       "name": "Bevel & Emboss Lighting",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-bevel-emboss",
-      "ref": "9223da74973b1313ee09d23c321ba6381caefcfa",
+      "ref": "e74c4e3b3bd9ec98c859dddc90404c3f6f3544e8",
       "integrity": "sha256-OcjWfyDqxMQntTtJ/anOyZHpSdDoSmEDDVDzm38vbU8=",
       "file": "com.hereliesaz.azphalt.bevel-emboss-1.0.0.azp",
-      "bytes": 1144
+      "bytes": 1439
     },
     {
       "id": "com.hereliesaz.azphalt.blur-reveal",
@@ -173,10 +184,10 @@
       "name": "Blur Reveal",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-blur-reveal",
-      "ref": "8c99ccbf28c056c3c01cc31ba8fa191856618693",
+      "ref": "4cf838b8a97f42c9d526ba142ea7138e462e56e6",
       "integrity": "sha256-CRNLh/8R9rRUbkz4NnnRAbMuulWRHbdK4j2ar62QNeg=",
       "file": "com.hereliesaz.azphalt.blur-reveal-1.2.0.azp",
-      "bytes": 1075
+      "bytes": 1372
     },
     {
       "id": "com.hereliesaz.azphalt.bounce",
@@ -184,10 +195,10 @@
       "name": "Bounce",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-bounce",
-      "ref": "161b14bff065558766e5ae357c9dbafdbcc10c0b",
+      "ref": "3ede59db627bc1370eb8da5f9e9f0f94da56a5be",
       "integrity": "sha256-fQ/XYtvSFDrL8lkrEKd4vXclhoydK2PIJYIRunv15rM=",
       "file": "com.hereliesaz.azphalt.bounce-1.2.0.azp",
-      "bytes": 1124
+      "bytes": 1418
     },
     {
       "id": "com.hereliesaz.azphalt.breathe-scale",
@@ -195,10 +206,10 @@
       "name": "Breathe Scale",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-breathe-scale",
-      "ref": "06c099ef57a4a75804d744e059be51a5ffe9391c",
+      "ref": "653b73bbc333e5e9c950c636232988f851ce9718",
       "integrity": "sha256-WgvQj5zdwrJCxxJy9GkxfTqi1LxHaUS3KmDZpGa6V6I=",
       "file": "com.hereliesaz.azphalt.breathe-scale-2.0.0.azp",
-      "bytes": 1093
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-angular-shader",
@@ -206,10 +217,10 @@
       "name": "Angular Shader",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
+      "ref": "207335bf69bb8146113b61869349f2a6804953c1",
       "integrity": "sha256-a7qWA0S8cLG7c2U10UN4L1q/kwRTzqeu4S+nOEpaDyw=",
       "file": "com.hereliesaz.azphalt.brush-acrylic-angular-shader-1.0.0.azp",
-      "bytes": 16571
+      "bytes": 16869
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-flat",
@@ -217,10 +228,10 @@
       "name": "Flat",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
+      "ref": "207335bf69bb8146113b61869349f2a6804953c1",
       "integrity": "sha256-JQCcy8Dr4ROuw+KPU39cv77Kcq6C2pM2oy3SmNvWgrk=",
       "file": "com.hereliesaz.azphalt.brush-acrylic-flat-1.0.0.azp",
-      "bytes": 10963
+      "bytes": 11259
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-round",
@@ -228,10 +239,10 @@
       "name": "Round",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
+      "ref": "207335bf69bb8146113b61869349f2a6804953c1",
       "integrity": "sha256-FXpEkKMRiZ6wkrLx34nYZHSxX3O8ShBXSEMcMk7jisw=",
       "file": "com.hereliesaz.azphalt.brush-acrylic-round-1.0.0.azp",
-      "bytes": 1772
+      "bytes": 2067
     },
     {
       "id": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab",
@@ -239,10 +250,10 @@
       "name": "Sponge Dab",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "30fb1839db5e946fa4f8ca31c68e2057ec5e4815",
+      "ref": "207335bf69bb8146113b61869349f2a6804953c1",
       "integrity": "sha256-0hA6qJUTtPYZzWEaUnIr9tdXM+N4Px6QEhKergoAwHk=",
       "file": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab-1.0.0.azp",
-      "bytes": 161745
+      "bytes": 162039
     },
     {
       "id": "com.hereliesaz.azphalt.brush-china-marker",
@@ -250,10 +261,10 @@
       "name": "China Marker",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "f87c1888a0fa434f08d3e140a518e276a46c8a99",
       "integrity": "sha256-fVloee4PcTg4j6iA1T4szQkPXmF9u1CcGz7dSYlfH70=",
       "file": "com.hereliesaz.azphalt.brush-china-marker-1.0.0.azp",
-      "bytes": 4688
+      "bytes": 4983
     },
     {
       "id": "com.hereliesaz.azphalt.brush-chisel-marker",
@@ -261,10 +272,10 @@
       "name": "Chisel Marker",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "f87c1888a0fa434f08d3e140a518e276a46c8a99",
       "integrity": "sha256-J01zE3apL3uNGeNR4Pa4uVASU2EDJLYcw1E13vQhnHs=",
       "file": "com.hereliesaz.azphalt.brush-chisel-marker-1.0.0.azp",
-      "bytes": 6105
+      "bytes": 6402
     },
     {
       "id": "com.hereliesaz.azphalt.brush-conte-crayon",
@@ -272,10 +283,10 @@
       "name": "Conté Crayon",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
+      "ref": "a392632ce1a99ee569bf65f63142d4a6b3c585d5",
       "integrity": "sha256-XeUzsyccRwgQoOBGI//d8q8lik82Pm5S0ECVlG5meQo=",
       "file": "com.hereliesaz.azphalt.brush-conte-crayon-1.0.0.azp",
-      "bytes": 5347
+      "bytes": 5643
     },
     {
       "id": "com.hereliesaz.azphalt.brush-hard-chalk",
@@ -283,10 +294,10 @@
       "name": "Hard Chalk",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
+      "ref": "a392632ce1a99ee569bf65f63142d4a6b3c585d5",
       "integrity": "sha256-uE3EmUUCwk7uwRxCxpyBau9LAtlVK7coSz/+gQAwNeA=",
       "file": "com.hereliesaz.azphalt.brush-hard-chalk-1.0.0.azp",
-      "bytes": 50804
+      "bytes": 51099
     },
     {
       "id": "com.hereliesaz.azphalt.brush-ink-sumi",
@@ -294,10 +305,10 @@
       "name": "Sumi Brush",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "f87c1888a0fa434f08d3e140a518e276a46c8a99",
       "integrity": "sha256-+D+MZvzTAL/v6UwA2FK9PgjdVLIV49lHFMIP5xsULXU=",
       "file": "com.hereliesaz.azphalt.brush-ink-sumi-1.0.0.azp",
-      "bytes": 129158
+      "bytes": 129453
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush",
@@ -305,10 +316,10 @@
       "name": "Bristle Drybrush",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
+      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
       "integrity": "sha256-pAAN/4cWQ2GB8CZREkU8prtYIPGl9NqMoRK7hAshlaI=",
       "file": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush-1.0.0.azp",
-      "bytes": 6394
+      "bytes": 6691
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-fan-blade",
@@ -316,10 +327,10 @@
       "name": "Fan Blade",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
+      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
       "integrity": "sha256-pqjKQnludymv5T4lIz4EAT3cTF1NzuCERwQBlMDk7O4=",
       "file": "com.hereliesaz.azphalt.brush-oil-fan-blade-1.0.0.azp",
-      "bytes": 5489
+      "bytes": 5786
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-filbert",
@@ -327,10 +338,10 @@
       "name": "Filbert",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
+      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
       "integrity": "sha256-dw08H2J8Z1q1M9tE1Uv1pQrUhdPlKW4Y9hugqfQsKDc=",
       "file": "com.hereliesaz.azphalt.brush-oil-filbert-1.0.0.azp",
-      "bytes": 49252
+      "bytes": 49547
     },
     {
       "id": "com.hereliesaz.azphalt.brush-oil-palette-knife",
@@ -338,10 +349,10 @@
       "name": "Palette Knife",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "2b7f96789c2fb113338747c6c6a5cd153f75a2af",
+      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
       "integrity": "sha256-la1g5BOi2zFCUMCSDvyIjcqkukr77Z5/VPgVcknSGjI=",
       "file": "com.hereliesaz.azphalt.brush-oil-palette-knife-1.0.0.azp",
-      "bytes": 8113
+      "bytes": 8410
     },
     {
       "id": "com.hereliesaz.azphalt.brush-paint-pen",
@@ -349,10 +360,10 @@
       "name": "Paint Pen",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "f87c1888a0fa434f08d3e140a518e276a46c8a99",
       "integrity": "sha256-ZpIEcQhK3Yn/9GmGOe8aqaxINpu/o754R0isuFiNK8Y=",
       "file": "com.hereliesaz.azphalt.brush-paint-pen-1.0.0.azp",
-      "bytes": 6169
+      "bytes": 6463
     },
     {
       "id": "com.hereliesaz.azphalt.brush-paw-print",
@@ -360,10 +371,10 @@
       "name": "Paw Print",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "f87c1888a0fa434f08d3e140a518e276a46c8a99",
       "integrity": "sha256-Vl/i3IizxmTpY/yU2/g8jbCMlAKMebftMCnt5qz8br4=",
       "file": "com.hereliesaz.azphalt.brush-paw-print-1.0.0.azp",
-      "bytes": 3963
+      "bytes": 4258
     },
     {
       "id": "com.hereliesaz.azphalt.brush-pointed-triangle",
@@ -371,10 +382,10 @@
       "name": "Pointed Triangle",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "98832cd9135061bdd23fcb70f2b843ecb9ce4f9e",
+      "ref": "f87c1888a0fa434f08d3e140a518e276a46c8a99",
       "integrity": "sha256-pt8AIzcwvoa4SCL5Wy3otKxi/8to2rSs14AM4bj62Mg=",
       "file": "com.hereliesaz.azphalt.brush-pointed-triangle-1.0.0.azp",
-      "bytes": 3021
+      "bytes": 3317
     },
     {
       "id": "com.hereliesaz.azphalt.brush-smudge-stick",
@@ -382,10 +393,10 @@
       "name": "Smudge Stick",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
+      "ref": "a392632ce1a99ee569bf65f63142d4a6b3c585d5",
       "integrity": "sha256-Sa8Tmvm28IVg3E1IqUFf5akTomo4kxNFWDJ2j8r1YCE=",
       "file": "com.hereliesaz.azphalt.brush-smudge-stick-1.0.0.azp",
-      "bytes": 60358
+      "bytes": 60654
     },
     {
       "id": "com.hereliesaz.azphalt.brush-soft-charcoal",
@@ -393,10 +404,10 @@
       "name": "Soft Charcoal",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "11f079bbbf365b4ff25291c904cd9cb5b79cd4b8",
+      "ref": "a392632ce1a99ee569bf65f63142d4a6b3c585d5",
       "integrity": "sha256-jWycM9OXRpWd73s+0q9QQ9SNuwpX+nl+YnpI61ZHQEk=",
       "file": "com.hereliesaz.azphalt.brush-soft-charcoal-1.0.0.azp",
-      "bytes": 36862
+      "bytes": 37159
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-fade",
@@ -404,10 +415,10 @@
       "name": "Fade",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
+      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
       "integrity": "sha256-NsmSzgmu2EZiZTQWKTdcxLcyxEpRu4qjU7v27lZP4ko=",
       "file": "com.hereliesaz.azphalt.brush-spray-fade-1.0.0.azp",
-      "bytes": 5419
+      "bytes": 5714
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-fat-cap",
@@ -415,10 +426,10 @@
       "name": "Fat Cap",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
+      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
       "integrity": "sha256-D92JIWVNHRYwyd0c1X4cGhP2HmqzR4/8GZ0Fej9pL90=",
       "file": "com.hereliesaz.azphalt.brush-spray-fat-cap-1.0.0.azp",
-      "bytes": 2890
+      "bytes": 3188
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-halo",
@@ -426,10 +437,10 @@
       "name": "Halo",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
+      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
       "integrity": "sha256-JmOjkcbd7xXme8yt1/YUbkDpP5vsFuqkE3x9EUci4zM=",
       "file": "com.hereliesaz.azphalt.brush-spray-halo-1.0.0.azp",
-      "bytes": 27365
+      "bytes": 27660
     },
     {
       "id": "com.hereliesaz.azphalt.brush-spray-skinny-cap",
@@ -437,10 +448,10 @@
       "name": "Skinny Cap",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "0ed0000741034423851d2e4b2d6e8b33ff38f074",
+      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
       "integrity": "sha256-VTNwNhWlxVth2s+2g6h1Z2TNYQ4f4cWWptTfWo/zm4E=",
       "file": "com.hereliesaz.azphalt.brush-spray-skinny-cap-1.0.0.azp",
-      "bytes": 5503
+      "bytes": 5798
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed",
@@ -448,10 +459,10 @@
       "name": "Dry-Edge Bleed",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
+      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
       "integrity": "sha256-KeBm8lm9LcxiExH8FG4GcDFfbIHnd83yDM95z0pH8GU=",
       "file": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed-1.0.0.azp",
-      "bytes": 2132
+      "bytes": 2427
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-salt-texture",
@@ -459,10 +470,10 @@
       "name": "Salt Texture",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
+      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
       "integrity": "sha256-xgCHXRuPzYol78E3/uxTxf+GDvR48eS8n/wEj35Qm/w=",
       "file": "com.hereliesaz.azphalt.brush-watercolor-salt-texture-1.0.0.azp",
-      "bytes": 3362
+      "bytes": 3657
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-wash-flat",
@@ -470,10 +481,10 @@
       "name": "Wash Flat",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
+      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
       "integrity": "sha256-UbloGjccRY4t0KbJOJQQeGhoWqt2cHeFD8MOO9w1Gv8=",
       "file": "com.hereliesaz.azphalt.brush-watercolor-wash-flat-1.0.0.azp",
-      "bytes": 19831
+      "bytes": 20125
     },
     {
       "id": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet",
@@ -481,10 +492,10 @@
       "name": "Wet-on-Wet",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "f33d6451e7c9c484942234823b5633673bacf1e1",
+      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
       "integrity": "sha256-9RwUkJEE8MXrntx2t071sak4OD+0neIFIqutydTPxDI=",
       "file": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet-1.0.0.azp",
-      "bytes": 4700
+      "bytes": 4994
     },
     {
       "id": "com.hereliesaz.azphalt.camera-controller",
@@ -492,10 +503,10 @@
       "name": "Camera Controller",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-camera-controller",
-      "ref": "d4bf62a45039b412ffe4dcabb175d23f8c497f8a",
+      "ref": "07a3512f80fcb10af86a5ef17cfc3e68fc14edac",
       "integrity": "sha256-qzuVIKRbIW79wCLE6YGyzCDzxrQtds15/cj4gMjrGzw=",
       "file": "com.hereliesaz.azphalt.camera-controller-1.0.0.azp",
-      "bytes": 1160
+      "bytes": 1457
     },
     {
       "id": "com.hereliesaz.azphalt.character-stagger",
@@ -503,10 +514,10 @@
       "name": "Char Stagger",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-character-stagger",
-      "ref": "65af373bb28775cceecbcc0dc1ac2ed87a73418e",
+      "ref": "4ec0da4fe780f2faa1bcc620a002d230d825a4aa",
       "integrity": "sha256-FyA78I4IPULibrzcVSR4cZM6Se+6/DxTJLZDC1y6HRg=",
       "file": "com.hereliesaz.azphalt.character-stagger-1.2.0.azp",
-      "bytes": 1089
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.checkerboard",
@@ -514,10 +525,10 @@
       "name": "Checkerboard",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-checkerboard",
-      "ref": "2bc936d0dd748a5233d20e7cdc5223a7f2591a7a",
+      "ref": "c53be8a1a1457ce27a92e5e61e416e2e6680ba6a",
       "integrity": "sha256-K2wxBlOnRGB/W+30Voo9K5Xd4m/NxXC3Z6bV8vFV//8=",
       "file": "com.hereliesaz.azphalt.checkerboard-1.0.0.azp",
-      "bytes": 13975
+      "bytes": 14270
     },
     {
       "id": "com.hereliesaz.azphalt.chromatic-pulse",
@@ -525,10 +536,10 @@
       "name": "Chromatic Pulse",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-chromatic-pulse",
-      "ref": "563d3169afedc89872f3db347da1747daf140dae",
+      "ref": "df42334e36bd7232f33bb8b2f4af5316b32af14e",
       "integrity": "sha256-tU6dqqQ/WmXcTpS24VQ2Iuhw+CSDnBBkOY+hf/yRlVU=",
       "file": "com.hereliesaz.azphalt.chromatic-pulse-1.0.0.azp",
-      "bytes": 1900
+      "bytes": 2195
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-glow",
@@ -536,10 +547,10 @@
       "name": "Cinematic Glow",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-cinematic-glow",
-      "ref": "794347c0804c9e63f6e930b5d4657e6eba78794c",
+      "ref": "f6551dfe5e0054f5e1ca89d86e3ef0a3232e9076",
       "integrity": "sha256-l75d53HjUTDqodEnG6+5KavVEgbgKH5JOb8aW1C+6aU=",
       "file": "com.hereliesaz.azphalt.cinematic-glow-1.0.0.azp",
-      "bytes": 2118
+      "bytes": 2413
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-pan",
@@ -547,10 +558,10 @@
       "name": "Cinematic Pan",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-cinematic-pan",
-      "ref": "1fb5cdadd75e5323251496a04826140cc65584ff",
+      "ref": "e7988074dfc2bb04c1fae33b151604c279e1b273",
       "integrity": "sha256-yP5gjEIYyVxQddl//M+gp06tCTgHS5dX6gIOx9b5/ls=",
       "file": "com.hereliesaz.azphalt.cinematic-pan-1.2.0.azp",
-      "bytes": 1136
+      "bytes": 1431
     },
     {
       "id": "com.hereliesaz.azphalt.cinematic-rise",
@@ -558,10 +569,10 @@
       "name": "Cinematic Rise",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-cinematic-rise",
-      "ref": "8de7e94567072a984538ce1d37b7d58e06dce1ce",
+      "ref": "79401cf7d9a38488b6a16010694229e0d4dce38d",
       "integrity": "sha256-Z90Ezb8Sq9S7dW6yAvDFvAjzXNnVEb/EJitTKL/qyoI=",
       "file": "com.hereliesaz.azphalt.cinematic-rise-1.2.0.azp",
-      "bytes": 1175
+      "bytes": 1469
     },
     {
       "id": "com.hereliesaz.azphalt.collision-dodge",
@@ -569,10 +580,10 @@
       "name": "Collision Dodge",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-collision-dodge",
-      "ref": "6fd735d485c1317cba449b9b7b35afeef5dc39b4",
+      "ref": "1deff25088e35ddc417407de0e3d3a56af2ed663",
       "integrity": "sha256-VrewUTsNd8grgGZ9+/Lmt0ZPKV+C8+8eWCm0uBMieTE=",
       "file": "com.hereliesaz.azphalt.collision-dodge-1.0.0.azp",
-      "bytes": 1089
+      "bytes": 1387
     },
     {
       "id": "com.hereliesaz.azphalt.comic-edge",
@@ -580,10 +591,10 @@
       "name": "Comic Edge",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-comic-edge",
-      "ref": "aded60df524cc7dee96c95d85c1d25737f92c9bc",
+      "ref": "5e48f07affee4ee0c9296c8f1c46aeda148be771",
       "integrity": "sha256-0y3RNynVc9OkDbvO53JnCsEAYjExW6DA/BtbPXZKHxg=",
       "file": "com.hereliesaz.azphalt.comic-edge-1.0.0.azp",
-      "bytes": 1947
+      "bytes": 2242
     },
     {
       "id": "com.hereliesaz.azphalt.countdown",
@@ -591,10 +602,10 @@
       "name": "Film Countdown",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-countdown",
-      "ref": "7338c87ab5a15957a6f96d9e13d60f4a2f099c9e",
+      "ref": "fbe137ed7c74ff384ca9da98d84ce0499771c8ea",
       "integrity": "sha256-0Ru1/jIlk+EVT4cFPrvXA6VkcVrMEREJSHKPY0pTX50=",
       "file": "com.hereliesaz.azphalt.countdown-1.0.0.azp",
-      "bytes": 13984
+      "bytes": 14279
     },
     {
       "id": "com.hereliesaz.azphalt.cyber-glitch",
@@ -602,10 +613,10 @@
       "name": "Cyber Glitch",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-cyber-glitch",
-      "ref": "f14f3eae656334a8f534dd64b5e53d7ef613e950",
+      "ref": "b24e5b980be6fdb79c552cd2297501c811d9b5c3",
       "integrity": "sha256-z42VS6eRyY2w9lQAcsjI98DeGBOCDsYigtL9cehI3DE=",
       "file": "com.hereliesaz.azphalt.cyber-glitch-1.0.0.azp",
-      "bytes": 1166
+      "bytes": 1461
     },
     {
       "id": "com.hereliesaz.azphalt.depth-hide",
@@ -613,10 +624,10 @@
       "name": "Depth Hide",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-depth-hide",
-      "ref": "702ae4695e770c4b2d46d81f0d01c6e071c72da9",
+      "ref": "c4e6d0984402705fce3a756ce984965de1dd4eae",
       "integrity": "sha256-GHIu9IOvtQ2FWrv6drupO2r0zdSJojj6nLrnrCl5lQ4=",
       "file": "com.hereliesaz.azphalt.depth-hide-2.0.0.azp",
-      "bytes": 1094
+      "bytes": 1389
     },
     {
       "id": "com.hereliesaz.azphalt.dev-workflow-skills",
@@ -627,7 +638,7 @@
       "ref": "(local)",
       "integrity": "sha256-xlXkUK70jA9qcQFB1yt7nf+P0yEonJs1ngz1K9JrhiM=",
       "file": "com.hereliesaz.azphalt.dev-workflow-skills-1.0.0.azp",
-      "bytes": 13969
+      "bytes": 14264
     },
     {
       "id": "com.hereliesaz.azphalt.diarization-box",
@@ -635,10 +646,10 @@
       "name": "Diarization Box",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-diarization-box",
-      "ref": "10820a457bee894eeca034c8db3a5343e5455c53",
+      "ref": "1936929e8429add0b15ebfff03cf5c1921c07e9a",
       "integrity": "sha256-gAyWTdRxsT4iH/UcsRZ5nSVRYArE72k6TXdlcZOHdS4=",
       "file": "com.hereliesaz.azphalt.diarization-box-2.0.0.azp",
-      "bytes": 1084
+      "bytes": 1380
     },
     {
       "id": "com.hereliesaz.azphalt.diarization-flip",
@@ -646,10 +657,10 @@
       "name": "Diarization Flip",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-diarization-flip",
-      "ref": "f4f337c502a788ea4974199f9d7cb981c5e93971",
+      "ref": "d44cc82472693dfc1d1a1f93f344041008589f03",
       "integrity": "sha256-YwJ819Zw1I3ebjsg5G1koiK/Dl9xIq1pApTGA004jtY=",
       "file": "com.hereliesaz.azphalt.diarization-flip-2.0.0.azp",
-      "bytes": 1085
+      "bytes": 1380
     },
     {
       "id": "com.hereliesaz.azphalt.dreamy-glow",
@@ -657,10 +668,10 @@
       "name": "Dreamy Glow",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-dreamy-glow",
-      "ref": "de75ead8f601146609c9e3f2a37a3d363c9592a6",
+      "ref": "963b16fea254d5d628a8c9062b11ff7ea78e07dd",
       "integrity": "sha256-/Mp+5/28MdN/LUVXFPFoY7/YCd/9o1Vb9BqipbEMPik=",
       "file": "com.hereliesaz.azphalt.dreamy-glow-1.0.0.azp",
-      "bytes": 1956
+      "bytes": 2250
     },
     {
       "id": "com.hereliesaz.azphalt.duotone",
@@ -668,10 +679,10 @@
       "name": "Duotone",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-duotone",
-      "ref": "150071958a1f849985f549d96adee825ecb6f495",
+      "ref": "f447a6fbd688fe018994748779450d69cfccc3cb",
       "integrity": "sha256-gJY3Beb2EuaHOYqEIwG5TX2F9LnIGePLy05vuj9dmaY=",
       "file": "com.hereliesaz.azphalt.duotone-1.0.0.azp",
-      "bytes": 1864
+      "bytes": 2159
     },
     {
       "id": "com.hereliesaz.azphalt.elastic-drop",
@@ -679,10 +690,10 @@
       "name": "Elastic Drop",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-elastic-drop",
-      "ref": "020394a0c2b860405542b91348ec69ba2ab8e0c4",
+      "ref": "fdbad490f7a292059fd986c780a054e5a835e4af",
       "integrity": "sha256-QI8Skbu9RYHp3D6BZ3bWkv+BTIoTplK/Fgrzs9tD7Ds=",
       "file": "com.hereliesaz.azphalt.elastic-drop-1.2.0.azp",
-      "bytes": 1133
+      "bytes": 1431
     },
     {
       "id": "com.hereliesaz.azphalt.emphasis-stroke",
@@ -690,10 +701,10 @@
       "name": "Emphasis Stroke",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-emphasis-stroke",
-      "ref": "91659d0649741f13dcf7e08366ae053c3d66ce56",
+      "ref": "60a1bcb4510514b8d2f3708624b7e6a3a7602473",
       "integrity": "sha256-rIdsyKx4SSdmvhCbCKykGV1dW+65tIS2HGLso3JWB8g=",
       "file": "com.hereliesaz.azphalt.emphasis-stroke-2.0.0.azp",
-      "bytes": 1135
+      "bytes": 1432
     },
     {
       "id": "com.hereliesaz.azphalt.environment-bleed",
@@ -701,10 +712,10 @@
       "name": "Environment Color Bleed",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-environment-bleed",
-      "ref": "895bbd53b990517c53d727748be135feefb6fb8b",
+      "ref": "2de0e1cd783f9c2ca603a6b8e282cd452d5332c5",
       "integrity": "sha256-DNCJ6ltkvCB+fSQQxgBXST5+C/+mJkqP/UZfo402ZxM=",
       "file": "com.hereliesaz.azphalt.environment-bleed-1.0.0.azp",
-      "bytes": 1099
+      "bytes": 1395
     },
     {
       "id": "com.hereliesaz.azphalt.face-anchor",
@@ -712,10 +723,10 @@
       "name": "Face Anchor",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-face-anchor",
-      "ref": "22f127783719ff4a0dfd973a422ed64b3620fe7d",
+      "ref": "94dde077f3a5683b964c9c5f3dc6ff33a2864265",
       "integrity": "sha256-5MbkHzI+n8KmTZle1gpY1bQ5b4lrpWMX080C56bg0xs=",
       "file": "com.hereliesaz.azphalt.face-anchor-2.0.0.azp",
-      "bytes": 1031
+      "bytes": 1327
     },
     {
       "id": "com.hereliesaz.azphalt.face-scale",
@@ -723,10 +734,10 @@
       "name": "Face Scale",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-face-scale",
-      "ref": "72aebc15835a56d7e64793c20550e3bd3c180ec7",
+      "ref": "8eb78d7c36b2c4ef7a5c1467560c7256b8f63ece",
       "integrity": "sha256-tqKxtl+jytVnt79f6UCfXP5hn5K2cLMkGEM435hKpD8=",
       "file": "com.hereliesaz.azphalt.face-scale-2.0.0.azp",
-      "bytes": 1082
+      "bytes": 1380
     },
     {
       "id": "com.hereliesaz.azphalt.fade-up",
@@ -734,10 +745,10 @@
       "name": "Fade Up",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-fade-up",
-      "ref": "ef5a1f055e41ed88ce92b652f9e13eb0e3fab9aa",
+      "ref": "618ed6610a13810b0692db82cceb07d8eb5df4e1",
       "integrity": "sha256-E6x9ibVlK7hIyWItFD/iyaemky0lDxceMuptwv29iKQ=",
       "file": "com.hereliesaz.azphalt.fade-up-1.2.0.azp",
-      "bytes": 1094
+      "bytes": 1390
     },
     {
       "id": "com.hereliesaz.azphalt.fast-neural-style",
@@ -745,10 +756,10 @@
       "name": "Fast Neural Style",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-fast-neural-style",
-      "ref": "d5f4403f4b5c91713630040bb90fc08fe81d0c08",
+      "ref": "6372eebc91be923b50de543353f21a94663e9239",
       "integrity": "sha256-3XQ9R8qMnVHHIlq8LNJ3BJko9n+mrDdppPrQA337/LA=",
       "file": "com.hereliesaz.azphalt.fast-neural-style-1.0.0.azp",
-      "bytes": 1211
+      "bytes": 1507
     },
     {
       "id": "com.hereliesaz.azphalt.film-burn",
@@ -756,10 +767,10 @@
       "name": "Film Burn",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-film-burn",
-      "ref": "4ebe7b785da8084abf5e58f245aa7a1bc847e320",
+      "ref": "69033c69424167892af11b1a69ba102b101d44b3",
       "integrity": "sha256-yQp1jqlJ5EqKgeip1qxcBuxU/UvzKmTKG0WetmzTlLU=",
       "file": "com.hereliesaz.azphalt.film-burn-1.0.0.azp",
-      "bytes": 1955
+      "bytes": 2251
     },
     {
       "id": "com.hereliesaz.azphalt.film-damage",
@@ -767,10 +778,10 @@
       "name": "Vintage Film Damage",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-film-damage",
-      "ref": "8b1bf43b1d404c05e8d17ec05852717a44cc9b94",
+      "ref": "1c5dddd7a6d4ca6fa8401d3fb033714a982d9a80",
       "integrity": "sha256-ffqGzcIWTqSXzpmjMdSqJ/ZBmrGv1oDSFy3ykUXFMHw=",
       "file": "com.hereliesaz.azphalt.film-damage-1.0.0.azp",
-      "bytes": 1183
+      "bytes": 1481
     },
     {
       "id": "com.hereliesaz.azphalt.floor-reflection",
@@ -778,10 +789,10 @@
       "name": "Floor Reflection",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-floor-reflection",
-      "ref": "da57b0a2a947485e05e8249e552a80a67d514d90",
+      "ref": "7124a87173f1053df0f556bf0a8aa6cf91f8e12d",
       "integrity": "sha256-Q7VozO+cSi02SkKklBmiX0txRGSu50sfBqJRynmV4SU=",
       "file": "com.hereliesaz.azphalt.floor-reflection-1.0.0.azp",
-      "bytes": 1053
+      "bytes": 1350
     },
     {
       "id": "com.hereliesaz.azphalt.focus-match",
@@ -789,10 +800,10 @@
       "name": "Focus Match",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-focus-match",
-      "ref": "8b2d59530408c2631348d32a0bce3f2427c33028",
+      "ref": "8b0772570a92b8803f92ed712f1b6f254a166e04",
       "integrity": "sha256-nroxmGAHWgFDwfTMQ/pwdJVAyXl9KIQc2pzAM5ObCAA=",
       "file": "com.hereliesaz.azphalt.focus-match-2.0.0.azp",
-      "bytes": 1087
+      "bytes": 1382
     },
     {
       "id": "com.hereliesaz.azphalt.frost-glass",
@@ -800,10 +811,10 @@
       "name": "Frost Glass",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-frost-glass",
-      "ref": "5d38edef27db95d6a4c5f8bc0416dbf10827971b",
+      "ref": "59c57dae61f0d86bac0a90b7255a441dabda2161",
       "integrity": "sha256-sHQZbeQ68Y5+nxgOVi7YLZa+uHXJpjzVO5S1A84BILo=",
       "file": "com.hereliesaz.azphalt.frost-glass-1.0.0.azp",
-      "bytes": 2022
+      "bytes": 2320
     },
     {
       "id": "com.hereliesaz.azphalt.gaze-dodge",
@@ -811,10 +822,10 @@
       "name": "Eye-Contact Dodge",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-gaze-dodge",
-      "ref": "fef9c593f36b01285c504ff1be3765b8ea412ee0",
+      "ref": "2b0498f136deb1e027c951874cf9edbb3f7755b2",
       "integrity": "sha256-1hKwvKyp+oy4/0WbzJxACDSzv0jryFAMtPZXQ2W4kuQ=",
       "file": "com.hereliesaz.azphalt.gaze-dodge-2.0.0.azp",
-      "bytes": 1090
+      "bytes": 1384
     },
     {
       "id": "com.hereliesaz.azphalt.glass-refraction",
@@ -822,10 +833,10 @@
       "name": "Glass Refraction",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-glass-refraction",
-      "ref": "226af868f07ec334e6a8a224cb3f3e583beb0056",
+      "ref": "d88cdfaeac35aee56e4ebc503ab61d3dab886eee",
       "integrity": "sha256-eRKFgVhahc5W6cZkRkU0huq1ZEuls0QEhpWRqHALOwg=",
       "file": "com.hereliesaz.azphalt.glass-refraction-1.0.0.azp",
-      "bytes": 1050
+      "bytes": 1347
     },
     {
       "id": "com.hereliesaz.azphalt.glitch-decode",
@@ -833,10 +844,10 @@
       "name": "Glitch Decode",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-glitch-decode",
-      "ref": "86ea9c8f7f667907cfbee2e703199fba841b5665",
+      "ref": "8748402afbd3ea01ee726547be3feeb51f043405",
       "integrity": "sha256-b96i7JINrZMC3cBXM/hgZ3bzLvMu008jq5Cz1pOQOSM=",
       "file": "com.hereliesaz.azphalt.glitch-decode-1.2.0.azp",
-      "bytes": 1165
+      "bytes": 1460
     },
     {
       "id": "com.hereliesaz.azphalt.glitch-slice",
@@ -844,10 +855,10 @@
       "name": "Glitch Slice",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-glitch-slice",
-      "ref": "70a0427abe325851f0be61298b242b081ba2c1c1",
+      "ref": "fcaf9ddaaf5384dc3aee9ef47c3211ad33887c59",
       "integrity": "sha256-PlmFzmHYeMmkuSYevOWLMwgr7r5D4TYDNBBrFByENUc=",
       "file": "com.hereliesaz.azphalt.glitch-slice-1.0.0.azp",
-      "bytes": 2059
+      "bytes": 2353
     },
     {
       "id": "com.hereliesaz.azphalt.gradients",
@@ -855,10 +866,10 @@
       "name": "Gradient",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-gradients",
-      "ref": "2bee8f22076dbf77d90578b540bbfcffe013c3e4",
+      "ref": "59af2b9e2896f3ee9766be4cf188dcec6769a89d",
       "integrity": "sha256-SP4JnpvI8wHMHHkSwuhoaxCYQtiITU3Goa7Dsjxsvaw=",
       "file": "com.hereliesaz.azphalt.gradients-1.0.0.azp",
-      "bytes": 13928
+      "bytes": 14224
     },
     {
       "id": "com.hereliesaz.azphalt.graffitixr",
@@ -869,7 +880,7 @@
       "ref": "(local)",
       "integrity": "sha256-vij9TJDx6APe9AfBPNqsepWod5GJoJKvvRtb3KkIVdk=",
       "file": "com.hereliesaz.azphalt.graffitixr-1.0.0.azp",
-      "bytes": 900
+      "bytes": 1198
     },
     {
       "id": "com.hereliesaz.azphalt.graffux",
@@ -880,7 +891,7 @@
       "ref": "(local)",
       "integrity": "sha256-CUJNKS9zae3fidB7knzU85eprpuHJsh5YHNGT5ocN4M=",
       "file": "com.hereliesaz.azphalt.graffux-1.0.0.azp",
-      "bytes": 841
+      "bytes": 1136
     },
     {
       "id": "com.hereliesaz.azphalt.grid-guide",
@@ -888,10 +899,10 @@
       "name": "Grid Guide",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-grid-guide",
-      "ref": "8f285b55ffc051119f7a769afac9672dcd8b8a9f",
+      "ref": "7a969fe0d76cd7e89b9bfdde63f2505cf9794238",
       "integrity": "sha256-+tfG+3OZ4eFlnMwGAoyCOGYwaiGRIOZQlbhAZQCYeJw=",
       "file": "com.hereliesaz.azphalt.grid-guide-1.0.0.azp",
-      "bytes": 14907
+      "bytes": 15202
     },
     {
       "id": "com.hereliesaz.azphalt.gtcrn",
@@ -899,10 +910,10 @@
       "name": "GTCRN",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-gtcrn",
-      "ref": "2d614ce57121308b714575555660788b9d8c9bd7",
+      "ref": "5c9044fec6a31872a1b9150feca477154b58faa1",
       "integrity": "sha256-DFmw6DsQ8PQ02r2qnoBflAgp7ke2gh5aMkBgBjzI3eo=",
       "file": "com.hereliesaz.azphalt.gtcrn-1.0.0.azp",
-      "bytes": 1136
+      "bytes": 1430
     },
     {
       "id": "com.hereliesaz.azphalt.guillotine",
@@ -913,7 +924,7 @@
       "ref": "(local)",
       "integrity": "sha256-brujkmGtsq6jId6+r87NzVIJYzKaSoEEjySt1k2AJgg=",
       "file": "com.hereliesaz.azphalt.guillotine-1.0.0.azp",
-      "bytes": 852
+      "bytes": 1147
     },
     {
       "id": "com.hereliesaz.azphalt.halftone",
@@ -921,10 +932,10 @@
       "name": "Halftone",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-halftone",
-      "ref": "6db9fea56adf61f11f7f499659e23f0a874421b2",
+      "ref": "893d96dc4d0c24dd7579dac93940a24b8989461b",
       "integrity": "sha256-ihY4ZEeUd8Zb0ihUXp/zoqPeuULyPx/agIc5SMpn3/Y=",
       "file": "com.hereliesaz.azphalt.halftone-1.0.0.azp",
-      "bytes": 15180
+      "bytes": 15479
     },
     {
       "id": "com.hereliesaz.azphalt.hop-in",
@@ -932,10 +943,10 @@
       "name": "Hop In (Squash & Stretch)",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-hop-in",
-      "ref": "409c489ed13363cf935ea359b2655f796379d520",
+      "ref": "ade638f50650d79068307c640e0c4afa6ac6f0a7",
       "integrity": "sha256-/tHvmt6771FCTHLqf/UTo+1GOvSyKSG72q9atnvKEFY=",
       "file": "com.hereliesaz.azphalt.hop-in-1.2.0.azp",
-      "bytes": 1235
+      "bytes": 1532
     },
     {
       "id": "com.hereliesaz.azphalt.hormozi-pop",
@@ -943,10 +954,10 @@
       "name": "Hormozi Pop",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-hormozi-pop",
-      "ref": "72eb63eb66c79c077cc29e52aa6cc0998bc63267",
+      "ref": "39ef3d6b29b4f04f6c2d33a14aac7656bee9c69d",
       "integrity": "sha256-2UoapPaQ2qXii+ySzhylJFJUdZaH0Vt4K6AHR8cbqrU=",
       "file": "com.hereliesaz.azphalt.hormozi-pop-1.2.0.azp",
-      "bytes": 1218
+      "bytes": 1514
     },
     {
       "id": "com.hereliesaz.azphalt.isolate-glow",
@@ -954,10 +965,10 @@
       "name": "Subject Isolate & Glow",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-isolate-glow",
-      "ref": "eb74ded2412a69573f015d0faf55fae2bcbf8ff0",
+      "ref": "5d1c637a208c18e8ab537c9b2bf43768b1b7524e",
       "integrity": "sha256-4ryILEvQUj/ETDJV4Ehiz5bhbfeOcULAm8JbMwfr/6o=",
       "file": "com.hereliesaz.azphalt.isolate-glow-1.0.0.azp",
-      "bytes": 1104
+      "bytes": 1399
     },
     {
       "id": "com.hereliesaz.azphalt.joy-pop",
@@ -965,10 +976,10 @@
       "name": "Joy Pop",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-joy-pop",
-      "ref": "c842af9f9ca0ae06a659bc6e593052d2d41b3535",
+      "ref": "9163364ea079ba9482529d0007306f39a6b786c2",
       "integrity": "sha256-Ft6DkLLkXtrAqUwK2l/FAD2VTOZOckw1ISS+SgSw+/0=",
       "file": "com.hereliesaz.azphalt.joy-pop-2.0.0.azp",
-      "bytes": 1098
+      "bytes": 1396
     },
     {
       "id": "com.hereliesaz.azphalt.kaleidoscope-spin",
@@ -976,10 +987,10 @@
       "name": "Kaleidoscope Spin",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-kaleidoscope-spin",
-      "ref": "89d0b5303ecfc8e71152ac48a0624a3ea5fa9788",
+      "ref": "19b4614ebae3b8db2dc4a69edb512be6234246c0",
       "integrity": "sha256-wlXR8RbHmC0w8i/pGDB9Rh9FTJLRotD5BMO9PsQr6ZA=",
       "file": "com.hereliesaz.azphalt.kaleidoscope-spin-1.0.0.azp",
-      "bytes": 1811
+      "bytes": 2107
     },
     {
       "id": "com.hereliesaz.azphalt.karaoke-sweep",
@@ -987,10 +998,10 @@
       "name": "Karaoke Sweep",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-karaoke-sweep",
-      "ref": "c5923c447b73b4b35fdf7b799f041aaf28c44ddd",
+      "ref": "b4ee29b3b53f0897a53198ad597de0f930960996",
       "integrity": "sha256-rGa8OVFkUNg+hOm5N2xyzddfwq0V1I2WzTzTGMrfExA=",
       "file": "com.hereliesaz.azphalt.karaoke-sweep-1.2.0.azp",
-      "bytes": 1166
+      "bytes": 1461
     },
     {
       "id": "com.hereliesaz.azphalt.lama",
@@ -998,10 +1009,10 @@
       "name": "LaMa",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-lama",
-      "ref": "77700485706cab5d98b0801387e0a30ae7c3adb4",
+      "ref": "7b5f5c41957b46cc2eda4bcc40ab1268e48f5d5f",
       "integrity": "sha256-7g7Vqb/EtsafFc1mCjXAo5DoS/azTv4s6nsDhxMsV9U=",
       "file": "com.hereliesaz.azphalt.lama-1.0.0.azp",
-      "bytes": 1118
+      "bytes": 1415
     },
     {
       "id": "com.hereliesaz.azphalt.lensflare",
@@ -1009,10 +1020,10 @@
       "name": "Lens Flare",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-lensflare",
-      "ref": "e4c2fc1e55b9a81dd8f88b5c4ef44e2dba45c466",
+      "ref": "e136c863ec319c9c8f24b32d9ce07235d76ec54c",
       "integrity": "sha256-Krbw3fFyx9gdv3TSrGwNe9GCcA2+ebQrujRpqqEm+uQ=",
       "file": "com.hereliesaz.azphalt.lensflare-1.0.0.azp",
-      "bytes": 14003
+      "bytes": 14298
     },
     {
       "id": "com.hereliesaz.azphalt.light-leak-sweep",
@@ -1020,10 +1031,10 @@
       "name": "Light Leak Sweep",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-light-leak-sweep",
-      "ref": "0028cb810b034b81bdce84ca2dcba49e45270876",
+      "ref": "da00e6e79a6ac6acb2f790a431a6e8b82cfcfe1c",
       "integrity": "sha256-SLaZJYjevxMu7oFdhYn8bZKxWUT32bpxIxIXCBfmekU=",
       "file": "com.hereliesaz.azphalt.light-leak-sweep-1.0.0.azp",
-      "bytes": 1873
+      "bytes": 2168
     },
     {
       "id": "com.hereliesaz.azphalt.liquid-chrome",
@@ -1031,10 +1042,10 @@
       "name": "Liquid Chrome",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-liquid-chrome",
-      "ref": "988fff42ea9fc760b738aefff377364b7cf748c0",
+      "ref": "78f53178b45b5134725f0aa84f168aff82cd761c",
       "integrity": "sha256-e7OzesYLsprlWozCWr02Z+OxZPfy4j/lZXJP5O7FfVU=",
       "file": "com.hereliesaz.azphalt.liquid-chrome-1.0.0.azp",
-      "bytes": 1919
+      "bytes": 2215
     },
     {
       "id": "com.hereliesaz.azphalt.loudness-color",
@@ -1042,10 +1053,10 @@
       "name": "Loudness Color",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-loudness-color",
-      "ref": "c247ca3206bcdab371828a20fc171077f75d67bb",
+      "ref": "3168b0d0b6212f56f2f3493ce3e5bc98f454fb06",
       "integrity": "sha256-CEu95Xs/CQJt31iqp7EwAHyXpx5z4GhScpDc7cnzkzc=",
       "file": "com.hereliesaz.azphalt.loudness-color-2.0.0.azp",
-      "bytes": 1081
+      "bytes": 1378
     },
     {
       "id": "com.hereliesaz.azphalt.mcpserved",
@@ -1056,7 +1067,7 @@
       "ref": "(local)",
       "integrity": "sha256-VFTwYL2UEJCYPc1SjvgMiyRvdmTxIcxvWLQqLXOqjg0=",
       "file": "com.hereliesaz.azphalt.mcpserved-1.0.0.azp",
-      "bytes": 842
+      "bytes": 1137
     },
     {
       "id": "com.hereliesaz.azphalt.midas",
@@ -1064,10 +1075,10 @@
       "name": "MiDaS",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-midas",
-      "ref": "f35e5a067655940000ba6c8574bd23e774c4cec5",
+      "ref": "4e4c839958db1b043652e9d7a6426912dbfe8b61",
       "integrity": "sha256-9PKLneDu67QOn60I+nybMRGRSRp3U4NE3+mXoyCCKPs=",
       "file": "com.hereliesaz.azphalt.midas-1.0.0.azp",
-      "bytes": 1090
+      "bytes": 1384
     },
     {
       "id": "com.hereliesaz.azphalt.mirnet",
@@ -1075,10 +1086,10 @@
       "name": "MIRNet",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-mirnet",
-      "ref": "e2829b97457b750826184e4187ef40af10594ea6",
+      "ref": "2d10dc326ab5d4bafb2f123f9596a3f1da6d7db9",
       "integrity": "sha256-sePePy840JEtnbxoFnXMjh14UhsPxCqSXs1/j43qyLQ=",
       "file": "com.hereliesaz.azphalt.mirnet-1.0.0.azp",
-      "bytes": 1136
+      "bytes": 1432
     },
     {
       "id": "com.hereliesaz.azphalt.mobilefacenet",
@@ -1086,10 +1097,10 @@
       "name": "MobileFaceNet",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-mobilefacenet",
-      "ref": "7d181b399d3ddec26f87014cefa9f7e55bbf924d",
+      "ref": "3de45a813bcf6b57f95e42cb390b71f36c9ff273",
       "integrity": "sha256-RDcXH5UF4YQF8FFv46H58LSqdPca3V/K1pdgFaisRBw=",
       "file": "com.hereliesaz.azphalt.mobilefacenet-1.0.0.azp",
-      "bytes": 1146
+      "bytes": 1440
     },
     {
       "id": "com.hereliesaz.azphalt.mobilenet",
@@ -1097,10 +1108,10 @@
       "name": "MobileNetV3",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-mobilenet",
-      "ref": "4e998139340fa9a6c9067c073638706e70b8a4d1",
+      "ref": "37a9ed10f2442d6e8fbeaa6bd85bf3642e3525f2",
       "integrity": "sha256-Zq/RqKV5p31y729GD+GKQZvamq6Od9WYOMMrszkm9is=",
       "file": "com.hereliesaz.azphalt.mobilenet-1.0.0.azp",
-      "bytes": 1253
+      "bytes": 1548
     },
     {
       "id": "com.hereliesaz.azphalt.moondream",
@@ -1108,10 +1119,10 @@
       "name": "Moondream 2",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-moondream",
-      "ref": "49466d6ea12a82ae685fe204c64b107ab50a9fdf",
+      "ref": "758b0c8f69ad4b1013504060dcfe984007282110",
       "integrity": "sha256-stzzIiwrapd/IyoEU20zIcu7PDH25qPnucn1S6s6Vro=",
       "file": "com.hereliesaz.azphalt.moondream-1.0.0.azp",
-      "bytes": 1160
+      "bytes": 1456
     },
     {
       "id": "com.hereliesaz.azphalt.motion-blur",
@@ -1119,10 +1130,10 @@
       "name": "Cinematic Motion Blur",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-motion-blur",
-      "ref": "3198bb7d0dcf468021712bc8c29d2b37d4723626",
+      "ref": "39e19c0eca739a574ec9c395729bfcb74673b53f",
       "integrity": "sha256-Yeqo7/6J0oDaVI9v+4hqe5Xve4dCDnX22cjprIju8mM=",
       "file": "com.hereliesaz.azphalt.motion-blur-1.0.0.azp",
-      "bytes": 1068
+      "bytes": 1365
     },
     {
       "id": "com.hereliesaz.azphalt.motion-tracking",
@@ -1130,10 +1141,10 @@
       "name": "Motion Tracker",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-motion-tracking",
-      "ref": "b01ba0fe3764c048678f2cf165a11f2c951e0a04",
+      "ref": "a1161409e9d64a6968a98e10a236ae75710aa911",
       "integrity": "sha256-0OzBqVMCO0ZaxK4UsjLVwyO6V+oRcH0gAD8/w8tUmJE=",
       "file": "com.hereliesaz.azphalt.motion-tracking-1.0.0.azp",
-      "bytes": 14033
+      "bytes": 14329
     },
     {
       "id": "com.hereliesaz.azphalt.motion-wind-warp",
@@ -1141,10 +1152,10 @@
       "name": "Motion Wind Warp",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-motion-wind-warp",
-      "ref": "3849e6f05c47bf647ed0cfc10c6843e4d30a74c5",
+      "ref": "975a334074f2ce70e0f7e47b997a04a1ab03432d",
       "integrity": "sha256-dh2cA9Uo5vQyxuUxCd3/BLqd5Z+cmjxLe4cCl94B/Rw=",
       "file": "com.hereliesaz.azphalt.motion-wind-warp-1.0.0.azp",
-      "bytes": 1095
+      "bytes": 1391
     },
     {
       "id": "com.hereliesaz.azphalt.neon-pulse",
@@ -1152,10 +1163,10 @@
       "name": "Neon Pulse",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-neon-pulse",
-      "ref": "1ebdbe72397922bb43ec56985e188265e18750d3",
+      "ref": "6e212771735119e8742585b58ab98048f6fed28f",
       "integrity": "sha256-S422h8mqUBQpGl4xvIBYgaZkGvAd7OXjU4S6OuBouhg=",
       "file": "com.hereliesaz.azphalt.neon-pulse-1.2.0.azp",
-      "bytes": 1191
+      "bytes": 1486
     },
     {
       "id": "com.hereliesaz.azphalt.neon-rim-pulse",
@@ -1163,10 +1174,10 @@
       "name": "Neon Rim Pulse",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-neon-rim-pulse",
-      "ref": "d7137c538ade090629b58c3a695a7e510046e98c",
+      "ref": "1923503595e1669482bad561551f9b6ec6e2930f",
       "integrity": "sha256-4u+W+cg1yfPoeKEPp8Ac8d8KhSYplOGUO/TvDFZ3BDc=",
       "file": "com.hereliesaz.azphalt.neon-rim-pulse-1.0.0.azp",
-      "bytes": 1970
+      "bytes": 2267
     },
     {
       "id": "com.hereliesaz.azphalt.noise",
@@ -1174,10 +1185,10 @@
       "name": "Digital Noise",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-noise",
-      "ref": "5011a697348b2e8a011a23cc528ab462da7af332",
+      "ref": "d5121405e00d37ef649e1bae74dfdcab669ad85c",
       "integrity": "sha256-1lmLNWVXEn38DybE/8w86S4KbyN4mFj9/TrFWhNcn58=",
       "file": "com.hereliesaz.azphalt.noise-1.0.0.azp",
-      "bytes": 13960
+      "bytes": 14256
     },
     {
       "id": "com.hereliesaz.azphalt.object-tracking",
@@ -1185,10 +1196,10 @@
       "name": "Motion Tracking - Object Follow",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-object-tracking",
-      "ref": "4395f69804a04f9b0d27da874d0aaca53e1c89e8",
+      "ref": "c6b418026740615321e0d863163b96f77963681c",
       "integrity": "sha256-Q80keWJBLIjW/tJYRmNfHKxsZLF4KZTQermiuZ86SAA=",
       "file": "com.hereliesaz.azphalt.object-tracking-1.0.0.azp",
-      "bytes": 1070
+      "bytes": 1365
     },
     {
       "id": "com.hereliesaz.azphalt.optical-timeramp",
@@ -1196,10 +1207,10 @@
       "name": "Optical Flow Time Ramp",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-.optical-timeramp",
-      "ref": "f043bea3194d116c379489be3d306148a3558da8",
+      "ref": "07bcc3db2948795031aade9c8e76596ac7eea36f",
       "integrity": "sha256-JDYASlYPK0BBkoTaKEF6KanQLoZ0m0j/XlWswkll7E4=",
       "file": "com.hereliesaz.azphalt.optical-timeramp-1.0.0.azp",
-      "bytes": 1097
+      "bytes": 1391
     },
     {
       "id": "com.hereliesaz.azphalt.pack.3d-environment",
@@ -1210,7 +1221,7 @@
       "ref": "(local)",
       "integrity": "sha256-/9d4rJPo7zKr8AhU+NzcO/Skzjonbi7CeB2ZTFoITYg=",
       "file": "com.hereliesaz.azphalt.pack.3d-environment-1.0.0.azp",
-      "bytes": 1045
+      "bytes": 1342
     },
     {
       "id": "com.hereliesaz.azphalt.pack.acrylic",
@@ -1221,7 +1232,7 @@
       "ref": "(local)",
       "integrity": "sha256-RXcdB86Vf77Y+iLxr4ho1hxkbkEcFdSbKmWUojGyHZQ=",
       "file": "com.hereliesaz.azphalt.pack.acrylic-1.0.0.azp",
-      "bytes": 816
+      "bytes": 1110
     },
     {
       "id": "com.hereliesaz.azphalt.pack.audio-reactive",
@@ -1232,7 +1243,7 @@
       "ref": "(local)",
       "integrity": "sha256-6ymAhtU90poIcp910PoynpaJ+y6Go2okdXtfiepmV9M=",
       "file": "com.hereliesaz.azphalt.pack.audio-reactive-1.0.0.azp",
-      "bytes": 987
+      "bytes": 1282
     },
     {
       "id": "com.hereliesaz.azphalt.pack.auto-kinetic-typography",
@@ -1243,7 +1254,7 @@
       "ref": "(local)",
       "integrity": "sha256-q85MfRtLcJzTOFGe/XG0E8GqIeVwyW4mzqCOtOsNZ7s=",
       "file": "com.hereliesaz.azphalt.pack.auto-kinetic-typography-1.0.0.azp",
-      "bytes": 1094
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.pack.broadcast-toolkit",
@@ -1254,7 +1265,7 @@
       "ref": "(local)",
       "integrity": "sha256-5/nPNKFreGX0ToV0q4vrwnvcIOrkAbi0tXjMehgL/p0=",
       "file": "com.hereliesaz.azphalt.pack.broadcast-toolkit-1.0.0.azp",
-      "bytes": 878
+      "bytes": 1174
     },
     {
       "id": "com.hereliesaz.azphalt.pack.camera-and-stabilization",
@@ -1265,7 +1276,7 @@
       "ref": "(local)",
       "integrity": "sha256-xNarldfQFRxYOMucAiXzLfOnkg7PfoW2N3lh0YQAccw=",
       "file": "com.hereliesaz.azphalt.pack.camera-and-stabilization-1.0.0.azp",
-      "bytes": 968
+      "bytes": 1264
     },
     {
       "id": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
@@ -1276,7 +1287,7 @@
       "ref": "(local)",
       "integrity": "sha256-tLrwXEhK137dX0pmSXUYFDBIjbGP+R2IeW8YCpobk18=",
       "file": "com.hereliesaz.azphalt.pack.charcoal-and-chalk-1.0.0.azp",
-      "bytes": 859
+      "bytes": 1153
     },
     {
       "id": "com.hereliesaz.azphalt.pack.glitch-and-damage",
@@ -1287,7 +1298,7 @@
       "ref": "(local)",
       "integrity": "sha256-bnisYlixAE+r/uIJPKM4pRyUYogDyhlaqoMsVzTm6yc=",
       "file": "com.hereliesaz.azphalt.pack.glitch-and-damage-1.0.0.azp",
-      "bytes": 926
+      "bytes": 1220
     },
     {
       "id": "com.hereliesaz.azphalt.pack.ink-and-marker",
@@ -1298,7 +1309,7 @@
       "ref": "(local)",
       "integrity": "sha256-gInM1s/6THRqTLKLH5z4fzfhaccdreLJFNbrf7ezZKM=",
       "file": "com.hereliesaz.azphalt.pack.ink-and-marker-1.1.0.azp",
-      "bytes": 893
+      "bytes": 1188
     },
     {
       "id": "com.hereliesaz.azphalt.pack.kinetic-type",
@@ -1309,7 +1320,7 @@
       "ref": "(local)",
       "integrity": "sha256-tIgjfStxC1nes+q0P+J8aOWV5g1ChZpFbmOSQrTnnYc=",
       "file": "com.hereliesaz.azphalt.pack.kinetic-type-1.0.0.azp",
-      "bytes": 936
+      "bytes": 1232
     },
     {
       "id": "com.hereliesaz.azphalt.pack.layout-and-emphasis",
@@ -1320,7 +1331,7 @@
       "ref": "(local)",
       "integrity": "sha256-z8gX0t/sQ74++g5rDiA4aP6uU3WCZ+fXBz667/zFEpg=",
       "file": "com.hereliesaz.azphalt.pack.layout-and-emphasis-1.0.0.azp",
-      "bytes": 937
+      "bytes": 1233
     },
     {
       "id": "com.hereliesaz.azphalt.pack.light-and-atmosphere",
@@ -1331,7 +1342,7 @@
       "ref": "(local)",
       "integrity": "sha256-WW/QdezQ3sG7JnE4lzXrZ9MhKqQbe2EwDhMarW+vaws=",
       "file": "com.hereliesaz.azphalt.pack.light-and-atmosphere-1.0.0.azp",
-      "bytes": 940
+      "bytes": 1233
     },
     {
       "id": "com.hereliesaz.azphalt.pack.oil",
@@ -1342,7 +1353,7 @@
       "ref": "(local)",
       "integrity": "sha256-i/Ef7Y/1/NglcNl6h8oV/+ugjcC+s+/+TqdWkH0UhiU=",
       "file": "com.hereliesaz.azphalt.pack.oil-1.0.0.azp",
-      "bytes": 832
+      "bytes": 1129
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-cleanup",
@@ -1353,7 +1364,7 @@
       "ref": "(local)",
       "integrity": "sha256-n6TrVmzSqOLV+8mpe3QOLVZGTGDuqL6Md78UTI4tTjI=",
       "file": "com.hereliesaz.azphalt.pack.one-click-cleanup-1.0.0.azp",
-      "bytes": 825
+      "bytes": 1121
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-neon",
@@ -1364,7 +1375,7 @@
       "ref": "(local)",
       "integrity": "sha256-0mKrk4dMNXE7I9uNrIAi2SS623wbCJ6gD+hQheHwCBg=",
       "file": "com.hereliesaz.azphalt.pack.one-click-neon-1.0.0.azp",
-      "bytes": 812
+      "bytes": 1110
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-punch",
@@ -1375,7 +1386,7 @@
       "ref": "(local)",
       "integrity": "sha256-2+9paKN5UtS78H5qqc/P2gCzpJTZ30qsmPJO49T/u4g=",
       "file": "com.hereliesaz.azphalt.pack.one-click-punch-1.0.0.azp",
-      "bytes": 826
+      "bytes": 1122
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-retro",
@@ -1386,7 +1397,7 @@
       "ref": "(local)",
       "integrity": "sha256-ab7J5Gqb+2naabWuk8H2rtL95E9DzKL3eHzECLOIvoE=",
       "file": "com.hereliesaz.azphalt.pack.one-click-retro-1.0.0.azp",
-      "bytes": 818
+      "bytes": 1114
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-speed",
@@ -1397,7 +1408,7 @@
       "ref": "(local)",
       "integrity": "sha256-WYYnCvMcxuaC83w7YgyGtTWlxScdoq8x3J8J3wtCSwc=",
       "file": "com.hereliesaz.azphalt.pack.one-click-speed-1.0.0.azp",
-      "bytes": 815
+      "bytes": 1112
     },
     {
       "id": "com.hereliesaz.azphalt.pack.restore-and-upscale",
@@ -1408,7 +1419,7 @@
       "ref": "(local)",
       "integrity": "sha256-AigiqHGGwXHvToWqgiMouTMDWhvR+Iw5w13uft+08ow=",
       "file": "com.hereliesaz.azphalt.pack.restore-and-upscale-1.0.0.azp",
-      "bytes": 837
+      "bytes": 1134
     },
     {
       "id": "com.hereliesaz.azphalt.pack.speech-and-captions",
@@ -1419,7 +1430,7 @@
       "ref": "(local)",
       "integrity": "sha256-VgjozWM2AeqItOLV9sLqVAGmCOyPYFgSpOnTreHdSq8=",
       "file": "com.hereliesaz.azphalt.pack.speech-and-captions-1.0.0.azp",
-      "bytes": 956
+      "bytes": 1251
     },
     {
       "id": "com.hereliesaz.azphalt.pack.spray-kit",
@@ -1430,7 +1441,7 @@
       "ref": "(local)",
       "integrity": "sha256-4Zbn9OzYqTzji1xH4CP8psTv3LYy/vyoP3yODM+q0uQ=",
       "file": "com.hereliesaz.azphalt.pack.spray-kit-1.0.0.azp",
-      "bytes": 823
+      "bytes": 1117
     },
     {
       "id": "com.hereliesaz.azphalt.pack.stencil-studio",
@@ -1441,7 +1452,7 @@
       "ref": "(local)",
       "integrity": "sha256-F7n+pZBgkE7dyNr/djvKG73jlxbaT47OCGP5DYqIemQ=",
       "file": "com.hereliesaz.azphalt.pack.stencil-studio-1.0.0.azp",
-      "bytes": 926
+      "bytes": 1224
     },
     {
       "id": "com.hereliesaz.azphalt.pack.subject-and-depth",
@@ -1452,7 +1463,7 @@
       "ref": "(local)",
       "integrity": "sha256-gfcjChU7OM6V9t19IJtn3d0ZbEgHuouHoZ/uR6IJ0xM=",
       "file": "com.hereliesaz.azphalt.pack.subject-and-depth-1.0.0.azp",
-      "bytes": 942
+      "bytes": 1237
     },
     {
       "id": "com.hereliesaz.azphalt.pack.surface-and-light",
@@ -1463,7 +1474,7 @@
       "ref": "(local)",
       "integrity": "sha256-udDfnTw0Z6yiSFFhdbTNX0jUO5MaC1kXfZCsVgYplLc=",
       "file": "com.hereliesaz.azphalt.pack.surface-and-light-1.0.0.azp",
-      "bytes": 937
+      "bytes": 1234
     },
     {
       "id": "com.hereliesaz.azphalt.pack.texture-and-wear",
@@ -1474,7 +1485,7 @@
       "ref": "(local)",
       "integrity": "sha256-+xcHdD6qf1a126rlyPP8jq8K+Fb17+/MQokdVyW+dEc=",
       "file": "com.hereliesaz.azphalt.pack.texture-and-wear-1.0.0.azp",
-      "bytes": 866
+      "bytes": 1160
     },
     {
       "id": "com.hereliesaz.azphalt.pack.transitions-and-physics",
@@ -1485,7 +1496,7 @@
       "ref": "(local)",
       "integrity": "sha256-VOtRkH/0Lugq9F5kimNHRdtCJTxJSDW9rL2n1zbFsoU=",
       "file": "com.hereliesaz.azphalt.pack.transitions-and-physics-1.0.0.azp",
-      "bytes": 931
+      "bytes": 1225
     },
     {
       "id": "com.hereliesaz.azphalt.pack.vision-and-masking",
@@ -1496,7 +1507,7 @@
       "ref": "(local)",
       "integrity": "sha256-S32BGk2H774EeFSKzdGOUEc0IMes6ot5bu7hGShM7j0=",
       "file": "com.hereliesaz.azphalt.pack.vision-and-masking-1.0.0.azp",
-      "bytes": 937
+      "bytes": 1234
     },
     {
       "id": "com.hereliesaz.azphalt.pack.watercolor",
@@ -1507,7 +1518,7 @@
       "ref": "(local)",
       "integrity": "sha256-rE4KvWS2l9+abxtOAIOa3SQPeqJd0K7Jx4aiTeiLB7A=",
       "file": "com.hereliesaz.azphalt.pack.watercolor-1.0.0.azp",
-      "bytes": 843
+      "bytes": 1139
     },
     {
       "id": "com.hereliesaz.azphalt.page-curl",
@@ -1515,10 +1526,10 @@
       "name": "Page Curl Bend",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-page-curl",
-      "ref": "8419bbca5a4ed352cc3099ace247c9da7ebb7a82",
+      "ref": "1400d348b573e89dbf31eb9040a468a68c1c56b3",
       "integrity": "sha256-KPNCIspytXxoPhlZbSZ6kwBbNBv5XbkBaqfwUj5F49M=",
       "file": "com.hereliesaz.azphalt.page-curl-1.0.0.azp",
-      "bytes": 1095
+      "bytes": 1389
     },
     {
       "id": "com.hereliesaz.azphalt.parallax-depth",
@@ -1526,10 +1537,10 @@
       "name": "Parallax Depth Generator",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-parallax-depth",
-      "ref": "187749ed89d8187b8cbb500e59b6e083455260bd",
+      "ref": "a5aaf294ca1ce5804e121d8d7fb070ad628dfe4d",
       "integrity": "sha256-LbFl3AUQ0t6LU94hm4hUsV0FFup6bC/1/eBesx9ChZw=",
       "file": "com.hereliesaz.azphalt.parallax-depth-1.0.0.azp",
-      "bytes": 1095
+      "bytes": 1391
     },
     {
       "id": "com.hereliesaz.azphalt.particle-shatter",
@@ -1537,10 +1548,10 @@
       "name": "Particle Shatter",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-particle-shatter",
-      "ref": "0dd9c1ee957c417ce8b8a3ffb3970e2c0f36d643",
+      "ref": "474c019e402ce8f92920af8328825e406e15cf3a",
       "integrity": "sha256-X39iUuAspKNabLi62+GlqOU0n18shBcRm4bmNaH6q48=",
       "file": "com.hereliesaz.azphalt.particle-shatter-1.0.0.azp",
-      "bytes": 1047
+      "bytes": 1344
     },
     {
       "id": "com.hereliesaz.azphalt.particles",
@@ -1548,10 +1559,10 @@
       "name": "Particles",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-particles",
-      "ref": "150fb2475bddf491c19fed60a6fda4626c36cc19",
+      "ref": "dff9f44314eb85bce9eff57f7eeff029eac147c3",
       "integrity": "sha256-rA5I7/L5pIFC/WwOhaxNSDqsWh4n4hl3haIIA5bsQiA=",
       "file": "com.hereliesaz.azphalt.particles-1.0.0.azp",
-      "bytes": 13972
+      "bytes": 14267
     },
     {
       "id": "com.hereliesaz.azphalt.pip",
@@ -1559,10 +1570,10 @@
       "name": "Pro Picture-in-Picture",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-pip",
-      "ref": "db412229a675385c67e626bf42939d65e0330188",
+      "ref": "c1e57ccbe085ec2ba595f6fb286c942b7bd28c55",
       "integrity": "sha256-x5cBg3yuq7Nqx795iAL2ZWgiGzXdNo0FaXio81OUS58=",
       "file": "com.hereliesaz.azphalt.pip-1.0.0.azp",
-      "bytes": 1182
+      "bytes": 1479
     },
     {
       "id": "com.hereliesaz.azphalt.piper-en",
@@ -1570,10 +1581,10 @@
       "name": "Piper (English)",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-piper-en",
-      "ref": "ad6eaa57ac4fe7a4232d304dff5f62747d3d0a22",
+      "ref": "42ce1db4d68ff906363e782df538b32f85547245",
       "integrity": "sha256-PvLhfHnMzU0nRsTCuTEZvlpuX6YNiU/rviSQQgFYBYs=",
       "file": "com.hereliesaz.azphalt.piper-en-1.0.0.azp",
-      "bytes": 1131
+      "bytes": 1430
     },
     {
       "id": "com.hereliesaz.azphalt.pitch-rotation",
@@ -1581,10 +1592,10 @@
       "name": "Pitch Rotation",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-pitch-rotation",
-      "ref": "2f68019cecd31f818f7374f68fc2d43a52a6d101",
+      "ref": "f17c628898b4bcbf6117295e19a5915fe710bbff",
       "integrity": "sha256-iZ5Q+ZpjY85tsgidUybU/GCbKQzmr3DRjQRRNm3md3s=",
       "file": "com.hereliesaz.azphalt.pitch-rotation-2.0.0.azp",
-      "bytes": 1080
+      "bytes": 1376
     },
     {
       "id": "com.hereliesaz.azphalt.pitch-tracker",
@@ -1592,10 +1603,10 @@
       "name": "Pitch Y-Tracker",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-pitch-tracker",
-      "ref": "e9c7a946da8b18106238066c92fd5a7aa1ab43f2",
+      "ref": "2faabfaaca8ca86e62cb2944a3dd1cd6f6a325dd",
       "integrity": "sha256-0+zqbwvtYArtjG0gtiDBK976VjNnpfaOPSBwCXuCL4g=",
       "file": "com.hereliesaz.azphalt.pitch-tracker-2.0.0.azp",
-      "bytes": 1095
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.planar-tracking",
@@ -1603,10 +1614,10 @@
       "name": "Motion Tracking - Planar Pin",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-planar-tracking",
-      "ref": "32f7d34aeabb554035c20d7b56d1d3aa66a9948a",
+      "ref": "810e5485f59efed10bb686cc9394b2ef2f199f6f",
       "integrity": "sha256-HAndTAbGBxvvmtmnj/R6FnfLzNX/+jsvBS2RJedSyh8=",
       "file": "com.hereliesaz.azphalt.planar-tracking-1.0.0.azp",
-      "bytes": 1072
+      "bytes": 1367
     },
     {
       "id": "com.hereliesaz.azphalt.pop-in",
@@ -1614,10 +1625,10 @@
       "name": "Pop In",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-pop-in",
-      "ref": "7e1ae895cc6244bcdc9b357f5e432e414eafd619",
+      "ref": "3e9dc6b9bc0d80baa822f61d2b5b1d61ee4d50a7",
       "integrity": "sha256-R7MhvU/FiyhGGWRhcOAt/H7iBIxp5jt4XA8eLI4ZeyU=",
       "file": "com.hereliesaz.azphalt.pop-in-1.2.0.azp",
-      "bytes": 1095
+      "bytes": 1393
     },
     {
       "id": "com.hereliesaz.azphalt.prism-flare",
@@ -1625,10 +1636,10 @@
       "name": "Prism Flare",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-prism-flare",
-      "ref": "f5c08f335250f5ef526b37a50f5563da8ff3a6b0",
+      "ref": "20835d3c7e74f0a5b6e3c451448856917c9380b7",
       "integrity": "sha256-cXLOI0oYgud0UXvHP5yScYeaxZKkZHBWPbRBLeHAs4g=",
       "file": "com.hereliesaz.azphalt.prism-flare-1.0.0.azp",
-      "bytes": 2088
+      "bytes": 2381
     },
     {
       "id": "com.hereliesaz.azphalt.pyannote-segmentation",
@@ -1636,10 +1647,10 @@
       "name": "pyannote Segmentation",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-pyannote-segmentation",
-      "ref": "905b84535e0126a29c7a8fbe82ee5bbed147967c",
+      "ref": "91d833b08ddd966855344dfc3bd7fd2ceae46773",
       "integrity": "sha256-W3k7oXt96lqaQKVVC4v8zpx/77srIFh8VJmtB9WtmPE=",
       "file": "com.hereliesaz.azphalt.pyannote-segmentation-1.0.0.azp",
-      "bytes": 1101
+      "bytes": 1395
     },
     {
       "id": "com.hereliesaz.azphalt.real-esrgan",
@@ -1647,10 +1658,10 @@
       "name": "Real-ESRGAN",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-real-esrgan",
-      "ref": "8deae1c905dbe19042f1c6c4b9710732419ebb1c",
+      "ref": "c788d3f2003ed5eb6acb0166039646884b079d70",
       "integrity": "sha256-++xdtRoftL0Bmsh5aPTaj8+AwtKBIN7f2nyXHjnH/e0=",
       "file": "com.hereliesaz.azphalt.real-esrgan-1.0.0.azp",
-      "bytes": 1209
+      "bytes": 1504
     },
     {
       "id": "com.hereliesaz.azphalt.rotate-snap",
@@ -1658,10 +1669,10 @@
       "name": "Rotate Snap",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-rotate-snap",
-      "ref": "72453af239d06007ce401e2cc7a65675e10d172d",
+      "ref": "fa2debcf8b47803d79ae07bf61d6b1a6c202fd02",
       "integrity": "sha256-hbRvdxpE0seSZ1R5Ik1Oy4git/EmUCFJDzceoGdHgOA=",
       "file": "com.hereliesaz.azphalt.rotate-snap-1.2.0.azp",
-      "bytes": 1172
+      "bytes": 1469
     },
     {
       "id": "com.hereliesaz.azphalt.rsvp-delivery",
@@ -1669,10 +1680,10 @@
       "name": "RSVP Delivery",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-rsvp-delivery",
-      "ref": "3299bbc67a5b8cd48304990bbb98d01d61f7c449",
+      "ref": "b0df640f1e89b97f469605ea4e4074c8eb6e4b4e",
       "integrity": "sha256-1OO8/CFg5MfHRvpUmYoG2DCeIf6sBhzRwemepTeEE+Y=",
       "file": "com.hereliesaz.azphalt.rsvp-delivery-1.2.0.azp",
-      "bytes": 1128
+      "bytes": 1425
     },
     {
       "id": "com.hereliesaz.azphalt.scale-stagger",
@@ -1680,10 +1691,10 @@
       "name": "Scale Stagger",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-scale-stagger",
-      "ref": "0fbd94719cff34b5f2974edf5cda4ad1248779e3",
+      "ref": "5e73774215e79c6a965acce968904e45d62aaef3",
       "integrity": "sha256-cVpg7dHqdbF9Qf8g7MJ+94tsr4MtVUozdcRbuHVt7UQ=",
       "file": "com.hereliesaz.azphalt.scale-stagger-1.2.0.azp",
-      "bytes": 1074
+      "bytes": 1372
     },
     {
       "id": "com.hereliesaz.azphalt.scene-lit-shadow",
@@ -1691,10 +1702,10 @@
       "name": "Scene-Lit Shadow",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-scene-lit-shadow",
-      "ref": "535e9e7c95509030c3888c8b2c8039b34c5ed32f",
+      "ref": "656e3684c6862ddb94f135fb77a42fb7040dd6d7",
       "integrity": "sha256-VTc5ZDLDrnHHBPq0Kam6OTCUTRYMSWlQ4G8uBnpmXZM=",
       "file": "com.hereliesaz.azphalt.scene-lit-shadow-1.0.0.azp",
-      "bytes": 1144
+      "bytes": 1440
     },
     {
       "id": "com.hereliesaz.azphalt.selfie-segmentation",
@@ -1702,10 +1713,10 @@
       "name": "Selfie Segmentation",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-selfie-segmentation",
-      "ref": "481259c71ed8526da354300d4704e6f006e1764f",
+      "ref": "15ecb4f4ef3bb48f0439fbef90b671f06f3d7960",
       "integrity": "sha256-lynlvB6loBq5no5p4muB+1YaYccxpLIFmqJWA8132Ek=",
       "file": "com.hereliesaz.azphalt.selfie-segmentation-1.0.0.azp",
-      "bytes": 1160
+      "bytes": 1458
     },
     {
       "id": "com.hereliesaz.azphalt.sentiment-hue",
@@ -1713,10 +1724,10 @@
       "name": "Sentiment Hue",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-sentiment-hue",
-      "ref": "ae1266aacd39c50c94ea12a50bb774dca97a1100",
+      "ref": "8559623cf9794ffa667c52c1ec2feeedb6f38bd0",
       "integrity": "sha256-Gd4KW+tq4Ez9wCNwnPLphvEFGs19sUc/h0q3P2M7v1o=",
       "file": "com.hereliesaz.azphalt.sentiment-hue-2.0.0.azp",
-      "bytes": 1078
+      "bytes": 1373
     },
     {
       "id": "com.hereliesaz.azphalt.slide-right",
@@ -1724,10 +1735,10 @@
       "name": "Slide Right",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-slide-right",
-      "ref": "6c51019d78cad53263e1d1ad2ec0a0be43a6f7e0",
+      "ref": "395104e22129d7876653ef3173e0de0fcad3b98c",
       "integrity": "sha256-uTMxrpdbsr37wjxspXuWMw/qke7BiqucTOCIhl5jrd4=",
       "file": "com.hereliesaz.azphalt.slide-right-1.2.0.azp",
-      "bytes": 1099
+      "bytes": 1394
     },
     {
       "id": "com.hereliesaz.azphalt.slump-disappointment",
@@ -1735,10 +1746,10 @@
       "name": "Slump (Disappointment)",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-slump-disappointment",
-      "ref": "c92b90ad3f0c39be9839be65eebabb0612fb2b0a",
+      "ref": "14b24b44bf99389a23263e1c9d44385cf227af0f",
       "integrity": "sha256-qtEKgnQhsbSmutjs5JpG8u0PS/7o0pQAB7x3pW21kHI=",
       "file": "com.hereliesaz.azphalt.slump-disappointment-1.2.0.azp",
-      "bytes": 1163
+      "bytes": 1457
     },
     {
       "id": "com.hereliesaz.azphalt.smpte",
@@ -1746,10 +1757,10 @@
       "name": "SMPTE Color Bars",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-smpte",
-      "ref": "99e93b739a6fe480c06eda22be9abee37591e6d7",
+      "ref": "a4a0fdd79a60adae37b88f903332cbff9ff8fca7",
       "integrity": "sha256-0nVLEjvBRy6nKYp+c/icL96QJpv7L0WbSpaoZjj+VL8=",
       "file": "com.hereliesaz.azphalt.smpte-1.0.0.azp",
-      "bytes": 13959
+      "bytes": 14254
     },
     {
       "id": "com.hereliesaz.azphalt.solid",
@@ -1757,10 +1768,10 @@
       "name": "Solid Color",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-solid",
-      "ref": "6a4baeba697ede1f67a1126d7a51c78b91327595",
+      "ref": "5ec465ac87ba24d9220f1243e7408a0a3001f3a6",
       "integrity": "sha256-xABDV7Ll1Az2lKEqXERJi9aZ2QWteyZL7Wr4RaB940c=",
       "file": "com.hereliesaz.azphalt.solid-1.0.0.azp",
-      "bytes": 13893
+      "bytes": 14191
     },
     {
       "id": "com.hereliesaz.azphalt.speaker-drop",
@@ -1768,10 +1779,10 @@
       "name": "Speaker Drop",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-speaker-drop",
-      "ref": "d458ab0f9a5faf4d2c80618e9a90840b5dfb98c1",
+      "ref": "4154154fd58c66af26ea25d1fc8817a57e45e1ef",
       "integrity": "sha256-yGEbI6EX5bpOyYuHNZsEmFc3yMdWP94IQ3LRlyUYDwo=",
       "file": "com.hereliesaz.azphalt.speaker-drop-2.0.0.azp",
-      "bytes": 1080
+      "bytes": 1378
     },
     {
       "id": "com.hereliesaz.azphalt.speaker-pan",
@@ -1779,10 +1790,10 @@
       "name": "Speaker Pan",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-speaker-pan",
-      "ref": "4f727a205b3b00990889d739a06172c4cf17a4bd",
+      "ref": "a75d39caa746a8130d9963d46a13f6cd8d4d6727",
       "integrity": "sha256-2ieNngBzw5u3NhhD6flzEDsk6QnscFqcP5HpZc7tD7Y=",
       "file": "com.hereliesaz.azphalt.speaker-pan-2.0.0.azp",
-      "bytes": 1087
+      "bytes": 1381
     },
     {
       "id": "com.hereliesaz.azphalt.speed-blur",
@@ -1790,10 +1801,10 @@
       "name": "Speed Blur",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-speed-blur",
-      "ref": "85b9b64c1d52bda6d6336ed19a02e7681b141e99",
+      "ref": "07eec056bc00dc2f8e3f5cdfe4d41e09183d98a3",
       "integrity": "sha256-GHep06W4WxTCB4BB/+eKGZveUgsDm40lRXUmkpzHeVA=",
       "file": "com.hereliesaz.azphalt.speed-blur-2.0.0.azp",
-      "bytes": 1080
+      "bytes": 1378
     },
     {
       "id": "com.hereliesaz.azphalt.spotlights",
@@ -1801,10 +1812,10 @@
       "name": "Studio Spotlights",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-spotlights",
-      "ref": "003c69c8a858406bed23b5265fa4b33ec335ec24",
+      "ref": "a651ab3d4c8d8b994c98be3050f38dc0bfcc4c00",
       "integrity": "sha256-noOkWFRXSkSZREsPDy5EbmuvXRXHH93efzHkKnLHRcw=",
       "file": "com.hereliesaz.azphalt.spotlights-1.0.0.azp",
-      "bytes": 1132
+      "bytes": 1427
     },
     {
       "id": "com.hereliesaz.azphalt.stabilize-actioncam",
@@ -1812,10 +1823,10 @@
       "name": "Video Stabilization - Action Cam",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-stabilize-actioncam",
-      "ref": "fa7278e99532bf6bced58a879659421695bb489e",
+      "ref": "d10b5ebf6a0816bfb9b9b951c85bb785cce7c3b1",
       "integrity": "sha256-qUooof3satYbrsrVDo8wkVf5zM5YSO2dJaG5oIxm8e0=",
       "file": "com.hereliesaz.azphalt.stabilize-actioncam-1.0.0.azp",
-      "bytes": 1147
+      "bytes": 1440
     },
     {
       "id": "com.hereliesaz.azphalt.stabilizer",
@@ -1823,10 +1834,10 @@
       "name": "Video Stabilization",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-stabilizer",
-      "ref": "69fbc1d6fbe2cbe23a138f65af429f7165e79e89",
+      "ref": "5f301ac581e7fa20d1df9d8f3d8687a207ff9648",
       "integrity": "sha256-xm81gIx8Jd3RqUx4Ppkes4ttOmNEsp0xrlQc0rL5Vzg=",
       "file": "com.hereliesaz.azphalt.stabilizer-1.0.0.azp",
-      "bytes": 14002
+      "bytes": 14298
     },
     {
       "id": "com.hereliesaz.azphalt.stencil-layers",
@@ -1834,10 +1845,10 @@
       "name": "Stencil Layers",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-stencil-layers",
-      "ref": "f1435a8aeda885cdb83a7761742d4e632fe9718a",
+      "ref": "1fa7ecce3b0e863b05d750d6fd49f4b9af7eff3f",
       "integrity": "sha256-7r4pAbvksokmv2u2Kdd92aaHr0vTS2ecoeohWwDYHR8=",
       "file": "com.hereliesaz.azphalt.stencil-layers-1.0.0.azp",
-      "bytes": 14588
+      "bytes": 14884
     },
     {
       "id": "com.hereliesaz.azphalt.subject-orbit",
@@ -1845,10 +1856,10 @@
       "name": "Subject Orbit",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-subject-orbit",
-      "ref": "bb019dd477f9b58059fd4fa8bd41f58be15f091a",
+      "ref": "cf68d5e42a691b0eaec68f82130da6f7714bdb5c",
       "integrity": "sha256-2oaDENd20dQbO80OPBjLcNYLm6KKH8Sg+dSMoHOvOYc=",
       "file": "com.hereliesaz.azphalt.subject-orbit-1.0.0.azp",
-      "bytes": 1188
+      "bytes": 1486
     },
     {
       "id": "com.hereliesaz.azphalt.subject-track",
@@ -1856,10 +1867,10 @@
       "name": "Subject Tracking",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-subject-track",
-      "ref": "c6a16d4663000f2973181c202f3e56e903e75df6",
+      "ref": "80dc5623f80499b373db1b91249767f4cca5df10",
       "integrity": "sha256-NDwY+HUsyIfUZ0jh0iFtM8xa6K1BIQBEGgmByhcbYr4=",
       "file": "com.hereliesaz.azphalt.subject-track-2.0.0.azp",
-      "bytes": 1030
+      "bytes": 1325
     },
     {
       "id": "com.hereliesaz.azphalt.terrain-puddle",
@@ -1867,10 +1878,10 @@
       "name": "Terrain Puddle Reflection",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-terrain-puddle",
-      "ref": "d0fc9c2a089d3166691ed01360426e0e318ac79e",
+      "ref": "7c11cc24d3a6b389359240e22ecadc74d6f1cf60",
       "integrity": "sha256-xmIKvDJfg1pokVNgBBbIQPXmHNLdmMmDzkmr+jLTr10=",
       "file": "com.hereliesaz.azphalt.terrain-puddle-1.0.0.azp",
-      "bytes": 1095
+      "bytes": 1388
     },
     {
       "id": "com.hereliesaz.azphalt.timecode",
@@ -1878,10 +1889,10 @@
       "name": "Timecode",
       "kind": "code",
       "repo": "HereLiesAz/azphalt-timecode",
-      "ref": "a7ec3e27c318763bd4c3b4bb9ae63c69dd9dfa4f",
+      "ref": "40ccaec2fdb3f3dfb2d54f1ca158e801619ffdf8",
       "integrity": "sha256-0GJsbpF0rjkD5mxXZPs0HUGi01rGq9RW53c50WpNfEA=",
       "file": "com.hereliesaz.azphalt.timecode-1.0.0.azp",
-      "bytes": 14059
+      "bytes": 14356
     },
     {
       "id": "com.hereliesaz.azphalt.tremble-arousal",
@@ -1889,10 +1900,10 @@
       "name": "Tremble (High Arousal)",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-tremble-arousal",
-      "ref": "3d66a06b597a7ca9405ad653b29a95b5db75a739",
+      "ref": "291a8a457243f31df0e31206a30a5e561e2383b8",
       "integrity": "sha256-J3wwTnj8atnG3qXDfxxI1j5QW93Qqz+NjkSjGFJDHuw=",
       "file": "com.hereliesaz.azphalt.tremble-arousal-1.2.0.azp",
-      "bytes": 1155
+      "bytes": 1449
     },
     {
       "id": "com.hereliesaz.azphalt.tripod-stabilizer",
@@ -1900,10 +1911,10 @@
       "name": "Video Stabilization - Tripod Mode",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-tripod-stabilizer",
-      "ref": "4da4aaf17122d539d47c764a208dc8d18c6eb961",
+      "ref": "1df725875f9f4d3688194ce2e2c533e6b8d09a55",
       "integrity": "sha256-cPwPzbLB4O9jz0yGzAFTjwg1rtaByp2ys4UeURgWCy4=",
       "file": "com.hereliesaz.azphalt.tripod-stabilizer-1.0.0.azp",
-      "bytes": 1161
+      "bytes": 1458
     },
     {
       "id": "com.hereliesaz.azphalt.typewriter",
@@ -1911,10 +1922,10 @@
       "name": "Typewriter",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-typewriter",
-      "ref": "077946f2151984e2d94d2b5b47b969ecab436452",
+      "ref": "589340c43452675b8c669ec1dac0cdd092125e65",
       "integrity": "sha256-2MJvmSqHgCwapj2i52ERVabDji6IB4rfJF4S/shjHto=",
       "file": "com.hereliesaz.azphalt.typewriter-1.2.0.azp",
-      "bytes": 1042
+      "bytes": 1340
     },
     {
       "id": "com.hereliesaz.azphalt.typewriter-cursor",
@@ -1922,10 +1933,10 @@
       "name": "Typewriter Cursor",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-typewriter-cursor",
-      "ref": "bc62fae0f3a5770b4b18812e512453f5c2e7ecd6",
+      "ref": "9b22456498c4bed302e9ec1fe68d37438779ca00",
       "integrity": "sha256-YIMfxchLFoZztVXUaWa2uqAtYl3p4t/qwekY3vcpF7w=",
       "file": "com.hereliesaz.azphalt.typewriter-cursor-1.2.0.azp",
-      "bytes": 1114
+      "bytes": 1410
     },
     {
       "id": "com.hereliesaz.azphalt.ultraface",
@@ -1933,10 +1944,10 @@
       "name": "UltraFace",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-ultraface",
-      "ref": "ee2c9a5d8d490916dcb39ad0aa03aeb55119ddf1",
+      "ref": "11d9178e0daa9964c646b4d21a794f296ca9c1c0",
       "integrity": "sha256-H9l0NLLEP54H3WZLgQMe9l/cHGLvyTPSJBQpaunyitQ=",
       "file": "com.hereliesaz.azphalt.ultraface-1.0.0.azp",
-      "bytes": 1191
+      "bytes": 1487
     },
     {
       "id": "com.hereliesaz.azphalt.vhs-retro",
@@ -1944,10 +1955,10 @@
       "name": "VHS Retro",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-vhs-retro",
-      "ref": "bd41fa2041a5305791ec4730081c66513a434daf",
+      "ref": "cade7354864d5fb7da8298787a2ff483ae6aee22",
       "integrity": "sha256-1NmE/fUh676k5+4dRbRBiS6kvXEdyTLygvR8mecR6D0=",
       "file": "com.hereliesaz.azphalt.vhs-retro-1.0.0.azp",
-      "bytes": 2050
+      "bytes": 2344
     },
     {
       "id": "com.hereliesaz.azphalt.vintage-grain-halation",
@@ -1955,10 +1966,10 @@
       "name": "Vintage Grain & Halation",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-vintage-grain-halation",
-      "ref": "b702bc9134ed4947374bca83ca5d99a5ef7b4bcc",
+      "ref": "917d861dddd7e3751d25eafb68f9f7cd11b373b2",
       "integrity": "sha256-TMtOFCmSWAhSP+Zb4ZT2c3vgmmBCm2DiZkVi5ZcN+OU=",
       "file": "com.hereliesaz.azphalt.vintage-grain-halation-1.0.0.azp",
-      "bytes": 2053
+      "bytes": 2349
     },
     {
       "id": "com.hereliesaz.azphalt.volume-bulge",
@@ -1966,10 +1977,10 @@
       "name": "Volume Bulge",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-volume-bulge",
-      "ref": "3d72a8c065ccac385f3ff83d6490bf57fef9e98d",
+      "ref": "9b89d643139ce75c4600f3f6cae89b45ab56fd72",
       "integrity": "sha256-Z5jxdMM+XGt6PdH75tOGcSfOsSF2ioJNXyBHYuf1FLk=",
       "file": "com.hereliesaz.azphalt.volume-bulge-2.0.0.azp",
-      "bytes": 1098
+      "bytes": 1393
     },
     {
       "id": "com.hereliesaz.azphalt.warpflow",
@@ -1977,10 +1988,10 @@
       "name": "Warp Flow Transition",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-warpflow",
-      "ref": "244a68ae123771e6c6226cf5d44af6021212094d",
+      "ref": "f8f99c76ec3950918228cf5962353f849f94ab36",
       "integrity": "sha256-hjpA6KXEvls0rPdtsd/0udWWoIPojjBy2FHa7lEhieg=",
       "file": "com.hereliesaz.azphalt.warpflow-1.0.0.azp",
-      "bytes": 1101
+      "bytes": 1398
     },
     {
       "id": "com.hereliesaz.azphalt.wespeaker",
@@ -1988,10 +1999,10 @@
       "name": "WeSpeaker",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-wespeaker",
-      "ref": "2e25e536b8dd9bf5848806e6ffceb20ca3faa8ae",
+      "ref": "278531e51451f3a7464556929e90eb17414b538d",
       "integrity": "sha256-OjG9WJV25l78lCGtzCywzUHRA5kIqO9IJ3sakeezxVk=",
       "file": "com.hereliesaz.azphalt.wespeaker-1.0.0.azp",
-      "bytes": 1136
+      "bytes": 1434
     },
     {
       "id": "com.hereliesaz.azphalt.whisper",
@@ -1999,10 +2010,10 @@
       "name": "Whisper",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-whisper",
-      "ref": "755b2b88da00ecaf7332e30e93a910d97ecadd58",
+      "ref": "c9c27d87a4e602c25cdba32893345c868d22eab8",
       "integrity": "sha256-Gqo1yJnoilf/QmeeEtl8Xgro19rMsSfrwGvzg3qNamE=",
       "file": "com.hereliesaz.azphalt.whisper-1.0.0.azp",
-      "bytes": 1154
+      "bytes": 1451
     },
     {
       "id": "com.hereliesaz.azphalt.whisper-blur",
@@ -2010,10 +2021,10 @@
       "name": "Whisper Blur",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-whisper-blur",
-      "ref": "86ec922ab2718d89719cb59465bd67ca18570f16",
+      "ref": "3d401b16613ddf00db46e7629f46989d7966e6b7",
       "integrity": "sha256-+txxQlXPAECiDhBQ1K0XqCpyJORv3ufz2xZYHJ++Yms=",
       "file": "com.hereliesaz.azphalt.whisper-blur-2.0.0.azp",
-      "bytes": 1053
+      "bytes": 1350
     },
     {
       "id": "com.hereliesaz.azphalt.word-stagger",
@@ -2021,10 +2032,10 @@
       "name": "Word Stagger",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-word-stagger",
-      "ref": "de1fa88664c15b57103efe5ebb093fcc7dd8cbd5",
+      "ref": "3370f1e759db561898fea8b71ff99fcc2a199822",
       "integrity": "sha256-PhWMkAyuqz5QNZUNT9yVfdVNPFSxqPyaERvzKnakbuw=",
       "file": "com.hereliesaz.azphalt.word-stagger-1.2.0.azp",
-      "bytes": 1084
+      "bytes": 1379
     },
     {
       "id": "com.hereliesaz.azphalt.yamnet",
@@ -2032,10 +2043,10 @@
       "name": "YAMNet",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-yamnet",
-      "ref": "1d7b03c595153d08388b905c30248aa49f81e61a",
+      "ref": "b044d7b8e9fee8b5e4531e3609cb71fb80636590",
       "integrity": "sha256-LJVBPzM24lXGde5LnRftVto4hrhD54zLcMDJRtrpRTA=",
       "file": "com.hereliesaz.azphalt.yamnet-1.0.0.azp",
-      "bytes": 1180
+      "bytes": 1476
     },
     {
       "id": "com.hereliesaz.azphalt.yell-shake",
@@ -2043,10 +2054,10 @@
       "name": "Yell Shake",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-yell-shake",
-      "ref": "42982d6097fed4214e6248cc687030e0b50aa01f",
+      "ref": "5a635087aee834a70c1221deae48e6c0a7f68536",
       "integrity": "sha256-Az0kJSOZe7iXfgcF+LyplgbpR8OU5ViaOqvYJ9maiOw=",
       "file": "com.hereliesaz.azphalt.yell-shake-2.0.0.azp",
-      "bytes": 1098
+      "bytes": 1394
     },
     {
       "id": "com.hereliesaz.azphalt.zdepth",
@@ -2054,10 +2065,10 @@
       "name": "AI Z-Depth Compositor",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-zdepth",
-      "ref": "ce9ad39363799c26a77c8456996bbced756926dd",
+      "ref": "5d944e9721d72431a7eea86761deba29958d804d",
       "integrity": "sha256-TggoREhLi51okFKfv2HESk++s8iNhM88WKjy0RloFkU=",
       "file": "com.hereliesaz.azphalt.zdepth-1.0.0.azp",
-      "bytes": 1136
+      "bytes": 1432
     },
     {
       "id": "com.hereliesaz.azphalt.zoom-punch",
@@ -2065,10 +2076,10 @@
       "name": "Zoom Punch",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-zoom-punch",
-      "ref": "134e7d506fcc0a01be26d3efe2c4c2ca9cd78581",
+      "ref": "89178fef3f69591e02564247e77e4536d0c8d6db",
       "integrity": "sha256-7OLGpAiolFisgzKZvuJJ74G+4bRms5vaxAmHhmvJxaQ=",
       "file": "com.hereliesaz.azphalt.zoom-punch-1.0.0.azp",
-      "bytes": 1985
+      "bytes": 2281
     },
     {
       "id": "com.hereliesaz.guillotine.cool-noir",
@@ -2079,7 +2090,7 @@
       "ref": "(local)",
       "integrity": "sha256-8nB8Z0o7oiN7D90N22AfQH26p68MRyAJrfxF8eTiS4s=",
       "file": "com.hereliesaz.guillotine.cool-noir-1.0.0.azp",
-      "bytes": 57641
+      "bytes": 57936
     },
     {
       "id": "com.hereliesaz.guillotine.teal-orange",
@@ -2090,7 +2101,7 @@
       "ref": "(local)",
       "integrity": "sha256-TgEk16L3IE/EFApbmY9V2S714xTuVmEZrogMS+yVuNY=",
       "file": "com.hereliesaz.guillotine.teal-orange-1.0.0.azp",
-      "bytes": 49544
+      "bytes": 49840
     },
     {
       "id": "com.hereliesaz.haive.accessibility-audit",
