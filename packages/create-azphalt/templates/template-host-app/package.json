@@ -8,13 +8,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@azphalt/azp": "^0.1.0",
-    "@azphalt/repository-client": "^0.1.0",
-    "@azphalt/azdk": "^0.1.0"
+    "@azphalt/azp": "^0.5.0",
+    "@azphalt/repository-client": "^0.3.2",
+    "@azphalt/azdk": "^0.5.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "vite": "^6.4.3"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
   },
   "license": "MIT",
   "author": "Your Name"

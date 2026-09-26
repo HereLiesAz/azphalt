@@ -251,7 +251,7 @@ async function extractTree(body: NonNullable<Response["body"]>): Promise<Map<str
     }
     const rel = header.name.split("/").slice(1).join("/");
     const chunks: Buffer[] = [];
-    stream.on("data", (c: Buffer) => chunks.push(c));
+    stream.on("data", (c) => chunks.push(c as Buffer)); // tar-stream emits Buffer chunks
     stream.on("end", () => {
       if (rel) files.set(rel, new Uint8Array(Buffer.concat(chunks)));
       next();

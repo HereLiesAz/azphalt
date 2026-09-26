@@ -199,7 +199,7 @@ export class NpmStore implements RegistryStore {
 
         extract.on('entry', (header, stream, next) => {
           const chunks: Buffer[] = [];
-          stream.on('data', (c) => chunks.push(c));
+          stream.on('data', (c) => chunks.push(c as Buffer)); // tar-stream emits Buffer chunks
           stream.on('end', () => {
             const fileData = Buffer.concat(chunks);
             // NPM puts everything in a 'package/' root directory

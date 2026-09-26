@@ -13,12 +13,12 @@ group = "store.azphalt"
 version = rootProject.version
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     // Ed25519. The JDK has had it natively since 15, but Android only from API 33 — Bouncy Castle is
     // pure Java and behaves identically on both, so the verifier does not change shape with the
     // platform it happens to be running on. Version matches the resolution pin in settings.gradle.kts.
-    implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.86")
 
     testImplementation(kotlin("test"))
 }

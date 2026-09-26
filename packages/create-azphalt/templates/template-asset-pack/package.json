@@ -7,8 +7,8 @@
     "build": "node build.js"
   },
   "dependencies": {
-    "@azphalt/azp": "^0.1.0",
-    "@azphalt/azdk": "^0.1.0"
+    "@azphalt/azp": "^0.5.0",
+    "@azphalt/azdk": "^0.5.0"
   },
   "license": "MIT",
   "author": "Your Name"

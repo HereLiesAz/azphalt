@@ -9,6 +9,6 @@
   "dependencies": {
     "@azphalt/azp": "workspace:*",
     "cors": "^2.8.6",
-    "express": "^4.22.2"
+    "express": "^5.2.1"
   }
 }
