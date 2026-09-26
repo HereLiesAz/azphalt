@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && node --test \"tools/*.test.mjs\"",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean",
     "fixtures": "pnpm --filter \"@azphalt/conformance...\" build && pnpm --filter @azphalt/conformance emit",

@@ -11,9 +11,10 @@
  *              of builds over the life of the project. This is what Android's `versionCode`
  *              uses, which Play requires to increase monotonically and forever.
  *
- * This is the **only** writer of that file. The Gradle build shells out to it rather than
- * reimplementing the increment, so the file's format can never drift between the two: there is
- * one place that decides what a bumped version looks like.
+ * This is the only writer of that file in this repository. The Gradle build shells out to it rather
+ * than reimplementing the increment, so the file's format can never drift between the two. The one
+ * writer outside it is the shared release workflow (`HereLiesAz/workflows`), whose key layout this
+ * tool matches (see `CANONICAL`).
  *
  * Usage:
  *   node tools/version.mjs print            → 0.1.2.7
@@ -38,10 +39,19 @@ export const versionFile = join(repoRoot, "version.properties");
 const FIELDS = ["major", "minor", "patch", "build"];
 
 /**
+ * The keys the shared release workflows (`HereLiesAz/workflows`, `scripts/version_contract.py`)
+ * read and write: `versionMajor` … `versionBuild` are canonical there, and the short names above are
+ * aliases it keeps in step. Both sets are written on every save, and a canonical key wins when
+ * reading, so a bump here and a bump in CI never disagree about the version.
+ */
+const CANONICAL = { major: "versionMajor", minor: "versionMinor", patch: "versionPatch", build: "versionBuild" };
+const OWN_KEYS = new Set([...FIELDS, ...Object.values(CANONICAL)]);
+
+/**
  * The file's own header, rewritten on every save.
  *
- * The file is regenerated rather than patched in place so that a bump is always a four-line diff
- * and never reformats or drops the explanation above the numbers.
+ * The file is regenerated rather than patched in place so that a bump is always the same eight-line
+ * diff (four numbers under two key sets) and never reformats or drops the explanation above the numbers.
  */
 const HEADER = `# The single source of truth for the azphalt version. Format: a.b.c.d
 #
@@ -54,25 +64,32 @@ const HEADER = `# The single source of truth for the azphalt version. Format: a.
 # versionCode, the Gradle project version, the desktop installers, and the version the web
 # store reports. Nothing hardcodes a version anywhere else.
 #
-# This file is written by \`tools/version.mjs\` and by nothing else. Do not hand-edit it —
+# This file is written by \`tools/version.mjs\` and the shared release workflow, and by nothing
+# else. versionMajor…versionBuild and major…build always carry the same four numbers. Do not hand-edit it —
 # use the commands in RELEASING.md § Versioning so the four numbers stay consistent.
 `;
 
-/** Parse `version.properties` into `{major, minor, patch, build}`. Throws if malformed. */
-export function readVersion(file = versionFile) {
-  const text = readFileSync(file, "utf8");
-  const parsed = {};
-  for (const raw of text.split(/\r?\n/)) {
+/** Every `key=value` pair in the file, in order. Throws on a line that is neither a pair nor a comment. */
+function readPairs(file) {
+  const pairs = [];
+  for (const raw of readFileSync(file, "utf8").split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || line.startsWith("#")) continue;
     const eq = line.indexOf("=");
     if (eq < 0) throw new Error(`${file}: not a key=value line: ${raw}`);
-    parsed[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
+    pairs.push([line.slice(0, eq).trim(), line.slice(eq + 1).trim()]);
   }
+  return pairs;
+}
+
+/** Parse `version.properties` into `{major, minor, patch, build}`. Throws if malformed. */
+export function readVersion(file = versionFile) {
+  const parsed = Object.fromEntries(readPairs(file));
   const version = {};
   for (const field of FIELDS) {
-    const value = parsed[field];
-    if (value === undefined) throw new Error(`${file}: missing '${field}'`);
+    // The canonical key wins, matching the shared version contract; the short alias is the fallback.
+    const value = parsed[CANONICAL[field]] ?? parsed[field];
+    if (value === undefined) throw new Error(`${file}: missing '${CANONICAL[field]}' (or '${field}')`);
     // Deliberately strict. A silently-coerced NaN here would ship an app whose versionCode is
     // garbage, and Play accepts a versionCode exactly once — there is no taking it back.
     if (!/^\d+$/.test(value)) throw new Error(`${file}: '${field}' must be a non-negative integer, got '${value}'`);
@@ -86,10 +103,23 @@ export function formatVersion(v) {
   return FIELDS.map((f) => v[f]).join(".");
 }
 
-/** Write the four numbers back, regenerating the header. */
+/**
+ * Write the four numbers back under both key sets, regenerating the header.
+ *
+ * Keys this tool does not own (the shared workflows add some, such as `versionMinorLast`) are kept,
+ * in their original order, after the version.
+ */
 export function writeVersion(v, file = versionFile) {
-  const body = FIELDS.map((f) => `${f}=${v[f]}`).join("\n");
-  writeFileSync(file, `${HEADER}${body}\n`);
+  let extra = [];
+  try {
+    extra = readPairs(file).filter(([key]) => !OWN_KEYS.has(key));
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  const canonical = FIELDS.map((f) => `${CANONICAL[f]}=${v[f]}`).join("\n");
+  const aliases = FIELDS.map((f) => `${f}=${v[f]}`).join("\n");
+  const rest = extra.map(([key, value]) => `\n${key}=${value}`).join("");
+  writeFileSync(file, `${canonical}\n\n${HEADER}${aliases}\n${rest ? `${rest.slice(1)}\n` : ""}`);
   return v;
 }
 
