@@ -43,6 +43,7 @@ export default defineConfig({
             { text: 'Companion Apps (RFC)', link: '/specs/companion-app' },
             { text: 'Store App (RFC)', link: '/specs/store-app' },
             { text: 'Web Handoff (RFC)', link: '/specs/web-handoff' },
+            { text: 'Off-device LLMs (RFC)', link: '/specs/llm' },
             { text: 'State Reporting', link: '/specs/state-reporting' },
             { text: 'Workflow Packages', link: '/specs/workflow' },
             { text: 'Role Packages', link: '/specs/role' }

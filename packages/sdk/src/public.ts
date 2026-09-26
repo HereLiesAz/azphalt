@@ -40,6 +40,11 @@ export type PackageSummary = Omit<LegacyPackageSummary, "kind"> & {
 };
 
 /** Search page whose summaries include orchestration-data kinds. */
+/**
+ * Browse/search response widened alongside PackageSummary. The legacy interface in index.ts is
+ * lexically bound to the legacy summary kind union, so merely re-exporting it would reject
+ * workflow/role summaries even though the public PackageSummary accepts them.
+ */
 export type PackageSearchResponse = Omit<LegacyPackageSearchResponse, "packages"> & {
   packages: PackageSummary[];
 };
