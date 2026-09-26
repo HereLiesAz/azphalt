@@ -41,6 +41,8 @@ Everything that reports a version reads it from that file: the Android `versionN
 
 `tools/version.mjs` is the only thing that writes the file. Do not hand-edit it.
 
+The file holds the four numbers twice: `versionMajor`…`versionBuild`, which the shared release workflows in `HereLiesAz/workflows` read and treat as canonical, and `major`…`build`. `tools/version.mjs` always writes both sets with the same values, reads the canonical set first, and keeps any other keys those workflows add (such as `versionMinorLast`).
+
 ~~~sh
 node tools/version.mjs print          # 0.1.2.7
 node tools/version.mjs print --code   # 7   (the Android versionCode)
