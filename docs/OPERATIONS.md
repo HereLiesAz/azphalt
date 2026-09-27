@@ -12,15 +12,14 @@ The production storefront is:
   `azphalt.store`, and the docs (`docs/`) at `azphalt.org`;
 - `apps/storefront/registry/` — git-backed canonical catalog source.
 
-The legacy Next.js storefront remains a reference implementation, not the production deployment
-target.
+The Next.js storefront is retired; `apps/storefront` now holds only the catalog.
 
 ### Cutover status
 
-The Worker deploys on every relevant push to `main`, but the public domains still point at the Vercel
-deployment of `apps/storefront` until they are attached to the Worker as Cloudflare Custom Domains.
-Until then, `azphalt.store` and `azphalt.org` are served by Next.js and the Worker is reachable only on
-its `workers.dev` address. The steps are in
+The Worker deploys on every relevant push to `main`, but the public domains still point at Vercel until
+they are attached to the Worker as Cloudflare Custom Domains. Vercel keeps serving the retired Next.js
+storefront's last good deployment — frozen, since builds of `main` now fail — and the Worker is reachable
+only on its `workers.dev` address. The steps are in
 [`apps/storefront-worker/README.md` § Domains](https://github.com/HereLiesAz/azphalt/blob/main/apps/storefront-worker/README.md#domains).
 Remove this section when the cutover is done.
 
