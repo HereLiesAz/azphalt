@@ -26,6 +26,12 @@ interface Env {
   ENTITLEMENT_PUBLIC_KEY_SPKI_B64?: string;
   BUYER_SESSION_SECRET?: string;
   ADMIN_TOKEN?: string;
+  /**
+   * Cloudflare's rate-limiting binding (`wrangler.jsonc` § ratelimits), keyed by client IP for the
+   * public write endpoints (ratings, reports). The counters live in Cloudflare's rate limiter, not in
+   * this Worker's storage, so no IP address is ever written down. Absent in tests and local dev.
+   */
+  WRITE_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
 interface CatalogEntry {
@@ -107,6 +113,9 @@ const BUYER_COOKIE = "azphalt_buyer_session";
 const BUYER_SUBJECT = /^buyer_[A-Za-z0-9_-]{20,128}$/;
 const PACKAGE_ID = /^[A-Za-z0-9._-]{1,200}$/;
 const VERSION = /^[A-Za-z0-9.+_-]{1,80}$/;
+/** `spec/marketplace-integrity.md` § 2. */
+const REPORT_REASONS = ["malware", "clone", "deceptive", "secret-leak", "broken", "ip-claim", "other"];
+const MAX_REPORT_TEXT = 4000;
 
 function json(data: unknown, status = 200, extra: HeadersInit = {}): Response {
   return new Response(JSON.stringify(data), {
@@ -454,9 +463,158 @@ function urlForm(fields: Record<string, string | undefined>): string {
   return body.toString();
 }
 
+interface RatingAggregate {
+  rating: number;
+  ratingCount: number;
+}
+
+/** Every rated package's average and count, from the Durable Object (`ratings` table). */
+async function ratingAggregates(env: Env): Promise<Record<string, RatingAggregate>> {
+  return stateJson<Record<string, RatingAggregate>>(env, "/ratings");
+}
+
+/** The marketplace catalog (free git catalog + paid listings) with live rating aggregates merged in. */
+async function ratedCatalog(req: Request, env: Env): Promise<CatalogEntry[]> {
+  const [catalog, listings, ratings] = await Promise.all([
+    getCatalog(req, env),
+    getListings(req, env),
+    ratingAggregates(env),
+  ]);
+  return marketplaceCatalog(catalog, listings).map((pkg) => {
+    const aggregate = ratings[pkg.id];
+    return aggregate ? { ...pkg, ...aggregate } : { ...pkg, ratingCount: 0 };
+  });
+}
+
 async function apiPackages(req: Request, env: Env): Promise<Response> {
+  return json(await ratedCatalog(req, env));
+}
+
+/** Whether this client may make one more public write. Always true where no limiter is bound. */
+async function allowWrite(req: Request, env: Env): Promise<boolean> {
+  if (!env.WRITE_LIMITER) return true;
+  const key = req.headers.get("cf-connecting-ip") || "unknown";
+  return (await env.WRITE_LIMITER.limit({ key })).success;
+}
+
+async function readJson(req: Request): Promise<Record<string, unknown> | undefined> {
+  try {
+    const body = await req.json();
+    return body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * `POST /api/ratings` — `{ packageId, stars }`, 1–5. One rating per package per browser: the rater is
+ * the opaque buyer subject in the signed recovery cookie (minted here if the browser has none), and a
+ * second rating from the same subject replaces the first. A paid package can only be rated by a
+ * subject holding an entitlement to it. Returns the package's new `{ rating, ratingCount }`.
+ */
+async function rate(req: Request, env: Env): Promise<Response> {
+  if (!(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
+  const body = await readJson(req);
+  if (!body) return json({ error: "invalid JSON body" }, 400);
+  const packageId = typeof body.packageId === "string" ? body.packageId.trim() : "";
+  const stars = body.stars;
+  if (!PACKAGE_ID.test(packageId)) return json({ error: "packageId is required" }, 400);
+  if (typeof stars !== "number" || !Number.isInteger(stars) || stars < 1 || stars > 5) {
+    return json({ error: "stars must be an integer from 1 to 5" }, 400);
+  }
+
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  return json(marketplaceCatalog(catalog, listings));
+  const free = catalog.some((pkg) => pkg.id === packageId);
+  const paid = !free && !!activeListing(listings, packageId);
+  if (!free && !paid) return json({ error: "unknown package: " + packageId }, 404);
+
+  const subjects = await readBuyerSubjects(req, env);
+  let subject: string | undefined = subjects[0];
+  if (paid) {
+    subject = undefined;
+    for (const candidate of subjects) {
+      const owned = await stateJson<EntitlementRecord[]>(env, "/purchases?subject=" + encodeURIComponent(candidate));
+      if (owned.some((record) => record.packageId === packageId)) {
+        subject = candidate;
+        break;
+      }
+    }
+    if (!subject) return json({ error: "only a buyer of this package can rate it" }, 403);
+  }
+  subject ||= newBuyerSubject();
+
+  const aggregate = await stateJson<RatingAggregate>(env, "/rating", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ packageId, subject, stars }),
+  });
+  const cookie = await makeBuyerCookie(req, subject, env);
+  return json(aggregate, 200, cookie ? { "set-cookie": cookie } : {});
+}
+
+function optionalText(value: unknown, max: number): string | undefined | null {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string" || value.length > max) return null;
+  return value;
+}
+
+/**
+ * `POST /reports` (and `/api/reports`) — file a report, `spec/marketplace-integrity.md` § 2. Anyone
+ * may file; nothing identifying the filer is stored. Every report here is **untrusted**: this store has
+ * no counter-signed hosts or verified accounts, so no report can trip auto-quarantine — each one waits
+ * for a moderator. An IP claim's signature is kept for the moderator to check, not verified here.
+ */
+async function fileReport(req: Request, env: Env): Promise<Response> {
+  if (!(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
+  const body = await readJson(req);
+  if (!body) return json({ error: "invalid JSON body" }, 400);
+
+  const packageId = typeof body.packageId === "string" ? body.packageId.trim() : "";
+  const reason = typeof body.reason === "string" ? body.reason : "";
+  if (!PACKAGE_ID.test(packageId)) return json({ error: "packageId is required" }, 400);
+  if (!REPORT_REASONS.includes(reason)) {
+    return json({ error: "reason must be one of " + REPORT_REASONS.join(", ") }, 400);
+  }
+  const version = optionalText(body.version, 80);
+  const detail = optionalText(body.detail, MAX_REPORT_TEXT);
+  const originalPackageId = optionalText(body.originalPackageId, 200);
+  const claimant = optionalText(body.claimant, 200);
+  const signature = optionalText(body.signature, 200);
+  if ([version, detail, originalPackageId, claimant, signature].includes(null)) {
+    return json({ error: "a text field is too long or not a string" }, 400);
+  }
+  if (version && !VERSION.test(version)) return json({ error: "invalid version" }, 400);
+  if (reason === "ip-claim" && !(originalPackageId && PACKAGE_ID.test(originalPackageId))) {
+    return json({ error: "an ip-claim needs originalPackageId" }, 400);
+  }
+
+  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  if (!catalog.some((pkg) => pkg.id === packageId) && !activeListing(listings, packageId)) {
+    return json({ error: "unknown package: " + packageId }, 404);
+  }
+
+  const report = await stateJson<Record<string, unknown>>(env, "/report", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      packageId,
+      version,
+      reason,
+      detail,
+      originalPackageId,
+      claimant,
+      signature,
+      trusted: false,
+      reportedAt: new Date().toISOString(),
+    }),
+  });
+  return json({ report, quarantined: false }, 201);
+}
+
+/** `GET /reports` (and `/api/reports`) — the moderation queue, newest first. Bearer `ADMIN_TOKEN`. */
+async function listReports(req: Request, env: Env): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  return json({ reports: await stateJson<unknown[]>(env, "/reports") });
 }
 
 function strings(value: unknown): string[] {
@@ -478,8 +636,7 @@ function sortPackages(packages: CatalogEntry[], sort: string | null): CatalogEnt
 
 async function repositoryPackages(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
-  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  let packages: CatalogEntry[] = marketplaceCatalog(catalog, listings).map((pkg) => ({
+  let packages: CatalogEntry[] = (await ratedCatalog(req, env)).map((pkg) => ({
     ...pkg,
     latest: pkg.version,
   }));
@@ -534,7 +691,11 @@ async function repositoryPackages(req: Request, env: Env): Promise<Response> {
 }
 
 async function repositoryDetail(req: Request, env: Env, id: string): Promise<Response> {
-  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  const [catalog, listings, ratings] = await Promise.all([
+    getCatalog(req, env),
+    getListings(req, env),
+    ratingAggregates(env),
+  ]);
   const publicPkg = catalog.find((entry) => entry.id === id);
   const listing = activeListing(listings, id);
   const pkg = publicPkg || (listing ? listedPackage(listing) : undefined);
@@ -542,6 +703,7 @@ async function repositoryDetail(req: Request, env: Env, id: string): Promise<Res
   const paid = !publicPkg && !!listing;
   return json({
     ...pkg,
+    ...(ratings[id] ?? { ratingCount: 0 }),
     latest: pkg.version,
     price: paid ? { amountCents: listing!.amountCents, currency: listing!.currency } : null,
     priceStatus: paid ? "paid" : "free",
@@ -1173,6 +1335,19 @@ export class AzphaltState {
         "package_id TEXT NOT NULL, version TEXT NOT NULL, chunk_index INTEGER NOT NULL, bytes BLOB NOT NULL, " +
         "PRIMARY KEY(package_id, version, chunk_index))"
       );
+      // One row per (package, rater). The rater is an opaque buyer subject, never a person or an IP.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS ratings (" +
+        "package_id TEXT NOT NULL, subject TEXT NOT NULL, stars INTEGER NOT NULL, updated_at TEXT NOT NULL, " +
+        "PRIMARY KEY(package_id, subject))"
+      );
+      // Filed reports. Nothing here identifies the filer beyond a `claimant` they chose to type.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS reports (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, package_id TEXT NOT NULL, version TEXT, reason TEXT NOT NULL, " +
+        "detail TEXT, original_package_id TEXT, claimant TEXT, signature TEXT, trusted INTEGER NOT NULL, " +
+        "reported_at TEXT NOT NULL)"
+      );
     });
   }
 
@@ -1546,6 +1721,90 @@ export class AzphaltState {
       }
     }
 
+    if (req.method === "GET" && path === "/ratings") {
+      const out: Record<string, { rating: number; ratingCount: number }> = {};
+      for (const row of sql.exec(
+        "SELECT package_id, AVG(stars) AS rating, COUNT(*) AS n FROM ratings GROUP BY package_id",
+      )) {
+        out[String(row.package_id)] = {
+          rating: Math.round(Number(row.rating) * 100) / 100,
+          ratingCount: Number(row.n),
+        };
+      }
+      return json(out);
+    }
+
+    if (req.method === "PUT" && path === "/rating") {
+      const { packageId, subject, stars } = await req.json() as {
+        packageId: string;
+        subject: string;
+        stars: number;
+      };
+      sql.exec(
+        "INSERT INTO ratings(package_id,subject,stars,updated_at) VALUES(?,?,?,?) " +
+        "ON CONFLICT(package_id,subject) DO UPDATE SET stars=excluded.stars, updated_at=excluded.updated_at",
+        packageId,
+        subject,
+        stars,
+        new Date().toISOString(),
+      );
+      const row = first(sql.exec(
+        "SELECT AVG(stars) AS rating, COUNT(*) AS n FROM ratings WHERE package_id=?",
+        packageId,
+      ));
+      return json({
+        rating: Math.round(Number(row?.rating) * 100) / 100,
+        ratingCount: Number(row?.n ?? 0),
+      });
+    }
+
+    if (req.method === "POST" && path === "/report") {
+      const r = await req.json() as {
+        packageId: string;
+        version?: string;
+        reason: string;
+        detail?: string;
+        originalPackageId?: string;
+        claimant?: string;
+        signature?: string;
+        trusted: boolean;
+        reportedAt: string;
+      };
+      const row = first(sql.exec(
+        "INSERT INTO reports(package_id,version,reason,detail,original_package_id,claimant,signature,trusted,reported_at) " +
+        "VALUES(?,?,?,?,?,?,?,?,?) RETURNING id",
+        r.packageId,
+        r.version ?? null,
+        r.reason,
+        r.detail ?? null,
+        r.originalPackageId ?? null,
+        r.claimant ?? null,
+        r.signature ?? null,
+        r.trusted ? 1 : 0,
+        r.reportedAt,
+      ));
+      return json({ id: Number(row?.id), ...r });
+    }
+
+    if (req.method === "GET" && path === "/reports") {
+      const optional = (value: unknown) => (value === null || value === undefined ? undefined : String(value));
+      return json(rows(sql.exec(
+        "SELECT id,package_id,version,reason,detail,original_package_id,claimant,signature,trusted,reported_at " +
+        "FROM reports ORDER BY reported_at DESC, id DESC LIMIT 500",
+      )).map((row) => ({
+        id: Number(row.id),
+        packageId: String(row.package_id),
+        version: optional(row.version),
+        reason: String(row.reason),
+        detail: optional(row.detail),
+        originalPackageId: optional(row.original_package_id),
+        claimant: optional(row.claimant),
+        signature: optional(row.signature),
+        trusted: Number(row.trusted) === 1,
+        reportedAt: String(row.reported_at),
+      })));
+    }
+
     return json({ error: "state route not found" }, 404);
   }
 }
@@ -1622,6 +1881,11 @@ export default {
       if (req.method === "GET" && path === "/api/purchases") return purchases(req, env);
       if (req.method === "POST" && path === "/api/connect/onboard") return connectOnboard(req, env);
       if (req.method === "GET" && path === "/api/connect/status") return connectStatus(req, env);
+      if (req.method === "POST" && path === "/api/ratings") return rate(req, env);
+      if (path === "/reports" || path === "/api/reports") {
+        if (req.method === "POST") return fileReport(req, env);
+        if (req.method === "GET") return listReports(req, env);
+      }
 
       if (req.method === "GET" && path === "/packages") return repositoryPackages(req, env);
       if (req.method === "GET" && path === "/revocations") return json({ revocations: [] });

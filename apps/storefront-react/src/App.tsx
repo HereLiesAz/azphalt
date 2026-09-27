@@ -4,6 +4,10 @@ import {
   fetchCheckoutStatus,
   fetchPurchases,
   fetchSellerStatus,
+  fetchReports,
+  fileReport,
+  ratePackage,
+  REPORT_REASONS,
   startSellerOnboarding,
   downloadPurchase,
   formatCount,
@@ -14,6 +18,7 @@ import {
   startCheckout,
   type PackageSummary,
   type Purchase,
+  type Report,
 } from "./api";
 import { drawPreview, paletteFor, rgba } from "./preview";
 import {
@@ -381,8 +386,30 @@ function Detail({
   // that does have a host the user should simply arrive there.
   const [noHost, setNoHost] = useState(false);
   const paid = isPaid(pkg);
-  const ratingLabel = formatRating(pkg.rating, pkg.ratingCount);
+  // The aggregate as the server last reported it; replaced by the response when this browser rates.
+  const [aggregate, setAggregate] = useState({ rating: pkg.rating, ratingCount: pkg.ratingCount });
+  const [myStars, setMyStars] = useState(0);
+  const [rateNote, setRateNote] = useState<string | null>(null);
+  const ratingLabel = formatRating(aggregate.rating, aggregate.ratingCount);
   const hosts = useMemo(() => hostsFor(pkg, catalog), [pkg, catalog]);
+
+  const rate = async (stars: number) => {
+    setMyStars(stars);
+    setRateNote(null);
+    try {
+      const r = await ratePackage(pkg.id, stars);
+      if (r.error) {
+        setRateNote(r.error);
+        setMyStars(0);
+      } else {
+        setAggregate({ rating: r.rating, ratingCount: r.ratingCount });
+        setRateNote("Thanks — your rating is saved for this browser.");
+      }
+    } catch (e) {
+      setRateNote((e as Error).message);
+      setMyStars(0);
+    }
+  };
 
   const hand = async () => {
     setBusy(true);
@@ -454,6 +481,33 @@ function Detail({
           ))}
         </div>
       )}
+      {(pkg.targetApps ?? []).length > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 16 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" }}>Available in</span>
+          {(pkg.targetApps ?? []).map((a) => (
+            <a key={a} className="chip" href={`/app/${encodeURIComponent(a)}`} style={{ textDecoration: "none" }}>
+              {a.split(".").pop() ?? a}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 20 }} role="group" aria-label="Rate this extension">
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)", marginRight: 6 }}>Rate</span>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            className="chip"
+            aria-label={`${n} star${n === 1 ? "" : "s"}`}
+            aria-pressed={myStars === n}
+            onClick={() => void rate(n)}
+            style={{ padding: "4px 10px", color: n <= myStars ? "var(--primary)" : "var(--on-surface-variant)" }}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      {rateNote && <div style={{ fontSize: 13, color: "var(--on-surface-variant)", marginTop: 6 }}>{rateNote}</div>}
       <button
         onClick={buy}
         disabled={busy}
@@ -475,6 +529,15 @@ function Detail({
           </button>
         </div>
       )}
+
+      <div style={{ marginTop: 28 }}>
+        <a
+          href={`/report?${new URLSearchParams({ packageId: pkg.id, version: pkg.version }).toString()}`}
+          style={{ fontSize: 13, color: "var(--on-surface-variant)" }}
+        >
+          Report this extension
+        </a>
+      </div>
 
       {dialog && (
         <div onClick={() => setDialog(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, zIndex: 60 }}>
@@ -590,7 +653,13 @@ function StorefrontApp() {
 
   useEffect(() => {
     fetchPackages()
-      .then(setPackages)
+      .then((all) => {
+        setPackages(all);
+        // `/?package=<id>` opens that package's detail — the link the per-app page uses.
+        const wanted = new URLSearchParams(window.location.search).get("package");
+        const hit = wanted ? all.find((p) => p.id === wanted) : undefined;
+        if (hit) open(hit);
+      })
       .catch((e) => console.error("Failed to fetch packages:", e))
       .finally(() => setLoading(false));
   }, []);
@@ -898,11 +967,258 @@ function PurchasesPage() {
   );
 }
 
-export function App() {
+/**
+ * `/report?packageId=…&version=…` — file a report (`spec/marketplace-integrity.md` § 2). A web report
+ * is untrusted: it goes to the moderation queue and never takes anything down on its own.
+ */
+function ReportPage() {
+  const params = new URLSearchParams(window.location.search);
+  const [packageId, setPackageId] = useState(params.get("packageId") ?? "");
+  const version = params.get("version") ?? undefined;
+  const [reason, setReason] = useState<string>("broken");
+  const [detail, setDetail] = useState("");
+  const [originalPackageId, setOriginalPackageId] = useState("");
+  const [claimant, setClaimant] = useState("");
+  const [signature, setSignature] = useState("");
+  const [state, setState] = useState<{ kind: "idle" | "sending" | "sent" } | { kind: "error"; message: string }>({ kind: "idle" });
+  const ipClaim = reason === "ip-claim";
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setState({ kind: "sending" });
+    const r = await fileReport({
+      packageId: packageId.trim(),
+      version,
+      reason,
+      detail: detail.trim() || undefined,
+      ...(ipClaim
+        ? {
+            originalPackageId: originalPackageId.trim(),
+            claimant: claimant.trim() || undefined,
+            signature: signature.trim() || undefined,
+          }
+        : {}),
+    }).catch((err: Error) => ({ error: err.message }));
+    setState(r.error ? { kind: "error", message: r.error } : { kind: "sent" });
+  };
+
+  const field = { width: "100%", boxSizing: "border-box" as const, border: "1px solid var(--outline)", background: "var(--surface)", color: "var(--on-background)", padding: "10px 12px", fontSize: 15, marginTop: 6 };
+  const label = { display: "block", marginTop: 18, fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" };
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 640, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <h1 style={{ fontSize: 44, marginTop: 32 }}>Report an extension</h1>
+      {state.kind === "sent" ? (
+        <p style={{ color: "var(--on-surface-variant)" }}>
+          Thanks. Your report is in the moderation queue. Nothing that identifies you was stored with it
+          {ipClaim && claimant.trim() ? ", apart from the name you gave" : ""}.
+        </p>
+      ) : (
+        <form onSubmit={(e) => void submit(e)}>
+          <p style={{ color: "var(--on-surface-variant)" }}>
+            A moderator reviews every report. Reports from the web never remove anything automatically.
+          </p>
+          <label style={label}>
+            Package id
+            <input required value={packageId} onChange={(e) => setPackageId(e.target.value)} style={field} />
+          </label>
+          <label style={label}>
+            What's wrong
+            <select value={reason} onChange={(e) => setReason(e.target.value)} style={field}>
+              {REPORT_REASONS.map(([value, text]) => (
+                <option key={value} value={value}>{text}</option>
+              ))}
+            </select>
+          </label>
+          {ipClaim && (
+            <>
+              <label style={label}>
+                Your original package id
+                <input required value={originalPackageId} onChange={(e) => setOriginalPackageId(e.target.value)} style={field} />
+              </label>
+              <label style={label}>
+                Your name or organisation (optional — stored with the claim)
+                <input value={claimant} onChange={(e) => setClaimant(e.target.value)} style={field} />
+              </label>
+              <label style={label}>
+                Signature (optional) — base64 Ed25519 signature of{" "}
+                <code>azphalt-ip-claim:v1:{packageId || "<packageId>"}:{originalPackageId || "<originalPackageId>"}</code>{" "}
+                by your package's publisher key
+                <input value={signature} onChange={(e) => setSignature(e.target.value)} style={field} />
+              </label>
+            </>
+          )}
+          <label style={label}>
+            Details (optional)
+            <textarea value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={4000} rows={6} style={field} />
+          </label>
+          {state.kind === "error" && <p style={{ color: "var(--error, #ffb4ab)" }}>{state.message}</p>}
+          <button
+            type="submit"
+            disabled={state.kind === "sending"}
+            style={{ marginTop: 20, border: 0, padding: "12px 22px", fontWeight: 800, background: "var(--primary)", color: "var(--on-primary)" }}
+          >
+            {state.kind === "sending" ? "Sending…" : "Send report"}
+          </button>
+        </form>
+      )}
+    </main>
+  );
+}
+
+/**
+ * `/moderation` — the report queue, newest first. Gated by the store's `ADMIN_TOKEN`, which is held in
+ * this page's memory only: it is never written to storage, so closing the tab signs out.
+ */
+function ModerationPage() {
+  const [token, setToken] = useState("");
+  const [reports, setReports] = useState<Report[] | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const load = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setStatus("Loading…");
+    try {
+      setReports(await fetchReports(token));
+      setStatus(null);
+    } catch (err) {
+      setReports(null);
+      setStatus((err as Error).message);
+    }
+  };
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 820, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <h1 style={{ fontSize: 44, marginTop: 32 }}>Moderation queue</h1>
+      <p style={{ color: "var(--on-surface-variant)" }}>
+        Filed reports, newest first. Every web report is untrusted: it waits here for a person and never
+        quarantines a package on its own.
+      </p>
+      <form onSubmit={(e) => void load(e)} style={{ display: "flex", gap: 8, marginTop: 16 }}>
+        <input
+          type="password"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="Admin token"
+          autoComplete="off"
+          style={{ flex: 1, border: "1px solid var(--outline)", background: "var(--surface)", color: "var(--on-background)", padding: "10px 12px", fontSize: 15 }}
+        />
+        <button className="chip" type="submit">{reports ? "Refresh" : "Open"}</button>
+      </form>
+      {status && <p style={{ color: "var(--on-surface-variant)" }}>{status}</p>}
+      {reports && reports.length === 0 && <p style={{ color: "var(--on-surface-variant)" }}>No reports filed.</p>}
+      <div style={{ display: "grid", gap: 12, marginTop: 24 }}>
+        {(reports ?? []).map((r) => (
+          <div key={r.id} style={{ padding: 18, background: "var(--surface-highest)", borderRadius: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
+              <strong>{r.packageId}{r.version ? ` @ ${r.version}` : ""}</strong>
+              <span style={{ fontSize: 12, color: "var(--on-surface-variant)" }}>{new Date(r.reportedAt).toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 8, fontSize: 12 }}>
+              <Pill text={r.reason} bg="var(--secondary-container)" fg="var(--on-secondary-container)" />
+              <span style={{ color: "var(--on-surface-variant)" }}>{r.trusted ? "trusted" : "untrusted"}</span>
+            </div>
+            {r.reason === "ip-claim" && (
+              <div style={{ fontSize: 13, marginTop: 8, color: "var(--on-surface-variant)" }}>
+                Claims to copy <strong>{r.originalPackageId}</strong>
+                {r.claimant ? ` · claimant: ${r.claimant}` : ""}
+                {r.signature ? " · signature supplied (unverified)" : ""}
+              </div>
+            )}
+            {r.detail && <p style={{ fontSize: 13, whiteSpace: "pre-wrap", color: "var(--on-surface-variant)", marginBottom: 0 }}>{r.detail}</p>}
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
+
+/**
+ * `/app/<appId>` — the packages one host app can see: those scoped to it (its companions and
+ * app-specific packages) and every global one (`spec/repository-api.md` § App scoping).
+ */
+function AppCatalogPage({ appId }: { appId: string }) {
+  const [packages, setPackages] = useState<PackageSummary[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPackages().then(setPackages).catch((e: Error) => setError(e.message));
+  }, []);
+
+  const scoped = (packages ?? []).filter((p) => (p.targetApps ?? []).includes(appId));
+  const global = (packages ?? []).filter((p) => (p.targetApps ?? []).length === 0);
+  const host = (packages ?? []).find((p) => p.kind === "app" && p.app?.hostId === appId);
+
+  const list = (title: string, items: PackageSummary[]) =>
+    items.length > 0 && (
+      <section style={{ marginTop: 28 }}>
+        <h2 style={{ fontSize: 20 }}>{title} <span style={{ color: "var(--on-surface-variant)", fontWeight: 400 }}>· {items.length}</span></h2>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          {items.map((p) => (
+            <a
+              key={p.id}
+              href={`/?package=${encodeURIComponent(p.id)}`}
+              style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "12px 16px", background: "var(--surface-highest)", color: "var(--on-surface)", textDecoration: "none" }}
+            >
+              <span><strong>{p.name}</strong> <span style={{ color: "var(--on-surface-variant)", fontSize: 13 }}>{p.kind}</span></span>
+              <span style={{ color: "var(--on-surface-variant)", fontSize: 13 }}>{priceLabel(p)}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    );
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 820, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <h1 style={{ fontSize: 44, marginTop: 32 }}>{host?.name ?? appId}</h1>
+      <p style={{ color: "var(--on-surface-variant)" }}>
+        Everything <code>{appId}</code> can use: packages made for it, plus every package that works in any app.
+      </p>
+      {error && <p style={{ color: "var(--on-surface-variant)" }}>{error}</p>}
+      {!packages && !error && <p style={{ color: "var(--on-surface-variant)" }}>Loading…</p>}
+      {packages && scoped.length === 0 && <p style={{ color: "var(--on-surface-variant)" }}>Nothing is made specifically for this app yet.</p>}
+      {list("Made for this app", scoped)}
+      {list("Works in any app", global)}
+    </main>
+  );
+}
+
+/** Every page's footer: the legal pages, and the version of the build that is actually deployed. */
+function SiteFooter() {
+  return (
+    <footer style={{ padding: "24px 32px 32px", textAlign: "center", fontSize: 12, color: "var(--on-surface-variant)" }}>
+      <a href="/privacy" style={{ color: "inherit" }}>Privacy</a>
+      <span aria-hidden="true" style={{ margin: "0 0.5rem" }}>·</span>
+      <a href="/terms" style={{ color: "inherit" }}>Terms</a>
+      <span aria-hidden="true" style={{ margin: "0 0.5rem" }}>·</span>
+      <a href="https://azphalt.org" style={{ color: "inherit" }}>Docs</a>
+      <span aria-hidden="true" style={{ margin: "0 0.5rem" }}>·</span>
+      <span title="Store version">v{__AZPHALT_VERSION__}</span>
+    </footer>
+  );
+}
+
+function Page() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   if (path === "/checkout/success") return <CheckoutSuccessPage />;
   if (path === "/purchases") return <PurchasesPage />;
   if (path === "/connect/onboard") return <SellerOnboardingPage />;
+  if (path === "/report") return <ReportPage />;
+  if (path === "/moderation") return <ModerationPage />;
+  const app = path.match(/^\/app\/([^/]+)$/);
+  if (app) return <AppCatalogPage appId={decodeURIComponent(app[1])} />;
   return <StorefrontApp />;
+}
+
+export function App() {
+  return (
+    <>
+      <Page />
+      <SiteFooter />
+    </>
+  );
 }
 

@@ -171,6 +171,74 @@ export async function fetchSellerStatus(sellerId: string, refresh = false): Prom
   return body;
 }
 
+/**
+ * Rate a package 1–5. One rating per browser (the signed recovery cookie names the rater); a paid
+ * package can only be rated by a browser that bought it. Resolves to the package's new aggregate.
+ */
+export async function ratePackage(
+  packageId: string,
+  stars: number,
+): Promise<{ rating?: number; ratingCount?: number; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/ratings`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ packageId, stars }),
+  });
+  const body = (await res.json()) as { rating?: number; ratingCount?: number; error?: string };
+  if (!res.ok && !body.error) body.error = `rating ${res.status}`;
+  return body;
+}
+
+export const REPORT_REASONS = [
+  ["broken", "It doesn't work"],
+  ["deceptive", "Misleading listing"],
+  ["malware", "Malicious or harmful"],
+  ["secret-leak", "Leaks secrets or credentials"],
+  ["clone", "Copy of another package"],
+  ["ip-claim", "Infringes my own package"],
+  ["other", "Something else"],
+] as const;
+
+export interface ReportInput {
+  packageId: string;
+  version?: string;
+  reason: string;
+  detail?: string;
+  originalPackageId?: string;
+  claimant?: string;
+  signature?: string;
+}
+
+export interface Report extends ReportInput {
+  id: number;
+  trusted: boolean;
+  reportedAt: string;
+}
+
+/** File a report (`spec/marketplace-integrity.md` § 2). Web reports are untrusted and wait for a moderator. */
+export async function fileReport(input: ReportInput): Promise<{ error?: string }> {
+  const res = await fetch(`${API_BASE}/api/reports`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (res.ok) return {};
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  return { error: body.error ?? `report ${res.status}` };
+}
+
+/** The moderation queue. The token is the store's `ADMIN_TOKEN`; the caller keeps it in memory only. */
+export async function fetchReports(token: string): Promise<Report[]> {
+  const res = await fetch(`${API_BASE}/api/reports`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (res.status === 401) throw new Error("That token was not accepted.");
+  if (!res.ok) throw new Error(`reports ${res.status}`);
+  return ((await res.json()) as { reports: Report[] }).reports;
+}
+
 export function priceLabel(p: PackageSummary): string {
   if (!p.price) return "FREE";
   const dollars = Math.floor(p.price.amountCents / 100);
