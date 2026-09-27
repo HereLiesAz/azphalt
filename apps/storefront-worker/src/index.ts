@@ -1,5 +1,6 @@
 import { MAX_PUBLISH_BYTES, publish, type RepositoryTokens } from "./publish";
-import { parseServiceAccount, PlayUnavailableError, verifyPlayPurchase } from "./play";
+import { compareSemver } from "./semver";
+import { parseServiceAccount, PlayUnavailableError, verifyPlayPurchase, verifyPlaySubscription } from "./play";
 
 type Fetcher = { fetch(input: Request): Promise<Response> };
 type DurableObjectNamespaceLike = {
@@ -781,6 +782,48 @@ async function resolveReport(req: Request, env: Env, reportId: string): Promise<
   return json({ report, revocation: await yank(env, report.packageId, version, reason) });
 }
 
+const MAX_UPDATES_BODY = 1024 * 1024;
+const MAX_UPDATES_ENTRIES = 5000;
+
+/**
+ * `POST /updates` — batch update check (repository-api.md § 6). The body is the host's installed
+ * `{ id, version }[]`; the answer lists only ids whose served version is strictly newer. Current,
+ * ahead, unknown and yanked-out ids are omitted. Read-only despite the verb.
+ */
+async function batchUpdates(req: Request, env: Env): Promise<Response> {
+  if (Number(req.headers.get("content-length") || "0") > MAX_UPDATES_BODY) {
+    return REPO_ERROR(413, "payload_too_large", "an update check body is at most 1 MB");
+  }
+  let parsed: unknown;
+  try {
+    parsed = await req.json();
+  } catch {
+    return REPO_ERROR(400, "bad_request", "invalid JSON body: expected an array of { id, version }");
+  }
+  if (!Array.isArray(parsed)) return REPO_ERROR(400, "bad_request", "body must be a JSON array of { id, version }");
+  if (parsed.length > MAX_UPDATES_ENTRIES) {
+    return REPO_ERROR(413, "payload_too_large", `at most ${MAX_UPDATES_ENTRIES} entries per request`);
+  }
+  for (const item of parsed) {
+    const rec = item as Record<string, unknown> | null;
+    if (!rec || typeof rec !== "object" || typeof rec.id !== "string" || typeof rec.version !== "string") {
+      return REPO_ERROR(400, "bad_request", "each entry must be an object with string `id` and `version`");
+    }
+  }
+  const [catalog, listings, revoked] = await Promise.all([getCatalog(req, env), getListings(req, env), revocations(env)]);
+  const yanked = new Set(revoked.map((r) => r.id + "@" + r.version));
+  const served = new Map<string, string>();
+  for (const pkg of marketplaceCatalog(catalog, listings)) {
+    if (!yanked.has(pkg.id + "@" + pkg.version)) served.set(pkg.id, pkg.version);
+  }
+  const updates: { id: string; latest: string }[] = [];
+  for (const { id, version } of parsed as { id: string; version: string }[]) {
+    const latest = served.get(id);
+    if (latest && compareSemver(latest, version) > 0) updates.push({ id, latest });
+  }
+  return json({ updates });
+}
+
 const INSTALL_EVENTS = ["installed", "uninstalled", "activated", "deactivated"];
 const MAX_INSTALL_BODY = 256 * 1024;
 
@@ -840,7 +883,6 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
 
   const listing = activeListing(await getListings(req, env), packageId);
   if (!listing) return REPO_ERROR(404, "not_found", "no paid listing for " + packageId);
-  if (listing.interval) return REPO_ERROR(501, "not_implemented", "Play subscriptions are not supported yet");
   // The product must be the one this package is sold as; otherwise any cheap product would unlock it.
   if (productId !== (listing.playProductId || packageId)) {
     return REPO_ERROR(402, "payment_required", "that product does not entitle this package");
@@ -848,7 +890,9 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
 
   let grant: Awaited<ReturnType<typeof verifyPlayPurchase>>;
   try {
-    grant = await verifyPlayPurchase({ packageName: env.PLAY_PACKAGE_NAME, serviceAccount }, productId, purchaseToken);
+    // A subscription listing is sold as a Play subscription product, and is checked (and expires) as one.
+    const verify = listing.interval ? verifyPlaySubscription : verifyPlayPurchase;
+    grant = await verify({ packageName: env.PLAY_PACKAGE_NAME, serviceAccount }, productId, purchaseToken);
   } catch (e) {
     // Not the buyer's fault and not a refusal: the store app retries instead of saying they did not pay.
     const message = e instanceof PlayUnavailableError ? e.message : "verification failed";
@@ -859,8 +903,9 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
   const token = await issueEntitlement(env, {
     packageId,
     subject: grant.subject,
-    kind: "perpetual",
+    kind: grant.expiresAt ? "subscription" : "perpetual",
     issuedAt: new Date().toISOString(),
+    ...(grant.expiresAt ? { expiresAt: grant.expiresAt } : {}),
   });
   return json({ entitlement: encodeToken(token) });
 }
@@ -2362,6 +2407,7 @@ export default {
       if (req.method === "POST" && path === "/packages") return publishPackage(req, env);
       if (req.method === "GET" && path === "/revocations") return revocationFeed(req, env);
       if (req.method === "POST" && path === "/installs") return reportInstalls(req, env);
+      if (req.method === "POST" && path === "/updates") return batchUpdates(req, env);
       if (req.method === "POST" && path === "/entitlements/play") return playEntitlement(req, env);
       if (req.method === "POST" && path === "/api/admin/revocations") return adminRevoke(req, env);
 
