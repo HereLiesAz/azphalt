@@ -6,6 +6,7 @@ import type {
   Kind,
   PackManifest,
   PackEntry,
+  RepositoryErrorCode,
 } from "@azphalt/azdk";
 
 /** A `GET /packages/{id}` detail body — the fields this client reads (a superset of the manifest). */
@@ -71,6 +72,41 @@ export interface DownloadOptions {
   onProgress?: (received: number, total: number) => void;
 }
 
+/** A `202 Accepted` from `POST /packages`: queued for review, not yet served (`repository-api.md` § 9). */
+export interface PublishPending {
+  status: "pending-review";
+  id: string;
+  version: string;
+  /** Where the review happens (also the response's `Location`). */
+  review: string;
+  publisher: { publicKey: string; pin: "new" | "matches" };
+}
+
+/** A `201 Created` from `POST /packages`: live now; `package` is the new version's detail (§ 3). */
+export interface PublishLive {
+  status: "published";
+  package: PackageDetail;
+}
+
+export type PublishResult = PublishPending | PublishLive;
+
+/**
+ * A refused publish, carrying the error envelope's machine `code` and any per-problem `details`
+ * (`"digest mismatch: assets/look.cube"`). `501` (`not_implemented`) means this repository takes no
+ * publishes and is final.
+ */
+export class PublishError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: RepositoryErrorCode | undefined,
+    message: string,
+    public readonly details: string[] = [],
+  ) {
+    super(message);
+    this.name = "PublishError";
+  }
+}
+
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Parse the total size out of a `Content-Range: bytes start-end/total` header, or `undefined`. */
@@ -102,6 +138,26 @@ export class RepositoryClient {
       h["Authorization"] = `Bearer ${this.token}`;
     }
     return h;
+  }
+
+  /**
+   * Publish a signed `.azp` (`POST /packages`, `repository-api.md` § 9). The signature is the
+   * publisher's identity; there is no other credential. Resolves to the live package (`201`) or to the
+   * pending review (`202`); throws {@link PublishError} on any refusal.
+   */
+  public async publish(azp: Uint8Array, opts: { signal?: AbortSignal } = {}): Promise<PublishResult> {
+    const res = await fetch(`${this.baseUrl}/packages`, {
+      method: "POST",
+      headers: { ...this.headers, "Content-Type": "application/vnd.azphalt.package" },
+      body: azp as BodyInit,
+      signal: opts.signal,
+    });
+    const body = await res.json().catch(() => undefined) as Record<string, unknown> | undefined;
+    if (res.status === 201) return { status: "published", package: body as unknown as PackageDetail };
+    if (res.status === 202) return body as unknown as PublishPending;
+    const error = (body?.error ?? {}) as { code?: RepositoryErrorCode; message?: string; details?: unknown };
+    const details = Array.isArray(error.details) ? error.details.filter((d): d is string => typeof d === "string") : [];
+    throw new PublishError(res.status, error.code, error.message || `Publish failed: ${res.status}`, details);
   }
 
   public async getIndex(): Promise<RepositoryIndex> {

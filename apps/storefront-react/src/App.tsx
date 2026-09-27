@@ -5,6 +5,7 @@ import {
   fetchPurchases,
   fetchSellerStatus,
   fetchReports,
+  resolveReport,
   fileReport,
   publishPackage,
   ratePackage,
@@ -1091,6 +1092,18 @@ function ModerationPage() {
     }
   };
 
+  const resolve = async (r: Report, action: "dismiss" | "yank") => {
+    if (action === "yank" && !window.confirm(
+      `Yank ${r.packageId}${r.version ? " " + r.version : ""}? It stops downloading and installed hosts are told to disable it.`,
+    )) return;
+    try {
+      await resolveReport(token, r.id, action);
+      await load();
+    } catch (err) {
+      setStatus((err as Error).message);
+    }
+  };
+
   return (
     <main style={{ minHeight: "100vh", padding: 32, maxWidth: 820, margin: "0 auto" }}>
       <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
@@ -1131,6 +1144,21 @@ function ModerationPage() {
               </div>
             )}
             {r.detail && <p style={{ fontSize: 13, whiteSpace: "pre-wrap", color: "var(--on-surface-variant)", marginBottom: 0 }}>{r.detail}</p>}
+            <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center", fontSize: 13 }}>
+              {r.resolution ? (
+                <span style={{ color: "var(--on-surface-variant)" }}>
+                  {r.resolution === "yanked" ? "Yanked" : "Dismissed"}
+                  {r.resolvedAt ? ` · ${new Date(r.resolvedAt).toLocaleString()}` : ""}
+                </span>
+              ) : (
+                <>
+                  <button className="chip" type="button" onClick={() => void resolve(r, "dismiss")}>Dismiss</button>
+                  <button className="chip" type="button" onClick={() => void resolve(r, "yank")}>
+                    Yank {r.version ? r.version : "current version"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>

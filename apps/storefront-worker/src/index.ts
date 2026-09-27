@@ -1,4 +1,5 @@
 import { MAX_PUBLISH_BYTES, publish, type RepositoryTokens } from "./publish";
+import { parseServiceAccount, PlayUnavailableError, verifyPlayPurchase } from "./play";
 
 type Fetcher = { fetch(input: Request): Promise<Response> };
 type DurableObjectNamespaceLike = {
@@ -42,6 +43,10 @@ interface Env {
   GITHUB_PUBLISH_TOKEN?: string;
   /** `owner/repo` publish pull requests are opened against. */
   PUBLISH_REPOSITORY?: string;
+  /** The store app's Play application id. With PLAY_SERVICE_ACCOUNT_JSON, enables `POST /entitlements/play`. */
+  PLAY_PACKAGE_NAME?: string;
+  /** A Google service-account key (JSON) with Play Console access to that app's orders. */
+  PLAY_SERVICE_ACCOUNT_JSON?: string;
 }
 
 interface CatalogEntry {
@@ -63,6 +68,8 @@ interface Listing {
   currency: string;
   interval?: "month" | "year";
   status?: "active" | "paused";
+  /** The Play product this package is sold as in the store app. Defaults to the package id. */
+  playProductId?: string;
   /** Public metadata for a paid-only package. The .azp bytes themselves must never be committed. */
   package: {
     version: string;
@@ -106,6 +113,21 @@ interface EntitlementToken {
   claims: EntitlementClaims;
   signature: string;
   publicKey: string;
+}
+
+interface InstallEvent {
+  id: string;
+  version: string;
+  event: string;
+  token?: string;
+  receipt?: string;
+}
+
+interface Revocation {
+  id: string;
+  version: string;
+  reason?: string;
+  revokedAt: string;
 }
 
 interface EntitlementRecord {
@@ -483,17 +505,37 @@ async function ratingAggregates(env: Env): Promise<Record<string, RatingAggregat
   return stateJson<Record<string, RatingAggregate>>(env, "/ratings");
 }
 
-/** The marketplace catalog (free git catalog + paid listings) with live rating aggregates merged in. */
+/** Every yanked version, newest first (the `revocations` table). */
+async function revocations(env: Env): Promise<Revocation[]> {
+  return stateJson<Revocation[]>(env, "/revocations");
+}
+
+async function isRevoked(env: Env, id: string, version: string): Promise<Revocation | undefined> {
+  return (await revocations(env)).find((r) => r.id === id && r.version === version);
+}
+
+/**
+ * The marketplace catalog (free git catalog + paid listings) with live rating aggregates and install
+ * tallies merged in. A package whose served version is yanked is left out: it cannot be downloaded,
+ * so a store card for it would be a dead end. Its detail (§ 3) still answers, with `yanked: true`.
+ */
 async function ratedCatalog(req: Request, env: Env): Promise<CatalogEntry[]> {
-  const [catalog, listings, ratings] = await Promise.all([
+  const [catalog, listings, ratings, installs, revoked] = await Promise.all([
     getCatalog(req, env),
     getListings(req, env),
     ratingAggregates(env),
+    stateJson<Record<string, { installs: number; uninstalls: number }>>(env, "/install-counts"),
+    revocations(env),
   ]);
-  return marketplaceCatalog(catalog, listings).map((pkg) => {
-    const aggregate = ratings[pkg.id];
-    return aggregate ? { ...pkg, ...aggregate } : { ...pkg, ratingCount: 0 };
-  });
+  const yanked = new Set(revoked.map((r) => r.id + "@" + r.version));
+  return marketplaceCatalog(catalog, listings)
+    .filter((pkg) => !yanked.has(pkg.id + "@" + pkg.version))
+    .map((pkg) => ({
+      ...pkg,
+      ...(ratings[pkg.id] ?? { ratingCount: 0 }),
+      // Installs and uninstalls, never "active installs" (state-reporting.md § 4.3).
+      ...(installs[pkg.id] ?? { installs: 0, uninstalls: 0 }),
+    }));
 }
 
 async function apiPackages(req: Request, env: Env): Promise<Response> {
@@ -652,6 +694,177 @@ async function listReports(req: Request, env: Env): Promise<Response> {
   return json({ reports: await stateJson<unknown[]>(env, "/reports") });
 }
 
+const REPO_ERROR = (status: number, code: string, message: string) => json({ error: { code, message } }, status);
+
+/** `GET /revocations?since=` — the yanked-version feed, newest first (repository-api.md § 5). */
+async function revocationFeed(req: Request, env: Env): Promise<Response> {
+  const since = new URL(req.url).searchParams.get("since");
+  let after = -Infinity;
+  if (since !== null) {
+    after = Date.parse(since);
+    if (Number.isNaN(after)) return REPO_ERROR(400, "bad_request", "since must be an ISO-8601 instant");
+  }
+  const feed = (await revocations(env)).filter((r) => Date.parse(r.revokedAt) > after);
+  return json({ revocations: feed });
+}
+
+/** The version a moderator's yank applies to: the one named, or the version the store serves now. */
+async function servedVersion(req: Request, env: Env, id: string): Promise<string | undefined> {
+  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  return catalog.find((pkg) => pkg.id === id)?.version ?? activeListing(listings, id)?.package.version;
+}
+
+async function yank(env: Env, id: string, version: string, reason: string | undefined): Promise<Revocation> {
+  return stateJson<Revocation>(env, "/revocation/" + encodeURIComponent(id) + "/" + encodeURIComponent(version), {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ reason, revokedAt: new Date().toISOString() }),
+  });
+}
+
+/**
+ * `POST /api/admin/revocations` `{ packageId, version?, reason? }` — yank a version (default: the one
+ * served now). Installed hosts learn on their next `/revocations` poll. Bearer `ADMIN_TOKEN`.
+ */
+async function adminRevoke(req: Request, env: Env): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  const body = await readJson(req);
+  const packageId = typeof body?.packageId === "string" ? body.packageId : "";
+  if (!PACKAGE_ID.test(packageId)) return json({ error: "packageId is required" }, 400);
+  const requested = optionalText(body?.version, 80);
+  const reason = optionalText(body?.reason, 200);
+  if (requested === null || reason === null || (requested && !VERSION.test(requested))) {
+    return json({ error: "invalid version or reason" }, 400);
+  }
+  const version = requested || await servedVersion(req, env, packageId);
+  if (!version) return json({ error: "unknown package: " + packageId }, 404);
+  return json({ revocation: await yank(env, packageId, version, reason) }, 201);
+}
+
+/** `DELETE /api/admin/revocations/{id}/{version}` — undo a mistaken yank. Bearer `ADMIN_TOKEN`. */
+async function adminUnrevoke(req: Request, env: Env, id: string, version: string): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  const res = await state(env).fetch(new Request(
+    "https://state.internal/revocation/" + encodeURIComponent(id) + "/" + encodeURIComponent(version),
+    { method: "DELETE" },
+  ));
+  return res.status === 200 ? new Response(null, { status: 204 }) : json({ error: "not revoked" }, 404);
+}
+
+/**
+ * `POST /api/reports/{id}/resolve` `{ action: "dismiss" | "yank", reason? }` — a moderator's decision
+ * on a report. `yank` revokes the reported version (or, if the report named none, the version served
+ * now) with the report's reason unless another is given. Bearer `ADMIN_TOKEN`.
+ */
+async function resolveReport(req: Request, env: Env, reportId: string): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  const body = await readJson(req);
+  const action = body?.action;
+  if (action !== "dismiss" && action !== "yank") return json({ error: 'action must be "dismiss" or "yank"' }, 400);
+  const reasonOverride = optionalText(body?.reason, 200);
+  if (reasonOverride === null) return json({ error: "invalid reason" }, 400);
+
+  const res = await state(env).fetch(new Request("https://state.internal/report/" + reportId + "/resolution", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ resolution: action === "yank" ? "yanked" : "dismissed", resolvedAt: new Date().toISOString() }),
+  }));
+  if (res.status === 404) return json({ error: "report not found" }, 404);
+  const report = await res.json() as { packageId: string; version?: string };
+  if (action === "dismiss") return json({ report });
+
+  const reports = await stateJson<{ id: number; reason: string }[]>(env, "/reports");
+  const reason = reasonOverride || reports.find((r) => String(r.id) === reportId)?.reason;
+  const version = report.version || await servedVersion(req, env, report.packageId);
+  if (!version) return json({ error: "the reported package is no longer served" }, 409);
+  return json({ report, revocation: await yank(env, report.packageId, version, reason) });
+}
+
+const INSTALL_EVENTS = ["installed", "uninstalled", "activated", "deactivated"];
+const MAX_INSTALL_BODY = 256 * 1024;
+
+/** `POST /installs` — install/uninstall transitions against report tokens (repository-api.md § 8). */
+async function reportInstalls(req: Request, env: Env): Promise<Response> {
+  if (Number(req.headers.get("content-length") || "0") > MAX_INSTALL_BODY) {
+    return REPO_ERROR(413, "payload_too_large", "at most 200 events per request");
+  }
+  const body = await readJson(req);
+  const events = body?.events;
+  if (!Array.isArray(events) || events.length > 200) {
+    return REPO_ERROR(400, "bad_request", "body must be { events: [...] } with at most 200 events");
+  }
+  const clean: InstallEvent[] = [];
+  for (const raw of events) {
+    const e = raw as Record<string, unknown>;
+    if (!e || typeof e !== "object" || typeof e.id !== "string" || typeof e.version !== "string" || typeof e.event !== "string") {
+      return REPO_ERROR(400, "bad_request", "every event needs string id, version and event");
+    }
+    // An unrecognised event, or an over-long credential, is rejected (counted), not fatal.
+    const credential = (value: unknown) => (typeof value === "string" && value.length <= 200 ? value : undefined);
+    clean.push({
+      id: e.id.slice(0, 200),
+      version: e.version.slice(0, 80),
+      event: INSTALL_EVENTS.includes(e.event) ? e.event : "unknown",
+      token: credential(e.token),
+      receipt: credential(e.receipt),
+    });
+  }
+  return json(await stateJson(env, "/installs", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ events: clean }),
+  }));
+}
+
+/**
+ * `POST /entitlements/play` — trade a verified Google Play purchase for the same signed entitlement a
+ * web purchase produces (repository-api.md § 7, `src/play.ts`). `501` until PLAY_PACKAGE_NAME and
+ * PLAY_SERVICE_ACCOUNT_JSON are set.
+ */
+async function playEntitlement(req: Request, env: Env): Promise<Response> {
+  const serviceAccount = parseServiceAccount(env.PLAY_SERVICE_ACCOUNT_JSON);
+  if (!env.PLAY_PACKAGE_NAME || !serviceAccount) {
+    return REPO_ERROR(501, "not_implemented", "Play purchase verification is not configured");
+  }
+  const body = await readJson(req);
+  if (!body) return REPO_ERROR(400, "bad_request", "body must be a JSON object");
+  const { packageId, productId, purchaseToken } = body;
+  if (typeof packageId !== "string" || typeof productId !== "string" || typeof purchaseToken !== "string") {
+    return REPO_ERROR(400, "bad_request", "packageId, productId and purchaseToken are required");
+  }
+  // Bounded before anything is forwarded to Google.
+  if (purchaseToken.length > 4096 || packageId.length > 256 || productId.length > 256) {
+    return REPO_ERROR(400, "bad_request", "request fields exceed their maximum length");
+  }
+
+  const listing = activeListing(await getListings(req, env), packageId);
+  if (!listing) return REPO_ERROR(404, "not_found", "no paid listing for " + packageId);
+  if (listing.interval) return REPO_ERROR(501, "not_implemented", "Play subscriptions are not supported yet");
+  // The product must be the one this package is sold as; otherwise any cheap product would unlock it.
+  if (productId !== (listing.playProductId || packageId)) {
+    return REPO_ERROR(402, "payment_required", "that product does not entitle this package");
+  }
+
+  let grant: Awaited<ReturnType<typeof verifyPlayPurchase>>;
+  try {
+    grant = await verifyPlayPurchase({ packageName: env.PLAY_PACKAGE_NAME, serviceAccount }, productId, purchaseToken);
+  } catch (e) {
+    // Not the buyer's fault and not a refusal: the store app retries instead of saying they did not pay.
+    const message = e instanceof PlayUnavailableError ? e.message : "verification failed";
+    return REPO_ERROR(502, "bad_gateway", "could not verify the purchase with Google: " + message);
+  }
+  if (!grant) return REPO_ERROR(402, "payment_required", "that purchase does not entitle this package");
+
+  const token = await issueEntitlement(env, {
+    packageId,
+    subject: grant.subject,
+    kind: "perpetual",
+    issuedAt: new Date().toISOString(),
+  });
+  return json({ entitlement: encodeToken(token) });
+}
+
+
 function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
@@ -736,6 +949,7 @@ async function repositoryDetail(req: Request, env: Env, id: string): Promise<Res
   const pkg = publicPkg || (listing ? listedPackage(listing) : undefined);
   if (!pkg) return json({ error: { code: "not_found", message: "unknown package: " + id } }, 404);
   const paid = !publicPkg && !!listing;
+  const yanked = !!(await isRevoked(env, id, pkg.version));
   return json({
     ...pkg,
     ...(ratings[id] ?? { ratingCount: 0 }),
@@ -747,7 +961,7 @@ async function repositoryDetail(req: Request, env: Env, id: string): Promise<Res
       integrity: pkg.integrity,
       digest: pkg.integrity,
       size: pkg.bytes,
-      yanked: false,
+      yanked,
     }],
   });
 }
@@ -1268,15 +1482,68 @@ async function adminUpload(req: Request, env: Env, id: string, version: string):
   );
 }
 
+/**
+ * Mint the `azphalt-report-token` for one full download (repository-api.md § 8). Ranged responses get
+ * none: one logical transfer is many range requests.
+ */
+async function withReportToken(env: Env, res: Response, id: string, version: string): Promise<Response> {
+  if (res.status !== 200) return res;
+  const { token } = await stateJson<{ token: string }>(env, "/report-token", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ packageId: id, version }),
+  });
+  const headers = new Headers(res.headers);
+  headers.set("azphalt-report-token", token);
+  return new Response(res.body, { status: res.status, headers });
+}
+
 async function download(req: Request, env: Env, id: string, version: string): Promise<Response> {
-  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  const [catalog, listings, revoked] = await Promise.all([
+    getCatalog(req, env),
+    getListings(req, env),
+    isRevoked(env, id, version),
+  ]);
+  // A yanked version is withdrawn, not hidden behind a flag the client may not read.
+  if (revoked) {
+    return json({
+      error: {
+        code: "not_found",
+        message: "version " + version + " of " + id + " was revoked" + (revoked.reason ? ": " + revoked.reason : ""),
+      },
+    }, 404);
+  }
+
   const publicPkg = catalog.find((p) => p.id === id && p.version === version);
   if (publicPkg) {
     if (!publicPkg.file) return json({ error: "package file unavailable" }, 404);
-    return Response.redirect(
+    // Served through the Worker rather than redirected, so a full download can carry its report token
+    // (a redirect's headers never reach the client that follows it). The bytes still come from the
+    // reviewed git catalog; Range passes through, so resumable downloads keep working.
+    const upstreamHeaders = new Headers();
+    const range = req.headers.get("range");
+    if (range) upstreamHeaders.set("range", range);
+    const upstream = await fetch(
       env.GITHUB_RAW_BASE.replace(/\/$/, "") + "/packages/" + encodeURIComponent(publicPkg.file),
-      302,
+      { headers: upstreamHeaders },
     );
+    if (upstream.status === 404) return json({ error: "package file unavailable" }, 404);
+    if (upstream.status === 416) {
+      return new Response(null, { status: 416, headers: { "content-range": upstream.headers.get("content-range") || "" } });
+    }
+    if (upstream.status !== 200 && upstream.status !== 206) {
+      return json({ error: { code: "bad_gateway", message: "the package store answered " + upstream.status } }, 502);
+    }
+    const out = new Headers();
+    out.set("content-type", "application/vnd.azphalt.package");
+    out.set("content-disposition", 'attachment; filename="' + id + "-" + version + '.azp"');
+    out.set("accept-ranges", "bytes");
+    out.set("cache-control", "public, max-age=300");
+    for (const name of ["content-length", "content-range", "etag"]) {
+      const value = upstream.headers.get(name);
+      if (value) out.set(name, value);
+    }
+    return withReportToken(env, new Response(upstream.body, { status: upstream.status, headers: out }), id, version);
   }
 
   const listing = activeListing(listings, id);
@@ -1307,7 +1574,7 @@ async function download(req: Request, env: Env, id: string, version: string): Pr
   out.set("content-type", "application/vnd.azphalt.package");
   out.set("content-disposition", 'attachment; filename="' + id + "-" + version + '.azp"');
   out.set("cache-control", "private, no-store");
-  return new Response(stored.body, { status: stored.status, headers: out });
+  return withReportToken(env, new Response(stored.body, { status: stored.status, headers: out }), id, version);
 }
 
 function first(iter: Iterable<Record<string, unknown>>): Record<string, unknown> | undefined {
@@ -1382,6 +1649,31 @@ export class AzphaltState {
         "id INTEGER PRIMARY KEY AUTOINCREMENT, package_id TEXT NOT NULL, version TEXT, reason TEXT NOT NULL, " +
         "detail TEXT, original_package_id TEXT, claimant TEXT, signature TEXT, trusted INTEGER NOT NULL, " +
         "reported_at TEXT NOT NULL)"
+      );
+      // A moderator's decision on a report: "dismissed" or "yanked". Added after the table shipped.
+      const reportColumns = new Set(rows(sql.exec("PRAGMA table_info(reports)")).map((row) => String(row.name)));
+      if (!reportColumns.has("resolution")) sql.exec("ALTER TABLE reports ADD COLUMN resolution TEXT");
+      if (!reportColumns.has("resolved_at")) sql.exec("ALTER TABLE reports ADD COLUMN resolved_at TEXT");
+      // Yanked versions — the `/revocations` feed (repository-api.md § 5).
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS revocations (" +
+        "package_id TEXT NOT NULL, version TEXT NOT NULL, reason TEXT, revoked_at TEXT NOT NULL, " +
+        "PRIMARY KEY(package_id, version))"
+      );
+      // Install reporting (repository-api.md § 8, state-reporting.md § 4). A report token is a bare
+      // random string minted with a full download; nothing about who received it is stored. A receipt
+      // is minted when an install is accepted and spent by the matching uninstall.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS report_tokens (" +
+        "token TEXT PRIMARY KEY, package_id TEXT NOT NULL, version TEXT NOT NULL, issued_at TEXT NOT NULL)"
+      );
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS install_receipts (" +
+        "receipt TEXT PRIMARY KEY, package_id TEXT NOT NULL, version TEXT NOT NULL, issued_at TEXT NOT NULL)"
+      );
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS install_counts (" +
+        "package_id TEXT PRIMARY KEY, installs INTEGER NOT NULL DEFAULT 0, uninstalls INTEGER NOT NULL DEFAULT 0)"
       );
     });
   }
@@ -1824,8 +2116,8 @@ export class AzphaltState {
     if (req.method === "GET" && path === "/reports") {
       const optional = (value: unknown) => (value === null || value === undefined ? undefined : String(value));
       return json(rows(sql.exec(
-        "SELECT id,package_id,version,reason,detail,original_package_id,claimant,signature,trusted,reported_at " +
-        "FROM reports ORDER BY reported_at DESC, id DESC LIMIT 500",
+        "SELECT id,package_id,version,reason,detail,original_package_id,claimant,signature,trusted,reported_at," +
+        "resolution,resolved_at FROM reports ORDER BY reported_at DESC, id DESC LIMIT 500",
       )).map((row) => ({
         id: Number(row.id),
         packageId: String(row.package_id),
@@ -1837,7 +2129,150 @@ export class AzphaltState {
         signature: optional(row.signature),
         trusted: Number(row.trusted) === 1,
         reportedAt: String(row.reported_at),
+        resolution: optional(row.resolution),
+        resolvedAt: optional(row.resolved_at),
       })));
+    }
+
+    match = path.match(/^\/report\/(\d+)\/resolution$/);
+    if (match && req.method === "PUT") {
+      const { resolution, resolvedAt } = await req.json() as { resolution: string; resolvedAt: string };
+      const row = first(sql.exec(
+        "UPDATE reports SET resolution=?, resolved_at=? WHERE id=? RETURNING package_id, version",
+        resolution,
+        resolvedAt,
+        Number(match[1]),
+      ));
+      if (!row) return json({ error: "report not found" }, 404);
+      return json({
+        id: Number(match[1]),
+        packageId: String(row.package_id),
+        version: row.version === null || row.version === undefined ? undefined : String(row.version),
+        resolution,
+        resolvedAt,
+      });
+    }
+
+    if (req.method === "GET" && path === "/revocations") {
+      return json(rows(sql.exec(
+        "SELECT package_id, version, reason, revoked_at FROM revocations ORDER BY revoked_at DESC, package_id",
+      )).map((row) => ({
+        id: String(row.package_id),
+        version: String(row.version),
+        ...(row.reason === null || row.reason === undefined ? {} : { reason: String(row.reason) }),
+        revokedAt: String(row.revoked_at),
+      })));
+    }
+
+    match = path.match(/^\/revocation\/([^/]+)\/([^/]+)$/);
+    if (match && req.method === "PUT") {
+      const { reason, revokedAt } = await req.json() as { reason?: string; revokedAt: string };
+      const id = decodeURIComponent(match[1]);
+      const version = decodeURIComponent(match[2]);
+      // Re-yanking keeps the original instant: hosts polling with `since` have already seen it.
+      sql.exec(
+        "INSERT INTO revocations(package_id,version,reason,revoked_at) VALUES(?,?,?,?) " +
+        "ON CONFLICT(package_id,version) DO UPDATE SET reason=excluded.reason",
+        id,
+        version,
+        reason ?? null,
+        revokedAt,
+      );
+      const row = first(sql.exec("SELECT revoked_at FROM revocations WHERE package_id=? AND version=?", id, version));
+      return json({ id, version, ...(reason ? { reason } : {}), revokedAt: String(row?.revoked_at) });
+    }
+    if (match && req.method === "DELETE") {
+      const removed = rows(sql.exec(
+        "DELETE FROM revocations WHERE package_id=? AND version=? RETURNING package_id",
+        decodeURIComponent(match[1]),
+        decodeURIComponent(match[2]),
+      ));
+      return json({ removed: removed.length > 0 }, removed.length > 0 ? 200 : 404);
+    }
+
+    if (req.method === "POST" && path === "/report-token") {
+      const { packageId, version } = await req.json() as { packageId: string; version: string };
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      const token = b64url(bytes);
+      const now = new Date();
+      // Unspent tokens are kept 30 days: long enough for any real install, short enough that a table
+      // of abandoned downloads does not grow forever.
+      sql.exec(
+        "DELETE FROM report_tokens WHERE issued_at < ?",
+        new Date(now.getTime() - 30 * 24 * 3600 * 1000).toISOString(),
+      );
+      sql.exec(
+        "INSERT INTO report_tokens(token,package_id,version,issued_at) VALUES(?,?,?,?)",
+        token,
+        packageId,
+        version,
+        now.toISOString(),
+      );
+      return json({ token });
+    }
+
+    if (req.method === "POST" && path === "/installs") {
+      // One Durable Object, one thread: each redeem-and-count below is atomic without a transaction.
+      const { events } = await req.json() as { events: InstallEvent[] };
+      let accepted = 0;
+      let rejected = 0;
+      const receipts: { id: string; receipt: string }[] = [];
+      const now = new Date().toISOString();
+      for (const event of events) {
+        if (event.event === "installed") {
+          // The token must exist, be unspent, and have been minted for this package: a token proves
+          // *a* download happened, so it must also say which.
+          const minted = event.token
+            ? first(sql.exec("DELETE FROM report_tokens WHERE token=? RETURNING package_id, version", event.token))
+            : undefined;
+          if (!minted || String(minted.package_id) !== event.id) {
+            rejected++;
+            continue;
+          }
+          sql.exec(
+            "INSERT INTO install_counts(package_id,installs,uninstalls) VALUES(?,1,0) " +
+            "ON CONFLICT(package_id) DO UPDATE SET installs=installs+1",
+            event.id,
+          );
+          const bytes = new Uint8Array(32);
+          crypto.getRandomValues(bytes);
+          const receipt = b64url(bytes);
+          sql.exec(
+            "INSERT INTO install_receipts(receipt,package_id,version,issued_at) VALUES(?,?,?,?)",
+            receipt,
+            event.id,
+            String(minted.version),
+            now,
+          );
+          receipts.push({ id: event.id, receipt });
+          accepted++;
+        } else if (event.event === "uninstalled") {
+          const minted = event.receipt
+            ? first(sql.exec("DELETE FROM install_receipts WHERE receipt=? RETURNING package_id", event.receipt))
+            : undefined;
+          if (!minted || String(minted.package_id) !== event.id) {
+            rejected++;
+            continue;
+          }
+          sql.exec("UPDATE install_counts SET uninstalls=uninstalls+1 WHERE package_id=?", event.id);
+          accepted++;
+        } else if (event.event === "activated" || event.event === "deactivated") {
+          // Accepted and not counted: unbounded by nature, so a count would mean nothing.
+          accepted++;
+        } else {
+          rejected++;
+        }
+      }
+      return json({ accepted, rejected, receipts });
+    }
+
+    if (req.method === "GET" && path === "/install-counts") {
+      const out: Record<string, { installs: number; uninstalls: number }> = {};
+      for (const row of sql.exec("SELECT package_id, installs, uninstalls FROM install_counts")) {
+        out[String(row.package_id)] = { installs: Number(row.installs), uninstalls: Number(row.uninstalls) };
+      }
+      return json(out);
     }
 
     return json({ error: "state route not found" }, 404);
@@ -1924,13 +2359,10 @@ export default {
 
       if (req.method === "GET" && path === "/packages") return repositoryPackages(req, env);
       if (req.method === "POST" && path === "/packages") return publishPackage(req, env);
-      if (req.method === "GET" && path === "/revocations") return json({ revocations: [] });
-      if (req.method === "POST" && path === "/installs") {
-        return json({ error: { code: "not_implemented", message: "this repository does not keep install statistics" } }, 501);
-      }
-      if (req.method === "POST" && path === "/entitlements/play") {
-        return json({ error: { code: "not_implemented", message: "Play purchase verification is not configured" } }, 501);
-      }
+      if (req.method === "GET" && path === "/revocations") return revocationFeed(req, env);
+      if (req.method === "POST" && path === "/installs") return reportInstalls(req, env);
+      if (req.method === "POST" && path === "/entitlements/play") return playEntitlement(req, env);
+      if (req.method === "POST" && path === "/api/admin/revocations") return adminRevoke(req, env);
 
       let match = path.match(/^\/packages\/([^/]+)$/);
       if (match && req.method === "GET") {
@@ -1941,6 +2373,14 @@ export default {
       if (match && req.method === "GET") {
         return sessionResult(req, env, decodeURIComponent(match[1]));
       }
+
+      match = path.match(/^\/api\/admin\/revocations\/([^/]+)\/([^/]+)$/);
+      if (match && req.method === "DELETE") {
+        return adminUnrevoke(req, env, decodeURIComponent(match[1]), decodeURIComponent(match[2]));
+      }
+
+      match = path.match(/^\/(?:api\/)?reports\/(\d+)\/resolve$/);
+      if (match && req.method === "POST") return resolveReport(req, env, match[1]);
 
       match = path.match(/^\/api\/admin\/packages\/([^/]+)\/([^/]+)$/);
       if (match && req.method === "PUT") {

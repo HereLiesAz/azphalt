@@ -42,4 +42,6 @@ client.setToken("…"); // e.g. after an OAuth exchange
   - `signal` — an `AbortSignal` that aborts the whole download.
   - `onProgress(received, total)` — called as bytes arrive.
 
+- `publish(azp, { signal? })` → `POST /packages` with the signed `.azp` bytes (`repository-api.md` § 9). Resolves to `{ status: "pending-review", id, version, review, publisher }` on `202` (queued for review — the flagship store opens a pull request), or `{ status: "published", package }` on `201`. Any refusal throws `PublishError` with `status`, the envelope's `code` and per-problem `details`; `501` means the repository takes no publishes.
+
 Types (`RepositoryIndex`, `PackageSummary`, `PackageSearchResponse`, `PackManifest`) come from [`@azphalt/azdk`](../sdk). Verify downloaded bytes with [`@azphalt/azp`](../azp)'s `verifyAzp` before use.

@@ -9,7 +9,7 @@ Durable Object. It replaces the former Vercel/Neon runtime path.
 
 | Host | Serves |
 |---|---|
-| `azphalt.store`, `www.azphalt.store` | The React storefront, the Repository API (`/packages`, `/revocations`, `/.well-known/azphalt.json`, …), publishing, checkout, purchases, ratings and reports |
+| `azphalt.store`, `www.azphalt.store` | The React storefront, the Repository API (`/packages`, `/revocations`, `/installs`, `/entitlements/play`, `/.well-known/azphalt.json`, …), publishing, checkout, purchases, ratings, reports and moderation |
 | `azphalt.org`, `www.azphalt.org` | The docs, mapped onto `/_docs/*` of the same asset bundle, with the docs' own 404 page |
 
 `pnpm --filter "@azphalt/storefront-worker..." build` builds both sites and assembles them into
@@ -29,7 +29,8 @@ they read without JavaScript.
   Durable Object.
 - The Worker generates and persists its buyer-session HMAC secret and Ed25519 entitlement signing
   keypair on first use.
-- Free package downloads redirect to the reviewed git-backed catalog.
+- Free package bytes come from the reviewed git-backed catalog; the Worker streams them (Range passes
+  through) instead of redirecting, so a full download can carry its install-report token.
 - Paid package bytes are stored only in protected Durable Object chunks and are returned only after a
   valid signed entitlement is presented.
 
@@ -46,6 +47,17 @@ npx wrangler secret put STRIPE_SECRET_KEY
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
 npx wrangler secret put ADMIN_TOKEN
 ~~~
+
+For the Play lane, also set the store app's id as a var and a Google service account as a secret
+(both unset → `POST /entitlements/play` answers `501`):
+
+~~~sh
+npx wrangler secret put PLAY_SERVICE_ACCOUNT_JSON   # the key file's JSON
+# wrangler.jsonc vars: "PLAY_PACKAGE_NAME": "store.azphalt.storefront"
+~~~
+
+The service account needs Play Console access to the app with *View financial data* (to read orders)
+and *Manage orders* (to acknowledge them).
 
 `STRIPE_WEBHOOK_SECRET` is required for subscriptions and renewal/cancellation events. One-time
 purchases can still fulfil from the Stripe Checkout session on the success page if the webhook is
@@ -88,12 +100,41 @@ page is a form over the same endpoint.
 - `POST /reports` (also `/api/reports`) — `spec/marketplace-integrity.md` § 2. Nothing identifying the
   filer is stored. Every report is **untrusted**: this store has no counter-signed hosts or verified
   accounts, so nothing is auto-quarantined; an IP claim's `signature` is kept for a moderator to check.
-- `GET /reports` (also `/api/reports`) — the moderation queue, newest 500 first,
-  `Authorization: Bearer $ADMIN_TOKEN`. The storefront's `/moderation` page asks for the token and holds
-  it in memory only.
+- `GET /reports` (also `/api/reports`) — the moderation queue, newest 500 first, with any decision
+  (`resolution`, `resolvedAt`). `Authorization: Bearer $ADMIN_TOKEN`. The storefront's `/moderation`
+  page asks for the token, holds it in memory only, and offers *Dismiss* and *Yank* on each report.
+- `POST /api/reports/{id}/resolve` `{ action: "dismiss" | "yank", reason? }` — records the decision.
+  `yank` revokes the reported version (the one served now, if the report named none) with the report's
+  reason. Admin.
+- `POST /api/admin/revocations` `{ packageId, version?, reason? }` yanks directly; `DELETE
+  /api/admin/revocations/{id}/{version}` undoes it. Admin.
+- `GET /revocations?since=` — the feed installed hosts poll (`spec/repository-api.md` § 5). A yanked
+  version drops out of `/packages` and `/api/packages`, shows `yanked: true` in its detail, and its
+  download answers `404`.
 
 Public writes are limited to 10 a minute per IP by Cloudflare's rate-limit binding (`WRITE_LIMITER`);
 the counters live in Cloudflare, so the Worker never stores an address.
+
+## Install counts
+
+`spec/repository-api.md` § 8 and `spec/state-reporting.md` § 4. Every full `200` download (free or
+paid) carries an `azphalt-report-token` header: 32 random bytes, stored with only the package and
+version, deleted unspent after 30 days. Ranged `206` responses carry none. `POST /installs` spends a
+token for an `installed` event (it must have been minted for the same package) and returns a receipt;
+an `uninstalled` event spends that receipt. `activated`/`deactivated` are accepted and not counted.
+`installs` and `uninstalls` appear on `/packages` and `/api/packages` summaries — never as active
+installs.
+
+## Play purchases
+
+`POST /entitlements/play` `{ packageId, productId, purchaseToken }` (`spec/repository-api.md` § 7,
+[`src/play.ts`](src/play.ts)). The Worker signs a service-account JWT (RS256, WebCrypto), trades it
+for an OAuth token, and reads the purchase from the Android Publisher API. A completed purchase gets
+the same store-signed entitlement a web purchase does, issued to `play-account:<obfuscatedExternalAccountId>`
+when the app set one, otherwise `play-order:<orderId>` (stable across reinstalls, which restore the same
+token). An unacknowledged purchase is acknowledged. The product must be the listing's `playProductId`,
+or the package id when that is unset. One-time products only: a subscription listing answers `501`.
+`402` means Google does not recognise the purchase; `502` means Google could not be asked.
 
 ## Listings
 
@@ -111,7 +152,8 @@ The public storefront overlay is `apps/storefront-react/public/listings.json`:
 ]
 ~~~
 
-For a subscription, add `"interval": "month"` or `"year"`. Subscription checkout is refused until a
+For a subscription, add `"interval": "month"` or `"year"`. If the store app sells the package under
+a different Play product id, add `"playProductId"`. Subscription checkout is refused until a
 Stripe webhook secret is configured.
 
 A seller connects their Stripe Express account at `/connect/onboard`; the Worker persists the
