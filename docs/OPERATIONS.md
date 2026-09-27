@@ -30,6 +30,17 @@ The production catalog is derived from the committed registry. The build exports
 A successful source merge is not, by itself, proof that production is serving the new catalog.
 Deployment freshness is part of correctness.
 
+### Rebuilding and signing the catalog
+
+`.github/workflows/registry-sync.yml` rebuilds `registry/packages/` and opens a PR when anything moved.
+It runs on a merged `sources.json` or `submissions/` change, nightly, on an extension repo's
+`extension-updated` dispatch, or by hand (`pinned` or `latest`). It is bound to a repository-scoped
+executor in `HereLiesAz/workflows`, which runs in that repo's `azphalt` environment. That environment
+needs `AZPHALT_PACKAGE_SIGNING_KEY` (and optionally `AZPHALT_PACKAGE_SIGNING_KEY_ID`). Without the key
+the build still verifies for integrity, but it reuses the committed signed bytes only for packages
+whose content did not change, and a changed package ships unsigned, which breaks publisher continuity
+for hosts that pinned its key. Never commit an unsigned rebuild of a signed package by hand.
+
 ## Centralized deployment verification
 
 The deployment workflow is owned by `HereLiesAz/workflows` (the shared `cloudflare-worker-deploy.yml`,
