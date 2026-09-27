@@ -1,106 +1,65 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
-#
-# You may wish to alter this file to override the set of languages analyzed,
-# or to provide custom queries or build logic.
-#
-# ******** NOTE ********
-# We have attempted to detect the languages in your repository. Please check
-# the `language` matrix defined below to confirm you have the correct set of
-# supported CodeQL languages.
-#
-name: "CodeQL Advanced"
-
+# centralized-by: HereLiesAz/workflows
+# central-source-path: .github/workflows/codeql.yml
+# central-source-sha256: 6649c58e422ab9b7f0b9ffcd8063f5af06360d14d60d48a054e8668342379c1d
+# This file intentionally contains no repository secrets.
+# central-run-tracker: HereLiesAz/workflows
+name: CodeQL Advanced
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   schedule:
     - cron: '39 12 * * 1'
 
+permissions:
+  actions: read
+  contents: read
+  statuses: read
 jobs:
-  analyze:
-    name: Analyze (${{ matrix.language }})
-    # Runner size impacts CodeQL analysis time. To learn more, please see:
-    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
-    #   - https://gh.io/supported-runners-and-hardware-resources
-    #   - https://gh.io/using-larger-runners (GitHub.com only)
-    # Consider using larger runners or machines with greater resources for possible analysis time improvements.
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    permissions:
-      # required for all workflows
-      security-events: write
-
-      # required to fetch internal or private CodeQL packs
-      packages: read
-
-      # only required for workflows in private repositories
-      actions: read
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        - language: actions
-          build-mode: none
-        # Manual: autobuild looks for a build at the repository root, and the Kotlin lives in
-        # apps/storefront-cmp (the store app) and its azp/ subproject (the .azp verifier).
-        - language: java-kotlin
-          build-mode: manual
-        - language: javascript-typescript
-          build-mode: none
-        # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
-        # Use `c-cpp` to analyze code written in C, C++ or both
-        # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
-        # Use 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
-        # To learn more about changing the languages that are analyzed or customizing the build mode for your analysis,
-        # see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning.
-        # If you are analyzing a compiled language, you can modify the 'build-mode' for that language to customize how
-        # your codebase is analyzed, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+  central:
+    name: Start
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      run_id: ${{ steps.locate.outputs.run_id }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v7
-
-    - name: Set up Java (storefront-cmp's toolchain)
-      if: matrix.language == 'java-kotlin'
-      uses: actions/setup-java@v5
-      with:
-        distribution: corretto
-        java-version: '17'
-
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
-        # If you wish to specify custom queries, you can do so here or in a config file.
-        # By default, queries listed here will override any specified in a config file.
-        # Prefix the list here with "+" to use these queries and those in the config file.
-
-        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-        # queries: security-extended,security-and-quality
-
-    # If the analyze step fails for one of the languages you are analyzing with
-    # "We were unable to automatically build your code", modify the matrix above
-    # to set the build mode to "manual" for that language. Then modify this step
-    # to build your code.
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - name: Run manual build steps
-      if: matrix.build-mode == 'manual'
-      shell: bash
-      working-directory: apps/storefront-cmp
-      # The shared model (commonMain + desktopMain) and the Kotlin .azp verifier, compiled under the
-      # tracer. Android and Wasm add no Kotlin of their own worth the SDK setup. FROZEN: an analysis
-      # never bumps version.properties.
-      env:
-        AZPHALT_VERSION_FROZEN: '1'
-      run: ./gradlew compileKotlinDesktop :azp:compileKotlin --no-daemon --no-build-cache --stacktrace
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
-      with:
-        category: "/language:${{matrix.language}}"
+      - id: locate
+        name: Locate run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: .github/workflows/codeql.yml
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: "set -euo pipefail\ncreated_at=\"$(gh api \"repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\" --jq .created_at)\"\nthreshold=\"$(date -u -d \"$created_at - 5 seconds\" +%s)\"\n# The gateway skips some events a tracker still sees (unmatched filters, forks, manual\n# runs, CI-skip pushes). No central status within 20 minutes means no central run.\nfor _ in $(seq 1 80); do\n  url=\"$(gh api \"repos/$GITHUB_REPOSITORY/statuses/$TARGET_SHA?per_page=100\" --jq \\\n    \"[.[] | select(.context == \\\"$STATUS_CONTEXT\\\" and ((.updated_at | fromdateiso8601) >= $threshold))][0].target_url // empty\")\"\n  run_id=\"$(sed -nE 's#.*/HereLiesAz/workflows/actions/runs/([0-9]+).*#\\1#p' <<<\"$url\")\"\n  if [[ -n \"$run_id\" ]]; then\n    echo \"run_id=$run_id\" >> \"$GITHUB_OUTPUT\"\n    echo \"Run: $url\"\n    exit 0\n  fi\n  sleep 15\ndone\necho \"::notice::No run of this workflow was started for this event.\"\n"
+  detect_languages:
+    name: detect_languages
+    needs:
+      - central
+    if: ${{ needs.central.outputs.run_id != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: detect_languages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ needs.central.outputs.run_id }}
+          JOB_NAME: detect_languages
+        shell: bash
+        run: "set -euo pipefail\napi=\"repos/HereLiesAz/workflows/actions/runs/$RUN_ID\"\nseen=\"\"\njob=\"\"\nfor _ in $(seq 1 1440); do\n  job=\"$(gh api \"$api/jobs?per_page=100\" --jq \"[.jobs[] | select(.name == \\\"$JOB_NAME\\\" or (.name | startswith(\\\"$JOB_NAME \\\")) or (.name | startswith(\\\"$JOB_NAME / \\\")))][0] // empty\")\"\n  if [[ -z \"$job\" ]]; then\n    [[ \"$(gh api \"$api\" --jq .status)\" == completed ]] && { echo \"Skipped.\"; exit 0; }\n    sleep 10\n    continue\n  fi\n  while IFS= read -r line; do\n    [[ -n \"$line\" ]] || continue\n    grep -qxF \"$line\" <<<\"$seen\" || { echo \"$line\"; seen+=\"$line\"$'\\n'; }\n  done < <(jq -r '.steps[]? | select(.status == \"completed\" and .conclusion != \"skipped\")\n    | \"\\(if .conclusion == \"success\" then \"✓\" else \"✗\" end) \\(.name)\"' <<<\"$job\")\n  [[ \"$(jq -r .status <<<\"$job\")\" == completed ]] && break\n  sleep 10\ndone\nconclusion=\"$(jq -r '.conclusion // \"cancelled\"' <<<\"$job\")\"\necho \"::group::Log\"\nif log=\"$(gh api \"repos/HereLiesAz/workflows/actions/jobs/$(jq -r .id <<<\"$job\")/logs\" 2>/dev/null)\"; then\n  sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z //' <<<\"$log\"\nelse\n  echo \"Log unavailable here: $(jq -r .html_url <<<\"$job\")\"\nfi\necho \"::endgroup::\"\ncase \"$conclusion\" in\n  success|skipped|neutral) exit 0 ;;\n  *) echo \"::error::$JOB_NAME: $conclusion\"; exit 1 ;;\nesac\n"
+  analyze:
+    name: analyze
+    needs:
+      - central
+      - detect_languages
+    if: ${{ needs.central.outputs.run_id != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: analyze
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ needs.central.outputs.run_id }}
+          JOB_NAME: analyze
+        shell: bash
+        run: "set -euo pipefail\napi=\"repos/HereLiesAz/workflows/actions/runs/$RUN_ID\"\nseen=\"\"\njob=\"\"\nfor _ in $(seq 1 1440); do\n  job=\"$(gh api \"$api/jobs?per_page=100\" --jq \"[.jobs[] | select(.name == \\\"$JOB_NAME\\\" or (.name | startswith(\\\"$JOB_NAME \\\")) or (.name | startswith(\\\"$JOB_NAME / \\\")))][0] // empty\")\"\n  if [[ -z \"$job\" ]]; then\n    [[ \"$(gh api \"$api\" --jq .status)\" == completed ]] && { echo \"Skipped.\"; exit 0; }\n    sleep 10\n    continue\n  fi\n  while IFS= read -r line; do\n    [[ -n \"$line\" ]] || continue\n    grep -qxF \"$line\" <<<\"$seen\" || { echo \"$line\"; seen+=\"$line\"$'\\n'; }\n  done < <(jq -r '.steps[]? | select(.status == \"completed\" and .conclusion != \"skipped\")\n    | \"\\(if .conclusion == \"success\" then \"✓\" else \"✗\" end) \\(.name)\"' <<<\"$job\")\n  [[ \"$(jq -r .status <<<\"$job\")\" == completed ]] && break\n  sleep 10\ndone\nconclusion=\"$(jq -r '.conclusion // \"cancelled\"' <<<\"$job\")\"\necho \"::group::Log\"\nif log=\"$(gh api \"repos/HereLiesAz/workflows/actions/jobs/$(jq -r .id <<<\"$job\")/logs\" 2>/dev/null)\"; then\n  sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z //' <<<\"$log\"\nelse\n  echo \"Log unavailable here: $(jq -r .html_url <<<\"$job\")\"\nfi\necho \"::endgroup::\"\ncase \"$conclusion\" in\n  success|skipped|neutral) exit 0 ;;\n  *) echo \"::error::$JOB_NAME: $conclusion\"; exit 1 ;;\nesac\n"
