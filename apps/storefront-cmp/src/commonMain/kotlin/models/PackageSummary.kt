@@ -62,6 +62,72 @@ data class AppDto(
     val installUrl: String? get() = platforms?.android?.install ?: platforms?.pwa?.startUrl
 }
 
+/** The parts of a `kind:"llm"` block (`spec/llm.md`) the store must disclose before install. */
+@Serializable
+data class LlmDto(
+    val tier: String,
+    val setup: LlmSetupDto? = null,
+    val weights: LlmWeightsDto? = null,
+    val endpoint: LlmEndpointDto? = null,
+    val dataHandling: LlmDataHandlingDto? = null,
+) {
+    /** Open weights in the user's own sandbox, as opposed to a third-party service. */
+    val isSandbox: Boolean get() = tier == "sandbox-weights"
+
+    /** The card end-cap: where prompts go, which matters more than the word "llm". */
+    val tierLabel: String get() = if (isSandbox) "sandbox llm" else "hosted llm"
+
+    /** Total download the sandbox caches, or 0 for a hosted model. */
+    val weightsBytes: Long get() = weights?.files.orEmpty().sumOf { it.byteSize ?: 0L }
+}
+
+@Serializable
+data class LlmSetupDto(val sandbox: String? = null, val requires: LlmRequiresDto? = null)
+
+@Serializable
+data class LlmRequiresDto(val githubToken: List<String> = emptyList())
+
+@Serializable
+data class LlmWeightsDto(
+    val runtime: String? = null,
+    val files: List<LlmWeightFileDto> = emptyList(),
+    val modelLicense: LlmModelLicenseDto? = null,
+    val requirements: LlmRequirementsDto? = null,
+)
+
+@Serializable
+data class LlmWeightFileDto(val name: String, val byteSize: Long? = null)
+
+@Serializable
+data class LlmModelLicenseDto(val spdx: String? = null, val commercialUse: Boolean? = null, val url: String? = null)
+
+@Serializable
+data class LlmRequirementsDto(
+    val accelerator: String? = null,
+    val minRamMB: Int? = null,
+    val minDiskMB: Int? = null,
+    val contextTokens: Int? = null,
+)
+
+@Serializable
+data class LlmEndpointDto(val baseUrl: String? = null, val defaultModel: String? = null, val auth: String? = null)
+
+@Serializable
+data class LlmDataHandlingDto(
+    val prompts: String = "unknown",
+    val modelPinned: Boolean? = null,
+    val operator: String? = null,
+    val terms: String? = null,
+) {
+    /** Plain-language reading of [prompts]; an unrecognised value reads as "unknown", never as safe. */
+    val promptsText: String get() = when (prompts) {
+        "not-retained" -> "Prompts are not retained."
+        "logged" -> "Prompts are logged by the operator."
+        "may-train" -> "Prompts may be used to train models."
+        else -> "The operator does not say what happens to prompts."
+    }
+}
+
 @Serializable
 data class PackageSummary(
     val id: String,
@@ -85,6 +151,8 @@ data class PackageSummary(
     val pack: PackDto? = null,
     /** Present only on a `kind:"app"` listing — the host directory is built from these. */
     val app: AppDto? = null,
+    /** Present only on a `kind:"llm"` listing — disclosed before install (`spec/llm.md`). */
+    val llm: LlmDto? = null,
     /**
      * The real artwork, when the package has any.
      *

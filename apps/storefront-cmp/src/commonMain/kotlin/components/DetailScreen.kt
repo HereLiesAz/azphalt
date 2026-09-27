@@ -212,6 +212,7 @@ fun DetailScreen(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Pill(pkg.kind, Hues.bgFor(pkg.id))
+                        pkg.llm?.let { Pill(it.tierLabel, Ground.Ink) }
                         if (pkg.isMature) Pill("18+", Roles.Acquire.first)
                     }
                     Pill("v${pkg.version}", Ground.Ink)
@@ -292,6 +293,11 @@ fun DetailScreen(
                         color = cs.onSurfaceVariant,
                     )
                 }
+            }
+
+            pkg.llm?.let { llm ->
+                Spacer(Modifier.height(24.dp))
+                LlmDisclosure(llm)
             }
 
             if (pkg.capabilities.isNotEmpty()) {
