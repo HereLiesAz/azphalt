@@ -7,7 +7,7 @@
  *
  * Keyed by the **processor subscription id** (a Stripe `sub_…`). The default
  * {@link InMemorySubscriptionStore} keeps dev/test behavior with no services; a durable deployment
- * supplies a database-backed store (see `@azphalt/registry-store-vercel`'s `PostgresSubscriptionStore`).
+ * supplies a database-backed store (its own implementation of this interface).
  */
 import type { SubscriptionInterval } from "./types.js";
 

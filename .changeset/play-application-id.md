@@ -1,5 +1,4 @@
 ---
-"@azphalt/storefront-cmp": minor
 "@azphalt/storefront-worker": patch
 ---
 

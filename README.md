@@ -48,7 +48,6 @@ LICENSE         Apache-2.0 (with NOTICE)
 | [`@azphalt/runtime-wasm`](packages/runtime-wasm) | The real sandbox — QuickJS-in-WASM (`js`) and raw WebAssembly (`wasm`). |
 | [`@azphalt/conformance`](packages/conformance) | Executable pass/fail battery for code hosts and asset hosts. |
 | [`@azphalt/registry`](packages/registry) | Verify · index · version · serve · search, the consignment marketplace overlay, and the Stripe Connect charge + onboarding surfaces. |
-| [`@azphalt/registry-store-vercel`](packages/registry-store-vercel) | Legacy/alternate Neon + Vercel Blob `RegistryStore` implementation. It remains reusable, but the flagship storefront no longer depends on Vercel. |
 | [`@azphalt/repository-client`](packages/repository-client) | Client SDK for the Repository API. |
 | [`@azphalt/llm-host`](packages/llm-host) | Host side of `kind: "llm"`: consent, sandbox install, runner and `openai-chat` protocols, rolling delimiters. |
 | [`@azphalt/mcp`](packages/mcp) | An MCP server exposing `.azp` verify/inspect/extract to any MCP host. |

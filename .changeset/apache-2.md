@@ -22,7 +22,6 @@
 "@azphalt/importer-video": minor
 "@azphalt/mcp": minor
 "@azphalt/registry": minor
-"@azphalt/registry-store-vercel": minor
 "@azphalt/repository-client": minor
 "@azphalt/runtime-reference": minor
 "@azphalt/runtime-wasm": minor
