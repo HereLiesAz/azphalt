@@ -2,20 +2,15 @@ import { defineConfig } from 'vitepress'
 
 // Served at azphalt.org, at the domain root — base stays '/'. azphalt.org and azphalt.store are one
 // deployment: the Cloudflare Worker (apps/storefront-worker) bundles this build under /_docs and routes
-// the azphalt.org host onto it. Until DNS moves to Cloudflare, the Vercel deployment of apps/storefront
-// does the same thing: its build runs `embed-docs` (AZPHALT_DOCS_EMBED) into public/_docs and
-// apps/storefront/middleware.ts maps the host. GitHub Pages (.github/workflows/deploy-docs.yml) is the
-// standalone alternative and does not serve the domain.
+// the azphalt.org host onto it. GitHub Pages (.github/workflows/deploy-docs.yml) is the standalone
+// alternative and does not serve the domain.
 export default defineConfig({
   title: "azphalt",
   description: "The open standard for portable digital-art, motion-graphics, and video extensions — and the marketplace at azphalt.store.",
   appearance: 'dark',
   lastUpdated: true,
-  // Extensionless URLs when served by a host that maps `/x` → `/x.html` (GitHub Pages, and Cloudflare
-  // static assets). For the Vercel-embedded build (AZPHALT_DOCS_EMBED — served at azphalt.org by
-  // apps/storefront/middleware.ts rewriting onto static files under /_docs), disable it so page links
-  // are `.html` and map 1:1 to files.
-  cleanUrls: !process.env.AZPHALT_DOCS_EMBED,
+  // Extensionless URLs: both hosts (Cloudflare static assets, GitHub Pages) map `/x` → `/x.html`.
+  cleanUrls: true,
   // Not VitePress's default `assets/`: in the Worker's bundle the storefront owns `/assets/*`, and those
   // requests skip the Worker (apps/storefront-worker/wrangler.jsonc § run_worker_first), so a docs page
   // asking for `/assets/…` on azphalt.org would be served the storefront's file.
