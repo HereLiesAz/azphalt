@@ -91,6 +91,7 @@ The native host that embeds the engine and renders the schema is **each app's ow
   registry/                 verify · index · version · serve · search, plus the consignment overlay
   registry-store-vercel/    alternate Neon + Vercel Blob RegistryStore implementation
   repository-client/        client SDK for the Repository API
+  llm-host/                 host side of kind: llm (sandbox install, runner, delimiters)
   mcp/                      an MCP server exposing azp verify/inspect/extract to any MCP host
   create-azphalt/           scaffolder for a new extension package
   web-handoff/              the web → host install handoff (spec/web-handoff.md)

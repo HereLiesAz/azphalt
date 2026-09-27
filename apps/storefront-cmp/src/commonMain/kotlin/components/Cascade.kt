@@ -163,7 +163,7 @@ private fun EntryCapsule(pkg: PackageSummary, index: Int, onOpen: (PackageSummar
         capText = when {
             held -> "Have"
             paid -> priceLabel(pkg)
-            else -> pkg.kind
+            else -> pkg.llm?.tierLabel ?: pkg.kind
         },
         labelSize = 14,
         height = 42.dp,
