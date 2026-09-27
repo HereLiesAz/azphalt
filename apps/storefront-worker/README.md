@@ -136,8 +136,23 @@ for an OAuth token, and reads the purchase from the Android Publisher API. A com
 the same store-signed entitlement a web purchase does, issued to `play-account:<obfuscatedExternalAccountId>`
 when the app set one, otherwise `play-order:<orderId>` (stable across reinstalls, which restore the same
 token). An unacknowledged purchase is acknowledged. The product must be the listing's `playProductId`,
-or the package id when that is unset. One-time products only: a subscription listing answers `501`.
-`402` means Google does not recognise the purchase; `502` means Google could not be asked.
+or the package id when that is unset.
+
+A listing with an `interval` is sold as a Play subscription and checked through
+`purchases.subscriptionsv2`. It entitles only while the subscription is active or in its grace period
+and includes that product. The entitlement is `kind: "subscription"` and expires when the product's
+current period does, so the store app exchanges the token again after a renewal. Its subject is the
+base order id (`GPA.…` without the `..N` renewal suffix), so renewals keep one subject.
+
+`402` means Google does not recognise the purchase or subscription as entitling; `502` means Google
+could not be asked.
+
+## Update checks
+
+`POST /updates` (`spec/repository-api.md` § 6) takes the host's installed `[{ id, version }]` (at most
+5000 entries, 1 MB) and answers `{ updates: [{ id, latest }] }`. Only ids whose served, non-yanked
+version is strictly newer by semver precedence are listed ([`src/semver.ts`](src/semver.ts));
+current, ahead and unknown ids are omitted.
 
 ## Listings
 
