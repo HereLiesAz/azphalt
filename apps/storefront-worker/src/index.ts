@@ -1,4 +1,4 @@
-import { MAX_PUBLISH_BYTES, publish } from "./publish";
+import { MAX_PUBLISH_BYTES, publish, type RepositoryTokens } from "./publish";
 
 type Fetcher = { fetch(input: Request): Promise<Response> };
 type DurableObjectNamespaceLike = {
@@ -36,7 +36,9 @@ interface Env {
   WRITE_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
   /** The same, much tighter, for `POST /packages` — each accepted publish opens a pull request. */
   PUBLISH_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
-  /** Fine-grained GitHub token for publish pull requests (`src/publish.ts`). Unset → publish answers 501. */
+  /** The gateway's token minter, over a service binding (`src/publish.ts` § RepositoryTokens). */
+  GITHUB_TOKENS?: RepositoryTokens;
+  /** A fixed GitHub token instead of the binding (self-hosted). Neither set → publish answers 501. */
   GITHUB_PUBLISH_TOKEN?: string;
   /** `owner/repo` publish pull requests are opened against. */
   PUBLISH_REPOSITORY?: string;

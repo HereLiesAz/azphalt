@@ -27,8 +27,22 @@ const PUBLISHERS_PATH = "apps/storefront/registry/publishers.json";
 const REVERSE_DNS = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$/;
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
+/**
+ * The `RepositoryTokens` entrypoint of HereLiesAz/workflows' gateway Worker, reached over a Cloudflare
+ * service binding. It mints a short-lived GitHub App installation token narrowed to HereLiesAz/azphalt
+ * with contents and pull-requests write, so this Worker keeps no GitHub secret.
+ */
+export interface RepositoryTokens {
+  azphaltPublishToken(): Promise<{ token: string; expiresAt: string }>;
+}
+
 export interface PublishEnv {
-  /** Fine-grained token: Contents and Pull requests read/write on {@link PublishEnv.PUBLISH_REPOSITORY}. */
+  /** How the flagship store gets its GitHub token (`wrangler.jsonc` § services). */
+  GITHUB_TOKENS?: RepositoryTokens;
+  /**
+   * A fixed token instead, for a deployment without the gateway: Contents and Pull requests
+   * read/write on {@link PublishEnv.PUBLISH_REPOSITORY}. Wins over {@link PublishEnv.GITHUB_TOKENS}.
+   */
   GITHUB_PUBLISH_TOKEN?: string;
   /** `owner/repo` the pull requests are opened against. */
   PUBLISH_REPOSITORY?: string;
@@ -225,7 +239,7 @@ interface Publishers {
 }
 
 export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishContext): Promise<PublishAccepted | PublishError> {
-  if (!env.GITHUB_PUBLISH_TOKEN || !env.PUBLISH_REPOSITORY) {
+  if (!(env.GITHUB_PUBLISH_TOKEN || env.GITHUB_TOKENS) || !env.PUBLISH_REPOSITORY) {
     return { status: 501, code: "not_implemented", message: "publishing is not configured on this repository" };
   }
   if (bytes.byteLength === 0) return { status: 400, code: "bad_request", message: "empty body: POST the signed .azp bytes" };
@@ -246,7 +260,15 @@ export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishCo
     return { status: 409, code: "conflict", message: `${id} is a paid listing; paid bytes are uploaded to protected storage, not published` };
   }
 
-  const gh = new GitHub(env.GITHUB_PUBLISH_TOKEN, env.PUBLISH_REPOSITORY);
+  // Only now, once the package has earned it, is a token fetched.
+  let token: string;
+  try {
+    token = env.GITHUB_PUBLISH_TOKEN ?? (await env.GITHUB_TOKENS!.azphaltPublishToken()).token;
+  } catch (error) {
+    console.error("publish token unavailable", error);
+    return { status: 503, code: "unavailable", message: "the repository's GitHub token is unavailable; try again shortly" };
+  }
+  const gh = new GitHub(token, env.PUBLISH_REPOSITORY);
   try {
     const head = await gh.ok<{ object: { sha: string } }>("GET", "/git/ref/heads/main");
     const commit = await gh.ok<{ tree: { sha: string } }>("GET", "/git/commits/" + head.object.sha);
