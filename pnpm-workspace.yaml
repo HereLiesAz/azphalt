@@ -10,10 +10,12 @@ packages:
   - "docs"
   - "examples/*"
 
-# pnpm 10+ blocks dependency install scripts unless listed here. esbuild's postinstall only
-# selects its native binary.
+# pnpm 10+ blocks dependency install scripts unless listed here. esbuild's and workerd's (the
+# Cloudflare runtime behind `wrangler dev`, via apps/storefront-worker) postinstalls only select
+# their native binary.
 allowBuilds:
   esbuild: true
+  workerd: true
 
 # Security floors for transitive dependencies. pnpm 11+ reads settings only from this file,
 # not from package.json's "pnpm" field.

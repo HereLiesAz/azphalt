@@ -1,18 +1,25 @@
 import { defineConfig } from 'vitepress'
 
-// Served at azphalt.org, at the domain root — base stays '/'. azphalt.org and azphalt.store are the same
-// Vercel deployment of apps/storefront: its build runs `embed-docs` (AZPHALT_DOCS_EMBED) into
-// public/_docs, and apps/storefront/middleware.ts maps the azphalt.org host onto /_docs. GitHub Pages
-// (.github/workflows/deploy-docs.yml) is the standalone alternative and does not serve the domain.
+// Served at azphalt.org, at the domain root — base stays '/'. azphalt.org and azphalt.store are one
+// deployment: the Cloudflare Worker (apps/storefront-worker) bundles this build under /_docs and routes
+// the azphalt.org host onto it. Until DNS moves to Cloudflare, the Vercel deployment of apps/storefront
+// does the same thing: its build runs `embed-docs` (AZPHALT_DOCS_EMBED) into public/_docs and
+// apps/storefront/middleware.ts maps the host. GitHub Pages (.github/workflows/deploy-docs.yml) is the
+// standalone alternative and does not serve the domain.
 export default defineConfig({
   title: "azphalt",
   description: "The open standard for portable digital-art, motion-graphics, and video extensions — and the marketplace at azphalt.store.",
   appearance: 'dark',
   lastUpdated: true,
-  // Extensionless URLs when served by a host that maps `/x` → `/x.html` (GitHub Pages). For the
-  // storefront-embedded build (AZPHALT_DOCS_EMBED — served at azphalt.org by apps/storefront/middleware.ts
-  // rewriting onto static files under /_docs), disable it so page links are `.html` and map 1:1 to files.
+  // Extensionless URLs when served by a host that maps `/x` → `/x.html` (GitHub Pages, and Cloudflare
+  // static assets). For the Vercel-embedded build (AZPHALT_DOCS_EMBED — served at azphalt.org by
+  // apps/storefront/middleware.ts rewriting onto static files under /_docs), disable it so page links
+  // are `.html` and map 1:1 to files.
   cleanUrls: !process.env.AZPHALT_DOCS_EMBED,
+  // Not VitePress's default `assets/`: in the Worker's bundle the storefront owns `/assets/*`, and those
+  // requests skip the Worker (apps/storefront-worker/wrangler.jsonc § run_worker_first), so a docs page
+  // asking for `/assets/…` on azphalt.org would be served the storefront's file.
+  assetsDir: 'docs-assets',
   sitemap: { hostname: 'https://azphalt.org' },
   head: [
     ['meta', { name: 'og:title', content: 'azphalt — the open extension standard' }],

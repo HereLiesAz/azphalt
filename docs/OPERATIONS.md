@@ -8,11 +8,21 @@ part of the vendor-neutral Azphalt package/runtime standard.
 The production storefront is:
 
 - `apps/storefront-react` — static marketplace UI and exported catalog;
-- `apps/storefront-worker` — Cloudflare Worker serving the storefront and Repository API;
+- `apps/storefront-worker` — Cloudflare Worker serving the storefront and Repository API at
+  `azphalt.store`, and the docs (`docs/`) at `azphalt.org`;
 - `apps/storefront/registry/` — git-backed canonical catalog source.
 
 The legacy Next.js storefront remains a reference implementation, not the production deployment
 target.
+
+### Cutover status
+
+The Worker deploys on every relevant push to `main`, but the public domains still point at the Vercel
+deployment of `apps/storefront` until they are attached to the Worker as Cloudflare Custom Domains.
+Until then, `azphalt.store` and `azphalt.org` are served by Next.js and the Worker is reachable only on
+its `workers.dev` address. The steps are in
+[`apps/storefront-worker/README.md` § Domains](https://github.com/HereLiesAz/azphalt/blob/main/apps/storefront-worker/README.md#domains).
+Remove this section when the cutover is done.
 
 ## Catalog source of truth
 
@@ -24,9 +34,12 @@ Deployment freshness is part of correctness.
 
 ## Centralized deployment verification
 
-The deployment workflow is owned by `HereLiesAz/workflows`. Before Cloudflare deployment it verifies
-that the generated catalog contains known app-scoped workflow and role packages. After deployment it
-polls the live Repository API until those packages are visible through an app-scoped request.
+The deployment workflow is owned by `HereLiesAz/workflows` (the shared `cloudflare-worker-deploy.yml`,
+bound to this repository's `.github/workflows/deploy-storefront.yml`). Before Cloudflare deployment it
+builds and tests the Worker and verifies that the generated catalog contains known app-scoped workflow
+and role packages. After deployment it runs `apps/storefront-worker/scripts/verify-deployment.mjs`
+against the new version's own deployment URL, polling until the storefront shell, the privacy page, the
+docs bundle and those packages (through an app-scoped request) are all being served.
 
 The current Aive probes verify:
 
@@ -35,7 +48,10 @@ The current Aive probes verify:
 
 through:
 
-`GET https://azphalt.store/packages?app=com.hereliesaz.aive&...`
+`GET <deployment URL>/packages?app=com.hereliesaz.aive&...`
+
+The deployment URL is the version's `workers.dev` address, so the check proves the new version is
+serving whether or not the public domain points at it yet.
 
 If the live API never exposes those packages, the deployment is failed rather than treating an empty
 Aive store as success.

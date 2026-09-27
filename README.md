@@ -27,7 +27,7 @@ Anyone can implement azphalt and run their own store. Ours is just the flagship.
 /spec/          normative, language-neutral: core (capabilities, package format, manifest, UI schema, repository API),
                 one spec per package kind, store/handoff, and marketplace integrity
 /packages/      the standard's libraries (see below)
-/apps/          storefront-react (production static marketplace UI) · storefront-worker (Cloudflare purchase/repository API) ·
+/apps/          storefront-react (production static marketplace UI) · storefront-worker (Cloudflare Worker: store, docs, purchase/repository API) ·
                 storefront (legacy Next.js reference implementation) · storefront-cmp (native/Compose client) ·
                 repository-server (reference backend) · marketplace + mock-backend (demo client + template server)
 /examples/      sample extensions
