@@ -45,15 +45,20 @@ cd apps/storefront-worker
 npx wrangler secret put STRIPE_SECRET_KEY
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
 npx wrangler secret put ADMIN_TOKEN
-npx wrangler secret put GITHUB_PUBLISH_TOKEN
 ~~~
 
 `STRIPE_WEBHOOK_SECRET` is required for subscriptions and renewal/cancellation events. One-time
 purchases can still fulfil from the Stripe Checkout session on the success page if the webhook is
 delayed. `ADMIN_TOKEN` protects paid-package uploads and the moderation queue.
-`GITHUB_PUBLISH_TOKEN` is a fine-grained token with **Contents** and **Pull requests** read/write on
-`PUBLISH_REPOSITORY` (a `wrangler.jsonc` var, `HereLiesAz/azphalt`); without it `POST /packages`
-answers `501`.
+
+There is **no GitHub secret**. `POST /packages` asks the central gateway Worker (`workflows`, from
+HereLiesAz/workflows) for a token over the `GITHUB_TOKENS` service binding: its `RepositoryTokens`
+entrypoint mints a GitHub App installation token narrowed to `HereLiesAz/azphalt` with contents and
+pull-requests write, valid for an hour. A service binding is private to the Cloudflare account, so
+the minter has no public URL. The App must hold those two permissions, or minting fails and publishes
+answer `503`. A deployment without the gateway can set a fixed `GITHUB_PUBLISH_TOKEN` secret instead
+(fine-grained, Contents and Pull requests read/write on `PUBLISH_REPOSITORY`); with neither,
+`POST /packages` answers `501`.
 
 ## Publishing
 

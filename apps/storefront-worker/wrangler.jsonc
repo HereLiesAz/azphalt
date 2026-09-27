@@ -31,6 +31,13 @@
     // POST /packages: each accepted publish opens a pull request, so 3 a minute per IP.
     { "name": "PUBLISH_LIMITER", "namespace_id": "4272", "simple": { "limit": 3, "period": 60 } }
   ],
+  // POST /packages gets a short-lived GitHub token, narrowed to HereLiesAz/azphalt, from the central
+  // gateway Worker (HereLiesAz/workflows worker/src/index.js § RepositoryTokens). A service binding is
+  // private to this account, so the minter is not reachable from the internet, and no GitHub secret
+  // is stored here.
+  "services": [
+    { "binding": "GITHUB_TOKENS", "service": "workflows", "entrypoint": "RepositoryTokens" }
+  ],
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["AzphaltState"] }
   ],
@@ -40,7 +47,7 @@
     "PLATFORM_FEE_BPS": "1500",
     "PROCESSOR_PCT_BPS": "290",
     "PROCESSOR_FLAT_CENTS": "30",
-    // Where POST /packages opens its review pull requests (the token is the GITHUB_PUBLISH_TOKEN secret).
+    // Where POST /packages opens its review pull requests (token: the GITHUB_TOKENS binding above).
     "PUBLISH_REPOSITORY": "HereLiesAz/azphalt"
   }
 }

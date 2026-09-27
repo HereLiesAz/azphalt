@@ -23,14 +23,14 @@ function build(id: string, version: string, key?: { privateKey: string }, payloa
 
 /** A GitHub REST stand-in holding one repository: a main branch, its trees, refs and pull requests. */
 function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pinnedAt: string }>; pinnedFiles?: string[] } = {}) {
-  const calls: Array<{ method: string; path: string; body?: any }> = [];
+  const calls: Array<{ method: string; path: string; body?: any; auth?: string }> = [];
   const refs = new Set<string>();
   const handler = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const path = url.pathname.replace("/repos/HereLiesAz/azphalt", "") + url.search;
     const method = init?.method ?? "GET";
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
-    calls.push({ method, path, body });
+    calls.push({ method, path, body, auth: new Headers(init?.headers).get("authorization") ?? undefined });
     const reply = (status: number, data: unknown) => new Response(JSON.stringify(data), { status });
 
     if (method === "GET" && path === "/git/ref/heads/main") return reply(200, { object: { sha: "c0" } });
@@ -68,7 +68,8 @@ function makeEnv(extra: Record<string, unknown> = {}) {
       "/listings.json": JSON.stringify(listings),
     }),
     STATE: durableState(),
-    GITHUB_PUBLISH_TOKEN: "ghp_test",
+    // The gateway's RepositoryTokens entrypoint, as the service binding exposes it.
+    GITHUB_TOKENS: { azphaltPublishToken: async () => ({ token: "ghs_minted", expiresAt: "2026-09-27T07:00:00Z" }) },
     PUBLISH_REPOSITORY: "HereLiesAz/azphalt",
     ...extra,
   } as never;
@@ -197,7 +198,7 @@ describe("POST /packages", () => {
 
   it("answers 501 when publishing is not configured, and 413 over the size cap", async () => {
     const key = generateSigningKey();
-    const off = await worker.fetch(post(build("com.example.fresh", "1.0.0", key)), makeEnv({ GITHUB_PUBLISH_TOKEN: undefined }));
+    const off = await worker.fetch(post(build("com.example.fresh", "1.0.0", key)), makeEnv({ GITHUB_TOKENS: undefined }));
     expect(off.status).toBe(501);
     const big = new Request("https://azphalt.store/packages", {
       method: "POST",
@@ -205,6 +206,30 @@ describe("POST /packages", () => {
       body: new Uint8Array(8),
     });
     expect((await worker.fetch(big, makeEnv())).status).toBe(413);
+  });
+
+  it("authenticates to GitHub with the token the gateway mints, and only after the package verifies", async () => {
+    let minted = 0;
+    const env = makeEnv({
+      GITHUB_TOKENS: { azphaltPublishToken: async () => (minted++, { token: "ghs_minted", expiresAt: "x" }) },
+    });
+    expect((await worker.fetch(post(build("com.example.fresh", "1.0.0")), env)).status).toBe(401);
+    expect(minted).toBe(0);
+
+    expect((await worker.fetch(post(build("com.example.fresh", "1.0.0", generateSigningKey())), env)).status).toBe(202);
+    expect(minted).toBe(1);
+    expect(new Set(github.calls.map((c) => c.auth))).toEqual(new Set(["Bearer ghs_minted"]));
+  });
+
+  it("prefers a fixed GITHUB_PUBLISH_TOKEN, and answers 503 when the gateway cannot mint", async () => {
+    const fixed = makeEnv({ GITHUB_PUBLISH_TOKEN: "ghp_fixed" });
+    expect((await worker.fetch(post(build("com.example.fresh", "1.0.0", generateSigningKey())), fixed)).status).toBe(202);
+    expect(github.calls[0].auth).toBe("Bearer ghp_fixed");
+
+    const down = makeEnv({ GITHUB_TOKENS: { azphaltPublishToken: async () => { throw new Error("App not installed"); } } });
+    const res = await worker.fetch(post(build("com.example.other", "1.0.0", generateSigningKey())), down);
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ error: { code: "unavailable" } });
   });
 
   it("rate-limits publishes per IP", async () => {
