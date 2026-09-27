@@ -1,0 +1,8 @@
+azphalt
+Copyright 2026 Az (https://hereliesaz.com)
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Extensions distributed through azphalt repositories are not covered by this
+licence: each package carries its own, named in its manifest and shipped in
+the package.

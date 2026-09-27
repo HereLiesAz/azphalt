@@ -3,7 +3,7 @@
   "version": "0.1.5",
   "private": true,
   "description": "A gallery of example azphalt packages — several per asset type and per extension kind. Doubles as a fixture set.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Az (https://hereliesaz.com)",
   "type": "module",
   "scripts": {

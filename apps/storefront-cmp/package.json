@@ -3,6 +3,6 @@
   "version": "0.1.1",
   "private": true,
   "description": "Compose Multiplatform (Kotlin/Wasm) storefront UI. Built with Gradle, not pnpm.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "packageManager": "yarn@1.22.22"
 }

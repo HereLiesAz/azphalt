@@ -126,10 +126,6 @@ kotlin {
             commonWebpackConfig {
                 outputFileName = "storefront-cmp.js"
             }
-            distribution {
-                // Next.js static asset folder
-                outputDirectory.set(file("../storefront/public"))
-            }
         }
         binaries.executable()
     }
