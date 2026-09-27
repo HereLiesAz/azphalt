@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @azphalt/storefront... build"
+  "buildCommand": "pnpm --filter \"@azphalt/storefront^...\" build && pnpm run embed-docs && pnpm run build"
 }

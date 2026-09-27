@@ -7,7 +7,8 @@
  * `AZPHALT_DOCS_EMBED=1` disables VitePress `cleanUrls`, so page links are `.html` and map 1:1 onto the
  * static files under `/_docs` when Next rewrites `azphalt.org/x` → `/_docs/x`.
  *
- * Run by the deploy workflow before `vercel build`; also runnable locally to preview the routing.
+ * Run by the Vercel build (`vercel.json` `buildCommand`) before `next build`; also runnable locally to
+ * preview the routing. Without it the deployment has no `public/_docs`, and azphalt.org serves 404s.
  */
 import { execSync } from "node:child_process";
 import { cpSync, rmSync, existsSync } from "node:fs";
