@@ -6,8 +6,9 @@
  * no dependency), trades it for an OAuth access token, and asks the Android Publisher API about the
  * token. A store app that verified its own purchase would be defeated by anyone willing to patch it.
  *
- * One-time products only. Subscriptions go through a different API (`purchases.subscriptionsv2`) and
- * a different entitlement shape; the route refuses them rather than guessing.
+ * One-time products go through `purchases.products` ([verifyPlayPurchase]); subscriptions through
+ * `purchases.subscriptionsv2` ([verifyPlaySubscription]), which yields an entitlement that expires
+ * with the subscription's current period.
  */
 
 const SCOPE = "https://www.googleapis.com/auth/androidpublisher";
@@ -26,9 +27,10 @@ export interface PlayConfig {
   serviceAccount: ServiceAccount;
 }
 
-/** Who a verified purchase entitles. */
+/** Who a verified purchase entitles, and until when (subscriptions only). */
 export interface PlayGrant {
   subject: string;
+  expiresAt?: string;
 }
 
 /** Google could not be asked (network, 5xx, or our own credentials refused): a 502, never a 402. */
@@ -173,5 +175,70 @@ export async function verifyPlayPurchase(
   if (purchase.obfuscatedExternalAccountId) return { subject: "play-account:" + purchase.obfuscatedExternalAccountId };
   if (purchase.orderId) return { subject: "play-order:" + purchase.orderId };
   // A completed purchase with neither is not something Play produces; refuse rather than invent one.
+  return null;
+}
+
+/** Subscription states that still entitle the buyer (grace period: payment is being retried). */
+const ENTITLING_STATES = new Set(["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD"]);
+
+/**
+ * Verify a subscription purchase. Resolves to the grant, expiring when the subscribed product's
+ * current period does, or null when the token is unknown, the subscription is not active (pending,
+ * on hold, paused, cancelled past its period, expired) or does not include [productId]. Throws
+ * {@link PlayUnavailableError} when Google cannot be asked.
+ *
+ * The subject is the purchase's base order id: Play appends `..0`, `..1`, … to the order id of each
+ * renewal, so stripping that suffix keeps one buyer one subject across renewals and restores. An
+ * `obfuscatedExternalAccountId`, when the app set one, is used instead.
+ *
+ * An unacknowledged subscription is acknowledged here, for the same reason as a one-time purchase.
+ */
+export async function verifyPlaySubscription(
+  config: PlayConfig,
+  productId: string,
+  purchaseToken: string,
+  fetchImpl: FetchLike = (input, init) => fetch(input, init),
+): Promise<PlayGrant | null> {
+  const token = await accessToken(config.serviceAccount, fetchImpl);
+  const base = API + "/" + encodeURIComponent(config.packageName) + "/purchases";
+  const url = base + "/subscriptionsv2/tokens/" + encodeURIComponent(purchaseToken);
+  let res: Response;
+  try {
+    res = await fetchImpl(url, { headers: { authorization: "Bearer " + token } });
+  } catch (e) {
+    throw new PlayUnavailableError("could not reach Google Play: " + (e as Error).message);
+  }
+  if (res.status === 400 || res.status === 404 || res.status === 410) return null;
+  if (res.status === 401) tokenCache.delete(config.serviceAccount.client_email);
+  if (!res.ok) throw new PlayUnavailableError("Google Play answered HTTP " + res.status);
+
+  const sub = await res.json() as {
+    subscriptionState?: string;
+    acknowledgementState?: string;
+    latestOrderId?: string;
+    externalAccountIdentifiers?: { obfuscatedExternalAccountId?: string };
+    lineItems?: { productId?: string; expiryTime?: string; latestSuccessfulOrderId?: string }[];
+  };
+  if (!ENTITLING_STATES.has(sub.subscriptionState ?? "")) return null;
+  const item = (sub.lineItems ?? []).find((l) => l.productId === productId);
+  const expiry = item?.expiryTime ? new Date(item.expiryTime) : undefined;
+  if (!item || !expiry || Number.isNaN(expiry.getTime()) || expiry.getTime() <= Date.now()) return null;
+
+  if (sub.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING") {
+    try {
+      await fetchImpl(
+        base + "/subscriptions/" + encodeURIComponent(productId) + "/tokens/" + encodeURIComponent(purchaseToken) + ":acknowledge",
+        { method: "POST", headers: { authorization: "Bearer " + token, "content-type": "application/json" }, body: "{}" },
+      );
+    } catch {
+      // Best effort, as for one-time purchases.
+    }
+  }
+
+  const expiresAt = expiry.toISOString();
+  const account = sub.externalAccountIdentifiers?.obfuscatedExternalAccountId;
+  if (account) return { subject: "play-account:" + account, expiresAt };
+  const order = (item.latestSuccessfulOrderId || sub.latestOrderId || "").replace(/\.\.\d+$/, "");
+  if (order) return { subject: "play-order:" + order, expiresAt };
   return null;
 }

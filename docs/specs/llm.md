@@ -5,8 +5,8 @@ the device**: a hosted OpenAI-compatible endpoint, or open weights the host runs
 GitHub Actions sandbox. Modeled on `kind: "mcp"` (mcp-server.md): the package is a signed header plus
 a bundled setup script, and the host runs everything **outside the user's device** under consent. The
 SDK types (`@azphalt/azdk` `LlmManifest`), the verifier (`validateLlmManifest`, § Verification) and a
-reference runner (the first-party `com.hereliesaz.azphalt.llm.*` packages) exist, and
-`@azphalt/conformance` has an `"llm"` host profile (§ Conformance).*
+reference runner (the first-party `com.hereliesaz.azphalt.llm.*` packages) and a reference host
+(`@azphalt/llm-host`) exist, and `@azphalt/conformance` has an `"llm"` host profile (§ Conformance).*
 
 ## Why this exists — and why it doesn't break the moat
 

@@ -293,8 +293,83 @@ describe("Play purchase exchange", () => {
     expect(await status({ ...valid, purchaseToken: "down" })).toBe(502);
     expect(await status({ ...valid, productId: "com.example.cheap" })).toBe(402);
     expect(await status({ ...valid, packageId: "com.example.nope", productId: "com.example.nope" })).toBe(404);
-    expect(await status({ packageId: "com.example.sub", productId: "com.example.sub", purchaseToken: "t" })).toBe(501);
     expect(await status({ ...valid, purchaseToken: "x".repeat(5000) })).toBe(400);
     expect(await status({ packageId: "com.example.paid" })).toBe(400);
+  });
+
+  it("verifies a subscription listing as a Play subscription that expires with its period", async () => {
+    const account = await serviceAccount("subs@example.iam.gserviceaccount.com");
+    const env = makeEnv({ PLAY_PACKAGE_NAME: "com.hereliesaz.azphalt.store", PLAY_SERVICE_ACCOUNT_JSON: account.json });
+    const expiry = new Date(Date.now() + 20 * 86400_000).toISOString();
+    let acknowledgedAt = "";
+    stubUpstream((url) => {
+      if (url.includes("oauth2")) return new Response(JSON.stringify({ access_token: "ya29.s" }));
+      const line = (state: string, productId = "com.example.sub", when = expiry) => new Response(JSON.stringify({
+        subscriptionState: state,
+        acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",
+        latestOrderId: "GPA.9999-0000..3",
+        lineItems: [{ productId, expiryTime: when, latestSuccessfulOrderId: "GPA.9999-0000..3" }],
+      }));
+      if (url.endsWith("/subscriptionsv2/tokens/active")) return line("SUBSCRIPTION_STATE_ACTIVE");
+      if (url.endsWith("/subscriptionsv2/tokens/grace")) return line("SUBSCRIPTION_STATE_IN_GRACE_PERIOD");
+      if (url.endsWith("/subscriptionsv2/tokens/hold")) return line("SUBSCRIPTION_STATE_ON_HOLD");
+      if (url.endsWith("/subscriptionsv2/tokens/lapsed")) return line("SUBSCRIPTION_STATE_ACTIVE", "com.example.sub", new Date(Date.now() - 1000).toISOString());
+      if (url.endsWith("/subscriptionsv2/tokens/other")) return line("SUBSCRIPTION_STATE_ACTIVE", "com.example.cheap");
+      if (url.endsWith("/subscriptions/com.example.sub/tokens/active:acknowledge")) {
+        acknowledgedAt = url;
+        return new Response("{}");
+      }
+      return undefined;
+    });
+    const sub = (purchaseToken: string) => exchange(env, { packageId: "com.example.sub", productId: "com.example.sub", purchaseToken });
+
+    const res = await sub("active");
+    expect(res.status).toBe(200);
+    const { entitlement } = await res.json() as { entitlement: string };
+    const token = JSON.parse(Buffer.from(entitlement, "base64").toString()) as { claims: Record<string, string> };
+    // Renewals ("..3") collapse onto the base order, so one buyer stays one subject.
+    expect(token.claims).toMatchObject({ packageId: "com.example.sub", kind: "subscription", subject: "play-order:GPA.9999-0000", expiresAt: expiry });
+    expect(acknowledgedAt).not.toBe("");
+
+    expect((await sub("grace")).status).toBe(200);
+    expect((await sub("hold")).status).toBe(402);
+    expect((await sub("lapsed")).status).toBe(402);
+    expect((await sub("other")).status).toBe(402);
+  });
+});
+
+describe("batch update check", () => {
+  const check = (env: never, body: unknown) => worker.fetch(req("POST", "/updates", body), env);
+
+  it("lists only ids with a strictly newer served version", async () => {
+    const env = makeEnv();
+    const res = await check(env, [
+      { id: "com.example.free", version: "0.9.0" },
+      { id: "com.example.free", version: "1.0.0" },
+      { id: "com.example.other", version: "2.1.0" },
+      { id: "com.example.paid", version: "1.0.0-rc.1" },
+      { id: "com.example.unknown", version: "0.0.1" },
+    ]);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      updates: [
+        { id: "com.example.free", latest: "1.0.0" },
+        { id: "com.example.paid", latest: "1.0.0" },
+      ],
+    });
+  });
+
+  it("omits a yanked version", async () => {
+    const env = makeEnv();
+    const yank = await worker.fetch(req("POST", "/api/admin/revocations", { packageId: "com.example.free", version: "1.0.0", reason: "malware" }, ADMIN), env);
+    expect(yank.status).toBeLessThan(300);
+    expect(await (await check(env, [{ id: "com.example.free", version: "0.9.0" }])).json()).toEqual({ updates: [] });
+  });
+
+  it("rejects a malformed body", async () => {
+    const env = makeEnv();
+    expect((await check(env, { id: "com.example.free" })).status).toBe(400);
+    expect((await check(env, [{ id: "com.example.free", version: 1 }])).status).toBe(400);
+    expect((await worker.fetch(new Request("https://azphalt.store/updates", { method: "POST", body: "not json" }), env)).status).toBe(400);
   });
 });
