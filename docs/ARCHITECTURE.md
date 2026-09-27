@@ -98,7 +98,7 @@ The native host that embeds the engine and renders the schema is **each app's ow
   submit-check/             validator for submissions/ PRs (CI + local); not published
 /apps/
   storefront-react/         production marketplace UI; statically exports the git-backed catalog
-  storefront-worker/        Cloudflare Worker serving the production storefront + Repository API
+  storefront-worker/        Cloudflare Worker serving the production storefront, docs + Repository API
   storefront/               legacy/reference Next.js storefront
   repository-server/        a reference Repository API backend over @azphalt/registry
   storefront-cmp/           native Compose Multiplatform store client (Android, desktop, web)

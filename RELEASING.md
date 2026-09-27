@@ -9,8 +9,9 @@ Nothing links the two. A package release does not move `version.properties`, and
 
 The production `azphalt.store` Cloudflare deployment is a third concern: its deployment workflow is
 centrally owned by `HereLiesAz/workflows`. It builds the storefront from this repository, verifies
-the exported git-backed catalog, deploys the Worker/static assets, and then verifies the live
-Repository API exposes known app-scoped workflow/role packages. See
+the exported git-backed catalog, deploys the Worker/static assets, and then verifies the new version,
+on its own deployment URL, serves the storefront, the docs and known app-scoped workflow/role
+packages. See
 [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
 
 **All release automation described below — `app-release.yml`, `release.yml`, and

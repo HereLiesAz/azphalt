@@ -4,7 +4,9 @@
 > [`apps/storefront-react`](../storefront-react) + [`apps/storefront-worker`](../storefront-worker)
 > on Cloudflare Workers/static assets. This Next.js app remains the reference/self-hosted implementation
 > and test bed; it is no longer the production deployment path and no longer requires Vercel/Neon for
-> the flagship store.
+> the flagship store. Until the domains move to the Worker
+> ([`apps/storefront-worker/README.md` § Domains](../storefront-worker/README.md#domains)), this app's
+> Vercel deployment still answers at `azphalt.store` and `azphalt.org`.
 
 The **azphalt consignment storefront** — a Next.js (App Router) app that sits on top of the open azphalt standard, the way a store sits on Open VSX. It consumes the `@azphalt/registry` package directly and demonstrates both lanes of the marketplace model (see [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) § _The marketplace — consignment model_):
 
