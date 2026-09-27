@@ -1,6 +1,6 @@
 {
   "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
-  "name": "azphalt-store",
+  "name": "azphalt",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-17",
   // No `routes` here: azphalt.store, www.azphalt.store, azphalt.org and www.azphalt.org are attached to
@@ -48,6 +48,9 @@
     "PROCESSOR_PCT_BPS": "290",
     "PROCESSOR_FLAT_CENTS": "30",
     // Where POST /packages opens its review pull requests (token: the GITHUB_TOKENS binding above).
-    "PUBLISH_REPOSITORY": "HereLiesAz/azphalt"
+    "PUBLISH_REPOSITORY": "HereLiesAz/azphalt",
+    // The store app's Play application id (apps/storefront-cmp/build.gradle.kts § applicationId).
+    // POST /entitlements/play stays 501 until the PLAY_SERVICE_ACCOUNT_JSON secret is set too.
+    "PLAY_PACKAGE_NAME": "com.hereliesaz.azphalt.store"
   }
 }

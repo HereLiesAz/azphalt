@@ -19,7 +19,7 @@
  * only the registry holds the signing key. A client that minted its own entitlement would be trivially
  * bypassed by patching the client.
  */
-package store.azphalt.storefront
+package com.hereliesaz.azphalt.store
 
 import android.app.Activity
 import android.content.Context

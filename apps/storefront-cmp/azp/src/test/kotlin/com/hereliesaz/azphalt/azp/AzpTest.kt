@@ -6,7 +6,7 @@
  * implementation is pinned to; reading that same file here is what makes "the Kotlin verifier matches
  * the reference" a fact rather than an intention.
  */
-package store.azphalt.azp
+package com.hereliesaz.azphalt.azp
 
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry

@@ -1,4 +1,4 @@
-package store.azphalt.storefront
+package com.hereliesaz.azphalt.store
 
 import android.app.Activity
 import android.os.Bundle
