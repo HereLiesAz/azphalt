@@ -48,13 +48,16 @@ npx wrangler secret put STRIPE_WEBHOOK_SECRET
 npx wrangler secret put ADMIN_TOKEN
 ~~~
 
-For the Play lane, also set the store app's id as a var and a Google service account as a secret
-(both unset → `POST /entitlements/play` answers `501`):
+For the Play lane, set a Google service account as a secret
+(without the secret, `POST /entitlements/play` answers `501`):
 
 ~~~sh
 npx wrangler secret put PLAY_SERVICE_ACCOUNT_JSON   # the key file's JSON
-# wrangler.jsonc vars: "PLAY_PACKAGE_NAME": "store.azphalt.storefront"
 ~~~
+
+`PLAY_PACKAGE_NAME` is already in `wrangler.jsonc` vars: `com.hereliesaz.azphalt.store`, the store app's
+`applicationId` (`apps/storefront-cmp/build.gradle.kts`). The two must match, or Google answers 404 and
+every purchase reads as `402`.
 
 The service account needs Play Console access to the app with *View financial data* (to read orders)
 and *Manage orders* (to acknowledge them).

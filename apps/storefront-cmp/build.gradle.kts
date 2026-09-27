@@ -194,7 +194,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "store.azphalt.storefront"
+        applicationId = "com.hereliesaz.azphalt.store"
         // 26, not 33: Ed25519 comes from Bouncy Castle rather than the platform (which only gained it
         // at 33), so the verifier does not dictate the floor. 26 is where adaptive icons land, which
         // avoids shipping a rasterised legacy icon per density for the sake of pre-Oreo devices.
