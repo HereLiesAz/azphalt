@@ -112,6 +112,18 @@ running the server is outside the suite.
 Checks: `reject-tampered`, `reject-unsafe-path`, `reject-non-mcp`, `surfaces-server`,
 `compat-version`, `profile-declaration`.
 
+### `runLlmConformance(host: LlmHost)`
+
+For a host that installs and talks to `kind:"llm"` packages ([`spec/llm.md`](../../spec/llm.md)).
+`load` reports the pre-install `disclosure` (`tier`, `prompts`, `setupTokenPermissions`) and
+`runsSetupOnDevice: false`; `translate` is the host's rolling-delimiter translator and
+`acceptsOutput` its output check, both keyed by a base64url session key; `profiles` must include
+`"llm"`. Provisioning the sandbox and running the model are outside the suite.
+
+Checks: `reject-tampered`, `reject-unsafe-path`, `reject-non-llm`, `reject-overbroad-run`,
+`discloses-before-install`, `delimiter-translation`, `output-check`, `compat-version`,
+`profile-declaration`.
+
 ### `runSkillConformance(host: SkillHost)`
 
 For an AI-agent host that consumes `kind:"skill"` packages ([`spec/skill.md`](../../spec/skill.md)).

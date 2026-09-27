@@ -93,6 +93,18 @@ import {
   checkComposableProfileDeclaration,
   type ComposableHost,
 } from "./composable-checks.js";
+import {
+  checkLlmRejectTampered,
+  checkLlmRejectUnsafePath,
+  checkLlmRejectNonLlm,
+  checkLlmRejectOverbroadRun,
+  checkLlmDisclosure,
+  checkLlmTranslation,
+  checkLlmOutputCheck,
+  checkLlmCompat,
+  checkLlmProfileDeclaration,
+  type LlmHost,
+} from "./llm-checks.js";
 
 export interface ConformanceReport {
   /** True iff every check passed. */
@@ -262,6 +274,29 @@ export async function runComposableConformance(host: ComposableHost): Promise<Co
   return { ok: checks.every((c) => c.ok), checks };
 }
 
+/**
+ * Run the **llm host** conformance battery against `host`: the profile an app implements to install
+ * and talk to `kind:"llm"` packages (`spec/llm.md`). It certifies that the host verifies the header
+ * (refusing tampered / unsafe / non-`llm` / over-permissioned / incompatible packages), discloses the
+ * tier, prompt handling and setup-token permissions before install and keeps setup off the device,
+ * translates rolling delimiters so no tag reaches the model, rejects output carrying any session tag,
+ * and declares an `llm` profile. Provisioning the sandbox and running the model are beyond this suite.
+ */
+export async function runLlmConformance(host: LlmHost): Promise<ConformanceReport> {
+  const checks: CheckResult[] = [
+    await checkLlmRejectTampered(host),
+    await checkLlmRejectUnsafePath(host),
+    await checkLlmRejectNonLlm(host),
+    await checkLlmRejectOverbroadRun(host),
+    await checkLlmDisclosure(host),
+    await checkLlmTranslation(host),
+    await checkLlmOutputCheck(host),
+    await checkLlmCompat(host),
+    checkLlmProfileDeclaration(host),
+  ];
+  return { ok: checks.every((c) => c.ok), checks };
+}
+
 export { validatePanel, CONTROL_TYPES_0_1 } from "./validate-panel.js";
 export { satisfiesCompat } from "./checks.js";
 export * as fixtures from "./fixtures.js";
@@ -281,6 +316,7 @@ export type {
   CompanionInvocation,
 } from "./companion-checks.js";
 export type { McpHost, McpLoadReport } from "./mcp-checks.js";
+export type { LlmHost, LlmLoadReport, LlmChatMessage } from "./llm-checks.js";
 export type { SkillHost, SkillLoadReport } from "./skill-checks.js";
 export type { ScriptHost, ScriptLoadReport } from "./script-checks.js";
 export type { ComposableHost, ComposableLoadReport } from "./composable-checks.js";
