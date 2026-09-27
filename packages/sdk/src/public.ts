@@ -10,6 +10,20 @@ export type {
   RoleManifest,
   RolePayloadEntry,
 } from "./role.js";
+export type {
+  LlmManifest,
+  LlmTier,
+  LlmProtocol,
+  LlmAuth,
+  LlmPromptHandling,
+  LlmInput,
+  LlmSetup,
+  LlmWeights,
+  LlmRunnerRequirements,
+  LlmEndpoint,
+  LlmRunPermissions,
+  LlmDataHandling,
+} from "./llm.js";
 
 import type {
   Kind as LegacyKind,
@@ -19,9 +33,10 @@ import type {
 } from "./index.js";
 import type { WorkflowManifest } from "./workflow.js";
 import type { RoleManifest } from "./role.js";
+import type { LlmManifest } from "./llm.js";
 
 /** All package kinds accepted by the current public SDK. */
-export type Kind = LegacyKind | "workflow" | "role";
+export type Kind = LegacyKind | "workflow" | "role" | "llm";
 
 /**
  * Root manifest exposed by the public SDK. `workflow` and `role` are deliberately outside the legacy
@@ -32,6 +47,8 @@ export type Manifest = Omit<LegacyManifest, "kind"> & {
   kind: Kind;
   workflow?: WorkflowManifest;
   role?: RoleManifest;
+  /** `kind:"llm"`: an off-device model (`spec/llm.md`); likewise receives no azphalt capability. */
+  llm?: LlmManifest;
 };
 
 /** Browse/search summary widened to include orchestration-data kinds. */

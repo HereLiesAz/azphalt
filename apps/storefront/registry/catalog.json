@@ -1048,6 +1048,138 @@
       "bytes": 2215
     },
     {
+      "id": "com.hereliesaz.azphalt.llm.cerebras",
+      "version": "1.0.0",
+      "name": "Cerebras gpt-oss-120b",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-n3h4uN86XFi987lKTlGdQevXTS2DfZGMfcFgX96LBo8=",
+      "file": "com.hereliesaz.azphalt.llm.cerebras-1.0.0.azp",
+      "bytes": 11875
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.groq",
+      "version": "1.0.0",
+      "name": "Groq gpt-oss-20b",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-ZN9H7XKVMRPj2knM0zNxdf0ypdaH4PeS+9hGBagGmz0=",
+      "file": "com.hereliesaz.azphalt.llm.groq-1.0.0.azp",
+      "bytes": 11880
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.kilo",
+      "version": "1.0.0",
+      "name": "Kilo Auto (free)",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-a67MoMkf2auJblbD9aqZISPyGxoKawZXDnkI/inRB24=",
+      "file": "com.hereliesaz.azphalt.llm.kilo-1.0.0.azp",
+      "bytes": 11952
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.llm7",
+      "version": "1.0.0",
+      "name": "LLM7 GLM-5.3 Flash",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-WvWVcdz1bt+58rxuCAgf+n6Ofm+436mQWNpEejB99xA=",
+      "file": "com.hereliesaz.azphalt.llm.llm7-1.0.0.azp",
+      "bytes": 11878
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.mistral",
+      "version": "1.0.0",
+      "name": "Mistral Small",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-s8aODfcfIuhCvEoJmJmBEuoYJDEmPm+bxNico4Vt02U=",
+      "file": "com.hereliesaz.azphalt.llm.mistral-1.0.0.azp",
+      "bytes": 11891
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.openrouter-free",
+      "version": "1.0.0",
+      "name": "OpenRouter Free Router",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-rv2oH64Zw65S7rp2JrnEmV2V4xSfcrQYu8U5CAl98S8=",
+      "file": "com.hereliesaz.azphalt.llm.openrouter-free-1.0.0.azp",
+      "bytes": 11902
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.ovhcloud",
+      "version": "1.0.0",
+      "name": "OVHcloud Qwen3 Coder 30B",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-0cX7ZbUpSQJjQJjMjeKOanKLw1duaScCfMHL1V0DwDY=",
+      "file": "com.hereliesaz.azphalt.llm.ovhcloud-1.0.0.azp",
+      "bytes": 11983
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.phi-3-5-mini",
+      "version": "1.0.0",
+      "name": "Phi-3.5 Mini Instruct (private sandbox)",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-vSnQ2NqxY1rpTK52q2gw5UprM7CdAtbGRy8/RqrgyRs=",
+      "file": "com.hereliesaz.azphalt.llm.phi-3-5-mini-1.0.0.azp",
+      "bytes": 12557
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.qwen2-5-1-5b",
+      "version": "1.0.0",
+      "name": "Qwen2.5 1.5B Instruct (private sandbox)",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-1gGjOb78i1Itv3sZI3mx+mi1SYusnlIZKFAM+GjTHgM=",
+      "file": "com.hereliesaz.azphalt.llm.qwen2-5-1-5b-1.0.0.azp",
+      "bytes": 12544
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.qwen2-5-coder-1-5b",
+      "version": "1.0.0",
+      "name": "Qwen2.5 Coder 1.5B Instruct (private sandbox)",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-sMp/MlX9YEV94tKZk7ZnHgBq8pi5yui2CxCAeEb+vEc=",
+      "file": "com.hereliesaz.azphalt.llm.qwen2-5-coder-1-5b-1.0.0.azp",
+      "bytes": 12572
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.smollm2-1-7b",
+      "version": "1.0.0",
+      "name": "SmolLM2 1.7B Instruct (private sandbox)",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-w7Ofu528cg85Y9B/TC4QUX7SMf8OTgIgujkRrwf36fk=",
+      "file": "com.hereliesaz.azphalt.llm.smollm2-1-7b-1.0.0.azp",
+      "bytes": 12557
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.zai",
+      "version": "1.0.0",
+      "name": "Z.ai GLM-4.7 Flash",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-kmd+jGtHZJLMU7XJYwWhaX1wvqERp/ByLaUXM4484i0=",
+      "file": "com.hereliesaz.azphalt.llm.zai-1.0.0.azp",
+      "bytes": 11888
+    },
+    {
       "id": "com.hereliesaz.azphalt.loudness-color",
       "version": "2.0.0",
       "name": "Loudness Color",

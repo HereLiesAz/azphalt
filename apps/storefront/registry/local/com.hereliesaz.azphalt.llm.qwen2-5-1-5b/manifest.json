@@ -1,0 +1,76 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.llm.qwen2-5-1-5b",
+  "name": "Qwen2.5 1.5B Instruct (private sandbox)",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "Qwen2.5 1.5B Instruct, 4-bit, run by llama.cpp in your own private GitHub Actions sandbox. No key; prompts go nowhere else.",
+  "author": "HereLiesAz",
+  "llm": {
+    "tier": "sandbox-weights",
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "requires": {
+        "githubToken": [
+          "contents:write",
+          "actions:write",
+          "checks:write",
+          "workflows:write"
+        ]
+      },
+      "fetches": [
+        {
+          "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11218/llama-b11218-bin-ubuntu-x64.tar.gz",
+          "checksum": "sha256-9ed52d78e24bfdadad0637a6481fb79a4bb26ddd61cf40ae3d4c56f6bbead793"
+        }
+      ]
+    },
+    "weights": {
+      "runtime": "llama.cpp",
+      "files": [
+        {
+          "name": "model.gguf",
+          "remoteUrl": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+          "checksum": "sha256-6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "byteSize": 1117320736,
+          "supportsRange": true
+        }
+      ],
+      "modelLicense": {
+        "spdx": "Apache-2.0",
+        "commercialUse": true,
+        "sourceUrl": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF"
+      },
+      "requirements": {
+        "accelerator": "cpu",
+        "quantization": "int4",
+        "minRamMB": 3072,
+        "minDiskMB": 2048,
+        "minCpuCores": 2,
+        "contextTokens": 4096
+      }
+    },
+    "endpoint": {
+      "protocols": [
+        "github-actions-runner"
+      ],
+      "defaultModel": "model.gguf",
+      "auth": "none"
+    },
+    "run": {
+      "permissions": {
+        "contents": "read",
+        "checks": "write"
+      }
+    },
+    "dataHandling": {
+      "prompts": "not-retained",
+      "modelPinned": true,
+      "operator": "GitHub (your private sandbox runner only)"
+    },
+    "role": "text-generation"
+  }
+}

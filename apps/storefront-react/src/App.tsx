@@ -18,6 +18,7 @@ import {
   isPaid,
   priceLabel,
   startCheckout,
+  type LlmBlock,
   type PackageSummary,
   type Purchase,
   type PublishTicket,
@@ -104,6 +105,71 @@ const InventoryContext = createContext<Record<string, InventoryEntry>>({});
 
 function Pill({ text, bg, fg }: { text: string; bg: string; fg: string }) {
   return <span className="pill" style={{ background: bg, color: fg }}>{text}</span>;
+}
+
+/** Short tier label for a `kind:"llm"` card: where the prompts go, before anything else. */
+function llmTierLabel(llm: LlmBlock): string {
+  return llm.tier === "sandbox-weights" ? "PRIVATE SANDBOX" : "HOSTED";
+}
+
+const PROMPT_HANDLING: Record<string, string> = {
+  "not-retained": "Prompts are not retained.",
+  logged: "Prompts are logged by the operator.",
+  "may-train": "Prompts may be used to train models.",
+  unknown: "The operator does not say what happens to prompts.",
+};
+
+function formatBytes(bytes: number): string {
+  return bytes >= 1e9 ? (bytes / 1e9).toFixed(1) + " GB" : Math.round(bytes / 1e6) + " MB";
+}
+
+/**
+ * What `spec/llm.md` § Discovery requires the store to show before install: the tier, the data
+ * handling, and the permissions the one-time setup token needs — plus the weights' own licence,
+ * which a host must surface too.
+ */
+function LlmDisclosure({ llm }: { llm: LlmBlock }) {
+  const dh = llm.dataHandling;
+  const token = llm.setup?.requires?.githubToken ?? [];
+  const license = llm.weights?.modelLicense;
+  const size = (llm.weights?.files ?? []).reduce((n, f) => n + (f.byteSize ?? 0), 0);
+  const req = llm.weights?.requirements;
+  const row = (label: string, value: React.ReactNode) => (
+    <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+      <span style={{ minWidth: 140, fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" }}>{label}</span>
+      <span style={{ fontSize: 14 }}>{value}</span>
+    </div>
+  );
+  return (
+    <section aria-label="Before you install" style={{ marginTop: 24, padding: 16, border: "1px solid var(--outline)" }}>
+      <div style={{ fontWeight: 800, fontSize: 16 }}>Before you install</div>
+      {row("Runs", llm.tier === "sandbox-weights"
+        ? "Open weights in your own private GitHub Actions sandbox. Prompts stay there."
+        : `A third-party service${llm.endpoint?.baseUrl ? " at " + new URL(llm.endpoint.baseUrl).host : ""}. Prompts leave your sandbox.`)}
+      {dh && row("Prompts", <>
+        {PROMPT_HANDLING[dh.prompts ?? "unknown"] ?? PROMPT_HANDLING.unknown}
+        {dh.operator && <> Operator: {dh.operator}.</>}
+        {dh.modelPinned === false && <> The model behind it can change without notice.</>}
+        {dh.terms && <> <a href={dh.terms} target="_blank" rel="noreferrer">Terms</a></>}
+      </>)}
+      {llm.endpoint?.defaultModel && row("Model", llm.endpoint.defaultModel)}
+      {license && row("Model licence", <>
+        {license.spdx ?? "unspecified"}{license.commercialUse === false && " · non-commercial"}
+        {license.url && <> <a href={license.url} target="_blank" rel="noreferrer">Read</a></>}
+      </>)}
+      {size > 0 && row("Download", `${formatBytes(size)} of weights, cached in the sandbox`)}
+      {req && row("Runner needs", [
+        req.accelerator, req.minRamMB && `${Math.round(req.minRamMB / 1024)} GB RAM`,
+        req.minDiskMB && `${Math.round(req.minDiskMB / 1024)} GB disk`, req.contextTokens && `${req.contextTokens} tokens context`,
+      ].filter(Boolean).join(" · "))}
+      {row("Setup token", token.length > 0
+        ? <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>{token.map((t) => <code key={t}>{t}</code>)}</span>
+        : "A GitHub token for the sandbox repository")}
+      <div style={{ fontSize: 12.5, color: "var(--on-surface-variant)", marginTop: 10 }}>
+        Setup runs once, off this device, in a private repository used only for azphalt sandboxes.
+      </div>
+    </section>
+  );
 }
 
 /** A canvas that animates the plugin preview only when `active`; otherwise it holds a still frame. */
@@ -214,6 +280,7 @@ function PackageCard({
         <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: 10 }}>
           <div style={{ display: "flex", gap: 6 }}>
             <Pill text={pkg.kind.toUpperCase()} bg={rgba(on, 0.16)} fg={on} />
+            {pkg.llm && <Pill text={llmTierLabel(pkg.llm)} bg={rgba(on, 0.16)} fg={on} />}
             {isMature(pkg) && <Pill text="18+" bg="var(--secondary-container)" fg="var(--on-secondary-container)" />}
             {/* Sits with kind and maturity rather than with the price: it describes the viewer's
                 relationship to the package, not the package's terms. Without it the install
@@ -463,6 +530,7 @@ function Detail({
         <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: 20 }}>
           <div style={{ display: "flex", gap: 6 }}>
             <Pill text={pkg.kind.toUpperCase()} bg={rgba(on, 0.16)} fg={on} />
+            {pkg.llm && <Pill text={llmTierLabel(pkg.llm)} bg={rgba(on, 0.16)} fg={on} />}
             {isMature(pkg) && <Pill text="18+" bg="var(--secondary-container)" fg="var(--on-secondary-container)" />}
           </div>
           <Pill text={`v${pkg.version}`} bg={rgba(on, 0.16)} fg={on} />
@@ -484,6 +552,7 @@ function Detail({
           ))}
         </div>
       )}
+      {pkg.llm && <LlmDisclosure llm={pkg.llm} />}
       {(pkg.targetApps ?? []).length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 16 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" }}>Available in</span>

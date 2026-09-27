@@ -31,7 +31,7 @@ export function validateRoleManifest(manifest: Manifest): string[] {
   if (manifest.assets !== undefined) errors.push('kind:"role" must not declare assets');
   if (manifest.contributes !== undefined) errors.push('kind:"role" must not declare contributes');
 
-  for (const block of ["app", "mcp", "pack", "skill", "script", "composable", "workflow"] as const) {
+  for (const block of ["app", "mcp", "pack", "skill", "script", "composable", "workflow", "llm"] as const) {
     if (manifest[block] !== undefined) errors.push(`kind:"role" must not declare a ${block} block`);
   }
 
