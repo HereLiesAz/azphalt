@@ -46,7 +46,6 @@ Keeping these separable is the core constraint: anyone can implement azphalt and
 | Component | Stack | React? |
 |---|---|---|
 | Production marketplace storefront | React + Vite static export behind a Cloudflare Worker | **Yes** |
-| Reference storefront | Next.js + TS | **Yes** — retained as a reference implementation |
 | The registry (host/version/search/serve packages) | Node/TS service + API | No — its browse UI can reuse the storefront's React |
 | The SDK (what authors build against) | TS | No — it's a library, not a UI |
 | Extension **UI** | **Declarative schema**, host-rendered | **No** — see below |
@@ -99,7 +98,7 @@ The native host that embeds the engine and renders the schema is **each app's ow
 /apps/
   storefront-react/         production marketplace UI; statically exports the git-backed catalog
   storefront-worker/        Cloudflare Worker serving the production storefront, docs + Repository API
-  storefront/               legacy/reference Next.js storefront
+  storefront/               the git-pinned catalog (registry/) and the scripts that build it
   repository-server/        a reference Repository API backend over @azphalt/registry
   storefront-cmp/           native Compose Multiplatform store client (Android, desktop, web)
   marketplace/              demo marketplace client

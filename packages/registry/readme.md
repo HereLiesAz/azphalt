@@ -56,4 +56,4 @@ Without those the provider throws on construction; the storefront (`apps/storefr
 
 ## Status
 
-Both lanes work end to end: publish/verify/version/serve/search, and the consignment overlay with money-split quoting. Storage defaults to in-memory (`InMemoryStore`); a deployment implements `RegistryStore` over its own database + object store. The Stripe Connect provider is implemented (pending live keys — see above). This package is consumed by the Next.js storefront (`apps/storefront`) and fronted over HTTP by the reference [`@azphalt/repository-server`](../../apps/repository-server).
+Both lanes work end to end: publish/verify/version/serve/search, and the consignment overlay with money-split quoting. Storage defaults to in-memory (`InMemoryStore`); a deployment implements `RegistryStore` over its own database + object store. The Stripe Connect provider is implemented (pending live keys — see above). This package is fronted over HTTP by the reference [`@azphalt/repository-server`](../../apps/repository-server).
