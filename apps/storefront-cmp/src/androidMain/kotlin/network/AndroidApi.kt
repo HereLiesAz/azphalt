@@ -268,7 +268,7 @@ public suspend fun exchangePlayPurchase(
 public actual suspend fun startCheckout(packageId: String): CheckoutResponse {
     // Deliberately not the web checkout. A Play-distributed app selling digital goods must use Play
     // Billing (spec/store-app.md § Paid packages), so the paid lane on Android goes through
-    // store.azphalt.storefront.Billing rather than this shared entry point.
+    // com.hereliesaz.azphalt.store.Billing rather than this shared entry point.
     throw UnsupportedOperationException(
         "paid packages on Android go through Play Billing, not the web checkout",
     )

@@ -190,7 +190,7 @@ kotlin {
 }
 
 android {
-    namespace = "store.azphalt.storefront"
+    namespace = "com.hereliesaz.azphalt.store"
     compileSdk = 37
 
     defaultConfig {

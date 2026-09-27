@@ -7,7 +7,7 @@
  * and decide whether the signer is anyone it wants to install from. A store app is a convenience, not
  * a trust anchor; see the spec's "What this is not".
  */
-package store.azphalt.storefront
+package com.hereliesaz.azphalt.store
 
 import android.content.ClipData
 import android.content.Context
