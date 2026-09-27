@@ -6,7 +6,7 @@ GitHub Actions sandbox. Modeled on `kind: "mcp"` (mcp-server.md): the package is
 a bundled setup script, and the host runs everything **outside the user's device** under consent. The
 SDK types (`@azphalt/azdk` `LlmManifest`), the verifier (`validateLlmManifest`, § Verification) and a
 reference runner (the first-party `com.hereliesaz.azphalt.llm.*` packages) and a reference host
-(`@azphalt/llm-host`) exist; no conformance profile does yet.*
+(`@azphalt/llm-host`) exist, and `@azphalt/conformance` has an `"llm"` host profile (§ Conformance).*
 
 ## Why this exists — and why it doesn't break the moat
 
@@ -335,10 +335,26 @@ Signing, publisher pinning, registry counter-signing, and revocations apply unch
   sandbox and a protocol browse for them.
 - The store card shows the tier, `dataHandling`, and the setup token permissions before install.
 
+## Conformance
+
+`runLlmConformance` in `@azphalt/conformance` certifies an `"llm"` host. The host exposes `load`
+(verify and report the pre-install disclosure, never running setup), its `openai-chat` translator,
+and its output check. The battery requires it to:
+
+- refuse a tampered package, an unsafe payload path, a non-`llm` package, a runner asking for more
+  than `contents: write`, `checks: write`, `actions: read`, and an unsatisfiable `compat`;
+- disclose the tier, `dataHandling.prompts` and the setup token's permissions for a valid package,
+  and confirm setup stays off the device;
+- turn tagged material into its own `user` message with no session tag or native control marker
+  left, using the reference runner's tag vectors;
+- reject output carrying any tag of the session, including an earlier turn's;
+- declare the `"llm"` profile.
+
 ## Open questions
 
 - **Other sandboxes.** GitLab CI, self-hosted runners, or confidential-computing enclaves as further
   `setup.sandbox` values.
-- **Conformance.** An `"llm"` host-conformance profile: header-only rules, refusal to run setup
-  on-device, consent display, rolling-delimiter translation, bounded result parsing.
+- **Conformance of the sandbox itself.** The `"llm"` profile checks what a host does in-process; it
+  cannot observe a host provisioning a public repository, over-scoping the setup token, or parsing an
+  unbounded result.
 - **Sandbox repository sharing.** One sandbox repository per host install or one per package.
