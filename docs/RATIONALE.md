@@ -1,6 +1,6 @@
 # azphalt — Rationale & Research
 
-*The evidence base behind azphalt's design: why an open, portable extension standard, why these formats, why MIT. Directional, drawn from public sources; treat download/revenue figures as order-of-magnitude. Sources at the end.*
+*The evidence base behind azphalt's design: why an open, portable extension standard, why these formats, why Apache-2.0. Directional, drawn from public sources; treat download/revenue figures as order-of-magnitude. Sources at the end.*
 
 ---
 
@@ -60,7 +60,7 @@ Every code extension is bound to a host runtime and runs only inside it. The clo
 ### 1.5 Registry & monetization blueprints (from outside paint apps)
 
 - **Figma Community** — JS plugins, freemium as the growth default. The monetization reality is the lesson: Figma's built-in seller program is capacity-limited / not approving new sellers, so in practice creators sell via Gumroad / LemonSqueezy / a Merchant of Record, generate license keys, and validate them inside the plugin. **Takeaway: don't build a walled payment garden — keep discovery free and let creators bring their own payment + license keys.**
-- **Open VSX (Eclipse Foundation)** — the blueprint for the code side. It exists because community extensions under open licenses shouldn't be locked to one vendor's restrictive marketplace terms, so Eclipse built a **vendor-neutral, open-source, self-hostable** registry that hosts the *same extension format as VS Code* — so extensions work across editors (VSCodium, Theia, Cursor) without changes. Self-hosting also fits an offline stance. This is the literal template for azphalt: MIT the API and let other apps run the same extensions.
+- **Open VSX (Eclipse Foundation)** — the blueprint for the code side. It exists because community extensions under open licenses shouldn't be locked to one vendor's restrictive marketplace terms, so Eclipse built a **vendor-neutral, open-source, self-hostable** registry that hosts the *same extension format as VS Code* — so extensions work across editors (VSCodium, Theia, Cursor) without changes. Self-hosting also fits an offline stance. This is the literal template for azphalt: license the API permissively and let other apps run the same extensions.
 - **Canva — external-payment baseline** *(verified on Canva's own docs)*. Canva Apps are JS apps run inside Canva's host via the Apps SDK; per Canva's docs the SDK **does not support in-app purchases** — the baseline is external payment links (the Figma model). The usage-based, Canva-handles-billing model is the **Premium Apps Program**, a *selective* program you apply into, plus **development grants** for building free apps. Canva Creators (assets/templates) pays a **usage-driven royalty pool**; Canva does **not** publish exact rates, and the circulating per-use/split figures are third-party estimates, treated here as unverified. Takeaways: external payment is the real baseline in both Figma and Canva; and Canva seeds its ecosystem by *paying developers* — a capital luxury a solo project can't match, which is why adopting open standards, not a checkbook, is the model.
 
 ### 1.6 The white space, and the plan
@@ -70,7 +70,7 @@ Every code extension is bound to a host runtime and runs only inside it. The clo
 **Plan:**
 1. **Import existing asset formats now** — `.abr`, `.brushset`, `.cube`. A day-one catalog from libraries the whole internet already made, at the cost of an importer rather than an ecosystem.
 2. **For the code API, copy Open VSX, not `.8bf`** — a portable JS/WASM sandbox (cross-platform + safe), and a vendor-neutral, self-hostable registry so the format can travel. Optionally integrate G'MIC as a ready-made portable effect engine.
-3. **Monetization: the Figma de-facto model** — free discovery, creators bring external payment + license keys (MIT permits closed, sold extensions), or a Clip-Studio-style in-app currency later.
+3. **Monetization: the Figma de-facto model** — free discovery, creators bring external payment + license keys (Apache-2.0 permits closed, sold extensions), or a Clip-Studio-style in-app currency later.
 
 **Reality check:** Clip Studio Assets works because CSP had millions of users first; a marketplace with no audience attracts no creators. The code-extension marketplace is a Phase-2+ effort that follows adoption. Asset-format import is the cheap early win that helps even a tiny user base — which is why azphalt ships importers before it ships a store.
 
@@ -78,33 +78,34 @@ Every code extension is bound to a host runtime and runs only inside it. The clo
 
 ## Part 2 — Licensing rationale
 
-azphalt is **MIT**. The reasoning, and how it sits against a host that isn't:
+azphalt is **Apache-2.0** (root `LICENSE`, with a `NOTICE`). The reasoning, and how it sits against a host that isn't:
 
-### 2.1 Why MIT for an extension standard
+### 2.1 Why Apache-2.0 for an extension standard
 
-Every real plugin ecosystem uses permissive/weak-copyleft for its **API**, because strong copyleft there forbids proprietary and cross-app extensions. VS Code's source and extension API are MIT, and that permissiveness is *why* the ecosystem exploded and why other editors run the same extensions.
+Every real plugin ecosystem uses permissive/weak-copyleft for its **API**, because strong copyleft there forbids proprietary and cross-app extensions. VS Code's source and extension API are permissive (MIT), and that permissiveness is *why* the ecosystem exploded and why other editors run the same extensions.
 
-- **MIT (chosen):** anyone builds extensions, keeps them closed, sells them; any app can adopt the API and run them. Maximum ecosystem, zero friction, de-facto-standard potential. The VS Code model.
-- **EPL-2.0:** also allows proprietary plugins and cross-app use, but adds file-level copyleft on the SDK itself. Choose only if guarding the framework from private forks matters more than frictionless adoption. For a young ecosystem, MIT wins.
+- **Apache-2.0 (chosen):** everything MIT allows — anyone builds extensions, keeps them closed, sells them; any app adopts the API and runs them — plus an **explicit patent grant** from every contributor and **patent retaliation** (a licensee who sues over patents in the work loses the licence). For a *standard* that other hosts are meant to implement, that grant is the point: an implementer is licensed for the contributors' patents that read on the code, not merely for the copyright. The cost is a little ceremony — keep the `NOTICE`, mark modified files — which is negligible next to that.
+- **MIT (the previous licence):** the same freedoms, no patent language. Simpler, and fine for a library; weaker for a standard whose value is that strangers can implement it without worrying who holds what.
+- **EPL-2.0:** also allows proprietary plugins and cross-app use, but adds file-level copyleft on the SDK itself. Choose only if guarding the framework from private forks matters more than frictionless adoption. For a young ecosystem, a permissive licence wins.
 - **AGPL was considered and rejected for anything an ecosystem builds against.** Anything built against an AGPL API inherits AGPL, which forbids proprietary/sold extensions and infects any host that runs them. It kills both ecosystem goals. (It remains the standard vehicle for *open-core dual-licensing* of an application — which is a host's concern, not the standard's.)
 
 ### 2.2 The boundary that keeps an open standard from leaking a host's moat
 
-azphalt being MIT and open is only safe because of one rule: **the extension API exposes only *editor* extension points — operations on layers, bitmaps, the canvas — and never a host's proprietary engine.** Plugins extend the editor, not the tracking core. That is precisely *why* the API can be open (there's no secret in it) and why a host's engine can stay under whatever license it likes behind it.
+azphalt being Apache-2.0 and open is only safe because of one rule: **the extension API exposes only *editor* extension points — operations on layers, bitmaps, the canvas — and never a host's proprietary engine.** Plugins extend the editor, not the tracking core. That is precisely *why* the API can be open (there's no secret in it) and why a host's engine can stay under whatever license it likes behind it.
 
-Concretely, for GraffitiXR, the app azphalt was split out of: its relocalization / teleological engine stays in GraffitiXR under **PolyForm Noncommercial**; GraffitiXR adopts azphalt's MIT API across a repo boundary. A separate MIT repo *cannot reference* that engine — the boundary is structural, not a discipline. Note that the engine leaks across module lines inside a host (significant algorithm code lives beyond any single native module), which is exactly why the API is its own module with its own MIT boundary: the license line is a real code boundary, not a comment.
+Concretely, for GraffitiXR, the app azphalt was split out of: its relocalization / teleological engine stays in GraffitiXR under **PolyForm Noncommercial**; GraffitiXR adopts azphalt's Apache-2.0 API across a repo boundary. A separate Apache-2.0 repo *cannot reference* that engine — the boundary is structural, not a discipline. Note that the engine leaks across module lines inside a host (significant algorithm code lives beyond any single native module), which is exactly why the API is its own module with its own Apache-2.0 boundary: the license line is a real code boundary, not a comment.
 
 ### 2.3 Mechanics worth carrying
 
-- **Treat licensing as per-file, not per-repo, the moment a repo mixes licenses.** Precedence, most-specific first: per-file SPDX header > module `LICENSE` > root `LICENSE`. azphalt itself is uniformly MIT under the root `LICENSE` today, so no file carries its own header yet — but the moment any part of this repo (or a fork of it) needs a different license, mark that layer explicitly rather than leaving it to the root file to imply:
+- **Treat licensing as per-file, not per-repo, the moment a repo mixes licenses.** Precedence, most-specific first: per-file SPDX header > module `LICENSE` > root `LICENSE`. azphalt itself is uniformly Apache-2.0 under the root `LICENSE` today, so no file carries its own header yet — but the moment any part of this repo (or a fork of it) needs a different license, mark that layer explicitly rather than leaving it to the root file to imply:
 
 ~~~
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 ~~~
 
 - **Contributions / CLA.** Outside contributions are owned by their authors; if you may ever dual-license or commercialize a part, take a CLA (or don't accept outside contributions to that part).
 - **Third-party dependencies keep their own licenses** and can't be relicensed — track them per-package.
-- **"Source-available" ≠ "open source."** azphalt itself *is* OSI-open (MIT). A host that embeds a non-commercial engine is not — describe such a host accurately (*source-available; core PolyForm Noncommercial, extension layer MIT*), and keep azphalt's own MIT framing clean and separate.
+- **"Source-available" ≠ "open source."** azphalt itself *is* OSI-open (Apache-2.0). A host that embeds a non-commercial engine is not — describe such a host accurately (*source-available; core PolyForm Noncommercial, extension layer Apache-2.0*), and keep azphalt's own Apache-2.0 framing clean and separate.
 
 ---
 
@@ -119,7 +120,7 @@ Concretely, for GraffitiXR, the app azphalt was split out of: its relocalization
 - Canva Apps / Creators (external-payment baseline, Premium Apps Program, royalty pool): Canva's own developer and creator docs.
 
 **Licensing**
-- MIT / EPL comparison and VS Code precedent: general licensing references; Open VSX / Eclipse.
+- Apache-2.0 / MIT / EPL comparison and VS Code precedent: general licensing references; Open VSX / Eclipse.
 - AGPL (dual-licensing precedent, network clause, why it's wrong for an API): gnu.org / OSI / choosealicense; FSF.
 - PolyForm Noncommercial 1.0.0 (the host-side license it sits against): polyformproject.org; SPDX.
 

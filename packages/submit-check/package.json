@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "description": "Validate registry submissions (submissions/<id>/) by packaging each into a verifiable .azp.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Az (https://hereliesaz.com)",
   "type": "module",
   "main": "./dist/index.js",

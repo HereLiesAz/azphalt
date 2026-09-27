@@ -10,7 +10,7 @@
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
 | `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script` \| `composable` \| `workflow` \| `role` \| `llm` *(proposed)*. |
-| `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
+| `license` | ✔ | SPDX id. The standard's Apache-2.0 licence permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
 | `targetApps` | — | Reverse-DNS host-app ids this package is scoped to (e.g. `["com.hereliesaz.graffux"]`). Empty/absent = **global** (every app). A repository shows an app-scoped package only to a matching app — see repository-api.md § App scoping. Discovery filter, not access control. |
