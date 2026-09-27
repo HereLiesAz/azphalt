@@ -17,12 +17,12 @@ import androidx.core.content.FileProvider
 import java.io.File
 import models.ExtensionStateEntry
 import models.parseHostInventory
-import store.azphalt.azp.VerifyResult
-import store.azphalt.azp.openAzp
+import com.hereliesaz.azphalt.azp.VerifyResult
+import com.hereliesaz.azphalt.azp.openAzp
 
 /** The action a host launches, and the extras it may set. Mirrors `spec/store-app.md` § The request. */
 public object Handoff {
-    public const val ACTION_BROWSE: String = "store.azphalt.action.BROWSE"
+    public const val ACTION_BROWSE: String = "com.hereliesaz.azphalt.action.BROWSE"
 
     public const val EXTRA_APP: String = "app"
     public const val EXTRA_MEDIA_DOMAINS: String = "mediaDomains"

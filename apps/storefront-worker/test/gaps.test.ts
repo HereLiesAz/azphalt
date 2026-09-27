@@ -220,12 +220,12 @@ describe("Play purchase exchange", () => {
 
   it("answers 501 until configured", async () => {
     expect((await exchange(makeEnv(), valid)).status).toBe(501);
-    expect((await exchange(makeEnv({ PLAY_PACKAGE_NAME: "store.azphalt" }), valid)).status).toBe(501);
+    expect((await exchange(makeEnv({ PLAY_PACKAGE_NAME: "com.hereliesaz.azphalt.store" }), valid)).status).toBe(501);
   });
 
   it("verifies with Google using a signed service-account JWT and issues a store-signed entitlement", async () => {
     const account = await serviceAccount("ok@example.iam.gserviceaccount.com");
-    const env = makeEnv({ PLAY_PACKAGE_NAME: "store.azphalt", PLAY_SERVICE_ACCOUNT_JSON: account.json });
+    const env = makeEnv({ PLAY_PACKAGE_NAME: "com.hereliesaz.azphalt.store", PLAY_SERVICE_ACCOUNT_JSON: account.json });
     let acknowledged = false;
     let assertion = "";
     const calls = stubUpstream((url, init) => {
@@ -253,7 +253,7 @@ describe("Play purchase exchange", () => {
       publicKey: string;
     };
     expect(token.claims).toMatchObject({ packageId: "com.example.paid", subject: "play-order:GPA.1234", kind: "perpetual" });
-    expect(calls.some((u) => u.includes("androidpublisher/v3/applications/store.azphalt/"))).toBe(true);
+    expect(calls.some((u) => u.includes("androidpublisher/v3/applications/com.hereliesaz.azphalt.store/"))).toBe(true);
     expect(acknowledged).toBe(true);
 
     // The JWT Google received is RS256-signed by the service account's key.
@@ -279,7 +279,7 @@ describe("Play purchase exchange", () => {
 
   it("maps refusals to 402, Google failures to 502, and bad requests to 400/404/501", async () => {
     const account = await serviceAccount("refusals@example.iam.gserviceaccount.com");
-    const env = makeEnv({ PLAY_PACKAGE_NAME: "store.azphalt", PLAY_SERVICE_ACCOUNT_JSON: account.json });
+    const env = makeEnv({ PLAY_PACKAGE_NAME: "com.hereliesaz.azphalt.store", PLAY_SERVICE_ACCOUNT_JSON: account.json });
     stubUpstream((url) => {
       if (url.includes("oauth2")) return new Response(JSON.stringify({ access_token: "ya29.r" }));
       if (url.endsWith("/tokens/cancelled")) return new Response(JSON.stringify({ purchaseState: 1, orderId: "GPA.1" }));

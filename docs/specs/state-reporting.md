@@ -105,7 +105,7 @@ Two transports, for two situations. Both are host → store app; the store app n
 
 ### 3.1 With a browse request (the common case)
 
-The host adds its inventory to the `store.azphalt.action.BROWSE` request (`store-app.md` § The request):
+The host adds its inventory to the `com.hereliesaz.azphalt.action.BROWSE` request (`store-app.md` § The request):
 
 | Extra | Type | Meaning |
 | --- | --- | --- |

@@ -23,7 +23,7 @@
  * A divergence here would not be a cosmetic bug: a host that accepts a package the reference
  * implementation rejects is a host with a weaker security boundary than the spec promises.
  */
-package store.azphalt.azp
+package com.hereliesaz.azphalt.azp
 
 import java.io.ByteArrayInputStream
 import java.security.KeyFactory

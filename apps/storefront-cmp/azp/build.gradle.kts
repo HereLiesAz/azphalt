@@ -6,7 +6,7 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-group = "store.azphalt"
+group = "com.hereliesaz.azphalt"
 // The root project's version, which is `version.properties`. Not restated here: a second version
 // string is a second source of truth, and it drifted from the app's the moment the app's started
 // moving. There is exactly one version in this repository and this subproject is not an exception.

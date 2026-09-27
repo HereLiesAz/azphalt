@@ -43,7 +43,7 @@ The store app saves the host **work**, never **judgement**.
 A host detects a store app by resolving the browse intent:
 
 ~~~kotlin
-val intent = Intent("store.azphalt.action.BROWSE")
+val intent = Intent("com.hereliesaz.azphalt.action.BROWSE")
 val available = context.packageManager.resolveActivity(intent, 0) != null
 ~~~
 
@@ -54,7 +54,7 @@ is a host with no *browse* affordance, not a broken one.
 
 ## The request
 
-The host launches `store.azphalt.action.BROWSE` **for result** (Activity Result API). Every extra is
+The host launches `com.hereliesaz.azphalt.action.BROWSE` **for result** (Activity Result API). Every extra is
 optional except `app`.
 
 | Extra | Type | Meaning |
