@@ -8,7 +8,7 @@ The pitch in one line: the paint/photo world's extensions are trapped — a Phot
 
 # Two things, kept separable
 
-- **The standard** *(this repo, MIT)* — the `.azp` package format, the SDK, the asset importers, a reference runtime, and the registry. Vendor-neutral by construction. This is the part other apps adopt.
+- **The standard** *(this repo, Apache-2.0)* — the `.azp` package format, the SDK, the asset importers, a reference runtime, and the registry. Vendor-neutral by construction. This is the part other apps adopt.
 - **The marketplace** *(a business, on top)* — a hosted consignment storefront on the open standard, the way a store sits on Open VSX. Never a precondition for adopting the standard. It can carry its own name.
 
 Anyone can implement azphalt and run their own store. Ours is just the flagship.
@@ -32,7 +32,7 @@ Anyone can implement azphalt and run their own store. Ours is just the flagship.
                 repository-server (reference backend) · marketplace + mock-backend (demo client + template server)
 /examples/      sample extensions
 /docs/          the docs site + design, adoption and operations guides, and the creator and host getting-started guides
-LICENSE         MIT
+LICENSE         Apache-2.0 (with NOTICE)
 ~~~
 
 ### Packages
@@ -80,4 +80,5 @@ Azphalt's portable extension architecture is designed to power the next generati
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+Apache License 2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Extensions published through
+azphalt carry their own licences; this one covers the standard, its libraries and the store's code.

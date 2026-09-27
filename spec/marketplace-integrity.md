@@ -116,7 +116,7 @@ pending human review. Untrusted reports never trip the threshold — they queue 
 - **Visibility** — a new manifest/registry field `visibility ∈ public | unlisted | private` (default
   `public`). `unlisted` = resolvable by exact id, hidden from browse (like an app-scoped package);
   `private` = access-gated. The registry filters browse/search by it exactly as it does `targetApps`.
-- **Proprietary is already first-class.** MIT permits closed/sold extensions, and the safety guarantee
+- **Proprietary is already first-class.** Apache-2.0 permits closed/sold extensions, and the safety guarantee
   is the **sandbox**, not disclosure — so azphalt **never requires source**. This RFC makes that
   explicit: the sweep and clone-checks operate on the *container* and *behavior*, never source; a
   closed-source, paid, private extension is a fully-supported citizen.

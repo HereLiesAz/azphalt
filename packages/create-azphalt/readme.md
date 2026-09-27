@@ -36,7 +36,7 @@ template's `readme.md` for details.
 ## Licence
 
 **Your extension, your terms.** The scaffolder asks which licence you want and writes it; it does not
-impose one. (The templates themselves carry no `LICENSE` — they are part of this MIT-licensed repo, and
+impose one. (The templates themselves carry no `LICENSE` — they are part of this Apache-2.0-licensed repo, and
 a checked-in licence file there would silently become *your* project's terms.)
 
 The prompt exists so that two things stay in agreement: `license` in `manifest.json` is an
