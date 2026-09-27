@@ -34,3 +34,6 @@ apps/storefront-cmp/google-services.json
 # from their source. sw.js had, ending up two versions behind the real one. index.html was never
 # committed despite being the same kind of file, which is what made the inconsistency visible.
 apps/storefront/public/
+
+# Wrangler's local dev state and bundles (apps/storefront-worker `wrangler dev`).
+.wrangler/

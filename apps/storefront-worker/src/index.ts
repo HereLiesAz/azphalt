@@ -127,7 +127,7 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-function base64ToBytes(value: string): Uint8Array {
+function base64ToBytes(value: string): Uint8Array<ArrayBuffer> {
   const binary = atob(value);
   const out = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
@@ -138,7 +138,7 @@ function b64url(bytes: Uint8Array): string {
   return bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function fromB64url(value: string): Uint8Array {
+function fromB64url(value: string): Uint8Array<ArrayBuffer> {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
   return base64ToBytes(normalized + "=".repeat((4 - normalized.length % 4) % 4));
 }
@@ -406,7 +406,7 @@ function marketplaceCatalog(catalog: CatalogEntry[], listings: Listing[]): Catal
   return [...free, ...paid];
 }
 
-async function sha256Integrity(bytes: Uint8Array): Promise<string> {
+async function sha256Integrity(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return "sha256-" + Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -479,7 +479,7 @@ function sortPackages(packages: CatalogEntry[], sort: string | null): CatalogEnt
 async function repositoryPackages(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  let packages = marketplaceCatalog(catalog, listings).map((pkg) => ({
+  let packages: CatalogEntry[] = marketplaceCatalog(catalog, listings).map((pkg) => ({
     ...pkg,
     latest: pkg.version,
   }));
@@ -1550,10 +1550,61 @@ export class AzphaltState {
   }
 }
 
+/** azphalt.org and www.azphalt.org: the docs site, served from the same assets under `/_docs`. */
+const DOCS_HOST = /(^|\.)azphalt\.org$/i;
+const DOCS_PREFIX = "/_docs";
+
+/**
+ * Serve the docs for a request on the docs host. Paths map 1:1 under `/_docs` (built with VitePress
+ * `cleanUrls`, so `/specs/llm` resolves to `specs/llm.html`). The asset layer answers `/x.html` with a
+ * redirect to `/_docs/x`; that prefix is stripped so the address bar never shows it. A miss gets the
+ * docs' own 404 page, not the storefront's shell.
+ */
+async function serveDocs(req: Request, env: Env): Promise<Response> {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return new Response("method not allowed", { status: 405, headers: { allow: "GET, HEAD" } });
+  }
+  const url = new URL(req.url);
+  const inner = new URL(url);
+  inner.pathname = url.pathname.startsWith(DOCS_PREFIX + "/") ? url.pathname : DOCS_PREFIX + url.pathname;
+  const response = await env.ASSETS.fetch(new Request(inner, req));
+
+  const location = response.headers.get("location");
+  if (response.status >= 300 && response.status < 400 && location) {
+    const target = new URL(location, inner);
+    if (target.origin === inner.origin && target.pathname.startsWith(DOCS_PREFIX + "/")) {
+      target.pathname = target.pathname.slice(DOCS_PREFIX.length);
+      const headers = new Headers(response.headers);
+      headers.set("location", target.pathname + target.search + target.hash);
+      return new Response(null, { status: response.status, headers });
+    }
+  }
+  if (response.status !== 404) return response;
+
+  const notFound = await env.ASSETS.fetch(new Request(new URL(DOCS_PREFIX + "/404", url), req));
+  if (!notFound.ok) return response;
+  return new Response(notFound.body, { status: 404, headers: notFound.headers });
+}
+
+/**
+ * Serve a storefront file, falling back to the SPA shell for a page navigation the asset layer has
+ * no file for (`/purchases`, `/app/<id>`, …). Other misses stay 404 so a broken asset link is visible.
+ */
+async function serveStorefront(req: Request, env: Env): Promise<Response> {
+  const response = await env.ASSETS.fetch(req);
+  if (response.status !== 404) return response;
+  if (req.method !== "GET" && req.method !== "HEAD") return response;
+  if (!(req.headers.get("accept") || "").includes("text/html")) return response;
+  const shell = await env.ASSETS.fetch(new Request(new URL("/", req.url), req));
+  return shell.ok ? shell : response;
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
+
+    if (DOCS_HOST.test(url.hostname)) return serveDocs(req, env);
 
     try {
       if (req.method === "GET" && path === "/api/health") {
@@ -1640,7 +1691,7 @@ export default {
         });
       }
 
-      return env.ASSETS.fetch(req);
+      return serveStorefront(req, env);
     } catch (error) {
       console.error("worker request failed", error);
       return json({ error: "internal error" }, 500);

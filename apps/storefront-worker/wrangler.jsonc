@@ -3,11 +3,21 @@
   "name": "azphalt-store",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-17",
+  // No `routes` here: azphalt.store, www.azphalt.store, azphalt.org and www.azphalt.org are attached to
+  // this Worker as Custom Domains in the Cloudflare dashboard (README § Domains). Declaring them here
+  // would make every deploy fail until those zones are on the account.
   "assets": {
-    "directory": "../storefront-react/dist",
+    // Built by `pnpm --filter "@azphalt/storefront-worker..." build`: the React storefront at the root,
+    // the docs under /_docs (scripts/assemble-assets.mjs).
+    "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/packages", "/packages/*", "/revocations", "/installs", "/entitlements/*", "/.well-known/*"]
+    // A miss is a plain 404; the Worker decides what a miss means per host (the storefront's SPA shell
+    // on azphalt.store, the docs' 404 page on azphalt.org).
+    "not_found_handling": "none",
+    // Everything runs through the Worker except the storefront's hashed bundles, which are served
+    // straight from the edge. The docs keep theirs in /docs-assets/ so azphalt.org still reaches the
+    // Worker for them (docs/.vitepress/config.mjs § assetsDir).
+    "run_worker_first": ["/*", "!/assets/*"]
   },
   "durable_objects": {
     "bindings": [
