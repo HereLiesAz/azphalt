@@ -83,12 +83,23 @@ apps can discover and install it:
    `submissions/<your-id>/` (see the repo's `submissions/README.md` and the **code** / **asset** /
    **model** templates). CI re-packages and validates it, then it lands in the free registry. Best for
    free, open extensions that live in the open registry.
-2. **Upload the bytes.** A conforming repository exposes a publish endpoint that takes raw `.azp` bytes
-   and returns the indexed summary (or `400` with the exact verification errors). The store verifies the
-   container the same way it verifies a submission — no shortcut around the checks.
+2. **Publish the signed bytes.** Send the `.azp`, signed with your publisher key, to
+   `POST https://azphalt.store/packages` ([Repository API § 9](/specs/repository-api#_9-publish)) —
+   or use the store's [Publish page](https://azphalt.store/publish):
 
-Either path runs the **same** verify-and-index pipeline; a listing on the store is never a lower bar
-than an open submission.
+   ~~~bash
+   curl -X POST -H "Content-Type: application/vnd.azphalt.package" \
+     --data-binary @my-extension.azp https://azphalt.store/packages
+   ~~~
+
+   The store verifies the container and the signature, then opens that same pull request under
+   `submissions/<your-id>/` for you and answers `202` with its address. Your first publish of an id
+   pins your key; every later version must be signed by the same key, or it is refused. A package
+   already maintained in the repository by hand is updated by pull request, not here. Up to 4 MB — put
+   heavy assets behind `remoteUrl` + `checksum`.
+
+Either path ends in the **same** reviewed pull request and the same checks; nothing reaches the store
+without a merge, and a listing on the store is never a lower bar than an open submission.
 
 > **Building an MCP server?** An [MCP server](/specs/mcp-server) is packaged as its own package kind
 > (`kind: "mcp"`) and published exactly like any other extension — there is no separate MCP publish

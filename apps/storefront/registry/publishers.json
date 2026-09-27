@@ -1,0 +1,7 @@
+{
+  "//": [
+    "Publisher keys pinned by POST /packages (apps/storefront-worker/src/publish.ts): the first publish",
+    "of an id pins its signer's SPKI key, and every later publish of that id must be signed by it."
+  ],
+  "publishers": {}
+}

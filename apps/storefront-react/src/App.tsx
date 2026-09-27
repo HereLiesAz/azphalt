@@ -6,6 +6,7 @@ import {
   fetchSellerStatus,
   fetchReports,
   fileReport,
+  publishPackage,
   ratePackage,
   REPORT_REASONS,
   startSellerOnboarding,
@@ -18,6 +19,7 @@ import {
   startCheckout,
   type PackageSummary,
   type Purchase,
+  type PublishTicket,
   type Report,
 } from "./api";
 import { drawPreview, paletteFor, rgba } from "./preview";
@@ -699,6 +701,7 @@ function StorefrontApp() {
         <nav style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "-6px 0 22px" }} aria-label="Store account actions">
           <a className="chip" href="/purchases" style={{ textDecoration: "none" }}>Purchases</a>
           <a className="chip" href="/connect/onboard" style={{ textDecoration: "none" }}>Sell</a>
+          <a className="chip" href="/publish" style={{ textDecoration: "none" }}>Publish</a>
         </nav>
         <div style={{ marginBottom: 24 }}>
           <input
@@ -1186,6 +1189,75 @@ function AppCatalogPage({ appId }: { appId: string }) {
   );
 }
 
+/**
+ * `/publish` — send a signed `.azp` to the store. Nothing goes live from here: the store opens a pull
+ * request against its git-backed catalog, and the merge is what publishes (`spec/repository-api.md` § 9).
+ */
+function PublishPage() {
+  const [file, setFile] = useState<File | null>(null);
+  const [state, setState] = useState<
+    { kind: "idle" | "sending" } | { kind: "done"; ticket: PublishTicket } | { kind: "error"; message: string; details?: string[] }
+  >({ kind: "idle" });
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return;
+    setState({ kind: "sending" });
+    try {
+      const r = await publishPackage(await file.arrayBuffer());
+      setState("error" in r ? { kind: "error", message: r.error, details: r.details } : { kind: "done", ticket: r });
+    } catch (err) {
+      setState({ kind: "error", message: (err as Error).message });
+    }
+  };
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 640, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <h1 style={{ fontSize: 44, marginTop: 32 }}>Publish</h1>
+      <p style={{ color: "var(--on-surface-variant)" }}>
+        Send a <strong>signed</strong> <code>.azp</code> (<code>signAzp</code> with your publisher key). The store checks it
+        and opens a pull request; it goes live when a maintainer merges it. Your first publish of an id pins your key —
+        every later version must be signed by the same key. Up to 4 MB; put heavy assets behind <code>remoteUrl</code>.
+      </p>
+      {state.kind === "done" ? (
+        <div style={{ padding: 18, background: "var(--surface-highest)", borderRadius: 20, marginTop: 24 }}>
+          <div style={{ fontWeight: 850 }}>{state.ticket.id} {state.ticket.version} is waiting for review</div>
+          <p style={{ color: "var(--on-surface-variant)", fontSize: 14 }}>
+            {state.ticket.publisher.pin === "new"
+              ? "This is the first publish of this id: merging it pins your key."
+              : "Signed by the key already pinned for this id."}
+          </p>
+          <a href={state.ticket.review} target="_blank" rel="noopener noreferrer">Follow the review →</a>
+        </div>
+      ) : (
+        <form onSubmit={(e) => void submit(e)} style={{ marginTop: 24 }}>
+          <input type="file" accept=".azp,application/vnd.azphalt.package" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <div>
+            <button
+              type="submit"
+              disabled={!file || state.kind === "sending"}
+              style={{ marginTop: 20, border: 0, padding: "12px 22px", fontWeight: 800, background: "var(--primary)", color: "var(--on-primary)" }}
+            >
+              {state.kind === "sending" ? "Checking…" : "Publish"}
+            </button>
+          </div>
+          {state.kind === "error" && (
+            <div style={{ marginTop: 16, color: "var(--error, #ffb4ab)" }}>
+              <p style={{ margin: 0 }}>{state.message}</p>
+              {state.details && (
+                <ul style={{ fontSize: 13 }}>
+                  {state.details.map((d) => <li key={d}>{d}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+        </form>
+      )}
+    </main>
+  );
+}
+
 /** Every page's footer: the legal pages, and the version of the build that is actually deployed. */
 function SiteFooter() {
   return (
@@ -1208,6 +1280,7 @@ function Page() {
   if (path === "/connect/onboard") return <SellerOnboardingPage />;
   if (path === "/report") return <ReportPage />;
   if (path === "/moderation") return <ModerationPage />;
+  if (path === "/publish") return <PublishPage />;
   const app = path.match(/^\/app\/([^/]+)$/);
   if (app) return <AppCatalogPage appId={decodeURIComponent(app[1])} />;
   return <StorefrontApp />;

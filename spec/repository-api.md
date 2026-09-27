@@ -276,6 +276,56 @@ of the tallies rather than half in each response. A repository MUST NOT present 
 live gauge without the identifier it forbids, and [`state-reporting.md`](state-reporting.md) § 4.3 says
 why.
 
+### 9. Publish
+`POST /packages`
+
+Accepts a package from its publisher. **Optional** — a repository that takes packages some other way
+(a pull request, an upload form, nothing at all) answers `501`, and a client MUST take that as final.
+
+**Request:** the raw `.azp` bytes (`Content-Type: application/vnd.azphalt.package`). The package MUST be
+signed (`signature.json`, [`package-format.md`](package-format.md) § Signing): the signature is the
+publisher's identity, and there is no other credential in this protocol.
+
+The repository MUST verify the container as a host would — safe paths, every `manifest.files` digest,
+no unlisted payload, a valid Ed25519 signature over `manifest.json` — and MUST apply **publisher
+continuity** to the id: the first accepted publish pins the signer's key, and a later publish of the
+same id signed by a different key is refused. A repository MAY refuse ids it maintains by other means.
+
+**Response.** Either the package is live, or it is waiting for review:
+
+- `201 Created` — published; the body is the new version's package detail (§ 3).
+- `202 Accepted` — accepted for review and not yet served. `Location` and `review` name where the
+  review happens:
+
+```json
+{
+  "status": "pending-review",
+  "id": "com.acme.filter",
+  "version": "1.3.0",
+  "review": "https://github.com/acme/registry/pull/42",
+  "publisher": { "publicKey": "<base64 SPKI>", "pin": "new" }
+}
+```
+
+`pin` is `new` when this publish would pin the key, `matches` when the key is already pinned for the id.
+A `202` is not a promise: a reviewer may still decline it.
+
+Failure modes:
+
+- `400` `bad_request` — not a verifiable package. The envelope MAY carry `error.details`, one string per
+  problem (`"digest mismatch: assets/look.cube"`).
+- `401` `unauthorized` — unsigned, or the signature does not verify.
+- `403` `forbidden` — the id is pinned to a different publisher key.
+- `409` `conflict` — the version is already published or already waiting for review, or the repository
+  does not accept publishes of this id.
+- `413` `payload_too_large` — over the repository's size limit.
+- `429` `rate_limited`.
+- `501` `not_implemented` — this repository does not take publishes.
+
+The flagship store answers `202`: an accepted package becomes a pull request against its git-backed
+catalog, and the merge is what publishes it, so the store keeps no runtime write path
+([`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) § Invariants).
+
 ## Error responses
 
 Every non-2xx response carries a normative JSON **error envelope** so a host can branch on a stable machine code and show a human message, rather than parsing a bare status:
@@ -284,7 +334,7 @@ Every non-2xx response carries a normative JSON **error envelope** so a host can
 { "error": { "code": "payment_required", "message": "This package requires a license." } }
 ```
 
-`code` is drawn from a fixed vocabulary: `bad_request` (`400`), `unauthorized` (`401`), `payment_required` (`402`), `not_found` (`404`), `method_not_allowed` (`405`), `rate_limited` (`429`), `server_error` (`500`). `message` is human-readable and MAY change; branch on `code`, display `message`. (The `401` / `402` download gate and the `400` validation failures above all use this shape.)
+`code` is drawn from a fixed vocabulary: `bad_request` (`400`), `unauthorized` (`401`), `payment_required` (`402`), `forbidden` (`403`), `not_found` (`404`), `method_not_allowed` (`405`), `conflict` (`409`), `payload_too_large` (`413`), `rate_limited` (`429`), `server_error` (`500`), `not_implemented` (`501`), `bad_gateway` (`502`), `unavailable` (`503`). `message` is human-readable and MAY change; branch on `code`, display `message`. (The `401` / `402` download gate and the `400` validation failures above all use this shape.)
 
 ## Reference implementation
 
