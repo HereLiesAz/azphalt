@@ -1,3 +1,5 @@
+import { MAX_PUBLISH_BYTES, publish } from "./publish";
+
 type Fetcher = { fetch(input: Request): Promise<Response> };
 type DurableObjectNamespaceLike = {
   idFromName(name: string): unknown;
@@ -32,6 +34,12 @@ interface Env {
    * this Worker's storage, so no IP address is ever written down. Absent in tests and local dev.
    */
   WRITE_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  /** The same, much tighter, for `POST /packages` — each accepted publish opens a pull request. */
+  PUBLISH_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  /** Fine-grained GitHub token for publish pull requests (`src/publish.ts`). Unset → publish answers 501. */
+  GITHUB_PUBLISH_TOKEN?: string;
+  /** `owner/repo` publish pull requests are opened against. */
+  PUBLISH_REPOSITORY?: string;
 }
 
 interface CatalogEntry {
@@ -609,6 +617,31 @@ async function fileReport(req: Request, env: Env): Promise<Response> {
     }),
   });
   return json({ report, quarantined: false }, 201);
+}
+
+/**
+ * `POST /packages` — publish a signed `.azp` by opening a review pull request (`src/publish.ts`,
+ * `spec/repository-api.md` § 9). `202` with the pull request's address; nothing is served until it
+ * is merged and deployed.
+ */
+async function publishPackage(req: Request, env: Env): Promise<Response> {
+  const fail = (status: number, code: string, message: string, details?: string[]) =>
+    json({ error: { code, message, ...(details ? { details } : {}) } }, status);
+  if (env.PUBLISH_LIMITER) {
+    const key = req.headers.get("cf-connecting-ip") || "unknown";
+    if (!(await env.PUBLISH_LIMITER.limit({ key })).success) return fail(429, "rate_limited", "too many publishes");
+  }
+  if (Number(req.headers.get("content-length") || "0") > MAX_PUBLISH_BYTES) {
+    return fail(413, "payload_too_large", `package exceeds ${MAX_PUBLISH_BYTES} bytes`);
+  }
+  const bytes = new Uint8Array(await req.arrayBuffer());
+  const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  const result = await publish(bytes, env, {
+    catalogVersion: async (id) => catalog.find((pkg) => pkg.id === id)?.version,
+    isListed: async (id) => listings.some((listing) => listing.packageId === id),
+  });
+  if (typeof result.status === "number") return fail(result.status, result.code, result.message, result.errors);
+  return json(result, 202, { location: result.review });
 }
 
 /** `GET /reports` (and `/api/reports`) — the moderation queue, newest first. Bearer `ADMIN_TOKEN`. */
@@ -1888,6 +1921,7 @@ export default {
       }
 
       if (req.method === "GET" && path === "/packages") return repositoryPackages(req, env);
+      if (req.method === "POST" && path === "/packages") return publishPackage(req, env);
       if (req.method === "GET" && path === "/revocations") return json({ revocations: [] });
       if (req.method === "POST" && path === "/installs") {
         return json({ error: { code: "not_implemented", message: "this repository does not keep install statistics" } }, 501);

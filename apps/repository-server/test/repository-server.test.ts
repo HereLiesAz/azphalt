@@ -269,7 +269,7 @@ describe("repository handler — spec/repository-api.md", () => {
   it("404s an unknown version and 405s a non-GET", async () => {
     const { handle, mk } = await handlerFixture();
     expect((await handle(mk("/packages/com.demo.free/versions/9.9.9/download"))).status).toBe(404);
-    expect((await handle(mk("/packages", { method: "POST" }))).status).toBe(405);
+    expect((await handle(mk("/packages", { method: "PUT" }))).status).toBe(405);
   });
 
   it("400s a malformed percent-escape in the path instead of throwing", async () => {

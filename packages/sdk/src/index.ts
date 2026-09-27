@@ -1497,10 +1497,16 @@ export type RepositoryErrorCode =
   | "bad_request"
   | "unauthorized"
   | "payment_required"
+  | "forbidden"
   | "not_found"
   | "method_not_allowed"
+  | "conflict"
+  | "payload_too_large"
   | "rate_limited"
-  | "server_error";
+  | "server_error"
+  | "not_implemented"
+  | "bad_gateway"
+  | "unavailable";
 
 export interface RepositoryErrorResponse {
   error: { code: RepositoryErrorCode; message: string };

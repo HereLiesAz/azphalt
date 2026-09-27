@@ -228,6 +228,30 @@ export async function fileReport(input: ReportInput): Promise<{ error?: string }
   return { error: body.error ?? `report ${res.status}` };
 }
 
+export interface PublishTicket {
+  status: "pending-review";
+  id: string;
+  version: string;
+  review: string;
+  pullRequest: number;
+  publisher: { publicKey: string; pin: "new" | "matches" };
+}
+
+/**
+ * Publish a signed `.azp` (`POST /packages`, `spec/repository-api.md` § 9). The store answers with a
+ * review ticket: the package becomes a pull request, and is served once it is merged.
+ */
+export async function publishPackage(bytes: ArrayBuffer): Promise<PublishTicket | { error: string; details?: string[] }> {
+  const res = await fetch(`${API_BASE}/packages`, {
+    method: "POST",
+    headers: { "content-type": "application/vnd.azphalt.package" },
+    body: bytes,
+  });
+  const body = (await res.json().catch(() => ({}))) as PublishTicket & { error?: { message?: string; details?: string[] } };
+  if (res.status === 202) return body;
+  return { error: body.error?.message ?? `publish ${res.status}`, details: body.error?.details };
+}
+
 /** The moderation queue. The token is the store's `ADMIN_TOKEN`; the caller keeps it in memory only. */
 export async function fetchReports(token: string): Promise<Report[]> {
   const res = await fetch(`${API_BASE}/api/reports`, {

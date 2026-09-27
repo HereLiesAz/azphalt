@@ -27,7 +27,9 @@
   // Per-IP limit on the public writes (ratings, reports): 10 a minute. Counted by Cloudflare, so the
   // Worker never stores an address. `namespace_id` only has to be unique within the account.
   "ratelimits": [
-    { "name": "WRITE_LIMITER", "namespace_id": "4271", "simple": { "limit": 10, "period": 60 } }
+    { "name": "WRITE_LIMITER", "namespace_id": "4271", "simple": { "limit": 10, "period": 60 } },
+    // POST /packages: each accepted publish opens a pull request, so 3 a minute per IP.
+    { "name": "PUBLISH_LIMITER", "namespace_id": "4272", "simple": { "limit": 3, "period": 60 } }
   ],
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["AzphaltState"] }
@@ -37,6 +39,8 @@
     "GITHUB_RAW_BASE": "https://raw.githubusercontent.com/HereLiesAz/azphalt/main/apps/storefront/registry",
     "PLATFORM_FEE_BPS": "1500",
     "PROCESSOR_PCT_BPS": "290",
-    "PROCESSOR_FLAT_CENTS": "30"
+    "PROCESSOR_FLAT_CENTS": "30",
+    // Where POST /packages opens its review pull requests (the token is the GITHUB_PUBLISH_TOKEN secret).
+    "PUBLISH_REPOSITORY": "HereLiesAz/azphalt"
   }
 }

@@ -110,11 +110,16 @@ const ERR_CODE: Record<number, RepositoryErrorCode> = {
   400: "bad_request",
   401: "unauthorized",
   402: "payment_required",
+  403: "forbidden",
   404: "not_found",
   405: "method_not_allowed",
-  413: "bad_request",
+  409: "conflict",
+  413: "payload_too_large",
   429: "rate_limited",
   500: "server_error",
+  501: "not_implemented",
+  502: "bad_gateway",
+  503: "unavailable",
 };
 
 /** A non-2xx response as the normative `{ error: { code, message } }` envelope (spec § Error responses). */
@@ -490,6 +495,11 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     }
     if (req.path === "/installs") {
       return req.method === "POST" ? await installs(req) : fail(405, `method not allowed: ${req.method}`);
+    }
+    // Publishing (`repository-api.md` § 9) is optional, and this facade serves a registry someone
+    // else fills — so it answers the normative "not here" rather than 405.
+    if (req.path === "/packages" && req.method === "POST") {
+      return fail(501, "this repository does not accept publishes");
     }
     if (req.method !== "GET") return fail(405, `method not allowed: ${req.method}`);
     if (req.path === "/.well-known/azphalt-repository.json") return json(200, index);

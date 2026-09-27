@@ -9,7 +9,7 @@ Durable Object. It replaces the former Vercel/Neon runtime path.
 
 | Host | Serves |
 |---|---|
-| `azphalt.store`, `www.azphalt.store` | The React storefront, the Repository API (`/packages`, `/revocations`, `/.well-known/azphalt.json`, …), checkout, purchases, ratings and reports |
+| `azphalt.store`, `www.azphalt.store` | The React storefront, the Repository API (`/packages`, `/revocations`, `/.well-known/azphalt.json`, …), publishing, checkout, purchases, ratings and reports |
 | `azphalt.org`, `www.azphalt.org` | The docs, mapped onto `/_docs/*` of the same asset bundle, with the docs' own 404 page |
 
 `pnpm --filter "@azphalt/storefront-worker..." build` builds both sites and assembles them into
@@ -45,11 +45,34 @@ cd apps/storefront-worker
 npx wrangler secret put STRIPE_SECRET_KEY
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
 npx wrangler secret put ADMIN_TOKEN
+npx wrangler secret put GITHUB_PUBLISH_TOKEN
 ~~~
 
 `STRIPE_WEBHOOK_SECRET` is required for subscriptions and renewal/cancellation events. One-time
 purchases can still fulfil from the Stripe Checkout session on the success page if the webhook is
 delayed. `ADMIN_TOKEN` protects paid-package uploads and the moderation queue.
+`GITHUB_PUBLISH_TOKEN` is a fine-grained token with **Contents** and **Pull requests** read/write on
+`PUBLISH_REPOSITORY` (a `wrangler.jsonc` var, `HereLiesAz/azphalt`); without it `POST /packages`
+answers `501`.
+
+## Publishing
+
+`POST /packages` ([`spec/repository-api.md`](../../spec/repository-api.md) § 9, [`src/publish.ts`](src/publish.ts))
+takes a signed `.azp` and answers `202` with a pull request, never by serving the bytes. The Worker:
+
+1. verifies the container over WebCrypto — safe paths, every digest, no unlisted payload, and the
+   Ed25519 signature over `manifest.json` (per-kind manifest checks run in the PR's submission check);
+2. applies publisher continuity: an id already pinned in
+   [`apps/storefront/registry/publishers.json`](../storefront/registry/publishers.json) must be signed
+   by its pinned key (`403` otherwise); an unpinned id already in the catalog, or with a folder on
+   `main`, is maintained by hand (`409`); a new id gets pinned by the same PR;
+3. writes `submissions/<id>/` — manifest without `files`, `LICENSE`, payload, replacing the previous
+   version's files — on a `publish/<id>/<version>` branch and opens the PR. A second publish of the
+   same version while the first is open is `409`.
+
+Limits come from the free plan: 4 MB per package, at most 30 binary files (each is one GitHub API call;
+text files go inline), and 3 publishes a minute per IP (`PUBLISH_LIMITER`). The storefront's `/publish`
+page is a form over the same endpoint.
 
 ## Ratings, reports and moderation
 
