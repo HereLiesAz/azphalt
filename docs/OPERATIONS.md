@@ -16,12 +16,11 @@ The Next.js storefront is retired; `apps/storefront` now holds only the catalog.
 
 ### Cutover status
 
-The Worker deploys on every relevant push to `main`, but the public domains still point at Vercel until
-they are attached to the Worker as Cloudflare Custom Domains. Vercel keeps serving the retired Next.js
-storefront's last good deployment — frozen, since builds of `main` now fail — and the Worker is reachable
-only on its `workers.dev` address. The steps are in
+`azphalt.store`, `www.azphalt.store`, `azphalt.org` and `www.azphalt.org` are Custom Domains of the
+`azphalt` Worker, which deploys on every relevant push to `main`. Left: the Worker's secrets, the Stripe
+webhook, and deleting the Vercel project — see
 [`apps/storefront-worker/README.md` § Domains](https://github.com/HereLiesAz/azphalt/blob/main/apps/storefront-worker/README.md#domains).
-Remove this section when the cutover is done.
+Remove this section when those are done.
 
 ## Catalog source of truth
 
