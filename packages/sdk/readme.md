@@ -24,16 +24,16 @@ export const invert = defineFilter((ctx) => {
 });
 ~~~
 
-`defineFilter`, `defineTool`, and `defineCommand` cover the three contribution kinds. The `ctx` a runtime passes in exposes **only** the sub-APIs whose capability the manifest declared and the host granted — an ungranted capability is *absent*, not an erroring stub.
+`defineFilter`, `defineTool`, `defineCommand`, and `defineTransition` cover the four contribution kinds. A transition receives two input frames (`ctx.from`, `ctx.to`) and a `ctx.progress` from 0 to 1, and writes the blend to `ctx.target`. The `ctx` a runtime passes in exposes **only** the sub-APIs whose capability the manifest declared and the host granted — an ungranted capability is *absent*, not an erroring stub.
 
 ## What's in the box
 
-- **Manifest & contributions** — `Manifest`, `Kind`, `Runtime`, `Capability`, `AssetType`, `AssetContribution`, `Contributes`, and the `Filter`/`Tool`/`Command` contribution shapes.
-- **The host surface** — `Host` and its sub-APIs (`CanvasApi`, `LayersApi`, `BitmapApi`, `SelectionApi`, `ColorApi`, `ParamsApi`, `AssetsApi`), plus `LayerRef`.
+- **Manifest & contributions** — `Manifest`, `Kind`, `Runtime`, `Capability`, `AssetType`, `AssetContribution`, `Contributes`, and the `Filter`/`Tool`/`Command`/`Transition` contribution shapes. The package entry (`src/public.ts`) also exports the orchestration manifest types — `WorkflowManifest` and its entry types, `RoleManifest`, `RolePayloadEntry` — and widens `Kind` (and with it `Manifest`, `PackageSummary`, and `PackageSearchResponse`) to include `workflow` and `role`.
+- **The host surface** — `Host` and its sub-APIs (`CanvasApi`, `LayersApi`, `BitmapApi`, `SelectionApi`, `ColorApi`, `ParamsApi`, `AssetsApi`, `TimeApi`, `AudioApi`), plus `LayerRef`. `TimeApi` is the read-only playback clock (`currentMs`, `durationMs`, `fps`, `frameIndex`), present only with the `time` capability on a temporal host; `AudioApi` reads and writes the current `AudioBuffer` (interleaved 32-bit float PCM), present only with the `audio` capability.
 - **Pixels** — `Bitmap` (opt-in `depth`: 8-bit `Uint8ClampedArray` by default, 16-bit `Uint16Array`), `RGBA`, `BitDepth`, and the helpers `bitDepth` / `bytesPerChannel` / `maxChannelValue`.
 - **UI schema** — `Panel` and the control types (`slider`, `number`, `toggle`, `select`, `color`, `text`, `button`, `group`) hosts render natively (see [`spec/ui-schema.md`](../../spec/ui-schema.md)).
 - **Repository API types** — `RepositoryIndex`, `PackageSummary`, `PackageSearchResponse` (see [`spec/repository-api.md`](../../spec/repository-api.md)).
-- **Author helpers** — `defineFilter`, `defineTool`, `defineCommand`, and `FORMAT_VERSION`.
+- **Author helpers** — `defineFilter`, `defineTool`, `defineCommand`, `defineTransition`, and `FORMAT_VERSION`.
 
 ## Related
 

@@ -9,9 +9,11 @@ It is the server counterpart to [`@azphalt/repository-client`](../../packages/re
 | Method & path | Returns |
 | --- | --- |
 | `GET /.well-known/azphalt-repository.json` | The repository index (name, version, auth). |
-| `GET /packages?q=&types=&tags=&app=&page=` | Paginated search/browse. `types` is a comma list of `AssetType`s; `tags` AND-filters over searchable text; `app` scopes results to a host app (see below). |
+| `GET /packages?q=&kind=&types=&tags=&mediaDomains=&capabilities=&app=&sort=&page=` | Paginated search/browse. `kind` is a comma list of package kinds to keep (e.g. `kind=app` for a host directory); `types` is a comma list of `AssetType`s; `tags` AND-filters over searchable text; `mediaDomains` keeps packages whose media domains intersect the list; `capabilities` is the set the host can grant, keeping only packages whose required capabilities are a subset of it; `app` scopes results to a host app (see below); `sort` is `popular`, `recent`, `rating`, or `name` (anything else keeps the natural order). |
 | `GET /packages/{id}` | Full metadata, version history, and the latest `Manifest`. |
 | `GET /packages/{id}/versions/{version}/download` | The binary `.azp` (`Content-Type: application/vnd.azphalt.package` — see [`spec/package-format.md`](../../spec/package-format.md) § Media type). Gated for paid packages. |
+| `GET /revocations?since=` | `{ revocations: [{ id, version, reason?, revokedAt }] }` — versions pulled after publish, newest first. `since` (an ISO-8601 instant) limits it to later revocations; an invalid date is a 400. |
+| `POST /updates` | Batch update check. The body is a JSON array of `{ id, version }` (the installed library); the response is `{ updates: [{ id, latest }] }`, listing only ids with a strictly newer non-yanked version. Other methods get a 405. |
 
 ## App scoping
 

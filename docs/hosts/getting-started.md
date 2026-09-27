@@ -154,8 +154,9 @@ console.log(manifest.name, manifest.assets);
 ## Self-hosting your own repository
 
 `azphalt.store` is one repository, not the only one — the API is neutral and self-hostable. To run your
-own catalog (free or paid) that the same client consumes, stand up
-[`@azphalt/repository-server`](https://github.com/HereLiesAz/azphalt/tree/main/apps/repository-server),
+own catalog (free or paid) that the same client consumes, run the reference server in
+[`apps/repository-server`](https://github.com/HereLiesAz/azphalt/tree/main/apps/repository-server)
+(it is not published to npm; `npm create azphalt` offers a Repository Server template to start from),
 or adopt the standard directly — see [Adopting the Standard](/ADOPTION).
 
 ## Next

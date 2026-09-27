@@ -1,8 +1,10 @@
 # Getting Started for Creators
 
 `azphalt` packages portable host-facing functionality and data into one signed `.azp` format. That
-includes sandboxed **code extensions**, **asset packs**, companion apps, MCP servers, packs, skills,
-scripts, composables, and declarative **workflow** and **role** packages.
+includes sandboxed **code extensions**, **asset packs**, **mixed** packages (code plus the assets it
+uses), companion apps, MCP servers, packs, skills, scripts, composables, and declarative **workflow**
+and **role** packages. A further kind, `llm` (off-device language models), is proposed in
+[the llm spec](/specs/llm) and not yet accepted by the tooling.
 
 The important distinction is not "plugin versus not-plugin"; it is the package `kind`, because each
 kind has its own trust/runtime rules. Workflow and role packages, for example, are signed declarative
@@ -14,14 +16,18 @@ The fastest start for scaffolded package kinds is:
 npm create azphalt@latest
 ~~~
 
-It asks what you're building and drops a ready-to-run project in place.
+It asks for a project name, a namespace (used for the package id), an author and a licence, then what
+you're building, and drops a ready-to-run project in place. Every project also gets a publisher signing
+key and a signing workflow; see the
+[`create-azphalt` readme](https://github.com/HereLiesAz/azphalt/tree/main/packages/create-azphalt)
+for what they are and why the key must stay out of git.
 
 ## Creating a Code Extension
 
 Pick **Code Extension** in the scaffolder. You get a working starter — a `brightness` filter and a `crossfade` transition — that you edit, test locally, and build:
 
 ~~~bash
-npm create azphalt@latest      # choose "Code Extension"
+npm create azphalt@latest      # name it my-extension, choose "Code Extension"
 cd my-extension
 npm install
 npm test                       # runs your contributions against the reference runtime
@@ -61,6 +67,12 @@ Pick **Asset Pack** in the scaffolder for a workspace that bundles your files in
 - `@azphalt/importer-video`: Package footage and VFX loops
 - `@azphalt/importer-font`: Package typography
 - `@azphalt/importer-audio`: Package SFX and music stems
+- `@azphalt/importer-transition`: Convert GL Transitions (gl-transitions.com) into transition assets
+- `@azphalt/importer-vector`: Package vector graphics
+- `@azphalt/importer-onnx`, `@azphalt/importer-tflite`, `@azphalt/importer-litert`, `@azphalt/importer-sherpa`: Package on-device ML models
+
+The CLIs take different arguments; the
+[importers readme](https://github.com/HereLiesAz/azphalt/tree/main/packages/importers) lists each one's usage.
 
 ## Publishing to azphalt.store
 

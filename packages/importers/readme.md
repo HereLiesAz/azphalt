@@ -38,7 +38,14 @@ azphalt-import-cube grade.cube --id com.you.grade -o grade.azp
 azphalt-import-cube grade.cube --id com.you.grade --license-file LICENSE.txt
 ~~~
 
-Common flags across importers: `--id` (required, reverse-DNS), `--name`, `--version`, `--author`, `--license` / `--license-file`, and `-o` for the output path.
+The CLIs do not all take the same arguments. There are three shapes:
+
+| Importers | Usage |
+|---|---|
+| `abr`, `cube`, `isf`, `transition`, `gltf`, `hdri` | `azphalt-import-<name> <input> --id <reverse.dns.id> [-o out.azp] [--name N] [--version V] [--license SPDX] [--license-file PATH] [--author A]`. `--id` is required; `-o` / `--out` defaults to the input's basename with `.azp`; without `--license-file` a placeholder `LICENSE` is written (SPDX from `--license`, default `MIT`) with a warning. `abr` also takes `--brush-index N`. |
+| `image`, `vector`, `video`, `audio`, `font`, `palette`, `motion` | `azphalt-import-<name> <input> <output.azp>`. `audio` also takes `--tags tag1 tag2 …`. These take no `--id` or metadata flags: the CLI writes a fixed id (`com.example.<name>-import`), version `1.0.0`, and author `User`, so use the library to set real values. |
+| `material` | `azphalt-import-material <output.azp> --albedo <file> [--normal <file>] …` — each `--<role> <file>` adds a texture map under that role. The id, version, and author are fixed as above. |
+| `tflite`, `litert`, `onnx`, `sherpa` | `azphalt-import-<name> <id> <version> <author> [filepath] [--url <remoteUrl>] [--checksum <sha256>] [--size <bytes>] [--role <role>]`. Writes `<id>.azp` in the current directory. |
 
 **Library**, to package programmatically:
 
@@ -59,4 +66,4 @@ Tests round-trip the output back through `verifyAzp` to prove the container is v
 
 ## Adding an importer
 
-Model a new one on [`cube`](cube) (the cleanest 1:1 case) or [`abr`](abr) (the reference for a lossy native format that must be *normalized*, not repacked). Mirror the CLI flag set and the `license` / `licenseText` options, validate the input up front, and add the target to the `AssetType` union in [`@azphalt/azdk`](../sdk) if it's a new kind. An [asset host](../../docs/ADOPTION_ASSET_HOST.md) applies each `type` with its own engine, so the value is only real once at least one host consumes it.
+Model a new one on [`cube`](cube) (the cleanest 1:1 case) or [`abr`](abr) (the reference for a lossy native format that must be *normalized*, not repacked). Mirror the flag set of the `cube` CLI and the `license` / `licenseText` options, validate the input up front, and add the target to the `AssetType` union in [`@azphalt/azdk`](../sdk) if it's a new kind. An [asset host](../../docs/ADOPTION_ASSET_HOST.md) applies each `type` with its own engine, so the value is only real once at least one host consumes it.

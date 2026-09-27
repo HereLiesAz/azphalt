@@ -1,21 +1,21 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Security fixes land on `main` and ship in the next release. Only the latest release is supported:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| What | Supported |
+|---|---|
+| npm packages (`@azphalt/*`, `create-azphalt`) | The latest published version of each package. Versions are independent, managed by Changesets. |
+| The apps (store, Android, desktop) | The latest release, versioned from [`version.properties`](version.properties) (see [RELEASING.md](RELEASING.md)). |
+| Older versions | Not patched. Upgrade to the latest. |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-Use this section to tell people how to report a vulnerability.
+Open an issue at [github.com/HereLiesAz/azphalt/issues](https://github.com/HereLiesAz/azphalt/issues) and put `[security]` at the start of the title.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Include the affected package or app and its version, what an attacker can do, and the steps to reproduce. Issues are public: describe the impact and the affected code, and leave out a working exploit. The maintainer will ask for the details needed to reproduce it.
+
+## What is in scope
+
+The security model is described in [spec/capability-model.md](spec/capability-model.md) (the sandbox and the never-list) and [spec/package-format.md § Signing](spec/package-format.md) (integrity, signatures and publisher pinning). Reports of a way around either are the most important kind.

@@ -54,9 +54,10 @@ a catalog that differs from the one that was reviewed.
 
 ### Changing what the store serves is a merged PR
 
-[`registry-sync.yml`](../../.github/workflows/registry-sync.yml) rebuilds the packages and opens a PR
-when anything moved. **Merging that PR is the publish step**; `deploy-storefront` then takes it live.
-The gate on a plugin update is a GitHub review, not an API call.
+The `registry-sync` workflow rebuilds the packages and opens a PR when anything moved. **Merging that
+PR is the publish step**; `deploy-storefront` then takes it live. The gate on a plugin update is a
+GitHub review, not an API call. Neither workflow is committed in this repository: both are maintained
+centrally in `HereLiesAz/workflows` (see [`RELEASING.md`](../../RELEASING.md)).
 
 It runs in one of two modes, because adding an extension and following an existing one upstream are
 different operations:
@@ -68,7 +69,7 @@ different operations:
 
 `pinned` is what publishes a **newly added** extension. Adding one is a lockfile edit — the PR appends
 an entry to `sources.json` — so its bytes do not exist under `registry/packages/` until a sync builds
-them. A `pinned` run adds exactly the missing packages and leaves all ~130 existing pins alone, which
+them. A `pinned` run adds exactly the missing packages and leaves all the existing pins (154 entries in `sources.json` at the time of writing) alone, which
 keeps the reviewable diff about the thing that changed.
 
 `latest` is how upstream extension updates get noticed, and necessarily touches every pin.
@@ -232,7 +233,7 @@ To serve under a **sub-path** (e.g. `example.com/azphalt`), set the base path at
 NEXT_BASE_PATH=/azphalt pnpm --filter @azphalt/storefront bundle
 ```
 
-`dist-server/` is the whole deployable (traced `node_modules` + `.next` + `static` + `public`). It needs **Node 18+** on the host.
+`dist-server/` is the whole deployable (traced `node_modules` + `.next` + `static` + `public`). It needs **Node 24+** on the host.
 
 **2. Upload** `apps/storefront/dist-server/` to your server (SFTP/rsync).
 

@@ -4,6 +4,26 @@
 
 ---
 
+## Current version
+
+- **The apps** (store, Android, desktop) share one version, held only in [`version.properties`](https://github.com/HereLiesAz/azphalt/blob/main/version.properties). Print it with `node tools/version.mjs print`. It is never written down anywhere else, including here. See [RELEASING.md § Versioning the apps](https://github.com/HereLiesAz/azphalt/blob/main/RELEASING.md#versioning-the-apps).
+- **The npm packages** (`@azphalt/*`, `create-azphalt`) each carry their own version in their `package.json`, managed by Changesets.
+
+## Invariants
+
+Each is enforced in code; the reference is where.
+
+1. **Extensions have no ambient authority.** A host function exists only for a capability the manifest declares and the host grants. The never-list (a host's engine, camera and sensors, the filesystem outside the package, the network) has no host function at all. [spec/capability-model.md](/specs/capability-model); enforced in `packages/runtime-reference/src/host.ts` (`createHost` adds each sub-API only when `granted.has(…)`).
+2. **Nothing is installed unverified.** Every file's digest must match the signed manifest, and an update is accepted only from the publisher key pinned at first install. [spec/package-format.md § Signing](/specs/package-format); enforced in `packages/azp/src/index.ts` (`verifyAzp`) and `packages/azp/src/trust.ts` (`verifyTrust`).
+3. **Assets are self-contained.** No asset makes a host fetch from the network; the only remote path is a `remoteUrl` checked against its `checksum` before use. [spec/package-format.md](/specs/package-format), [spec/extension-manifest.md § assets](/specs/extension-manifest).
+4. **Header kinds carry no code and no capabilities.** `app`, `mcp`, `pack` and `composable` packages declare how to reach or list something; they ship no `/code` and grant nothing. Enforced by the per-kind validators in `packages/azp/src/` (for example `app.ts`, `mcp.ts`, `composable.ts`).
+5. **Packages never contain secrets.** A credential-keyed value must reference an input the host prompts for. Enforced in `packages/azp/src/mcp.ts` (`CREDENTIAL_KEY_RE`).
+6. **azphalt depends on no host.** Hosts depend on the published packages; nothing here imports a host's code. Enforced by the repository boundary (this repo contains no host engine).
+7. **One version, one file.** App versions come only from `version.properties`, written only by `tools/version.mjs` (and the shared release workflow it matches). Enforced in `tools/version.mjs`, tested in `tools/version.test.mjs`.
+8. **Dependencies are on their latest stable releases.** [CLAUDE.md § Dependencies](https://github.com/HereLiesAz/azphalt/blob/main/CLAUDE.md); kept current by `.github/dependabot.yml`.
+
+---
+
 ## What lives here — two things, kept separable
 
 1. **The standard** *(open, MIT)* — the `.azp` format spec, the SDK extensions are written against, the asset importers, the reference runtime, and the registry. This is the thing other apps adopt. It must be, and look, vendor-neutral.
@@ -11,10 +31,10 @@
 
 Keeping these separable is the core constraint: anyone can implement azphalt and even run their own store; yours is just the flagship.
 
-## Why azphalt is a separate repo from GraffitiXR
+## Why azphalt is a separate repo from its hosts
 
 - **Credible neutrality.** A standard trapped in an app's repo reads as that app's private thing, and no competitor adopts it. Separation is the first structural signal that it's shared infrastructure.
-- **A physical moat boundary.** A separate MIT repo literally cannot see a host's proprietary engine source. "The extension surface never exposes GraffitiXR's relocalization engine" stops being a discipline you maintain and becomes a line you *can't cross by accident*.
+- **A physical moat boundary.** A separate MIT repo literally cannot see a host's proprietary engine source. "The extension surface never exposes a host's tracking engine" stops being a discipline you maintain and becomes a line you *can't cross by accident*.
 - **Clean dependency direction.** A conforming host (Graffux the first, Guillotine — a video/audio editor — the second) depends on azphalt as a published library and calls across the boundary. azphalt never depends on any host.
 
 ## The stack, and why
@@ -50,28 +70,50 @@ The native host that embeds the engine and renders the schema is **each app's ow
   repository-api.md         the HTTP interface a discovery/distribution repository exposes
   workflow.md               declarative workflow/orchestration packages
   role.md                   declarative role/persona packages
+  companion-app.md          external companion/host apps (kind: app)
+  mcp-server.md             MCP servers (kind: mcp)
+  pack.md                   curated packs that reference other packages
+  skill.md                  Agent Skill bundles
+  script.md                 native scripts a host installs like a package manager
+  composable.md             UI element descriptions a host's own renderer interprets
+  llm.md                    off-device language models (kind: llm) — proposed
+  store-app.md              delegating browse/install to a store app
+  web-handoff.md            the web → host azphalt://install handoff
+  state-reporting.md        install/usage state a host reports back
+  marketplace-integrity.md  keeping the open registry safe
 /packages/
-  sdk/                      TS SDK authors build against (typed editor extension points)
+  sdk/                      TS SDK authors build against (typed editor extension points), published as @azphalt/azdk
+  sdk-compat/               @azphalt/sdk, a compatibility alias re-exporting @azphalt/azdk
   azp/                      read/write/verify/sign .azp containers (Ed25519 + trust store)
   importers/                .abr, .cube, ISF, gl-transitions, glTF, ML models … -> normalized into .azp
   runtime-reference/        in-process reference host that proves the capability contract
   runtime-wasm/             the real sandbox — QuickJS-in-WASM (js) + raw WebAssembly (wasm)
   conformance/              an executable pass/fail battery for code hosts and asset hosts
   registry/                 verify · index · version · serve · search, plus the consignment overlay
+  registry-store-vercel/    alternate Neon + Vercel Blob RegistryStore implementation
   repository-client/        client SDK for the Repository API
   mcp/                      an MCP server exposing azp verify/inspect/extract to any MCP host
   create-azphalt/           scaffolder for a new extension package
+  web-handoff/              the web → host install handoff (spec/web-handoff.md)
+  submit-check/             validator for submissions/ PRs (CI + local); not published
 /apps/
   storefront-react/         production marketplace UI; statically exports the git-backed catalog
   storefront-worker/        Cloudflare Worker serving the production storefront + Repository API
   storefront/               legacy/reference Next.js storefront
   repository-server/        a reference Repository API backend over @azphalt/registry
+  storefront-cmp/           native Compose Multiplatform store client (Android, desktop, web)
+  marketplace/              demo marketplace client
+  mock-backend/             template repository server paired with the demo client
 /examples/                  sample extensions; double as reference templates
 /docs/                      the docs site (VitePress) + these design/adoption guides
   ARCHITECTURE.md           this document
   RATIONALE.md              the research it's built on
   ADOPTION.md               how another app implements a conforming (code) host
   ADOPTION_ASSET_HOST.md    the lighter, data-only host profile
+  ADOPTION_COMPANION_HOST.md  hosts that launch companion apps
+  OPERATIONS.md             running the production storefront
+  creators/                 getting started as a package creator
+  hosts/                    getting started as a host consuming a repository
   GOVERNANCE.md             neutrality + how decisions get made
 LICENSE                     MIT
 README.md
@@ -98,8 +140,8 @@ Storefront-lane details:
 ## Licensing & boundary
 
 - Everything in azphalt: **MIT** (`LICENSE` at repo root). The marketplace storefront can be MIT or private.
-- A host's engine is **not here and cannot be referenced.** The SDK exposes only editor extension points — layers, bitmaps, canvas. GraffitiXR's PolyForm engine stays in GraffitiXR, behind the boundary.
-- This is the same MIT/PolyForm line from GraffitiXR's `LICENSING.md`, now enforced as a repo boundary instead of a module boundary.
+- A host's engine is **not here and cannot be referenced.** The SDK exposes only editor extension points — layers, bitmaps, canvas. A host's proprietary engine (GraffitiXR's PolyForm-licensed relocalization engine, the case azphalt was split out to protect) stays in that host, behind the boundary.
+- This is the MIT/PolyForm line from GraffitiXR's `LICENSING.md`, where azphalt started, now enforced as a repo boundary instead of a module boundary.
 
 ## Governance / neutrality
 

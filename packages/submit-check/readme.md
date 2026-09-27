@@ -31,4 +31,4 @@ for (const r of validateSubmissions("submissions")) {
 }
 ~~~
 
-Run automatically by [`.github/workflows/submissions.yml`](../../.github/workflows/submissions.yml) on any PR touching `submissions/**`.
+Run automatically by the submissions workflow on any PR touching `submissions/**`. That workflow is not committed in this repository; it is maintained centrally in `HereLiesAz/workflows` (see [`RELEASING.md`](../../RELEASING.md)).

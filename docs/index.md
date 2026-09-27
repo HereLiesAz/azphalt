@@ -28,7 +28,7 @@ features:
     link: /creators/getting-started
     linkText: Publish & sell
   - title: Neutral & self-hostable
-    details: "The standard is open and the Repository API is self-hostable — azphalt.store is one repository, not a gatekeeper. Run your own catalog with @azphalt/repository-server and the same client works against it."
+    details: "The standard is open and the Repository API is self-hostable — azphalt.store is one repository, not a gatekeeper. Run your own catalog from the reference server (`apps/repository-server` in the repo, or `npm create azphalt` → Repository Server) and the same client works against it."
     link: /specs/repository-api
     linkText: Read the spec
   - title: Verified production catalog

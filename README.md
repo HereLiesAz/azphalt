@@ -24,13 +24,14 @@ Anyone can implement azphalt and run their own store. Ours is just the flagship.
 ## Layout
 
 ~~~
-/spec/          normative, language-neutral (capabilities, package format, manifest, UI schema, repository API)
+/spec/          normative, language-neutral: core (capabilities, package format, manifest, UI schema, repository API),
+                one spec per package kind, store/handoff, and marketplace integrity
 /packages/      the standard's libraries (see below)
 /apps/          storefront-react (production static marketplace UI) · storefront-worker (Cloudflare purchase/repository API) ·
                 storefront (legacy Next.js reference implementation) · storefront-cmp (native/Compose client) ·
                 repository-server (reference backend) · marketplace + mock-backend (demo client + template server)
 /examples/      sample extensions
-/docs/          the docs site + design/adoption guides (ARCHITECTURE · RATIONALE · ADOPTION · GOVERNANCE)
+/docs/          the docs site + design, adoption and operations guides, and the creator and host getting-started guides
 LICENSE         MIT
 ~~~
 
@@ -50,13 +51,15 @@ LICENSE         MIT
 | [`@azphalt/registry-store-vercel`](packages/registry-store-vercel) | Legacy/alternate Neon + Vercel Blob `RegistryStore` implementation. It remains reusable, but the flagship storefront no longer depends on Vercel. |
 | [`@azphalt/repository-client`](packages/repository-client) | Client SDK for the Repository API. |
 | [`@azphalt/mcp`](packages/mcp) | An MCP server exposing `.azp` verify/inspect/extract to any MCP host. |
+| [`@azphalt/web-handoff`](packages/web-handoff) | The web→host install handoff from `spec/web-handoff.md`: build the `azphalt://install` link, attempt it, and fall back when no host claims it. |
 | [`create-azphalt`](packages/create-azphalt) | Scaffolder for a new extension package. |
 
 ## Documentation
 
 - **Design & reasoning:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/RATIONALE.md`](docs/RATIONALE.md) · [`docs/GOVERNANCE.md`](docs/GOVERNANCE.md)
-- **Adopting azphalt in your app:** [`docs/ADOPTION.md`](docs/ADOPTION.md) (runs code) · [`docs/ADOPTION_ASSET_HOST.md`](docs/ADOPTION_ASSET_HOST.md) (assets only)
-- **Normative specs:** [`spec/`](spec) — capability model, package format, manifest, UI schema, repository API
+- **Adopting azphalt in your app:** [`docs/ADOPTION.md`](docs/ADOPTION.md) (runs code) · [`docs/ADOPTION_ASSET_HOST.md`](docs/ADOPTION_ASSET_HOST.md) (assets only) · [`docs/ADOPTION_COMPANION_HOST.md`](docs/ADOPTION_COMPANION_HOST.md) (launches companion apps) · [`docs/hosts/getting-started.md`](docs/hosts/getting-started.md)
+- **Creating packages:** [`docs/creators/getting-started.md`](docs/creators/getting-started.md)
+- **Normative specs:** [`spec/`](spec) — capability model, package format, manifest, UI schema and repository API; one spec per package kind (companion app, MCP server, pack, skill, script, composable, workflow, role, and the proposed `llm`); the store app and web handoff; state reporting; marketplace integrity
 - **Publishing a package:** [`submissions/README.md`](submissions) — submit a plugin, extension, or asset by pull request
 - **Releasing:** [`RELEASING.md`](RELEASING.md)
 - **Production storefront operations:** [`docs/OPERATIONS.md`](docs/OPERATIONS.md)
@@ -67,7 +70,7 @@ The `docs/` tree also builds as a VitePress site (`pnpm --filter docs build`).
 
 Spec-first, and now substantially built: the SDK, the `.azp` container with signing and a trust model, a wide importer family, both runtimes (the reference contract and the QuickJS-in-WASM / raw-WASM sandbox), a conformance suite, and the registry with its consignment marketplace and a reference repository backend. The marketplace's paid lane runs end to end — real Stripe Connect split-payout checkout with self-service seller onboarding, signed buy-once entitlements that gate downloads and are recoverable by the buyer, and a zero-fixed-cost production backend on Cloudflare Workers + SQLite Durable Objects. The storefront's signing/session keys self-provision into the Durable Object; Stripe credentials remain Cloudflare secrets.
 
-The store's **catalog** is git, not a database: [`apps/storefront/registry/sources.json`](apps/storefront/registry/sources.json) pins every extension to one commit, the built `.azp` bytes are committed alongside it, and every production deployment exports that registry into the static catalog served by the Cloudflare storefront worker. Changing what the store serves therefore takes a merged PR — there is no runtime write path. The deployment is not considered healthy until the centralized workflow verifies both the generated catalog and the live `/packages` endpoint, including known app-scoped Aive workflow/role packages. It currently carries **120 packages** — 109 extensions plus nine app packs and two header packages.
+The store's **catalog** is git, not a database: [`apps/storefront/registry/sources.json`](apps/storefront/registry/sources.json) pins every extension to one commit, the built `.azp` bytes are committed alongside it, and every production deployment exports that registry into the static catalog served by the Cloudflare storefront worker. Changing what the store serves therefore takes a merged PR — there is no runtime write path. The deployment is not considered healthy until the centralized workflow verifies both the generated catalog and the live `/packages` endpoint, including known app-scoped Aive workflow/role packages. At the time of writing it carries **266 packages** (143 asset, 64 workflow, 28 pack, 14 code, 12 role, 3 app, 1 skill, 1 MCP), counted from `apps/storefront/registry/catalog.json`.
 
 The first conforming native hosts are [Graffux](https://github.com/HereLiesAz/Graffux) (paint / AR) and [Guillotine](https://github.com/HereLiesAz/Guillotine) (video / audio, temporal), which adopt azphalt across their own engine boundaries. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and its reasoning.
 

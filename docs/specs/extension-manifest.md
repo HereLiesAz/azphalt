@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script` \| `composable` \| `llm` *(proposed)*. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script` \| `composable` \| `workflow` \| `role` \| `llm` *(proposed)*. |
 | `license` | ✔ | SPDX id. MIT permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
@@ -21,6 +21,14 @@
 | `capabilities` | code/mixed | Declared capabilities (see capability-model.md). |
 | `contributes` | code/mixed | Extension points the code registers (below). |
 | `app` | app | External-app block — how to install/invoke an Android app or PWA, its `roles` (`companion` and/or `host`), and its handoffs. See § `app`, companion-app.md, and web-handoff.md § Host directory. |
+| `mcp` | mcp | MCP server header: transports, `inputs`, `offers`. See § `mcp` and mcp-server.md. |
+| `pack` | pack | The packages the pack references. See § `pack` and pack.md. |
+| `skill` | skill | The bundled Agent Skills. See § `skill` and skill.md. |
+| `script` | script | Interpreter, entry and dependencies of a native script. See § `script` and script.md. |
+| `composable` | composable | UI element descriptions for a host's own renderer. See § `composable` and composable.md. |
+| `workflow` | workflow | Declarative workflow/orchestration data. See § `workflow` and workflow.md. |
+| `role` | role | Declarative role/persona data. See § `role` and role.md. |
+| `llm` | llm *(proposed)* | Off-device language model header. See § `llm` and llm.md. |
 | `files` | ✔ | Map of payload path → SHA-256 digest (integrity; see package-format.md). |
 
 ## `compat`
@@ -314,7 +322,7 @@ For a `kind: "llm"` **off-device language model**, the manifest carries an `llm`
 
 ## Resolved
 
-- **Inter-package dependencies are out of scope for `0.1`.** A package is **self-contained**: it declares no dependency on another package, and a host resolves nothing transitively. Everything a package needs is either in its own payload or reachable through a granted capability. A dependency mechanism (and the resolution, versioning, and trust questions it brings) is deferred to a later version. *(An author who needs shared logic vendors it into the package.)*
+- **Inter-package dependencies are out of scope for `0.1`,** with two declared exceptions: a `pack` references its member packages (pack.md), and a `workflow` may declare `workflow.dependencies` (workflow.md). Otherwise a package is **self-contained**: it declares no dependency on another package, and a host resolves nothing transitively. Everything a package needs is either in its own payload or reachable through a granted capability. A dependency mechanism (and the resolution, versioning, and trust questions it brings) is deferred to a later version. *(An author who needs shared logic vendors it into the package.)*
 
 ## Open
 - Localization of `name` / `description` / UI labels (the registry surface is tracked in the repository-API discussion; the manifest/UI surface is still open).

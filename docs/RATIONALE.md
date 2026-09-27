@@ -92,7 +92,7 @@ Every real plugin ecosystem uses permissive/weak-copyleft for its **API**, becau
 
 azphalt being MIT and open is only safe because of one rule: **the extension API exposes only *editor* extension points — operations on layers, bitmaps, the canvas — and never a host's proprietary engine.** Plugins extend the editor, not the tracking core. That is precisely *why* the API can be open (there's no secret in it) and why a host's engine can stay under whatever license it likes behind it.
 
-Concretely, for the first host: GraffitiXR's relocalization / teleological engine stays in GraffitiXR under **PolyForm Noncommercial**; GraffitiXR adopts azphalt's MIT API across a repo boundary. A separate MIT repo *cannot reference* that engine — the boundary is structural, not a discipline. Note that the engine leaks across module lines inside a host (significant algorithm code lives beyond any single native module), which is exactly why the API is its own module with its own MIT boundary: the license line is a real code boundary, not a comment.
+Concretely, for GraffitiXR, the app azphalt was split out of: its relocalization / teleological engine stays in GraffitiXR under **PolyForm Noncommercial**; GraffitiXR adopts azphalt's MIT API across a repo boundary. A separate MIT repo *cannot reference* that engine — the boundary is structural, not a discipline. Note that the engine leaks across module lines inside a host (significant algorithm code lives beyond any single native module), which is exactly why the API is its own module with its own MIT boundary: the license line is a real code boundary, not a comment.
 
 ### 2.3 Mechanics worth carrying
 
