@@ -1,0 +1,66 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.llm.kilo",
+  "name": "Kilo Auto (free)",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "Kilo's free router, no key needed. It picks the model, and the free route may log and train on prompts.",
+  "author": "HereLiesAz",
+  "llm": {
+    "tier": "endpoint",
+    "inputs": [
+      {
+        "id": "providerKey",
+        "type": "promptString",
+        "password": true,
+        "optional": true,
+        "description": "Kilo account key (optional; raises the anonymous limit of 200 requests an hour per IP)"
+      }
+    ],
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "requires": {
+        "githubToken": [
+          "contents:write",
+          "actions:write",
+          "checks:write",
+          "workflows:write",
+          "secrets:write"
+        ]
+      },
+      "secrets": [
+        {
+          "name": "PROVIDER_KEY",
+          "input": "providerKey"
+        }
+      ],
+      "fetches": []
+    },
+    "endpoint": {
+      "protocols": [
+        "openai-chat",
+        "github-actions-runner"
+      ],
+      "baseUrl": "https://api.kilo.ai/api/gateway",
+      "defaultModel": "kilo-auto/free",
+      "auth": "optional-bearer",
+      "authInput": "providerKey"
+    },
+    "run": {
+      "permissions": {
+        "contents": "read",
+        "checks": "write"
+      }
+    },
+    "dataHandling": {
+      "prompts": "may-train",
+      "modelPinned": false,
+      "operator": "Kilo Code",
+      "terms": "https://kilo.ai/terms"
+    },
+    "role": "text-generation"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.llm.zai",
+  "name": "Z.ai GLM-4.7 Flash",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "GLM-4.7 Flash from Z.ai, free with a key, one request at a time.",
+  "author": "HereLiesAz",
+  "llm": {
+    "tier": "endpoint",
+    "inputs": [
+      {
+        "id": "providerKey",
+        "type": "promptString",
+        "password": true,
+        "description": "Z.ai API key"
+      }
+    ],
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "requires": {
+        "githubToken": [
+          "contents:write",
+          "actions:write",
+          "checks:write",
+          "workflows:write",
+          "secrets:write"
+        ]
+      },
+      "secrets": [
+        {
+          "name": "PROVIDER_KEY",
+          "input": "providerKey"
+        }
+      ],
+      "fetches": []
+    },
+    "endpoint": {
+      "protocols": [
+        "openai-chat",
+        "github-actions-runner"
+      ],
+      "baseUrl": "https://api.z.ai/api/paas/v4",
+      "defaultModel": "glm-4.7-flash",
+      "auth": "required-bearer",
+      "authInput": "providerKey"
+    },
+    "run": {
+      "permissions": {
+        "contents": "read",
+        "checks": "write"
+      }
+    },
+    "dataHandling": {
+      "prompts": "unknown",
+      "modelPinned": true,
+      "operator": "Z.ai",
+      "terms": "https://docs.z.ai/legal-agreement/privacy-policy"
+    },
+    "role": "text-generation"
+  }
+}

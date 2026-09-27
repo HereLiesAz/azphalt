@@ -30,6 +30,25 @@ export interface PackageSummary {
    * `handoffs` is deliberately not surfaced by the API: the storefront never invokes a companion.
    */
   app?: AppBlock;
+  /**
+   * Present only on a `kind:"llm"` listing (`spec/llm.md`). The store MUST show the tier, the data
+   * handling and the setup token's permissions before install; see `LlmDisclosure` in App.tsx.
+   */
+  llm?: LlmBlock;
+}
+
+/** The parts of a `kind:"llm"` block the store discloses before install. */
+export interface LlmBlock {
+  tier: "endpoint" | "sandbox-weights" | string;
+  setup?: { sandbox?: string; requires?: { githubToken?: string[] }; fetches?: { url: string }[] };
+  weights?: {
+    runtime?: string;
+    files?: { name: string; byteSize?: number }[];
+    modelLicense?: { spdx?: string; commercialUse?: boolean; url?: string };
+    requirements?: { accelerator?: string; minRamMB?: number; minDiskMB?: number; contextTokens?: number };
+  };
+  endpoint?: { protocols?: string[]; baseUrl?: string; defaultModel?: string; auth?: string };
+  dataHandling?: { prompts?: string; modelPinned?: boolean; operator?: string; terms?: string };
 }
 
 /** The `app` block of a `kind:"app"` package, as `/api/packages` surfaces it. */

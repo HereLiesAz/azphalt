@@ -15,6 +15,7 @@ import { validateScriptManifest } from "./script.js";
 import { validateComposableManifest } from "./composable.js";
 import { validateWorkflowManifest } from "./workflow.js";
 import { validateRoleManifest } from "./role.js";
+import { validateLlmManifest } from "./llm.js";
 
 /**
  * Fixed archive timestamp for reproducible output. Built from LOCAL fields on purpose: fflate
@@ -157,6 +158,8 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     errors.push(...validateWorkflowManifest(manifest));
   } else if (manifest.kind === "role") {
     errors.push(...validateRoleManifest(manifest));
+  } else if (manifest.kind === "llm") {
+    errors.push(...validateLlmManifest(manifest));
   }
 
   const sigRaw = payload["signature.json"];
@@ -204,3 +207,4 @@ export { validateScriptManifest } from "./script.js";
 export { validateComposableManifest } from "./composable.js";
 export { validateWorkflowManifest } from "./workflow.js";
 export { validateRoleManifest } from "./role.js";
+export { validateLlmManifest } from "./llm.js";

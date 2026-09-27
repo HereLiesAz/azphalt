@@ -3,8 +3,10 @@
 *Status: **Proposed**. Extends the package model with a kind for a **language model a host reaches off
 the device**: a hosted OpenAI-compatible endpoint, or open weights the host runs in a private
 GitHub Actions sandbox. Modeled on `kind: "mcp"` (mcp-server.md): the package is a signed header plus
-a bundled setup script, and the host runs everything **outside the user's device** under consent. No
-SDK wiring, verifier, or conformance profile exists yet.*
+a bundled setup script, and the host runs everything **outside the user's device** under consent. The
+SDK types (`@azphalt/azdk` `LlmManifest`), the verifier (`validateLlmManifest`, § Verification) and a
+reference runner (the first-party `com.hereliesaz.azphalt.llm.*` packages) exist; no conformance
+profile does yet.*
 
 ## Why this exists — and why it doesn't break the moat
 
@@ -256,6 +258,11 @@ under § Rolling delimiters.
 
 ### `github-actions-runner`
 
+**Sandbox layout.** The host commits the package payload to `llm/<package id>/` in the sandbox
+repository and the package's runner workflow to `.github/workflows/`, so several `llm` packages can
+share one sandbox. (The first-party packages ship the workflow as `setup/workflow.yml`, already
+pointing at `llm/<package id>/setup/`.)
+
 The host dispatches the sandbox's runner workflow and follows it:
 
 1. **Dispatch.** `workflow_dispatch` with a single `task` input (JSON). The workflow's `run-name`
@@ -264,6 +271,11 @@ The host dispatches the sandbox's runner workflow and follows it:
 2. **Progress.** The run writes steps to a check run whose name is the correlation id; `output.text`
    holds one `<seq>\t<message>` line per step, append-only. The host reads it incrementally and
    de-duplicates by `seq`.
+   The `task` object: `correlationId` (string, required); `op` — `generate` (default) or `setup`, a
+   one-shot smoke test the host runs after setup; `messages` — `[{ role, content }]` with `system`,
+   `user`, or `assistant` roles, untrusted material tagged per § Rolling delimiters; `sessionKey` and
+   `turn` (§ Rolling delimiters; omit both when nothing is tagged); optional `model` (overrides
+   `defaultModel`, endpoint tier only), `maxTokens`, `temperature`.
 3. **Result.** The run uploads an artifact named `azphalt-llm-result` containing `result.json`:
    `{ "status": "completed" | "failed", "message", "text"?, "patch"?, "branch"?, "inputTokens"?,
    "outputTokens"? }`. A host MUST bound the artifact (reference: 4 MB zipped, 2 MB JSON) and treat
@@ -278,7 +290,8 @@ model is asked to process) apart with a delimiter the material cannot forge.
   in a model's context.
 - **Per-turn tags.** For turn `n` the host derives
   `tag_n = base32(HMAC-SHA256(sessionKey, "azphalt-llm-turn:" || n))[0:26]`, with a fresh random
-  `sessionKey` per session. Each untrusted segment is wrapped `⟦tag_n⟧ … ⟦/tag_n⟧`.
+  `sessionKey` per session: at least 16 random bytes, sent as unpadded base64url. `base32` is RFC 4648
+  (uppercase, unpadded) and `n` is its decimal string. Each untrusted segment is wrapped `⟦tag_n⟧ … ⟦/tag_n⟧`.
 - **Escaping.** Before wrapping, the host removes or escapes, inside untrusted text, every occurrence
   of any tag of the session and of the target model's native control tokens and role markers.
 - **Translation.** A trusted translator — the host for `openai-chat`, the runner for

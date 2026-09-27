@@ -1,0 +1,65 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.llm.groq",
+  "name": "Groq gpt-oss-20b",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "OpenAI's open-weight gpt-oss-20b on Groq's free tier. Fast; needs a free Groq key.",
+  "author": "HereLiesAz",
+  "llm": {
+    "tier": "endpoint",
+    "inputs": [
+      {
+        "id": "providerKey",
+        "type": "promptString",
+        "password": true,
+        "description": "Groq API key"
+      }
+    ],
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "requires": {
+        "githubToken": [
+          "contents:write",
+          "actions:write",
+          "checks:write",
+          "workflows:write",
+          "secrets:write"
+        ]
+      },
+      "secrets": [
+        {
+          "name": "PROVIDER_KEY",
+          "input": "providerKey"
+        }
+      ],
+      "fetches": []
+    },
+    "endpoint": {
+      "protocols": [
+        "openai-chat",
+        "github-actions-runner"
+      ],
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "defaultModel": "openai/gpt-oss-20b",
+      "auth": "required-bearer",
+      "authInput": "providerKey"
+    },
+    "run": {
+      "permissions": {
+        "contents": "read",
+        "checks": "write"
+      }
+    },
+    "dataHandling": {
+      "prompts": "unknown",
+      "modelPinned": true,
+      "operator": "Groq",
+      "terms": "https://groq.com/terms-of-use"
+    },
+    "role": "text-generation"
+  }
+}

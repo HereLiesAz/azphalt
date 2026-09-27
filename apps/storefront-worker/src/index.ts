@@ -84,6 +84,7 @@ interface Listing {
     maturity?: string;
     app?: unknown;
     pack?: unknown;
+    llm?: unknown;
     manifest?: unknown;
     bytes?: number;
     integrity: string;

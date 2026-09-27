@@ -34,8 +34,9 @@ const REQUIRED = ["azphalt", "name", "version", "kind", "license", "compat"] as 
  * and `script` are the exceptions that DO carry a real payload (bundled `SKILL.md` files, or a bundled
  * script file respectively) — see `spec/skill.md` and `spec/script.md`. `composable` is a header kind
  * like `app`/`mcp`/`pack` — see `spec/composable.md`.
+ * `llm` carries its sandbox setup script as payload — see `spec/llm.md`.
  */
-const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable", "workflow", "role"];
+const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable", "workflow", "role", "llm"];
 
 /** All files under `dir`, as `/`-separated paths relative to `dir`. */
 function walk(dir: string, prefix = ""): string[] {

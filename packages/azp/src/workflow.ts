@@ -202,7 +202,7 @@ export function validateWorkflowManifest(manifest: Manifest): string[] {
     errors.push('kind:"workflow" must not declare contributes');
   }
 
-  for (const block of ["app", "mcp", "pack", "skill", "script", "composable"] as const) {
+  for (const block of ["app", "mcp", "pack", "skill", "script", "composable", "llm"] as const) {
     if (manifest[block] !== undefined) {
       errors.push(`kind:"workflow" must not declare a ${block} block`);
     }

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build-catalog": "tsx scripts/build-catalog.ts",
-    "build-previews": "tsx scripts/build-previews.ts"
+    "build-previews": "tsx scripts/build-previews.ts",
+    "gen-llm-packages": "tsx scripts/gen-llm-packages.ts"
   },
   "dependencies": {
     "@azphalt/azdk": "workspace:*",

@@ -1,0 +1,65 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.llm.cerebras",
+  "name": "Cerebras gpt-oss-120b",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "OpenAI's open-weight gpt-oss-120b on Cerebras's free tier. Needs a free Cerebras key.",
+  "author": "HereLiesAz",
+  "llm": {
+    "tier": "endpoint",
+    "inputs": [
+      {
+        "id": "providerKey",
+        "type": "promptString",
+        "password": true,
+        "description": "Cerebras API key"
+      }
+    ],
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "requires": {
+        "githubToken": [
+          "contents:write",
+          "actions:write",
+          "checks:write",
+          "workflows:write",
+          "secrets:write"
+        ]
+      },
+      "secrets": [
+        {
+          "name": "PROVIDER_KEY",
+          "input": "providerKey"
+        }
+      ],
+      "fetches": []
+    },
+    "endpoint": {
+      "protocols": [
+        "openai-chat",
+        "github-actions-runner"
+      ],
+      "baseUrl": "https://api.cerebras.ai/v1",
+      "defaultModel": "gpt-oss-120b",
+      "auth": "required-bearer",
+      "authInput": "providerKey"
+    },
+    "run": {
+      "permissions": {
+        "contents": "read",
+        "checks": "write"
+      }
+    },
+    "dataHandling": {
+      "prompts": "unknown",
+      "modelPinned": true,
+      "operator": "Cerebras",
+      "terms": "https://www.cerebras.ai/terms-of-service"
+    },
+    "role": "text-generation"
+  }
+}

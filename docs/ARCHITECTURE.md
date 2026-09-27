@@ -75,7 +75,7 @@ The native host that embeds the engine and renders the schema is **each app's ow
   skill.md                  Agent Skill bundles
   script.md                 native scripts a host installs like a package manager
   composable.md             UI element descriptions a host's own renderer interprets
-  llm.md                    off-device language models (kind: llm) — proposed
+  llm.md                    off-device language models (kind: llm) — proposed; verifier + first-party packages
   store-app.md              delegating browse/install to a store app
   web-handoff.md            the web → host azphalt://install handoff
   state-reporting.md        install/usage state a host reports back

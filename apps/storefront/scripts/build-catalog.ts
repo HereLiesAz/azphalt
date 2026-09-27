@@ -499,7 +499,9 @@ async function main(): Promise<void> {
   }
 
   const selected = only ? lock.sources.filter((s) => s.id === only) : lock.sources;
-  if (!selected.length) {
+  // `--only` may also name a folder package (registry/local/ or submissions/), which has no lock entry.
+  const onlyFolder = !!only && [localDir, submissionsDir].some((d) => existsSync(join(d, only, "manifest.json")));
+  if (!selected.length && !onlyFolder) {
     console.error(only ? `build-catalog: no source with id ${only}` : "build-catalog: lockfile has no sources");
     process.exit(1);
   }

@@ -1,0 +1,65 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.llm.openrouter-free",
+  "name": "OpenRouter Free Router",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "OpenRouter's router across its free models. Free-model providers may log and train on prompts, and the model changes under you.",
+  "author": "HereLiesAz",
+  "llm": {
+    "tier": "endpoint",
+    "inputs": [
+      {
+        "id": "providerKey",
+        "type": "promptString",
+        "password": true,
+        "description": "OpenRouter API key"
+      }
+    ],
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "requires": {
+        "githubToken": [
+          "contents:write",
+          "actions:write",
+          "checks:write",
+          "workflows:write",
+          "secrets:write"
+        ]
+      },
+      "secrets": [
+        {
+          "name": "PROVIDER_KEY",
+          "input": "providerKey"
+        }
+      ],
+      "fetches": []
+    },
+    "endpoint": {
+      "protocols": [
+        "openai-chat",
+        "github-actions-runner"
+      ],
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "defaultModel": "openrouter/free",
+      "auth": "required-bearer",
+      "authInput": "providerKey"
+    },
+    "run": {
+      "permissions": {
+        "contents": "read",
+        "checks": "write"
+      }
+    },
+    "dataHandling": {
+      "prompts": "may-train",
+      "modelPinned": false,
+      "operator": "OpenRouter",
+      "terms": "https://openrouter.ai/terms"
+    },
+    "role": "text-generation"
+  }
+}
