@@ -1,0 +1,49 @@
+# Builds and deploys the production Cloudflare Worker (apps/storefront-worker): the React storefront at
+# azphalt.store, the docs at azphalt.org, and the Repository API. Bound centrally to HereLiesAz/workflows'
+# cloudflare-worker-deploy.yml, whose purpose profile for this file runs the same steps; the controller
+# replaces this file with its tracker once registered.
+name: Deploy Storefront
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/storefront-worker/**"
+      - "apps/storefront-react/**"
+      - "apps/storefront/registry/**"
+      - "docs/**"
+      - "spec/**"
+      - "packages/azp/**"
+      - "packages/azdk/**"
+      - "packages/web-handoff/**"
+      - "version.properties"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: corepack enable && pnpm install --frozen-lockfile
+      # Builds the Worker's dependencies (the React storefront, the docs) and assembles its assets.
+      - run: pnpm --filter "@azphalt/storefront-worker..." build
+      - run: pnpm --filter @azphalt/storefront-worker typecheck
+      - run: pnpm --filter @azphalt/storefront-worker test
+      - name: Verify the exported catalog carries the Aive workflow and role lane
+        run: |
+          jq -e '
+            any(.[]; .id == "com.hereliesaz.haive.feature-delivery" and .kind == "workflow")
+            and any(.[]; .id == "com.hereliesaz.haive.role.ux-researcher" and .kind == "role")
+          ' apps/storefront-worker/dist/catalog.json >/dev/null
+      - id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/storefront-worker
+      - name: Verify the new version is serving
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: node apps/storefront-worker/scripts/verify-deployment.mjs "$DEPLOYMENT_URL"
