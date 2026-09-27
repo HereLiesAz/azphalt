@@ -5,7 +5,7 @@
     "access": "public"
   },
   "description": "Scaffolding tool for azphalt projects.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Az",
   "type": "module",
   "bin": {

@@ -3,7 +3,7 @@
   "version": "0.1.5",
   "private": true,
   "description": "A reference implementation of the azphalt Repository API (spec/repository-api.md), served over @azphalt/registry.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Az (https://hereliesaz.com)",
   "type": "module",
   "main": "./dist/index.js",

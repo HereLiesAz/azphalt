@@ -4,7 +4,7 @@ A small **reference storefront UI** — a Vite + React app that browses and view
 
 By default it points at a repository running on `http://localhost:3000` — the bundled [`@azphalt/mock-backend`](../mock-backend) serves exactly that. For a spec-complete backend over the real registry, use [`@azphalt/repository-server`](../repository-server) instead.
 
-> Not to be confused with [`apps/storefront`](../storefront), the Next.js **consignment** storefront that sits directly on [`@azphalt/registry`](../../packages/registry). This app is the lighter, client-only browse UI.
+> Not to be confused with [`apps/storefront-react`](../storefront-react), the production storefront served by [`apps/storefront-worker`](../storefront-worker). This app is the lighter, client-only demo browse UI.
 
 ## Run it
 

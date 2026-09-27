@@ -28,12 +28,5 @@ apps/storefront-cmp/local.properties
 # apps/storefront-cmp/build.gradle.kts) so a checkout without it still builds.
 apps/storefront-cmp/google-services.json
 
-# apps/storefront/public/ is the Kotlin/Wasm distribution's output directory, and a Gradle
-# distribution task clears it before writing. Nothing committed there survives a build, so these —
-# every one of them a wasmJsMain/resources file the build re-emits — were copies that silently drifted
-# from their source. sw.js had, ending up two versions behind the real one. index.html was never
-# committed despite being the same kind of file, which is what made the inconsistency visible.
-apps/storefront/public/
-
 # Wrangler's local dev state and bundles (apps/storefront-worker `wrangler dev`).
 .wrangler/

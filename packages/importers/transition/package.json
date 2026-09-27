@@ -5,7 +5,7 @@
     "access": "public"
   },
   "description": "Import GL Transitions (gl-transitions.com) into .azp transition assets.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Az (https://hereliesaz.com)",
   "type": "module",
   "main": "./dist/index.js",
