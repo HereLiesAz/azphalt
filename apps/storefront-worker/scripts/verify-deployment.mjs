@@ -3,7 +3,7 @@
  * catalog? Run by the deploy workflow against Wrangler's deployment URL (the workers.dev address), so it
  * checks the new version itself whether or not the public domains point at it yet.
  *
- *   node apps/storefront-worker/scripts/verify-deployment.mjs https://azphalt-store.<account>.workers.dev
+ *   node apps/storefront-worker/scripts/verify-deployment.mjs https://azphalt.<account>.workers.dev
  *
  * The catalog checks retry for up to five minutes: a new version takes a moment to reach every edge.
  * Deployment freshness is part of correctness (docs/OPERATIONS.md), so a miss fails the deploy.

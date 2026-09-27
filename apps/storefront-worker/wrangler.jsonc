@@ -1,6 +1,6 @@
 {
   "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
-  "name": "azphalt-store",
+  "name": "azphalt",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-17",
   // No `routes` here: azphalt.store, www.azphalt.store, azphalt.org and www.azphalt.org are attached to

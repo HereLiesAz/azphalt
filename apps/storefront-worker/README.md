@@ -189,18 +189,18 @@ runs [`scripts/verify-deployment.mjs`](scripts/verify-deployment.mjs) against th
 ## Domains
 
 The four hostnames are attached to this Worker as **Custom Domains** in the Cloudflare dashboard
-(Workers & Pages → `azphalt-store` → Settings → Domains & Routes), not in `wrangler.jsonc`, so a deploy
+(Workers & Pages → `azphalt` → Settings → Domains & Routes), not in `wrangler.jsonc`, so a deploy
 never fails on a zone that isn't on the account yet.
 
 Until they are attached, the domains are served by the last Vercel deployment of the retired Next.js
 storefront, frozen: Vercel builds of `main` now fail and it keeps serving its last good one. To move them:
 
 1. Let one deploy of this Worker succeed and check it on its `workers.dev` URL
-   (`node apps/storefront-worker/scripts/verify-deployment.mjs https://azphalt-store.<account>.workers.dev`,
+   (`node apps/storefront-worker/scripts/verify-deployment.mjs https://azphalt.<account>.workers.dev`,
    and `/_docs/` for the docs).
 2. Set the secrets above.
 3. Add `azphalt.store` and `azphalt.org` to the Cloudflare account, then attach the four hostnames as
-   Custom Domains of `azphalt-store`.
+   Custom Domains of `azphalt`.
 4. Point the Stripe webhook at `https://azphalt.store/api/webhooks/stripe`.
 5. Confirm the live hosts, then remove the domains from the Vercel project and delete it.
 
