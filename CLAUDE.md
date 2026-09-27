@@ -6,7 +6,7 @@
 Android store app, the desktop builds, and the web store. Format `a.b.c.d`. Full details in
 [RELEASING.md § Versioning the apps](RELEASING.md#versioning-the-apps).
 
-Two rules that apply to you:
+Three rules that apply to you:
 
 1. **Bump the minor when you add a feature or a function.** In the same change that adds it, run
    `node tools/version.mjs bump --minor` and commit the result. `c` and `d` are automatic — a

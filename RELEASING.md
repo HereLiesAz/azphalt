@@ -55,12 +55,12 @@ node tools/version.mjs check          # validate the file
 ### When bumps happen
 
 - **Locally**, any Gradle invocation that compiles bumps `c` and `d` before reading them, so the artifact carries the version that build produced. `./gradlew tasks`, `clean`, `--dry-run` and IDE syncs do not. The bump shells out to `tools/version.mjs`; if node is not on `PATH` it warns and builds at the committed version rather than failing.
-- **In CI**, `AZPHALT_VERSION_FROZEN=1` disables that, and the `version` job of `.github/workflows/app-release.yml` performs the one bump for a `main` commit instead. Nothing else in CI moves the number: a PR check has no business rewriting a tracked file it cannot commit, and a run that invokes Gradle several times — the wasm bundle, the APK, the verifier tests — would otherwise make one commit produce a store and an app claiming different versions. See § One commit, one version, every artifact.
+- **In CI**, `AZPHALT_VERSION_FROZEN=1` disables that, and the `version` job of the `app-release.yml` workflow (synced from `HereLiesAz/workflows`) performs the one bump for a `main` commit instead. Nothing else in CI moves the number: a PR check has no business rewriting a tracked file it cannot commit, and a run that invokes Gradle several times — the wasm bundle, the APK, the verifier tests — would otherwise make one commit produce a store and an app claiming different versions. See § One commit, one version, every artifact.
 - **After a feature lands**, run `bump --minor` in the same change that adds it. That is the only bump a human or an agent performs by hand.
 
 ### One commit, one version, every artifact
 
-`.github/workflows/app-release.yml` runs on every push to `main` and is the **only** thing that moves
+The `app-release.yml` workflow (synced from `HereLiesAz/workflows`) runs on every push to `main` and is the **only** thing that moves
 the version on `main`. It has four jobs, in this order:
 
 1. **version** — bumps `c` and `d` once, commits `version.properties` back to `main`, tags
@@ -109,7 +109,7 @@ Pick the affected packages, choose the bump (`patch` / `minor` / `major`), and w
 
 ## The release flow (automated)
 
-`.github/workflows/release.yml` runs on every push to `main`:
+The `release.yml` workflow (synced from `HereLiesAz/workflows`) runs on every push to `main`:
 
 1. **Accumulate.** While unreleased changesets exist, the workflow opens (and keeps updating) a **"Version Packages"** PR that applies the bumps and writes each package's `CHANGELOG.md`.
 2. **Publish.** When you merge that PR, the same workflow builds, tests, and runs `changeset publish`, pushing every bumped package to npm and tagging the release.
@@ -140,10 +140,21 @@ This is **not** an auth failure. The tarball packs, the token authenticates, the
 
 Re-running the full **Release** workflow is the wrong fix: it re-attempts the blocked name immediately and re-trips the limit. Instead, publish the missing package **alone, with backoff**:
 
-- **`.github/workflows/publish-package.yml`** ("Publish single package (retry)") publishes ONE package, short-circuiting if it's already live and otherwise retrying with growing waits (0 / 60 / 180 / 420 / 600 / 900 s) so the limit can clear inside a single run. It runs automatically on every push to `main` (defaulting to `@azphalt/azdk`, the keystone dependency) and is also `workflow_dispatch`-able for any package: **Actions → "Publish single package (retry)" → Run workflow**, set `package`.
+- **`publish-package.yml`** ("Publish single package (retry)", synced from `HereLiesAz/workflows`) publishes ONE package, short-circuiting if it's already live and otherwise retrying with growing waits (0 / 60 / 180 / 420 / 600 / 900 s) so the limit can clear inside a single run. It runs automatically on every push to `main` (defaulting to `@azphalt/azdk`, the keystone dependency) and is also `workflow_dispatch`-able for any package: **Actions → "Publish single package (retry)" → Run workflow**, set `package`.
 - It's a **no-op once the target is live**, so it's safe as a standing self-heal guard: any later push to `main` re-attempts a still-missing package for free.
 
 If a single backoff run still exhausts on E429, the window is on a longer (multi-hour) span — wait a few hours (or until the next day) and run it once more. The underlying script is **`scripts/publish-one-retry.sh`**.
+
+### Staged publish (many new packages at once)
+
+To publish every publishable package without tripping the limit in the first place, publish in stages under a staging dist-tag, then promote:
+
+~~~sh
+pnpm release:staged    # scripts/publish-staged.sh: batches under the "staging" dist-tag, with cool-downs
+pnpm release:promote   # scripts/promote-latest.sh: retag each staged version as "latest"
+~~~
+
+`release:staged` publishes through `scripts/publish-one-retry.sh`, so it is idempotent and backs off on E429. Tune it with `STAGE_SIZE` (default 5), `STAGE_COOLDOWN` (default 120 s), `PUBLISH_COOLDOWN` (default 30 s) and `PUBLISH_TAG` (default `staging`). Verify the staged versions before running `release:promote`, which only retags existing versions and creates no new package names. Both publish only what `scripts/publishable.mjs` lists: non-private packages under `packages/`.
 
 ## Manual release (fallback)
 
@@ -157,3 +168,5 @@ pnpm run release   # build + test + changeset publish
 Use `pnpm run version` (not bare `pnpm version`, which is pnpm's own version command). The `version` script also runs `pnpm install --lockfile-only` after bumping, so `pnpm-lock.yaml` stays in sync and CI's `--frozen-lockfile` install doesn't fail.
 
 Private packages (the `apps/*`, e.g. `@azphalt/storefront`) are never published — Changesets skips any package marked `private` automatically.
+
+The exception is **`@azphalt/mock-backend`** (`apps/mock-backend`): it is not marked private and is published on npm, so `pnpm run release` (`changeset publish`) publishes it with the packages. The staged path above skips it, because `scripts/publishable.mjs` lists only packages under `packages/`.

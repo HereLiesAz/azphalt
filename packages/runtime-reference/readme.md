@@ -13,8 +13,11 @@ This runtime proves the **contract**, not the sandbox:
   capability is **absent** (`undefined`), matching `spec/capability-model.md`'s "absent, not
   merely gated."
 - **Image-buffer ABI** — bitmaps are RGBA, straight alpha, mutated in place; 8-bit by default (`Uint8ClampedArray`), 16-bit opt-in via `depth: 16` (`Uint16Array`, channels 0–65535).
-- **Contribution dispatch** — `runFilter`/`runTool`/`runCommand` resolve the manifest `entry`
-  export and run it with a capability-scoped context.
+- **Contribution dispatch** — `runFilter`/`runTool`/`runCommand`/`runTransition` resolve the
+  manifest `entry` export and run it with a capability-scoped context. `runTransition(manifest,
+  module, world, { from, to, progress }, transitionId?)` adds the two input frames and the blend
+  position to the context and targets the world's active layer, which the transition writes via
+  `bitmap.write`.
 
 It runs a **trusted** extension module in-process — callers pass the already-imported extension
 module. The WASM isolation substrate that sandboxes *untrusted* code is a separate concern, shipped

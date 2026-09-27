@@ -61,7 +61,7 @@ optional except `app`.
 | --- | --- | --- |
 | `app` | `String` | **REQUIRED.** The host's reverse-DNS id. Drives app scoping (`repository-api.md` § App scoping): the store shows global packages plus those whose `targetApps` names this host. |
 | `mediaDomains` | `String[]` | Restricts to packages whose `mediaDomains` intersect these (`image`, `video`, `audio`, `3d`, `model`, `font`). A video host passing `["video","audio"]` never sees a paint-only brush. |
-| `kinds` | `String[]` | Restricts by `kind` — `asset`, `code`, `mixed`, `app`, `mcp`, `pack`. A host with no code sandbox passes `["asset"]`. |
+| `kinds` | `String[]` | Restricts by `kind` — the same values as `repository-api.md` § search `kind`: `asset`, `code`, `mixed`, `app`, `mcp`, `pack`, `skill`, `script`, `composable`, `workflow`, `role`. A host with no code sandbox passes `["asset"]`. |
 | `compat` | `String` | The host's azphalt version, so the store can hide packages whose `compat` range excludes it. |
 | `repository` | `String` | Base URL of the conforming repository to browse. Defaults to the store app's own. A host pinned to its own registry passes it here. |
 | `id` | `String` | Deep-link straight to one package's detail instead of the browse grid. |

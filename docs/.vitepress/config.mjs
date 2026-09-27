@@ -1,16 +1,17 @@
 import { defineConfig } from 'vitepress'
 
-// Served at azphalt.org, at the domain root — base stays '/'. The docs use GitHub Pages; the live
-// storefront/registry at azphalt.store is deployed separately as a Cloudflare Worker + static assets.
-// Keeping them separate means both hosting paths can remain on free tiers.
+// Served at azphalt.org, at the domain root — base stays '/'. azphalt.org and azphalt.store are the same
+// Vercel deployment of apps/storefront: its build runs `embed-docs` (AZPHALT_DOCS_EMBED) into
+// public/_docs, and apps/storefront/middleware.ts maps the azphalt.org host onto /_docs. GitHub Pages
+// (.github/workflows/deploy-docs.yml) is the standalone alternative and does not serve the domain.
 export default defineConfig({
   title: "azphalt",
   description: "The open standard for portable digital-art, motion-graphics, and video extensions — and the marketplace at azphalt.store.",
   appearance: 'dark',
   lastUpdated: true,
   // Extensionless URLs when served by a host that maps `/x` → `/x.html` (GitHub Pages). For the
-  // storefront-embedded build (AZPHALT_DOCS_EMBED — served at azphalt.org via next.config host rewrites
-  // onto static files under /_docs), disable it so page links are `.html` and map 1:1 to files.
+  // storefront-embedded build (AZPHALT_DOCS_EMBED — served at azphalt.org by apps/storefront/middleware.ts
+  // rewriting onto static files under /_docs), disable it so page links are `.html` and map 1:1 to files.
   cleanUrls: !process.env.AZPHALT_DOCS_EMBED,
   sitemap: { hostname: 'https://azphalt.org' },
   head: [
@@ -40,6 +41,9 @@ export default defineConfig({
             { text: 'Marketplace Integrity', link: '/specs/marketplace-integrity' },
             { text: 'MCP Server', link: '/specs/mcp-server' },
             { text: 'Extension Packs', link: '/specs/pack' },
+            { text: 'Skill Packages', link: '/specs/skill' },
+            { text: 'Script Packages', link: '/specs/script' },
+            { text: 'Composable Packages', link: '/specs/composable' },
             { text: 'Companion Apps (RFC)', link: '/specs/companion-app' },
             { text: 'Store App (RFC)', link: '/specs/store-app' },
             { text: 'Web Handoff (RFC)', link: '/specs/web-handoff' },
@@ -58,7 +62,12 @@ export default defineConfig({
             { text: 'Manifest Schema', link: '/specs/extension-manifest' },
             { text: 'Package Format', link: '/specs/package-format' },
             { text: 'Extension Packs', link: '/specs/pack' },
-            { text: 'MCP Servers', link: '/specs/mcp-server' }
+            { text: 'MCP Servers', link: '/specs/mcp-server' },
+            { text: 'Skill Packages', link: '/specs/skill' },
+            { text: 'Script Packages', link: '/specs/script' },
+            { text: 'Composable Packages', link: '/specs/composable' },
+            { text: 'Workflow Packages', link: '/specs/workflow' },
+            { text: 'Role Packages', link: '/specs/role' }
           ]
         }
       ],
@@ -71,7 +80,9 @@ export default defineConfig({
             { text: 'Receiving a Web Handoff', link: '/specs/web-handoff' },
             { text: 'Adopting the Standard (code host)', link: '/ADOPTION' },
             { text: 'Adopting as an Asset Host', link: '/ADOPTION_ASSET_HOST' },
-            { text: 'Adopting as a Companion Host', link: '/ADOPTION_COMPANION_HOST' }
+            { text: 'Adopting as a Companion Host', link: '/ADOPTION_COMPANION_HOST' },
+            { text: 'Workflow Packages', link: '/specs/workflow' },
+            { text: 'Role Packages', link: '/specs/role' }
           ]
         }
       ],
