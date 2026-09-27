@@ -1,0 +1,65 @@
+name: CI
+
+# PR and push validation. Bound by hash to HereLiesAz/workflows' central `ci-validation.yml`, which
+# runs the equivalent command from its purpose profile (scripts/semantic_catalog.py) and replaces this
+# file with a tracker. Edit this file, then rebind the new hash there — the jobs below are the
+# reference for what the profile runs.
+on: [push, pull_request]
+permissions: read-all
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test
+
+  # Keep the language-neutral conformance fixtures honest: regenerate them from @azphalt/conformance
+  # and fail if the committed bytes or expectations drift. They are emitted artifacts, never
+  # hand-edited — see conformance/fixtures/README.md.
+  conformance-fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm fixtures
+      - name: Fail if the fixtures are out of date
+        run: |
+          git add -N conformance/fixtures
+          if ! git diff --exit-code -- conformance/fixtures; then
+            echo "::error::conformance/fixtures is out of date — run 'pnpm fixtures' and commit the result." >&2
+            exit 1
+          fi
+
+  # The Compose storefront: Wasm, the Android store app, the shared model's tests and the Kotlin .azp
+  # verifier's tests (which pin it to the TypeScript reference through packages/azp/test/vectors/).
+  storefront-compose:
+    runs-on: ubuntu-latest
+    # Read the version, never move it: the bump belongs to app-release on main.
+    env:
+      AZPHALT_VERSION_FROZEN: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: corretto
+          java-version: '17'
+      - name: Write google-services.json when Firebase is configured
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+        run: node .github/scripts/write-google-services.mjs
+      - working-directory: apps/storefront-cmp
+        run: |
+          ./gradlew wasmJsBrowserDistribution --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew desktopTest --no-daemon --stacktrace
+          ./gradlew :azp:test --no-daemon --stacktrace

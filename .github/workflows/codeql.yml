@@ -45,8 +45,10 @@ jobs:
         include:
         - language: actions
           build-mode: none
+        # Manual: autobuild looks for a build at the repository root, and the Kotlin lives in
+        # apps/storefront-cmp (the store app) and its azp/ subproject (the .azp verifier).
         - language: java-kotlin
-          build-mode: autobuild
+          build-mode: manual
         - language: javascript-typescript
           build-mode: none
         # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
@@ -61,11 +63,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v7
 
-    # Add any setup steps before running the `github/codeql-action/init` action.
-    # This includes steps like installing compilers or runtimes (`actions/setup-node`
-    # or others). This is typically only required for manual builds.
-    # - name: Setup runtime (example)
-    #   uses: actions/setup-example@v1
+    - name: Set up Java (storefront-cmp's toolchain)
+      if: matrix.language == 'java-kotlin'
+      uses: actions/setup-java@v5
+      with:
+        distribution: corretto
+        java-version: '17'
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -89,13 +92,13 @@ jobs:
     - name: Run manual build steps
       if: matrix.build-mode == 'manual'
       shell: bash
-      run: |
-        echo 'If you are using a "manual" build mode for one or more of the' \
-          'languages you are analyzing, replace this with the commands to build' \
-          'your code, for example:'
-        echo '  make bootstrap'
-        echo '  make release'
-        exit 1
+      working-directory: apps/storefront-cmp
+      # The shared model (commonMain + desktopMain) and the Kotlin .azp verifier, compiled under the
+      # tracer. Android and Wasm add no Kotlin of their own worth the SDK setup. FROZEN: an analysis
+      # never bumps version.properties.
+      env:
+        AZPHALT_VERSION_FROZEN: '1'
+      run: ./gradlew compileKotlinDesktop :azp:compileKotlin --no-daemon --no-build-cache --stacktrace
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
