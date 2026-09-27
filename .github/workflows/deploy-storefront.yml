@@ -18,6 +18,8 @@ on:
       - "version.properties"
       - "pnpm-lock.yaml"
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   deploy:
     runs-on: ubuntu-latest
