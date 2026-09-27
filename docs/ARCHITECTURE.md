@@ -89,7 +89,6 @@ The native host that embeds the engine and renders the schema is **each app's ow
   runtime-wasm/             the real sandbox — QuickJS-in-WASM (js) + raw WebAssembly (wasm)
   conformance/              an executable pass/fail battery for code hosts and asset hosts
   registry/                 verify · index · version · serve · search, plus the consignment overlay
-  registry-store-vercel/    alternate Neon + Vercel Blob RegistryStore implementation
   repository-client/        client SDK for the Repository API
   llm-host/                 host side of kind: llm (sandbox install, runner, delimiters)
   mcp/                      an MCP server exposing azp verify/inspect/extract to any MCP host

@@ -9,8 +9,7 @@
  * gate on — a seller's live payout status.
  *
  * The default {@link InMemorySellerAccountStore} keeps dev/test behavior with no services; a durable
- * deployment supplies a database-backed store (see `@azphalt/registry-store-vercel`'s
- * `PostgresSellerAccountStore`).
+ * deployment supplies a database-backed store (its own implementation of this interface).
  */
 
 /** A seller's onboarded Stripe connected account and its current capability status. */

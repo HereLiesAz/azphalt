@@ -10,8 +10,7 @@
  * two licenses for one payment.
  *
  * The default {@link InMemoryEntitlementStore} keeps dev/test behavior with no services; a durable
- * deployment supplies a database-backed store (see `@azphalt/registry-store-vercel`'s
- * `PostgresEntitlementStore`).
+ * deployment supplies a database-backed store (its own implementation of this interface).
  */
 import type { EntitlementToken } from "./entitlement.js";
 

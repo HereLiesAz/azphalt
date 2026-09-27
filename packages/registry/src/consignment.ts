@@ -89,8 +89,7 @@ export interface PaymentProvider {
  * Storing the session **and its originating input** lets fulfilment read the package and buyer from
  * the stored input (never the request body) and lets sessions survive a restart / another serverless
  * instance. The default {@link InMemoryPaymentSessionStore} keeps process behavior unchanged; a durable
- * deployment supplies a database-backed store (see `@azphalt/registry-store-vercel`'s
- * `PostgresSessionStore`).
+ * deployment supplies a database-backed store (its own implementation of this interface).
  */
 export interface PaymentSessionStore {
   /** Persist a session and the input it was created from. */
