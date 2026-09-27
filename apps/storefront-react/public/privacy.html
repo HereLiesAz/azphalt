@@ -16,7 +16,13 @@
   - Rate limiting is Cloudflare's rate-limit binding keyed by IP; the Worker stores no address
     (wrangler.jsonc: ratelimits, index.ts: allowWrite).
   - No request logs: wrangler.jsonc enables no observability, logpush or tail consumer.
-  - Install counts: `POST /installs` answers 501 — nothing is recorded.
+  - Install counts: a full download mints a random single-use token stored with only the package and
+    version; `POST /installs` spends it and increments a per-package counter (index.ts: withReportToken,
+    AzphaltState `report_tokens` / `install_receipts` / `install_counts`). Unspent tokens are deleted
+    after 30 days.
+  - Free downloads are fetched by the Worker from GitHub and streamed back (index.ts: download).
+  - Play purchases: the token is sent to Google's Android Publisher API to verify it and is not stored
+    (src/play.ts).
 
   If behaviour here changes, this page changes with it.
 -->
@@ -166,9 +172,10 @@
 
   <h3 id="install-counts">Install counts</h3>
   <p>
-    This store does not currently record install counts. The Azphalt standard lets an app report that
-    an install happened, and if the store starts accepting those reports they follow rules written
-    into the standard so they cannot identify you:
+    The store counts installs and uninstalls per extension, so publishers can see how their work is
+    used. An app may report that it installed or removed an extension; it does not have to, and nothing
+    breaks if it does not. The reports follow rules written into the Azphalt standard so they cannot
+    identify you:
   </p>
   <ul>
     <li>
@@ -179,9 +186,13 @@
     <li>it never carries the names of other apps on your device, or anything you made with an extension;</li>
     <li>
       it has to present a one-time token issued with the download itself, stored with no record of who
-      received it.
+      received it (only which extension and version it was for) and deleted after 30 days if unused.
     </li>
   </ul>
+  <p>
+    What is kept is two numbers per extension: installs and uninstalls. The store never presents them as
+    &ldquo;active users&rdquo;, because it has no way to know that without identifying you.
+  </p>
 
   <h3>What an app tells the store on your device</h3>
   <p>
@@ -207,8 +218,9 @@
     <li>
       <strong>In the Android app</strong> — by
       <a href="https://policies.google.com/privacy">Google Play Billing</a>. Where the app confirms a
-      Play purchase with the Azphalt registry, it sends the purchase token Google gave it. The token
-      identifies the transaction, not you.
+      Play purchase with the Azphalt registry, it sends the purchase token Google gave it. The store
+      passes that token to Google to confirm the purchase and then forgets it; the licence it issues
+      names the Play order, not you.
     </li>
   </ul>
   <p>
@@ -280,7 +292,8 @@
     </li>
     <li>
       <strong>GitHub</strong> — where extension source and the store&rsquo;s own code are hosted, and
-      where free extension files are downloaded from. Contributing is public by nature.
+      where free extension files are stored. The store fetches them from GitHub on your behalf, so
+      GitHub sees Cloudflare, not you. Contributing is public by nature.
     </li>
   </ul>
   <p>Azphalt does not sell data, does not share it for advertising, and has no advertising partners.</p>

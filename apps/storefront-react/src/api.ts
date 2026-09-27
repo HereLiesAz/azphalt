@@ -214,6 +214,9 @@ export interface Report extends ReportInput {
   id: number;
   trusted: boolean;
   reportedAt: string;
+  /** A moderator's decision, once made. */
+  resolution?: "dismissed" | "yanked";
+  resolvedAt?: string;
 }
 
 /** File a report (`spec/marketplace-integrity.md` § 2). Web reports are untrusted and wait for a moderator. */
@@ -261,6 +264,23 @@ export async function fetchReports(token: string): Promise<Report[]> {
   if (res.status === 401) throw new Error("That token was not accepted.");
   if (!res.ok) throw new Error(`reports ${res.status}`);
   return ((await res.json()) as { reports: Report[] }).reports;
+}
+
+/**
+ * A moderator's decision on a report. `yank` revokes the reported version (or the one served now) and
+ * publishes it on `/revocations`, so installed hosts learn on their next poll.
+ */
+export async function resolveReport(token: string, id: number, action: "dismiss" | "yank"): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/reports/${id}/resolve`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ action }),
+  });
+  if (res.status === 401) throw new Error("That token was not accepted.");
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error || `resolve ${res.status}`);
+  }
 }
 
 export function priceLabel(p: PackageSummary): string {
