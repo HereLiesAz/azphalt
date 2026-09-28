@@ -174,9 +174,12 @@ The weights are cached between runs (§ Sandbox); the Actions cache needs no ent
 Every `llm` package carries a setup script, even when all it has to do is confirm that a GitHub token
 with the needed permissions exists. Setup is **off-device only**.
 
-- **`sandbox`** — where setup and the model run. `0.1` defines only `github-actions`. A host that
-  cannot provide the named sandbox MUST NOT install the package. A host MUST NOT run `script` on the
-  user's device under any circumstances.
+- **`sandbox`** — where setup and the model run. `0.1` defines only `github-actions`. A host MUST NOT
+  run `script` on the user's device under any circumstances. A host that cannot provide the named
+  sandbox MUST NOT run setup or use `github-actions-runner`. It MAY still install a package whose
+  `endpoint.protocols` include `openai-chat` and reach it over that protocol alone, because
+  `openai-chat` needs neither setup nor the sandbox (§ Protocols). It MUST NOT install a package that
+  declares only `github-actions-runner`, which includes every `sandbox-weights` package.
 - **`script`** — a path present in `manifest.files`, so the signed manifest covers its bytes.
 - **`requires.githubToken`** — the permissions the **one-time setup token** needs. The host checks the
   token has them before offering the install, shows them in the consent prompt, and uses that token
