@@ -1,0 +1,12 @@
+{
+  "/api/webhooks/stripe/route": "/api/webhooks/stripe",
+  "/api/checkout/route": "/api/checkout",
+  "/api/packages/route": "/api/packages",
+  "/api/preview/[id]/route": "/api/preview/[id]",
+  "/api/checkout/complete/route": "/api/checkout/complete",
+  "/api/publish/route": "/api/publish",
+  "/_not-found/page": "/_not-found",
+  "/api/download/[id]/route": "/api/download/[id]",
+  "/page": "/",
+  "/app/[appId]/page": "/app/[appId]"
+}

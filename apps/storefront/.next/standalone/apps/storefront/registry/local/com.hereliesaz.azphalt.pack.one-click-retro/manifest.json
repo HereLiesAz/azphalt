@@ -1,0 +1,33 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.one-click-retro",
+  "name": "One-Click: Retro",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Instant analogue. Film decay, a print halftone screen and grain — drop it on and it looks aged.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.film-damage",
+        "required": true,
+        "note": "flicker, dust, sepia"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.halftone",
+        "required": true,
+        "note": "print dot screen"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.noise",
+        "required": true,
+        "note": "grain"
+      }
+    ]
+  }
+}

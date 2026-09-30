@@ -1,0 +1,73 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.subject-and-depth",
+  "name": "Subject & Depth",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Find the subject and place graphics around it — matting, depth estimation, face and object tracking, and layers that sit behind people.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.selfie-segmentation",
+        "required": true,
+        "note": "foreground matte"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.midas",
+        "required": true,
+        "note": "monocular depth"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.subject-track",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.ultraface",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.zdepth",
+        "required": false,
+        "note": "tuck a layer behind the subject"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.depth-hide",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.parallax-depth",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.subject-orbit",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.face-anchor",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.face-scale",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.gaze-dodge",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.planar-tracking",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.object-tracking",
+        "required": false
+      }
+    ]
+  }
+}

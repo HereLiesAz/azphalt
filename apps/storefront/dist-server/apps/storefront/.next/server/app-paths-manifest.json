@@ -1,0 +1,12 @@
+{
+  "/api/webhooks/stripe/route": "app/api/webhooks/stripe/route.js",
+  "/api/checkout/route": "app/api/checkout/route.js",
+  "/api/packages/route": "app/api/packages/route.js",
+  "/api/preview/[id]/route": "app/api/preview/[id]/route.js",
+  "/api/checkout/complete/route": "app/api/checkout/complete/route.js",
+  "/api/publish/route": "app/api/publish/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/download/[id]/route": "app/api/download/[id]/route.js",
+  "/page": "app/page.js",
+  "/app/[appId]/page": "app/app/[appId]/page.js"
+}

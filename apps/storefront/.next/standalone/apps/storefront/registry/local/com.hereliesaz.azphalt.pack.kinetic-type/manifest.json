@@ -1,0 +1,80 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.kinetic-type",
+  "name": "Kinetic Type",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Text that moves. Per-word and per-character staggers, entrances and emphasis for titles, captions and lower thirds.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.word-stagger",
+        "required": true,
+        "note": "the workhorse"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.character-stagger",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.pop-in",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.fade-up",
+        "required": true
+      },
+      {
+        "id": "com.hereliesaz.azphalt.3d-word-flip",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.scale-stagger",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.auto-stagger",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.emphasis-stroke",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.hormozi-pop",
+        "required": false,
+        "note": "high-energy social caption"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.hop-in",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.joy-pop",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.slide-right",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.rsvp-delivery",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.typewriter",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.typewriter-cursor",
+        "required": false
+      }
+    ]
+  }
+}
