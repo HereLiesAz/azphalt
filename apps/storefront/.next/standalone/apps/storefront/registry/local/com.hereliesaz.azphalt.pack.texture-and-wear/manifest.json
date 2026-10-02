@@ -1,0 +1,41 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.texture-and-wear",
+  "name": "Texture & Wear",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Age the artwork so it belongs to the surface — film decay, grain, glitch corruption and particulate.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.film-damage",
+        "required": true,
+        "note": "dust, flicker, sepia"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.particles",
+        "required": true,
+        "note": "airborne particulate"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.cyber-glitch",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.action-glitch",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.neon-pulse",
+        "required": false,
+        "note": "electric edge glow"
+      }
+    ]
+  }
+}

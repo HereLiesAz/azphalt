@@ -1,0 +1,14 @@
+{
+  "..\\..\\node_modules\\.pnpm\\next@15.5.21_@types+node@22.20.1_react-dom@18.3.1_react@18.3.1__react@18.3.1\\node_modules\\next\\dist\\client\\index.js -> ../pages/_app": {
+    "id": 151,
+    "files": [
+      "static/chunks/532.89d1fbec3bf5c291.js"
+    ]
+  },
+  "..\\..\\node_modules\\.pnpm\\next@15.5.21_@types+node@22.20.1_react-dom@18.3.1_react@18.3.1__react@18.3.1\\node_modules\\next\\dist\\client\\index.js -> ../pages/_error": {
+    "id": 3986,
+    "files": [
+      "static/chunks/986.99c9b1d49e58fdb8.js"
+    ]
+  }
+}

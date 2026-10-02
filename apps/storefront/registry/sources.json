@@ -1071,9 +1071,9 @@
     {
       "id": "com.hereliesaz.azphalt.whisper",
       "repo": "HereLiesAz/azphalt-whisper",
-      "ref": "c9c27d87a4e602c25cdba32893345c868d22eab8",
-      "version": "1.0.0",
-      "integrity": "sha256-Gqo1yJnoilf/QmeeEtl8Xgro19rMsSfrwGvzg3qNamE="
+      "ref": "1783e70245bc629198ffece6ab0171253f4ef32b",
+      "version": "1.1.0",
+      "integrity": "sha256-5MqNVmgafduSR+0Zcqma/L5yYnE8+WCqSUousSuAaLM="
     },
     {
       "id": "com.hereliesaz.azphalt.whisper-blur",

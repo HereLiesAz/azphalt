@@ -1,0 +1,31 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.mcpserved",
+  "name": "mcpserved",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Runs an MCP server on the device, so a host's MCP client can reach local tools without a desktop or a network round-trip.",
+  "author": "HereLiesAz",
+  "homepage": "https://github.com/HereLiesAz/mcpserved/releases/latest",
+  "mcp": {
+    "servers": [
+      {
+        "id": "mcpserved",
+        "local": {
+          "platforms": {
+            "android": {
+              "component": "com.hereliesaz.mcpserved/.McpService"
+            }
+          }
+        }
+      }
+    ],
+    "offers": {
+      "tools": true,
+      "resources": true,
+      "prompts": false
+    }
+  }
+}

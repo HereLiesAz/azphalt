@@ -1,0 +1,50 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.layout-and-emphasis",
+  "name": "Layout & Emphasis",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Arrange the frame and point at things — picture-in-picture, raised type, subject isolation and tracked callouts.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.guillotine"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.pip",
+        "required": true,
+        "note": "premium picture-in-picture with shadow"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.3d-protrusion",
+        "required": true,
+        "note": "lift type off the plane"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.isolate-glow",
+        "required": true,
+        "note": "pop the subject out of the background"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.bevel-emboss",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.active-camouflage",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.focus-match",
+        "required": false
+      },
+      {
+        "id": "com.hereliesaz.azphalt.motion-tracking",
+        "required": false,
+        "note": "pin a callout to a moving object"
+      }
+    ]
+  }
+}

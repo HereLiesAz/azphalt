@@ -1,0 +1,33 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.restore-and-upscale",
+  "name": "Restore & Upscale",
+  "version": "1.0.0",
+  "kind": "pack",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Rescue a bad source: 4x super-resolution, low-light and denoise restoration, and neural style transfer for a repaint.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "pack": {
+    "entries": [
+      {
+        "id": "com.hereliesaz.azphalt.real-esrgan",
+        "required": true,
+        "note": "4x super-resolution"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.mirnet",
+        "required": true,
+        "note": "low-light + denoise"
+      },
+      {
+        "id": "com.hereliesaz.azphalt.fast-neural-style",
+        "required": false,
+        "note": "repaint in a learned style"
+      }
+    ]
+  }
+}
