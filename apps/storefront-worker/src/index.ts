@@ -28,6 +28,12 @@ interface Env {
   STRIPE_WEBHOOK_SECRET?: string;
   ENTITLEMENT_PRIVATE_KEY_PKCS8_B64?: string;
   ENTITLEMENT_PUBLIC_KEY_SPKI_B64?: string;
+  /**
+   * Public half (base64 SPKI) of the ed25519 key `build-catalog` signs every catalog package with
+   * (`AZPHALT_PACKAGE_SIGNING_KEY`). Published in `signingKeys` so a host trusts those packages
+   * directly (spec/package-format.md § Trust model) instead of flagging an unknown signer.
+   */
+  PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64?: string;
   BUYER_SESSION_SECRET?: string;
   ADMIN_TOKEN?: string;
   /**
@@ -2470,11 +2476,13 @@ export default {
           version: "0.1",
           repository: env.PUBLIC_ORIGIN,
           baseUrl: env.PUBLIC_ORIGIN,
-          signingKeys: [{
-            keyId: "store-v1",
-            algorithm: "ed25519",
-            publicKey,
-          }],
+          // The entitlement key stays first: buy-once tokens are verified against it.
+          signingKeys: [
+            { keyId: "store-v1", algorithm: "ed25519", publicKey },
+            ...(env.PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64
+              ? [{ keyId: "packages-v1", algorithm: "ed25519", publicKey: env.PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64 }]
+              : []),
+          ],
         });
       }
 

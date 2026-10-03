@@ -277,6 +277,18 @@ describe("Play purchase exchange", () => {
     expect(token.publicKey).toBe(wellKnown.signingKeys[0].publicKey);
   });
 
+  it("publishes the catalog's package-signing key after the entitlement key", async () => {
+    const packages = "MCowBQYDK2VwAyEAWNptGhJCdyjabJ/pEnw+nh41woxC01z6mS8XnL8Cv+M=";
+    const keys = async (env: ReturnType<typeof makeEnv>) =>
+      ((await (await worker.fetch(req("GET", "/.well-known/azphalt.json"), env)).json()) as {
+        signingKeys: { keyId: string; publicKey: string }[];
+      }).signingKeys;
+    expect((await keys(makeEnv())).map((k) => k.keyId)).toEqual(["store-v1"]);
+    const both = await keys(makeEnv({ PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64: packages }));
+    expect(both.map((k) => k.keyId)).toEqual(["store-v1", "packages-v1"]);
+    expect(both[1].publicKey).toBe(packages);
+  });
+
   it("maps refusals to 402, Google failures to 502, and bad requests to 400/404/501", async () => {
     const account = await serviceAccount("refusals@example.iam.gserviceaccount.com");
     const env = makeEnv({ PLAY_PACKAGE_NAME: "com.hereliesaz.azphalt.store", PLAY_SERVICE_ACCOUNT_JSON: account.json });
