@@ -335,8 +335,10 @@ Signing, publisher pinning, registry counter-signing, and revocations apply unch
 
 - `kind: "llm"` flows through the browse/search summary and package detail like any other kind.
 - A registry carrying these packages advertises an `"llm"` profile, so only hosts that implement a
-  sandbox and a protocol browse for them.
-- The store card shows the tier, `dataHandling`, and the setup token permissions before install.
+  protocol browse for them: `openai-chat` alone, or the sandbox and `github-actions-runner`.
+- The store card shows the tier and `dataHandling` before install, and the setup token permissions
+  when the host will run setup. A host that uses `openai-chat` alone shows packages it can install,
+  so not one that declares only `github-actions-runner`.
 
 ## Conformance
 
