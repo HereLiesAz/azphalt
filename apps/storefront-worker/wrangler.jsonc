@@ -56,5 +56,30 @@
     // listed in /.well-known/azphalt.json so hosts trust those packages. Public, so not a secret;
     // rotate it together with that key.
     "PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64": "MCowBQYDK2VwAyEAWNptGhJCdyjabJ/pEnw+nh41woxC01z6mS8XnL8Cv+M="
+  },
+  // Workers Builds runs `wrangler preview` for every non-production branch, and a Preview takes its
+  // bindings and vars from this block only (nothing top-level is inherited but assets, migrations
+  // and compatibility settings). Without it every pull request's build failed. A Preview gets its
+  // own STATE namespace and its own rate-limit counters. It gets no GITHUB_TOKENS binding, so a
+  // branch Preview can never open publish pull requests (POST /packages answers 501 there).
+  "previews": {
+    "durable_objects": {
+      "bindings": [
+        { "name": "STATE", "class_name": "AzphaltState" }
+      ]
+    },
+    "ratelimits": [
+      { "name": "WRITE_LIMITER", "namespace_id": "4273", "simple": { "limit": 10, "period": 60 } },
+      { "name": "PUBLISH_LIMITER", "namespace_id": "4274", "simple": { "limit": 3, "period": 60 } }
+    ],
+    "vars": {
+      "PUBLIC_ORIGIN": "https://azphalt.store",
+      "GITHUB_RAW_BASE": "https://raw.githubusercontent.com/HereLiesAz/azphalt/main/apps/storefront/registry",
+      "PLATFORM_FEE_BPS": "1500",
+      "PROCESSOR_PCT_BPS": "290",
+      "PROCESSOR_FLAT_CENTS": "30",
+      "PLAY_PACKAGE_NAME": "com.hereliesaz.azphalt.store",
+      "PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64": "MCowBQYDK2VwAyEAWNptGhJCdyjabJ/pEnw+nh41woxC01z6mS8XnL8Cv+M="
+    }
   }
 }
