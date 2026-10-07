@@ -1,65 +1,20 @@
+# centralized-by: HereLiesAz/workflows
+# central-source-path: .github/workflows/ci.yml
+# central-source-sha256: 38e5d7c44c90f84a2063bbb847769c5c260cee9f190c51b94c6047845f347854
+# This file intentionally contains no repository secrets.
+# central-run-tracker: HereLiesAz/workflows
 name: CI
-
-# PR and push validation. Bound by hash to HereLiesAz/workflows' central `ci-validation.yml`, which
-# runs the equivalent command from its purpose profile (scripts/semantic_catalog.py) and replaces this
-# file with a tracker. Edit this file, then rebind the new hash there — the jobs below are the
-# reference for what the profile runs.
 on: [push, pull_request]
-permissions: read-all
+permissions: {}
 jobs:
-  build-test:
+  central:
+    name: Hand-off
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm test
-
-  # Keep the language-neutral conformance fixtures honest: regenerate them from @azphalt/conformance
-  # and fail if the committed bytes or expectations drift. They are emitted artifacts, never
-  # hand-edited — see conformance/fixtures/README.md.
-  conformance-fixtures:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm fixtures
-      - name: Fail if the fixtures are out of date
-        run: |
-          git add -N conformance/fixtures
-          if ! git diff --exit-code -- conformance/fixtures; then
-            echo "::error::conformance/fixtures is out of date — run 'pnpm fixtures' and commit the result." >&2
-            exit 1
-          fi
-
-  # The Compose storefront: Wasm, the Android store app, the shared model's tests and the Kotlin .azp
-  # verifier's tests (which pin it to the TypeScript reference through packages/azp/test/vectors/).
-  storefront-compose:
-    runs-on: ubuntu-latest
-    # Read the version, never move it: the bump belongs to app-release on main.
-    env:
-      AZPHALT_VERSION_FROZEN: '1'
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
-        with:
-          distribution: corretto
-          java-version: '17'
-      - name: Write google-services.json when Firebase is configured
+      - name: Point to central result
         env:
-          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
-        run: node .github/scripts/write-google-services.mjs
-      - working-directory: apps/storefront-cmp
-        run: |
-          ./gradlew wasmJsBrowserDistribution --no-daemon --stacktrace
-          ./gradlew assembleDebug --no-daemon --stacktrace
-          ./gradlew desktopTest --no-daemon --stacktrace
-          ./gradlew :azp:test --no-daemon --stacktrace
+          STATUS_CONTEXT: .github/workflows/ci.yml
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: "set -euo pipefail\n# The build runs in HereLiesAz/workflows. Its result is reported on this commit as the\n# commit status named below: pending when the central run starts, then success or\n# failure. This job only points there and ends, so it never holds a runner while the\n# central run waits for one. (Trackers that followed the central run job-by-job held a\n# runner each for the whole build; under the account's concurrent-job limit they\n# starved the very runs they were waiting on: 2026-10-01, illumera waited 3h to start.)\n# No status at all means the gateway intentionally skipped this event.\n{\n  echo \"### Runs in HereLiesAz/workflows\"\n  echo\n  echo \"Result: commit status \\`$STATUS_CONTEXT\\` on \\`$TARGET_SHA\\`.\"\n  echo \"Central runs: $GITHUB_SERVER_URL/HereLiesAz/workflows/actions\"\n} >> \"$GITHUB_STEP_SUMMARY\"\necho \"Result is reported as commit status '$STATUS_CONTEXT' on $TARGET_SHA.\"\n"
