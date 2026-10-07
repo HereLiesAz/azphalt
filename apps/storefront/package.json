@@ -17,13 +17,13 @@
     "@azphalt/azdk": "workspace:*",
     "@azphalt/azp": "workspace:*",
     "@azphalt/runtime-reference": "workspace:*",
-    "tar-stream": "^3.2.1"
+    "tar-stream": "^3.2.2"
   },
   "devDependencies": {
-    "@types/node": "^26.6.3",
-    "@types/tar-stream": "^3.1.4",
+    "@types/node": "^26.6.4",
+    "@types/tar-stream": "^3.1.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.3"
   }
 }
