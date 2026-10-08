@@ -1103,6 +1103,17 @@
       "bytes": 12188
     },
     {
+      "id": "com.hereliesaz.azphalt.llm.moyai",
+      "version": "1.0.0",
+      "name": "Moyai (self-hosted)",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-UlSF6oYYZPUhHcqvcJAgOjZJ56S5XCey9qwfMlgMByI=",
+      "file": "com.hereliesaz.azphalt.llm.moyai-1.0.0.azp",
+      "bytes": 5585
+    },
+    {
       "id": "com.hereliesaz.azphalt.llm.openrouter-free",
       "version": "1.0.0",
       "name": "OpenRouter Free Router",
