@@ -42,8 +42,8 @@ they do not claim to stop a model from being persuaded by text it was asked to p
 
 An `llm` package declares one **tier**, which fixes where prompts go:
 
-- **`endpoint`** — a third-party service runs the model. Prompts leave the user's control and reach
-  the operator; `dataHandling` (below) MUST say what the operator does with them.
+- **`endpoint`** — a third-party or self-hosted service runs the model or agent session. Prompts leave
+  the device and reach that deployment; `dataHandling` (below) MUST say what the operator does with them.
 - **`sandbox-weights`** — the setup script installs checksum-pinned open weights in the private
   sandbox, and the model runs there. No third-party model operator sees a prompt; only the sandbox
   provider's infrastructure is involved. Slower and smaller (CPU runners), but it restores the
@@ -156,9 +156,11 @@ The weights are cached between runs (§ Sandbox); the Actions cache needs no ent
   - `modelLicense` carries the weights' own terms, in the shape of
     `extension-manifest.md § Model license`; a host MUST surface it before install.
 - **`endpoint`** — how the host talks to the model once set up (§ Protocols). Required.
-  - `protocols` — a non-empty subset of `openai-chat`, `github-actions-runner`. `sandbox-weights`
+  - `protocols` — a non-empty subset of `openai-chat`, `moyai-session`, `github-actions-runner`. `sandbox-weights`
     permits only `github-actions-runner`.
-  - `baseUrl` — required when `protocols` includes `openai-chat`; MUST be `https://`.
+  - `baseUrl` — required for direct endpoint protocols (`openai-chat`, `moyai-session`). It MUST be an
+    `https://` URL or a full `${input:<id>}` reference to a declared non-secret input that the host resolves
+    at install/link time. This lets a package describe a self-hosted endpoint without embedding an address.
   - `defaultModel` — the model id to request; the host MAY let the user override it.
   - `auth` — `none` | `optional-bearer` | `required-bearer`. A bearer mode names its key via
     `authInput` (an `inputs[].id`).
@@ -249,15 +251,37 @@ model runs.
 
 ## Protocols
 
-A host talks to a set-up model through one of the declared protocols. When both are declared, the
-host (or the user) chooses; `openai-chat` is faster, `github-actions-runner` keeps calls inside the
-sandbox.
+A host talks to a set-up model through one of the declared protocols. When more than one is declared,
+the host (or the user) chooses. `openai-chat` is the common one-shot text path, `moyai-session` is a
+remote durable agent-session path, and `github-actions-runner` keeps calls inside the sandbox.
 
 ### `openai-chat`
 
 The host sends `POST {baseUrl}/chat/completions` directly, with roles as separate `messages` entries
 and the bearer key from `authInput` when present. Untrusted material goes only in `user`-role content,
 under § Rolling delimiters.
+
+### `moyai-session`
+
+A host using this protocol connects to a user-supplied or package-supplied Moyai deployment and maps
+Moyai's durable run lifecycle onto its own provider/session contract. The package remains an LLM
+package: workflow semantics, approvals, retries, role assignment, and artifact acceptance stay owned
+by the host.
+
+The direct endpoint contract is:
+
+1. **Start:** `POST {baseUrl}/api/runs` with a task prompt and optional GitHub repository URL,
+   harness, or model selection. The returned Moyai run id is the provider run id.
+2. **Observe:** `GET {baseUrl}/api/runs/{runId}/events` for resumable SSE progress and
+   `GET {baseUrl}/api/runs/{runId}` for authoritative snapshots/messages/artifacts.
+3. **Message:** `POST {baseUrl}/api/runs/{runId}/messages` for follow-up/steering.
+4. **Cancel:** `POST {baseUrl}/api/runs/{runId}/cancel`.
+5. **Reconnect:** re-use the persisted run id; a host MUST NOT create a second Moyai run merely
+   because the client process restarted.
+
+A `moyai-session` package MAY be keyless (`auth:"none"`). A self-hosted deployment URL can be a
+declared `${input:...}` value. Authentication or organization policy provided by the Moyai
+deployment itself remains outside the package unless a future protocol revision standardizes it.
 
 ### `github-actions-runner`
 
@@ -322,8 +346,9 @@ and signature checks:
   `byteSize`.
 - `llm.setup` is present; `setup.sandbox` is a known value; `setup.script` names a path in
   `manifest.files`; every `setup.fetches[]` entry has `url` and a `sha256-` `checksum`.
-- `llm.endpoint.protocols` is non-empty and allowed for the tier; `openai-chat` requires an `https://`
-  `baseUrl`; a bearer `auth` names an `authInput` that is a declared input.
+- `llm.endpoint.protocols` is non-empty and allowed for the tier; direct endpoint protocols require an
+  `https://` `baseUrl` or a full declared `${input:...}` URL reference; a bearer `auth` names an `authInput`
+  that is a declared input.
 - `llm.run.permissions` stays within the allowed set (§ Sandbox).
 - `llm.dataHandling` is present for the `endpoint` tier.
 - Every `${input:…}` reference and every `setup.secrets[].input` resolves to a declared input; no
