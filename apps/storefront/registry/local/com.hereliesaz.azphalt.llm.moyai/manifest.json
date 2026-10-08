@@ -1,0 +1,41 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.llm.moyai",
+  "name": "Moyai (self-hosted)",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "Connect to a self-hosted Moyai agent workspace. No provider API key is required; enter only the HTTPS URL of your Moyai deployment.",
+  "author": "HereLiesAz",
+  "homepage": "https://github.com/BerriAI/moyai",
+  "llm": {
+    "tier": "endpoint",
+    "inputs": [
+      {
+        "id": "endpointUrl",
+        "type": "promptString",
+        "password": false,
+        "description": "HTTPS URL of your self-hosted Moyai deployment"
+      }
+    ],
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "fetches": []
+    },
+    "endpoint": {
+      "protocols": [
+        "moyai-session"
+      ],
+      "baseUrl": "${input:endpointUrl}",
+      "auth": "none"
+    },
+    "dataHandling": {
+      "prompts": "unknown",
+      "modelPinned": false,
+      "operator": "Configured self-hosted Moyai deployment"
+    },
+    "role": "text-generation"
+  }
+}
