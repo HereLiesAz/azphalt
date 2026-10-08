@@ -17,6 +17,13 @@
         "type": "promptString",
         "password": false,
         "description": "HTTPS URL of your self-hosted Moyai deployment"
+      },
+      {
+        "id": "workspacePassword",
+        "type": "promptString",
+        "password": true,
+        "optional": true,
+        "description": "Moyai workspace password (optional; required when the deployment uses password login)"
       }
     ],
     "setup": {
