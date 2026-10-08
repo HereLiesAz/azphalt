@@ -42,7 +42,11 @@ const moyaiManifest: Omit<Manifest, "files"> = {
   id: "com.example.azphalt.llm.moyai",
   llm: {
     tier: "endpoint",
-    inputs: [{ id: "endpointUrl", type: "promptString", description: "HTTPS URL of the self-hosted Moyai instance" }],
+    inputs: [
+      { id: "endpointUrl", type: "promptString", description: "HTTPS URL of the self-hosted Moyai instance" },
+      { id: "workspacePassword", type: "promptString", password: true, optional: true,
+        description: "Moyai workspace password (optional)" },
+    ],
     setup: { sandbox: "github-actions", script: "setup/setup.sh", fetches: [] },
     endpoint: {
       protocols: ["moyai-session"],
