@@ -37,6 +37,27 @@ const endpointManifest: Omit<Manifest, "files"> = {
   },
 };
 
+const moyaiManifest: Omit<Manifest, "files"> = {
+  ...endpointManifest,
+  id: "com.example.azphalt.llm.moyai",
+  llm: {
+    tier: "endpoint",
+    inputs: [
+      { id: "endpointUrl", type: "promptString", description: "HTTPS URL of the self-hosted Moyai instance" },
+      { id: "workspacePassword", type: "promptString", password: true, optional: true,
+        description: "Moyai workspace password (optional)" },
+    ],
+    setup: { sandbox: "github-actions", script: "setup/setup.sh", fetches: [] },
+    endpoint: {
+      protocols: ["moyai-session"],
+      baseUrl: "${input:endpointUrl}",
+      auth: "none",
+    },
+    dataHandling: { prompts: "unknown", modelPinned: false, operator: "Configured self-hosted Moyai deployment" },
+    role: "text-generation",
+  },
+};
+
 const weightsManifest: Omit<Manifest, "files"> = {
   ...endpointManifest,
   id: "com.example.azphalt.llm.qwen",
@@ -66,8 +87,8 @@ const errorsOf = (mutate: (m: Manifest) => void, base = endpointManifest) => {
 };
 
 describe("validateLlmManifest", () => {
-  it("accepts both tiers", () => {
-    for (const base of [endpointManifest, weightsManifest]) {
+  it("accepts endpoint, sandbox-weights, and remote agent-session packages", () => {
+    for (const base of [endpointManifest, weightsManifest, moyaiManifest]) {
       const { manifest, azp } = build(base);
       expect(validateLlmManifest(manifest)).toEqual([]);
       expect(verifyAzp(azp)).toMatchObject({ ok: true });
@@ -105,6 +126,8 @@ describe("validateLlmManifest", () => {
     expect(errorsOf((m) => { m.llm!.endpoint.baseUrl = "http://api.example"; })).toMatch(/https/);
     expect(errorsOf((m) => { m.llm!.endpoint.protocols = ["openai-chat"]; }, weightsManifest)).toMatch(/permits only github-actions-runner/);
     expect(errorsOf((m) => { m.llm!.endpoint.authInput = "other"; })).toMatch(/not a declared input/);
+    expect(errorsOf((m) => { m.llm!.endpoint.baseUrl = "http://moyai.example"; }, moyaiManifest)).toMatch(/https/);
+    expect(errorsOf((m) => { m.llm!.endpoint.baseUrl = "${input:missing}"; }, moyaiManifest)).toMatch(/declared/);
   });
 
   it("caps run permissions", () => {

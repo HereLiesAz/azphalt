@@ -15,7 +15,7 @@ import type { Manifest } from "@azphalt/azdk";
 
 const TIERS = new Set(["endpoint", "sandbox-weights"]);
 const SANDBOXES = new Set(["github-actions"]);
-const PROTOCOLS = new Set(["openai-chat", "github-actions-runner"]);
+const PROTOCOLS = new Set(["openai-chat", "github-actions-runner", "moyai-session"]);
 const AUTH = new Set(["none", "optional-bearer", "required-bearer"]);
 const PROMPTS = new Set(["not-retained", "logged", "may-train", "unknown"]);
 /** Highest level each runner permission may take; anything unlisted is forbidden. */
@@ -32,6 +32,7 @@ const CREDENTIAL_KEY_RE = /(key|token|secret|password|passwd|api[-_]?key|authori
 const CREDENTIAL_NAME_KEYS = new Set(["authInput", "input"]);
 // Bounded quantifier; see mcp.ts (CodeQL js/polynomial-redos).
 const INPUT_REF_RE = /\$\{input:([^}]{1,128})\}/g;
+const FULL_INPUT_REF_RE = /^\$\{input:([^}]{1,128})\}$/;
 const FORBIDDEN_BLOCKS = ["app", "mcp", "pack", "skill", "script", "composable", "workflow", "role"] as const;
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -50,6 +51,13 @@ function httpsUrl(value: unknown): boolean {
   } catch {
     return false;
   }
+}
+
+function endpointUrl(value: unknown, declared: Set<string>): boolean {
+  if (httpsUrl(value)) return true;
+  if (typeof value !== "string") return false;
+  const ref = FULL_INPUT_REF_RE.exec(value);
+  return !!ref && declared.has(ref[1]);
 }
 
 export function validateLlmManifest(manifest: Manifest): string[] {
@@ -181,12 +189,13 @@ export function validateLlmManifest(manifest: Manifest): string[] {
           errors.push(`llm: sandbox-weights permits only github-actions-runner, not ${p}`);
         }
       }
-      if (protocols.includes("openai-chat") && !httpsUrl(endpoint.baseUrl)) {
-        errors.push("llm: openai-chat requires an https:// endpoint.baseUrl");
+      if ((protocols.includes("openai-chat") || protocols.includes("moyai-session")) &&
+          !endpointUrl(endpoint.baseUrl, declared)) {
+        errors.push("llm: direct endpoint protocols require an https:// endpoint.baseUrl or a declared ${input:…} URL");
       }
     }
-    if (endpoint.baseUrl !== undefined && !httpsUrl(endpoint.baseUrl)) {
-      errors.push("llm: endpoint.baseUrl must be https:// with no credentials");
+    if (endpoint.baseUrl !== undefined && !endpointUrl(endpoint.baseUrl, declared)) {
+      errors.push("llm: endpoint.baseUrl must be https:// with no credentials or a declared ${input:…} URL");
     }
     if (typeof endpoint.auth !== "string" || !AUTH.has(endpoint.auth)) {
       errors.push("llm: endpoint.auth must be none, optional-bearer, or required-bearer");
