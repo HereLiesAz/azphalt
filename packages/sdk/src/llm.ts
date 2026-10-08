@@ -12,7 +12,7 @@ import type { McpInput, ModelLicense, ModelRequirements, RemoteModelFileMember }
 export type LlmTier = "endpoint" | "sandbox-weights";
 
 /** How a host talks to a set-up model. `sandbox-weights` permits only `github-actions-runner`. */
-export type LlmProtocol = "openai-chat" | "github-actions-runner";
+export type LlmProtocol = "openai-chat" | "github-actions-runner" | "moyai-session";
 
 /** Bearer-key requirement of the endpoint. A bearer mode names its key via `authInput`. */
 export type LlmAuth = "none" | "optional-bearer" | "required-bearer";
@@ -72,7 +72,7 @@ export interface LlmRunnerRequirements extends Omit<ModelRequirements, "quantiza
 
 export interface LlmEndpoint {
   protocols: LlmProtocol[];
-  /** Required when `protocols` includes `openai-chat`; MUST be `https://`. */
+  /** Required for direct endpoint protocols. A full `${input:<id>}` may defer a self-hosted URL to install time. */
   baseUrl?: string;
   defaultModel?: string;
   auth: LlmAuth;
