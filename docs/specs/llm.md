@@ -279,9 +279,10 @@ The direct endpoint contract is:
 5. **Reconnect:** re-use the persisted run id; a host MUST NOT create a second Moyai run merely
    because the client process restarted.
 
-A `moyai-session` package MAY be keyless (`auth:"none"`). A self-hosted deployment URL can be a
-declared `${input:...}` value. Authentication or organization policy provided by the Moyai
-deployment itself remains outside the package unless a future protocol revision standardizes it.
+A `moyai-session` package MAY be keyless (`auth:"none"`) with respect to model/provider APIs. A
+self-hosted deployment URL can be a declared `${input:...}` value. A package MAY also declare an
+optional password input for the deployment's own workspace login; that credential is host-vaulted
+connection state, not a model API key, and MUST NOT be embedded in the package or endpoint URL.
 
 ### `github-actions-runner`
 
