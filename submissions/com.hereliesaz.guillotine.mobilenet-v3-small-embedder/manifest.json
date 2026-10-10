@@ -1,0 +1,34 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.guillotine.mobilenet-v3-small-embedder",
+  "name": "MobileNet-V3 Small Image Embedder",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "Turns an image into an embedding vector for \"is this the same thing?\" matching, e.g. tracking one specific object across a clip. MediaPipe ImageEmbedder model.",
+  "author": "HereLiesAz",
+  "homepage": "https://github.com/HereLiesAz/TheGuillotine",
+  "assets": [
+    {
+      "type": "tflite",
+      "role": "image-embedding",
+      "path": "",
+      "remoteUrl": "https://storage.googleapis.com/mediapipe-models/image_embedder/mobilenet_v3_small/float32/1/mobilenet_v3_small.tflite",
+      "checksum": "sha256-bbbb4c51a55a53905af1daec995ca1aae355046f8839bb8c9f5ce9271394bc40",
+      "byteSize": 4117670,
+      "modelLicense": {
+        "spdx": "Apache-2.0",
+        "commercialUse": true,
+        "attributionRequired": false,
+        "url": "https://www.apache.org/licenses/LICENSE-2.0",
+        "sourceUrl": "https://ai.google.dev/edge/mediapipe/solutions/vision/image_embedder"
+      },
+      "tags": [
+        "image-embedding",
+        "recognition",
+        "mediapipe"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.guillotine.efficientdet-lite2",
+  "name": "EfficientDet-Lite2 Object Detector",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "Detects the 80 COCO object classes with bounding boxes, including small or off-centre objects (a phone in a hand, a car at the frame edge). MediaPipe ObjectDetector model.",
+  "author": "HereLiesAz",
+  "homepage": "https://github.com/HereLiesAz/TheGuillotine",
+  "assets": [
+    {
+      "type": "tflite",
+      "role": "object-detection",
+      "path": "",
+      "remoteUrl": "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite2/float32/1/efficientdet_lite2.tflite",
+      "checksum": "sha256-ad2abbf2b4e10585e15176fd7b5ef03c28dda959ae26fc142549fdd1814db91d",
+      "byteSize": 23096891,
+      "modelLicense": {
+        "spdx": "Apache-2.0",
+        "commercialUse": true,
+        "attributionRequired": false,
+        "url": "https://www.apache.org/licenses/LICENSE-2.0",
+        "sourceUrl": "https://ai.google.dev/edge/mediapipe/solutions/vision/object_detector"
+      },
+      "tags": [
+        "object-detection",
+        "coco",
+        "mediapipe"
+      ]
+    }
+  ]
+}
