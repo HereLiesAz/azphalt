@@ -2236,6 +2236,39 @@
       "bytes": 57919
     },
     {
+      "id": "com.hereliesaz.guillotine.efficientdet-lite2",
+      "version": "1.0.0",
+      "name": "EfficientDet-Lite2 Object Detector",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-KT7xfR/+aZVJSlJdLOoqWBMvGkImsx22MkVvpYSBjhk=",
+      "file": "com.hereliesaz.guillotine.efficientdet-lite2-1.0.0.azp",
+      "bytes": 5236
+    },
+    {
+      "id": "com.hereliesaz.guillotine.efficientnet-lite0",
+      "version": "1.0.0",
+      "name": "EfficientNet-Lite0 Scene Classifier",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-4TBgSGv9NV6b/MWZkj1tSodv3rPMpaRFx2NfWnZn+fg=",
+      "file": "com.hereliesaz.guillotine.efficientnet-lite0-1.0.0.azp",
+      "bytes": 5243
+    },
+    {
+      "id": "com.hereliesaz.guillotine.mobilenet-v3-small-embedder",
+      "version": "1.0.0",
+      "name": "MobileNet-V3 Small Image Embedder",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-4+Dgx9juufsT0cokI2MPrNaxU0iM2csGy6mqCLZrEz0=",
+      "file": "com.hereliesaz.guillotine.mobilenet-v3-small-embedder-1.0.0.azp",
+      "bytes": 5241
+    },
+    {
       "id": "com.hereliesaz.guillotine.teal-orange",
       "version": "1.0.0",
       "name": "Teal & Orange",
