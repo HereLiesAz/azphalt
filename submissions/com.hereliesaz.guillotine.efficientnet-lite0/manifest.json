@@ -1,0 +1,35 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.guillotine.efficientnet-lite0",
+  "name": "EfficientNet-Lite0 Scene Classifier",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "Tags an image with ImageNet's 1,000 labels (beach, stage, kitchen, ...) for scene-based search and keep/remove decisions. MediaPipe ImageClassifier model.",
+  "author": "HereLiesAz",
+  "homepage": "https://github.com/HereLiesAz/TheGuillotine",
+  "assets": [
+    {
+      "type": "tflite",
+      "role": "image-labeling",
+      "path": "",
+      "remoteUrl": "https://storage.googleapis.com/mediapipe-models/image_classifier/efficientnet_lite0/float32/1/efficientnet_lite0.tflite",
+      "checksum": "sha256-6c7ab0a6e5dcbf38a8c33b960996a55a3b4300b36a018c4545801de3a3c8bde0",
+      "byteSize": 18582189,
+      "modelLicense": {
+        "spdx": "Apache-2.0",
+        "commercialUse": true,
+        "attributionRequired": false,
+        "url": "https://www.apache.org/licenses/LICENSE-2.0",
+        "sourceUrl": "https://ai.google.dev/edge/mediapipe/solutions/vision/image_classifier"
+      },
+      "tags": [
+        "image-labeling",
+        "classification",
+        "imagenet",
+        "mediapipe"
+      ]
+    }
+  ]
+}
