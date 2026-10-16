@@ -185,3 +185,13 @@ describe("free download vs the catalog", () => {
     }
   });
 });
+
+describe("publish manifest integrity", () => {
+  it("refuses a manifest with duplicate keys (signature is over raw bytes)", async () => {
+    const dup = '{"id":"com.example.dup","version":"1.0.0","files":{},"files":{"LICENSE":"sha256-00"}}';
+    const azp = zipSync({ "manifest.json": strToU8(dup), LICENSE: strToU8("MIT") });
+    const r = await inspectAzp(azp);
+    expect("status" in r && r.status).toBe(400);
+    expect("message" in r && r.message).toMatch(/duplicate manifest key/);
+  });
+});

@@ -142,21 +142,27 @@ export function createHost(manifest: Manifest, world: World): RuntimeHost {
   }
 
   if (granted.has("params")) {
+    // Own-property reads only: `"constructor"` / `"__proto__"` are not params (they used to resolve to
+    // Object.prototype members), and a missing string param is "" — the same answer the QuickJS runtime
+    // gives — rather than the literal text "undefined".
+    const param = (key: string): unknown => (Object.hasOwn(world.params, key) ? world.params[key] : undefined);
     host.params = {
-      value: <T = unknown>(key: string) => world.params[key] as T,
-      number: (key) => Number(world.params[key]),
-      bool: (key) => Boolean(world.params[key]),
-      string: (key) => String(world.params[key]),
-      color: (key) => toRgba(world.params[key]),
+      value: <T = unknown>(key: string) => param(key) as T,
+      number: (key) => Number(param(key)),
+      bool: (key) => Boolean(param(key)),
+      string: (key) => String(param(key) ?? ""),
+      color: (key) => toRgba(param(key)),
     };
   }
 
   if (granted.has("assets")) {
     host.assets = {
       read: (path) => {
-        const b = world.assets[path];
+        const b = Object.hasOwn(world.assets, path) ? world.assets[path] : undefined;
         if (!b) throw new Error(`asset not found in package: ${path}`);
-        return b;
+        // A copy, like the QuickJS runtime: handing out the live payload let one run's writes corrupt
+        // the bytes every later run of the same package would read.
+        return b.slice();
       },
     };
   }

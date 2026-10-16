@@ -99,6 +99,87 @@ function fromBase64(value: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+/**
+ * Parse JSON, refusing duplicate object keys. A copy of `@azphalt/azp`'s `parseJsonNoDuplicateKeys`
+ * (kept inline because that package imports `node:crypto`, which a Worker cannot load): the signature
+ * is over the raw manifest bytes, so a manifest with two `"files"` objects verifies under `JSON.parse`
+ * (last wins) yet reads differently to a verifier that keeps the first.
+ */
+function parseJsonNoDuplicateKeys<T = unknown>(text: string): T {
+  // Frames: one per open `{`/`[`. For objects we collect keys and remember whether the next string
+  // is a key (true just after `{` or `,` inside an object) or a value.
+  interface Frame {
+    object: boolean;
+    keys?: Set<string>;
+    expectKey: boolean;
+  }
+  const stack: Frame[] = [];
+  let expectingKey = false; // top-level is a value position
+
+  let i = 0;
+  const n = text.length;
+  while (i < n) {
+    const c = text[i];
+    if (c === '"') {
+      // Read a full JSON string (with escapes) and advance i past the closing quote.
+      const start = i;
+      i++;
+      let raw = "";
+      while (i < n) {
+        const ch = text[i];
+        if (ch === "\\") {
+          raw += ch + (text[i + 1] ?? "");
+          i += 2;
+          continue;
+        }
+        if (ch === '"') break;
+        raw += ch;
+        i++;
+      }
+      i++; // past closing quote
+      const top = stack[stack.length - 1];
+      if (top && top.object && expectingKey) {
+        // This string is an object key. Decode just enough to compare (JSON.parse the token).
+        const key = JSON.parse(text.slice(start, i)) as string;
+        if (top.keys!.has(key)) throw new Error(`duplicate manifest key: ${JSON.stringify(key)}`);
+        top.keys!.add(key);
+        expectingKey = false; // now expect `:` then a value
+      }
+      continue;
+    }
+    if (c === "{") {
+      stack.push({ object: true, keys: new Set(), expectKey: true });
+      expectingKey = true;
+      i++;
+      continue;
+    }
+    if (c === "[") {
+      stack.push({ object: false, expectKey: false });
+      expectingKey = false;
+      i++;
+      continue;
+    }
+    if (c === "}" || c === "]") {
+      stack.pop();
+      expectingKey = false;
+      i++;
+      continue;
+    }
+    if (c === ",") {
+      const top = stack[stack.length - 1];
+      expectingKey = !!(top && top.object);
+      i++;
+      continue;
+    }
+    // `:` and whitespace and primitive characters — a key is only ever a string, so after `:` the
+    // next string is a value; expectingKey stays false until the next `,`/`{`.
+    i++;
+  }
+
+  return JSON.parse(text) as T;
+}
+
+
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes as Uint8Array<ArrayBuffer>));
   return Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -137,7 +218,7 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
   if (!manifestRaw) return bad("manifest.json is missing");
   let manifest: Inspected["manifest"];
   try {
-    manifest = JSON.parse(strFromU8(manifestRaw));
+    manifest = parseJsonNoDuplicateKeys(strFromU8(manifestRaw)) as Inspected["manifest"];
   } catch (error) {
     return bad("manifest.json is not valid JSON: " + (error instanceof Error ? error.message : String(error)));
   }

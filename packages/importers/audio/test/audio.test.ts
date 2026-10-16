@@ -96,3 +96,12 @@ describe("importer-audio", () => {
     ).toThrow(/unrecognized audio format/);
   });
 });
+
+describe("importer-audio MP3 sniffing", () => {
+  const opts = { id: "t.a", version: "1.0.0", author: "T" };
+  it("accepts a real MPEG-1 Layer III frame and rejects ADTS AAC that shares the sync bits", () => {
+    expect(() => importAudio(new Uint8Array([0xff, 0xfb, 0x90, 0x00]), opts)).not.toThrow(); // MPEG-1 L3
+    expect(() => importAudio(new Uint8Array([0xff, 0xf1, 0x50, 0x80]), opts)).toThrow(/unrecognized/); // ADTS AAC
+    expect(() => importAudio(new Uint8Array([0xff, 0xe9, 0x00, 0x00]), opts)).toThrow(/unrecognized/); // reserved version
+  });
+});

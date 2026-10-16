@@ -31,6 +31,8 @@ export function parseGltf(bytes: Uint8Array): GltfInfo {
       }
       const version = view.getUint32(4, true);
       const declaredLength = view.getUint32(8, true);
+      if (version !== 2) throw new Error(`glTF: unsupported GLB version ${version} (only 2)`);
+      if (declaredLength < 12) throw new Error(`glTF: GLB declares an impossible length ${declaredLength}`);
       if (declaredLength > bytes.length) {
         throw new Error(
           `glTF: GLB declares ${declaredLength} bytes but only ${bytes.length} present`,
