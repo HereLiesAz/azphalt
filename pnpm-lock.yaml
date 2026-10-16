@@ -253,6 +253,9 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1(supports-color@10.2.2)
+      express-rate-limit:
+        specifier: ^8.7.1
+        version: 8.7.1(express@5.2.1(supports-color@10.2.2))(supports-color@10.2.2)
 
   apps/repository-server:
     dependencies:
@@ -2731,6 +2734,12 @@ packages:
     peerDependencies:
       express: '>= 4.11'
 
+  express-rate-limit@8.7.1:
+    resolution: {integrity: sha512-2FXbqkygil3mZiXzEtM0IjE/UBmBNot0J1GEVrJT4JbrvwOSoEtqtO+wHbiMQELWe1eNvHoYRg2dkjOid+6JkA==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      express: '>= 4.11'
+
   express@5.2.1:
     resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}
     engines: {node: '>= 18'}
@@ -5085,6 +5094,14 @@ snapshots:
   expect-type@1.4.0: {}
 
   express-rate-limit@8.7.0(express@5.2.1(supports-color@10.2.2))(supports-color@10.2.2):
+    dependencies:
+      debug: 4.4.3(supports-color@10.2.2)
+      express: 5.2.1(supports-color@10.2.2)
+      ip-address: 10.7.2
+    transitivePeerDependencies:
+      - supports-color
+
+  express-rate-limit@8.7.1(express@5.2.1(supports-color@10.2.2))(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       express: 5.2.1(supports-color@10.2.2)

@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import express from "express";
 import cors from "cors";
+import { rateLimit } from "express-rate-limit";
 import { writeAzp, digest } from "@azphalt/azp";
 
 const app = express();
@@ -133,8 +134,16 @@ function authorize(req) {
   return ok ? null : { status: 402, message: "no license for this package" };
 }
 
-// 6. Download API
-app.get("/packages/:id/versions/:version/download", (req, res) => {
+// 6. Download API. Rate-limited per client: the route checks an access token, so it must not be
+// open to unbounded guessing. Tune (or move to your gateway) for production.
+const downloadLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: Number(process.env.DOWNLOAD_RATE_LIMIT) || 120,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  handler: (_req, res) => fail(res, 429, "rate_limited", "too many requests"),
+});
+app.get("/packages/:id/versions/:version/download", downloadLimiter, (req, res) => {
   const pkg = DB.packages.find((p) => p.id === req.params.id);
   if (!pkg) return fail(res, 404, "not_found", `unknown package: ${req.params.id}`);
   // Only the version this server actually holds. (It used to serve v1.0.0 bytes for ANY requested
