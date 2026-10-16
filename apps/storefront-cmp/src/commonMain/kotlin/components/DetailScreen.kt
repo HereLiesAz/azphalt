@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import models.CheckoutResponse
+import models.installCount
 import models.ExtensionState
 import models.HostOption
 import models.LocalHostInventory
@@ -236,7 +237,7 @@ fun DetailScreen(
                 FactCapsule("Kind", pkg.kind)
                 FactCapsule("Version", pkg.version)
                 formatRating(rating, ratingCount)?.let { FactCapsule("Rated", it) }
-                if (pkg.downloads > 0) FactCapsule("Installs", formatCount(pkg.downloads))
+                if (pkg.installCount > 0) FactCapsule("Installs", formatCount(pkg.installCount))
             }
             Spacer(Modifier.height(20.dp))
             RecordTile(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(24.dp)) {

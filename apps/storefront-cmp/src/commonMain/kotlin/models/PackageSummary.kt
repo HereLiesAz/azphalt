@@ -140,6 +140,8 @@ data class PackageSummary(
     val priceStatus: String = "free",
     val capabilities: List<String> = emptyList(),
     val downloads: Int = 0,
+    /** Counted installs; the Worker merges this into each catalog entry. Preferred over [downloads]. */
+    val installs: Int? = null,
     val rating: Float? = null,
     val ratingCount: Int = 0,
     val updatedAt: String? = null,
@@ -165,3 +167,6 @@ data class PackageSummary(
     /** True when the developer flagged this as 18+ content the store should put behind an age gate. */
     val isMature: Boolean get() = maturity == "mature"
 }
+
+/** The install figure to show: the counted installs when the server supplies them, else downloads. */
+val PackageSummary.installCount: Int get() = installs ?: downloads

@@ -17,7 +17,9 @@ dependencies {
 
     // Ed25519. The JDK has had it natively since 15, but Android only from API 33 — Bouncy Castle is
     // pure Java and behaves identically on both, so the verifier does not change shape with the
-    // platform it happens to be running on. Version matches the resolution pin in settings.gradle.kts.
+    // platform it happens to be running on. (settings.gradle.kts pins a BouncyCastle version too, but only
+    // for the BUILD's own tooling classpath — it does not touch this runtime dependency, so the two
+    // numbers are independent and this one is the one that ships.)
     implementation("org.bouncycastle:bcprov-jdk18on:1.86")
 
     testImplementation(kotlin("test"))

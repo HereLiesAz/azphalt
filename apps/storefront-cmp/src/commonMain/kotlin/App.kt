@@ -38,6 +38,7 @@ import models.ExtensionStateEntry
 import models.HandoffSession
 import models.LocalHostInventory
 import models.PackageSummary
+import models.installCount
 import models.forgetInstall
 import models.installedEntry
 import models.mergeInventories
@@ -148,7 +149,7 @@ fun StorefrontApp(
                 (app == null || p.targetApps.isEmpty() || app in p.targetApps)
         }
         val shown = when (sort) {
-            SortMode.POPULAR -> filtered.sortedByDescending { it.downloads }
+            SortMode.POPULAR -> filtered.sortedByDescending { it.installCount }
             SortMode.RATING -> filtered.sortedByDescending { it.rating ?: -1f }
             SortMode.RECENT -> filtered.sortedByDescending { it.updatedAt ?: "" }
             SortMode.NAME -> filtered.sortedBy { it.name.lowercase() }
