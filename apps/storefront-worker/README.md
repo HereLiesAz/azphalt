@@ -207,6 +207,12 @@ curl -X PUT \
 
 Checkout is refused until the listed package/version exists in protected storage.
 
+**Size.** The upload endpoint accepts up to 100 MB (the free plan's request limit), but a Worker
+isolate has 128 MB of memory and both the upload and a full paid download hold the package in memory
+more than once (the request body, then the stored chunks and the merged buffer). In practice keep
+paid packages **under about 40 MB**, and put heavy assets behind a `remoteUrl` as the package format
+intends.
+
 ## Deploying
 
 [`.github/workflows/deploy-storefront.yml`](../../.github/workflows/deploy-storefront.yml) is bound to

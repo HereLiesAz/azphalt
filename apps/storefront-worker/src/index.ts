@@ -1114,7 +1114,11 @@ async function checkout(req: Request, env: Env): Promise<Response> {
       method: "POST",
       headers: {
         "content-type": "application/x-www-form-urlencoded",
-        "idempotency-key": "azp_" + packageId + "_" + buyerId + "_" + listing.amountCents,
+        // Stripe rejects a repeat of a key whose parameters changed (HTTP 400 "keys must be unique to the
+        // request"). The key therefore has to cover everything that shapes the session — payout
+        // destination, fee and currency too — or a seller's account change or a fee-rate change would
+        // make every retry by the same buyer fail for 24 hours.
+        "idempotency-key": await idempotencyKey(["azp", packageId, buyerId, listing.amountCents, listing.currency, applicationFee, destination, listing.interval ?? ""]),
       },
       body: urlForm(fields),
     });
@@ -1175,6 +1179,12 @@ async function adminConnectInvite(req: Request, env: Env): Promise<Response> {
   const sellerId = typeof body?.sellerId === "string" ? body.sellerId.trim() : "";
   if (!sellerId || sellerId.length > 128) return json({ error: "sellerId is required" }, 400);
   return json({ sellerId, inviteCode: await connectInvite(env, sellerId) });
+}
+
+/** A short, stable Stripe idempotency key derived from every parameter that shapes the request. */
+async function idempotencyKey(parts: (string | number)[]): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(parts.join("\u0000"))));
+  return "azp_" + Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 40);
 }
 
 /** The Play SKU a package id is sold under when its listing sets no `playProductId`. Mirrors the store app. */
