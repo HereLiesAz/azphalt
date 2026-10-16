@@ -1,9 +1,9 @@
 plugins {
-    kotlin("multiplatform") version "2.4.20"
-    kotlin("plugin.serialization") version "2.4.20"
+    kotlin("multiplatform") version "2.4.21"
+    kotlin("plugin.serialization") version "2.4.21"
     // Kotlin 2.0+ split the Compose compiler into its own plugin, versioned with Kotlin.
-    id("org.jetbrains.kotlin.plugin.compose") version "2.4.20"
-    id("org.jetbrains.compose") version "1.12.1"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.21"
+    id("org.jetbrains.compose") version "1.12.2"
     id("com.android.application") version "9.4.1"
     // Applied conditionally below — it hard-fails when google-services.json is absent, and that file
     // is a secret this repository does not carry. See `firebaseConfigured`.
@@ -188,7 +188,7 @@ kotlin {
                     // `project.dependencies.platform(...)`, not a bare `platform(...)`: a multiplatform
                     // source set's dependency block is a KotlinDependencyHandler, which has no
                     // platform() of its own, so the BOM has to be built through the project's handler.
-                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:34.19.0"))
+                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:35.0.0"))
                     implementation("com.google.firebase:firebase-analytics")
                 }
             }
