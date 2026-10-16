@@ -6,6 +6,10 @@ export interface ImportOptions {
   name?: string;
   version: string;
   author: string;
+  /** SPDX id for the manifest; default `"MIT"`. */
+  license?: string;
+  /** Full license text written as the package's LICENSE entry. */
+  licenseText?: string;
 }
 
 /** One normalized swatch (spec/package-format.md § Palette format). */
@@ -24,6 +28,7 @@ function normalizeHex(input: string): string {
 }
 
 function channelToHex(v: number): string {
+  if (!Number.isFinite(v)) throw new Error("palette: non-finite colour channel");
   return Math.round(Math.max(0, Math.min(1, v)) * 255)
     .toString(16)
     .padStart(2, "0");
@@ -86,14 +91,23 @@ function parseAsePalette(bytes: Uint8Array): Swatch[] {
         p += 2;
         if (code !== 0) name += String.fromCharCode(code);
       }
-      const model = String.fromCharCode(view.getUint8(p), view.getUint8(p + 1), view.getUint8(p + 2), view.getUint8(p + 3));
-      p += 4;
+      // Bounds-guard every read against the block end, so a short/truncated block is skipped rather
+      // than throwing an uncaught DataView RangeError. A non-finite channel is skipped too (its
+      // channelToHex would throw), so one bad swatch never aborts the whole import.
       let color: string | undefined;
-      if (model === "RGB ") {
-        color = `#${channelToHex(view.getFloat32(p, false))}${channelToHex(view.getFloat32(p + 4, false))}${channelToHex(view.getFloat32(p + 8, false))}`;
-      } else if (model === "Gray") {
-        const g = channelToHex(view.getFloat32(p, false));
-        color = `#${g}${g}${g}`;
+      if (p + 4 <= blockEnd) {
+        const model = String.fromCharCode(view.getUint8(p), view.getUint8(p + 1), view.getUint8(p + 2), view.getUint8(p + 3));
+        p += 4;
+        try {
+          if (model === "RGB " && p + 12 <= blockEnd) {
+            color = `#${channelToHex(view.getFloat32(p, false))}${channelToHex(view.getFloat32(p + 4, false))}${channelToHex(view.getFloat32(p + 8, false))}`;
+          } else if (model === "Gray" && p + 4 <= blockEnd) {
+            const g = channelToHex(view.getFloat32(p, false));
+            color = `#${g}${g}${g}`;
+          }
+        } catch {
+          color = undefined; // non-finite channel — skip this swatch
+        }
       }
       if (color) swatches.push({ name: name.length > 0 ? name : color.toUpperCase(), color });
     }
@@ -132,12 +146,16 @@ export function importPalette(bytes: Uint8Array, opts: ImportOptions): Uint8Arra
     name: opts.name || "Color Palette",
     version: opts.version,
     kind: "asset",
-    license: "MIT",
+    license: opts.license ?? "MIT",
     compat: ">=0.1",
     author: opts.author,
     assets: [{ type: "palette", path: "assets/palette.json" }],
   };
 
-  const { azp } = writeAzp({ manifest, payload, license: "MIT License" });
+  const { azp } = writeAzp({
+    manifest,
+    payload,
+    license: opts.licenseText ?? `${opts.license ?? "MIT"}\n\nProvide the full license text.\n`,
+  });
   return azp;
 }
