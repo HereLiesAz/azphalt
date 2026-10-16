@@ -207,3 +207,14 @@ describe("inventory", () => {
     expect(isHeld(inv, "never-seen")).toBe(false);
   });
 });
+
+describe("isSafeInstallUrl", () => {
+  it("allows https and market, rejects script/data/file/cleartext", async () => {
+    const { isSafeInstallUrl } = await import("../src/index.js");
+    expect(isSafeInstallUrl("https://play.google.com/store/apps/details?id=x")).toBe(true);
+    expect(isSafeInstallUrl("market://details?id=x")).toBe(true);
+    for (const bad of ["javascript:alert(1)", "data:text/html,x", "file:///etc/passwd", "http://x.example", "", "not a url"]) {
+      expect(isSafeInstallUrl(bad)).toBe(false);
+    }
+  });
+});

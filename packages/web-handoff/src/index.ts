@@ -192,7 +192,7 @@ export function hostsFor(pkg: HandoffPackage, catalog: HandoffPackage[]): HostOp
     if (!(app.roles ?? ["companion"]).includes("host")) continue;
     if (!app.hostId) continue;
     if (wanted.size > 0 && !wanted.has(app.hostId)) continue;
-    const installUrl = app.platforms?.android?.install ?? app.platforms?.pwa?.startUrl;
+    const installUrl = [app.platforms?.android?.install, app.platforms?.pwa?.startUrl].find(isSafeInstallUrl);
     if (!installUrl) continue;
     if (seen.has(app.hostId)) continue;
     seen.add(app.hostId);
@@ -263,4 +263,20 @@ export function attemptHandoff(link: string): Promise<boolean> {
       resolve(left);
     }, HANDOFF_WAIT_MS);
   });
+}
+
+/**
+ * Whether a listing's install/start URL is safe to render as a link. Listings are third-party data
+ * (anyone may publish a `kind:"app"` entry), so a `javascript:` / `data:` / `file:` / cleartext
+ * `http:` value must never reach an `href` or `window.open`. `https:` and Android's `market:` deep
+ * link are allowed.
+ */
+export function isSafeInstallUrl(value: unknown): value is string {
+  if (typeof value !== "string" || value.length === 0) return false;
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" || u.protocol === "market:";
+  } catch {
+    return false;
+  }
 }

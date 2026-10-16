@@ -22,7 +22,8 @@ export type Runtime = "js" | "wasm";
 
 /** 
  * Least-privilege surface an extension may request. See `spec/capability-model.md`.
- * Note: no `StorageApi` ships in 0.1.
+ * `storage` is deliberately absent: it is deferred (not part of 0.1, `spec/capability-model.md`), has
+ * no host API, and the registry's security sweep blocks a package that declares it.
  */
 export type Capability =
   | "canvas"
@@ -33,8 +34,7 @@ export type Capability =
   | "params"
   | "assets"
   | "time"
-  | "audio"
-  | "storage";
+  | "audio";
 
 export type AssetType =
   | "brush" | "lut" | "pattern" | "stamp" | "shader" | "transition"
@@ -1513,7 +1513,12 @@ export type RepositoryErrorCode =
   | "unavailable";
 
 export interface RepositoryErrorResponse {
-  error: { code: RepositoryErrorCode; message: string };
+  error: {
+    code: RepositoryErrorCode;
+    message: string;
+    /** Optional machine-readable specifics (e.g. the verification errors behind a rejected publish). */
+    details?: string[];
+  };
 }
 
 /** One installed package a host asks the registry to check for updates (`POST /updates`). */

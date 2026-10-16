@@ -83,23 +83,49 @@ const world = (bitmap: ConformanceBitmap, params: Record<string, unknown> = {}):
 
 /* ───────────────────────── package-level (host-agnostic) ───────────────────────── */
 
-/** Checklist: "Rejects … any file failing its digest." */
-export function checkRejectTampered(): CheckResult {
+/**
+ * Checklist: "Rejects … any file failing its digest."
+ *
+ * With a [host] this drives the HOST: it must run a good package (the control) yet refuse the
+ * tampered one — so a host that verifies nothing fails, and so does one that refuses everything.
+ * Without a host it only checks that `@azphalt/azp`'s `verifyAzp` rejects the fixture (a sanity check
+ * on the fixture itself, which says nothing about any particular host).
+ */
+export function checkRejectTampered(): CheckResult;
+export function checkRejectTampered(host: Pick<CodeHost, "runFilter">): Promise<CheckResult>;
+export function checkRejectTampered(host?: Pick<CodeHost, "runFilter">): CheckResult | Promise<CheckResult> {
   const id = "reject-tampered";
   const title = "Refuses a package whose payload fails its digest";
   if (verifyAzp(fx.validFilterAzp()).ok !== true) return fail(id, title, "a valid package failed verification");
-  return verifyAzp(fx.tamperedAzp()).ok === false
-    ? pass(id, title)
-    : fail(id, title, "a tampered package passed verification");
+  if (verifyAzp(fx.tamperedAzp()).ok !== false) return fail(id, title, "a tampered package passed verification");
+  if (!host) return pass(id, title);
+  return hostRefuses(host, id, title, fx.tamperedAzp(), "a tampered package ran on the host");
 }
 
-/** Checklist: "Rejects unsafe paths." */
-export function checkRejectUnsafePath(): CheckResult {
+/** Checklist: "Rejects unsafe paths." Host-driven when a [host] is given, like {@link checkRejectTampered}. */
+export function checkRejectUnsafePath(): CheckResult;
+export function checkRejectUnsafePath(host: Pick<CodeHost, "runFilter">): Promise<CheckResult>;
+export function checkRejectUnsafePath(host?: Pick<CodeHost, "runFilter">): CheckResult | Promise<CheckResult> {
   const id = "reject-unsafe-path";
   const title = "Refuses a package with an unsafe payload path (`..`)";
-  return verifyAzp(fx.unsafePathAzp()).ok === false
-    ? pass(id, title)
-    : fail(id, title, "a package with a '..' path passed verification");
+  if (verifyAzp(fx.unsafePathAzp()).ok !== false) return fail(id, title, "a package with a '..' path passed verification");
+  if (!host) return pass(id, title);
+  return hostRefuses(host, id, title, fx.unsafePathFilterAzp(), "a runnable package carrying a '..' path ran on the host");
+}
+
+/** The host must run the control package and refuse [bad] — refusing everything proves nothing. */
+async function hostRefuses(
+  host: Pick<CodeHost, "runFilter">,
+  id: string,
+  title: string,
+  bad: Uint8Array,
+  failure: string,
+): Promise<CheckResult> {
+  const px = { data: [10, 20, 30, 255], width: 1, height: 1 };
+  const control = await run(host as CodeHost, fx.validFilterAzp(), world(px, { strength: 1 }));
+  if (control.error) return fail(id, title, `the host could not run a valid package, so refusal proves nothing: ${control.error.message}`);
+  const { error } = await run(host as CodeHost, bad, world(px, { strength: 1 }));
+  return error ? pass(id, title, "refused") : fail(id, title, failure);
 }
 
 /* ───────────────────────── host-driven ───────────────────────── */
@@ -109,6 +135,10 @@ export async function checkCapabilityGating(host: CodeHost): Promise<CheckResult
   const id = "capability-gating";
   const title = "An ungranted capability is absent, not an erroring stub";
   // Filter touches bitmap; manifest grants only params. Reaching ctx.bitmap must fail.
+  // Baseline: the host must be able to run a well-formed package at all, or "it errored" would also
+  // be what a host that rejects everything does — and that is not gating.
+  const base = await run(host, fx.validFilterAzp(), world({ data: [10, 20, 30, 255], width: 1, height: 1 }, { strength: 1 }));
+  if (base.error) return fail(id, title, `the host cannot run a valid package, so a refusal proves nothing: ${base.error.message}`);
   const { error } = await run(host, fx.ungrantedCapabilityAzp(), world({ data: [0, 0, 0, 0], width: 1, height: 1 }));
   return error
     ? pass(id, title, "filter failed reaching an ungranted capability")

@@ -121,8 +121,8 @@ export interface VideoAudioConformanceReport extends ConformanceReport {
 /** Run the full **code-host** conformance battery against `host`. Package-level checks need no host. */
 export async function runConformance(host: CodeHost): Promise<ConformanceReport> {
   const checks: CheckResult[] = [
-    checkRejectTampered(),
-    checkRejectUnsafePath(),
+    await checkRejectTampered(host),
+    await checkRejectUnsafePath(host),
     await checkCapabilityGating(host),
     await checkNeverList(host),
     await checkAbiRoundTrip(host),
@@ -160,8 +160,8 @@ export async function runAssetConformance(host: AssetHost): Promise<ConformanceR
  */
 export async function runVideoAudioConformance(host: VideoAudioHost): Promise<VideoAudioConformanceReport> {
   const checks: CheckResult[] = [
-    checkRejectTampered(),
-    checkRejectUnsafePath(),
+    await checkRejectTampered(host),
+    await checkRejectUnsafePath(host),
     checkDeclaresTemporalSupport(host),
     await checkTransitionDispatch(host),
     await checkAudioAbi(host),

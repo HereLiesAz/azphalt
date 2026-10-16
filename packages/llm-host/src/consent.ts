@@ -33,6 +33,12 @@ export function llmBlock(manifest: Manifest): LlmManifest {
   return manifest.llm;
 }
 
+function hostOf(baseUrl: string): string {
+  const ref = /^\$\{input:([^}]{1,128})\}$/.exec(baseUrl);
+  if (ref) return `(supplied by you: ${ref[1]})`;
+  return new URL(baseUrl).host;
+}
+
 export function llmConsent(manifest: Manifest): LlmConsent {
   const llm = llmBlock(manifest);
   const secretFor = new Map((llm.setup.secrets ?? []).map((s) => [s.input, s.name]));
@@ -41,7 +47,10 @@ export function llmConsent(manifest: Manifest): LlmConsent {
     name: manifest.name,
     tier: llm.tier,
     runs: llm.tier === "sandbox-weights" ? "sandbox" : "third-party",
-    endpointHost: llm.endpoint.baseUrl ? new URL(llm.endpoint.baseUrl).host : undefined,
+    // A `${input:…}` base URL is not a URL until the user supplies it, and `new URL` would throw on it
+    // — which crashed the mandatory consent screen for exactly the packages that need it most. The
+    // user is shown the placeholder instead; the real host is shown once the input is resolved.
+    endpointHost: llm.endpoint.baseUrl ? hostOf(llm.endpoint.baseUrl) : undefined,
     defaultModel: llm.endpoint.defaultModel,
     dataHandling: llm.dataHandling,
     modelLicense: llm.weights?.modelLicense,

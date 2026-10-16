@@ -7,7 +7,8 @@
  * `openai-chat`, the sandbox runner for `github-actions-runner` — turns tagged segments into separate
  * `user` messages, so tags never reach the model; output containing any session tag is rejected.
  *
- * Must stay byte-for-byte compatible with the reference runner (`scripts/llm-sandbox/run.py`).
+ * Tag derivation and wrapping stay byte-for-byte compatible with the reference runner
+ * (`apps/storefront/scripts/llm-sandbox/run.py`); `scrub` is a strict superset (see its note).
  */
 
 export interface ChatMessage {
@@ -66,11 +67,24 @@ export async function sessionTags(sessionKey: string, turn: number): Promise<str
   return Promise.all(Array.from({ length: turn + 1 }, (_, n) => turnTag(sessionKey, n)));
 }
 
-/** Remove every session tag and native control marker from untrusted text. */
+/**
+ * Remove every session tag and native control marker from untrusted text.
+ *
+ * Runs to a **fixpoint**: a single pass is bypassable by nesting, because removing the inner token
+ * can splice the surrounding halves into a live one (`<|im_<|x|>start|>` → `<|im_start|>`,
+ * `[IN[INST]ST]` → `[INST]`). Each pass strictly shortens the text, so the loop terminates. (The
+ * reference runner's `run.py` is single-pass; on any input without nested markers the two agree, and
+ * on nested input this removes strictly more — never less — so the result is safe for both.)
+ */
 export function scrub(text: string, tags: string[]): string {
   let out = text;
-  for (const tag of tags) out = out.split(`⟦${tag}⟧`).join("").split(`⟦/${tag}⟧`).join("");
-  return out.replace(NATIVE_MARKERS, "");
+  for (;;) {
+    let next = out;
+    for (const tag of tags) next = next.split(`⟦${tag}⟧`).join("").split(`⟦/${tag}⟧`).join("");
+    next = next.replace(NATIVE_MARKERS, "");
+    if (next === out) return out;
+    out = next;
+  }
 }
 
 /** Wrap untrusted [material] for the current turn (the last of [tags]), scrubbing it first. */
