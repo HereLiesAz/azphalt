@@ -31,6 +31,19 @@ expect fun handoffUri(id: String, version: String?): String
 expect fun openExternal(url: String)
 
 /**
+ * Whether [url] may be handed to the OS or a browser. Listing URLs (a host's install pointer, an
+ * operator's terms) are third-party data from the registry, so only `https://` is opened — never
+ * `javascript:`, `data:`, `file:`, `content:` or cleartext `http:`. [allowMarket] additionally permits
+ * Android's `market://` deep link, which a Play install pointer legitimately uses. Every
+ * [openExternal] actual applies this, so no call site has to remember to.
+ */
+fun isSafeExternalUrl(url: String, allowMarket: Boolean = false): Boolean {
+    val u = url.trim()
+    if (u.isEmpty() || u.any { it.isISOControl() || it == ' ' }) return false
+    return u.startsWith("https://", ignoreCase = true) || (allowMarket && u.startsWith("market://", ignoreCase = true))
+}
+
+/**
  * The conforming download URL for [id] at [version] (`spec/repository-api.md` § Download Package) —
  * the `.azp` half of the fallback, which works with no link support at all because a host registered
  * for the media type opens the downloaded file directly.

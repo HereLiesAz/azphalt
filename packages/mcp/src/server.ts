@@ -45,8 +45,9 @@ export function createServer(): McpServer {
       title: "Verify an .azp package",
       description:
         "Check a base64-encoded .azp for integrity: safe paths, every payload file matching its " +
-        "manifest digest, and — if a signature is present — a valid Ed25519 signature. Returns " +
-        "{ ok, errors, signed }.",
+        "manifest digest, and — if a signature is present — that it is internally consistent. " +
+        "`signed: true` is tamper-evidence only: it does NOT identify the signer (any self-generated " +
+        "key passes), so it is not proof of authorship. Returns { ok, errors, signed }.",
       inputSchema: { azpBase64: z.string().describe("The .azp file, base64-encoded.") },
     },
     async ({ azpBase64 }) => {

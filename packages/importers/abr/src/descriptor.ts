@@ -16,11 +16,15 @@ function readKey(r: Reader): string {
   return len === 0 ? r.ascii(4) : r.ascii(len);
 }
 
-function readValue(r: Reader, ostype: string): DescValue {
+/** Maximum descriptor nesting. Photoshop descriptors are shallow; deep nesting is a stack-overflow DoS. */
+const MAX_DEPTH = 64;
+
+function readValue(r: Reader, ostype: string, depth: number): DescValue {
+  if (depth > MAX_DEPTH) throw new Error("descriptor: nesting too deep");
   switch (ostype) {
     case "Objc":
     case "GlbO":
-      return readBody(r);
+      return readBody(r, depth + 1);
     case "doub":
       return r.f64();
     case "UntF": {
@@ -47,7 +51,7 @@ function readValue(r: Reader, ostype: string): DescValue {
       // Each list item is at least a 4-byte OSType; reject a count that can't fit (DoS/OOM guard).
       if (n * 4 > r.remaining) throw new Error("descriptor: list size exceeds remaining bytes");
       const arr: DescValue[] = [];
-      for (let i = 0; i < n; i++) arr.push(readValue(r, r.ascii(4)));
+      for (let i = 0; i < n; i++) arr.push(readValue(r, r.ascii(4), depth + 1));
       return arr;
     }
     case "tdta": {
@@ -60,16 +64,19 @@ function readValue(r: Reader, ostype: string): DescValue {
   }
 }
 
-function readBody(r: Reader): DescObject {
+function readBody(r: Reader, depth: number): DescObject {
+  if (depth > MAX_DEPTH) throw new Error("descriptor: nesting too deep");
   r.unicode(); // descriptor name (usually empty)
   readKey(r); // class id
   const count = r.u32();
   // Each item is at least 8 bytes (key code + OSType); reject an impossible count (DoS/OOM guard).
   if (count * 8 > r.remaining) throw new Error("descriptor: item count exceeds remaining bytes");
-  const obj: DescObject = {};
+  // Null-prototype: a descriptor key literally named `__proto__` must be an ordinary own key, not a
+  // prototype mutation — otherwise `code in obj` in the brush-param lifter can be fooled.
+  const obj: DescObject = Object.create(null);
   for (let i = 0; i < count; i++) {
     const key = readKey(r);
-    obj[key] = readValue(r, r.ascii(4));
+    obj[key] = readValue(r, r.ascii(4), depth + 1);
   }
   return obj;
 }
@@ -79,5 +86,5 @@ export function readDescriptor(bytes: Uint8Array): DescObject {
   const r = new Reader(bytes);
   const save = r.pos;
   if (r.u32() !== 16) r.seek(save);
-  return readBody(r);
+  return readBody(r, 0);
 }

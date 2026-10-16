@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateKeyPairSync } from "node:crypto";
@@ -118,8 +119,7 @@ Reuse the **same** key across all your extensions so a host recognizes one publi
 /** The local git `user.name`, as the default author — the answer is usually right and always real. */
 function gitUserName(): string | undefined {
   try {
-    // Import lazily: the scaffolder must still run where git is absent.
-    const { execFileSync } = require("node:child_process") as typeof import("node:child_process");
+    // `git` may be absent; execFileSync then throws and we fall through to no default.
     const name = execFileSync("git", ["config", "user.name"], { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     return name || undefined;
   } catch {
@@ -228,11 +228,12 @@ function applyAuthorAndLicense(
   if (fs.existsSync(pkgPath)) {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
     if (author.trim()) pkg.author = author;
-    if (choice?.spdx) pkg.license = choice.spdx;
+    // "Other" has no SPDX id; leave the package honest rather than the template's MIT.
+    if (choice) pkg.license = choice.spdx || "SEE LICENSE IN LICENSE";
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
   }
 
-  // The templates ship no LICENSE of their own — they are part of this MIT-licensed repo, and a
+  // The templates ship no LICENSE of their own — they are part of this Apache-2.0 repo, and a
   // checked-in licence file would both be redundant here and become the scaffolded project's terms
   // by accident. The new project's LICENSE is written here, from the author's answer.
   const licensePath = path.join(root, "LICENSE");

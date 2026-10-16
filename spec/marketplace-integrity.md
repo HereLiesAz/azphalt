@@ -4,8 +4,9 @@
 **users** and fair to **developers** without breaking the open, self-hostable standard: a **security
 sweep** at publish/update, **reporting & moderation**, **private / proprietary hosting**, and
 **anti-clone / provenance**. Each builds on azphalt's existing trust primitives rather than inventing
-new cryptography. All three implementation phases are on `main` (`@azphalt/registry`'s `scanPackage`,
-the `visibility` field + ACL download gate, and the clone/provenance signals). The **shapes and wiring**
+new cryptography. The core of all three implementation phases is on `main` (`@azphalt/registry`'s `scanPackage`,
+the `visibility` field + ACL download gate, and the clone/provenance signals); the items listed under
+*Not yet implemented* at the end of this page are normative but have no code yet. The **shapes and wiring**
 here are normative; **enforcement policy** (exact thresholds, block-vs-flag staffing) is a deployment
 choice — the sign-off decisions below record the **flagship's** defaults, which a self-hosted registry
 overrides.*
@@ -194,7 +195,9 @@ earlier package, which publisher key, the similarity score), never the numbers.
 2. **Visibility + private download** — the `visibility` field + the ACL download gate.
 3. **Clone / provenance** — asset/code fingerprinting + the provenance-evidence moderation flow.
 
-All three phases are implemented and on `main`.
+The core of all three phases is implemented and on `main`. What is still missing is listed in
+*Not yet implemented* below — those requirements are normative, and a conformant registry MUST NOT
+claim them until it has them.
 
 ## Resolved
 
@@ -209,3 +212,21 @@ All three phases are implemented and on `main`.
 - **Verified publisher** — "verified" is conferred by a **registry counter-signature** (the registry
   vouches for the key). A deployment MAY layer an additional out-of-band identity check to elevate
   further, but the counter-signature is the standard's baseline for the auto-actions above.
+
+## Not yet implemented
+
+The reference registry (`@azphalt/registry`) does **not** yet do the following. They remain normative
+requirements; a deployment that needs them must add them, and must not advertise them before then:
+
+- **Counter-signed scan report** (§ 1). The scan report is attached to the version but not counter-signed.
+- **Signed IP-claim verification** (§ 2). `report()` takes `trusted` from the caller; there is no
+  `azphalt-ip-claim:v1:` signature check, so a transport must decide which reports are trusted.
+- **Denylist re-scan** (§ 1, § 2). The denylist is consulted at `publish`; already-indexed versions are
+  not re-scanned when it changes.
+- **Auto-quarantine of a strong clone** (§ 4). Clone checks raise a `flag`; they never quarantine.
+- **Code fingerprint** (§ 4). Only asset digests are compared for provenance, not normalized code.
+
+Since publish requires a signature and pins the publisher key (`spec/repository-api.md` § 9), the
+`reportInstalls`, `rate` and `report` surfaces are the places a transport must add its own abuse
+controls (per-subject de-duplication, existence checks, rate limits): the library deliberately does not
+know who a caller is.

@@ -15,7 +15,7 @@
  * A real repository backs the registry with a database + object store and the authorizer with its own
  * accounts/entitlements service.
  */
-import { writeAzp } from "@azphalt/azp";
+import { writeAzp, signAzp, generateSigningKey } from "@azphalt/azp";
 import { InMemoryStore, Marketplace, Registry } from "@azphalt/registry";
 import type { Manifest } from "@azphalt/azdk";
 import { InMemoryAuthorizer } from "@azphalt/registry";
@@ -65,8 +65,12 @@ async function seed(): Promise<{ registry: Registry; marketplace: Marketplace; a
     },
   ];
 
+  // The registry requires signed publishes; sign the demo seed with a throwaway key (a real
+  // deployment uses its publishers' own keys).
+  const demoKey = generateSigningKey();
   for (const p of packages) {
-    await registry.publish(writeAzp({ manifest: p.manifest, payload: p.payload, license: LICENSE }).azp);
+    const unsigned = writeAzp({ manifest: p.manifest, payload: p.payload, license: LICENSE }).azp;
+    await registry.publish(signAzp(unsigned, { privateKey: demoKey.privateKey }));
   }
   await marketplace.listForSale("com.demo.paidlut", "seller_demo", { amountCents: 900, currency: "USD" });
 

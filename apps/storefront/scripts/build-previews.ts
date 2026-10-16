@@ -2,7 +2,7 @@
  * Generate a store-card preview for every package that has something to show — by **running the
  * extension**, not by drawing an icon for it.
  *
- * A card that shows the same puzzle glyph for 133 packages tells a user nothing; the whole point of
+ * A card that shows the same puzzle glyph for hundreds of packages tells a user nothing; the whole point of
  * a store is deciding what a thing does before installing it. `spec/extension-manifest.md` already
  * defines `preview: { image?, clip? }`, and the repository API already surfaces it on every summary
  * (`registry.ts` → `handler.ts`). Nothing produced one, so the field was universally absent.
@@ -24,16 +24,16 @@
  * `preview.image` may be an in-package path *or* an `https:` URL. These are written to
  * `registry/previews/` and referenced by URL, which keeps package bytes — and therefore every
  * `integrity` digest and every signature — untouched. Baking previews into the `.azp` would mean
- * re-signing 133 packages to change a picture.
+ * re-signing every package to change a picture.
  *
  *   pnpm --filter @azphalt/storefront build-previews
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
-import { readAzp } from "@azphalt/azp";
+import { readAzp, unsafePathReason } from "@azphalt/azp";
 import { open, runFilter } from "@azphalt/runtime-reference";
 import type { Manifest } from "@azphalt/azdk";
 import { encodePng } from "./lib/png.js";
@@ -51,12 +51,15 @@ const packagesDir = join(registryDir, "packages");
  * from production, and disguised as a 200 by the SPA fallback rewrite.
  *
  * Keeping them beside `previews.json` also puts them where they belong: they are generated registry
- * data, like `registry/packages/*.azp`, and are served by a route handler for the same reason.
+ * data, like `registry/packages/*.azp`, and are served by the Cloudflare Worker for the same reason.
  */
 const outDir = join(registryDir, "previews");
 
 /** Scratch space for evaluating extension code payloads (see `loadModule`). */
-const scratch = join(tmpdir(), "azphalt-previews");
+// A fresh, unpredictable directory per run. A fixed shared path let one version's leftovers satisfy the
+// next version's imports (a preview rendered from code the package no longer has) and let anyone who
+// pre-created it on a shared machine control what got imported.
+const scratch = mkdtempSync(join(tmpdir(), "azphalt-previews-"));
 
 const W = 320;
 const H = 180;
@@ -160,6 +163,8 @@ async function loadModule(manifest: Manifest, payload: Record<string, Uint8Array
   if (!entry) throw new Error("manifest has no entry");
   const dir = join(scratch, manifest.id);
   for (const [rel, bytes] of Object.entries(payload)) {
+    // `readAzp` does not verify paths; a name that escapes the scratch dir must never be written.
+    if (unsafePathReason(rel)) throw new Error(`unsafe payload path: ${rel}`);
     const dest = join(dir, rel);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, bytes);
@@ -632,7 +637,7 @@ async function main(): Promise<void> {
         if (!tracks) { skipped++; continue; }   // no track we understand — show nothing, not a guess
         rgba = filmstrip(tracks);
         strips++;
-      } catch { skipped++; continue; }
+      } catch (e) { failures.push(`${manifest.id}: motion preset unreadable — ${(e as Error).message.split("\n")[0]}`); skipped++; continue; }
     } else {
       // Models, packs, app and mcp headers: nothing truthful to render.
       skipped++;
@@ -674,10 +679,16 @@ async function main(): Promise<void> {
   if (failures.length) {
     console.log(`build-previews: ${failures.length} could not render:`);
     for (const f of failures) console.log(`  - ${f}`);
+    // Surface them as CI annotations so they are not buried in a green job. `--strict` makes them fatal
+    // (a regression gate); by default a package that cannot be previewed does not block a deploy.
+    for (const f of failures) console.log(`::warning title=build-previews::${f}`);
+    if (process.argv.includes("--strict")) process.exitCode = 1;
   }
 }
 
-main().catch((e) => {
-  console.error("build-previews: fatal —", e);
-  process.exit(1);
-});
+main()
+  .catch((e) => {
+    console.error("build-previews: fatal —", e);
+    process.exitCode = 1;
+  })
+  .finally(() => rmSync(scratch, { recursive: true, force: true }));

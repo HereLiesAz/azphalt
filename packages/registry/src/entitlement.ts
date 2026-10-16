@@ -73,6 +73,11 @@ export function issueEntitlement(registryPrivateKey: string, claims: Entitlement
   if (claims.kind !== "perpetual" && claims.kind !== "subscription") {
     throw new Error("entitlement: kind must be 'perpetual' or 'subscription'");
   }
+  // A subscription that never expires is a perpetual grant by accident — require an expiry so a
+  // mis-issued token can't become a lifetime entitlement (spec/repository-api.md § 4).
+  if (claims.kind === "subscription" && typeof claims.expiresAt !== "string") {
+    throw new Error("entitlement: a subscription must carry an expiresAt");
+  }
   const key = createPrivateKey(registryPrivateKey);
   if (key.asymmetricKeyType !== "ed25519") throw new Error("entitlement: registryPrivateKey must be an ed25519 key");
   const signature = cryptoSign(null, Buffer.from(canonicalClaims(claims), "utf8"), key);
@@ -123,7 +128,12 @@ export function verifyEntitlement(
 
   const trustedIssuer = Array.isArray(opts?.trustedKeys) && opts.trustedKeys.includes(token.publicKey);
   const nowMs = opts.now ? new Date(opts.now).getTime() : Date.now();
-  const live = token.claims.expiresAt === undefined || new Date(token.claims.expiresAt).getTime() > nowMs;
+  // A subscription MUST have a future expiry to be live; a subscription with no expiresAt is treated as
+  // not live (defense against a mis-issued never-expiring subscription). Perpetual tokens have no expiry.
+  const live =
+    token.claims.kind === "subscription"
+      ? typeof token.claims.expiresAt === "string" && new Date(token.claims.expiresAt).getTime() > nowMs
+      : token.claims.expiresAt === undefined || new Date(token.claims.expiresAt).getTime() > nowMs;
   const packageMatch = opts.packageId === undefined || token.claims.packageId === opts.packageId;
 
   const valid = signatureValid && trustedIssuer && live && packageMatch;

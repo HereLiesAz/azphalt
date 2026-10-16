@@ -3,7 +3,7 @@
  * with `@azphalt/azp` `writeAzp`, so it verifies like any shipped extension. The filter modules are
  * plain ES modules written against `@azphalt/azdk` — exactly what a `runtime: "js"` host loads.
  */
-import { writeAzp, signAzp, countersign, digest, verifyAzp, verifyTrust } from "@azphalt/azp";
+import { readAzp, writeAzp, signAzp, countersign, digest, verifyAzp, verifyTrust } from "@azphalt/azp";
 import { createPrivateKey, createPublicKey, sign as cryptoSign } from "node:crypto";
 import type { AssetContribution, Manifest, Panel } from "@azphalt/azdk";
 
@@ -57,6 +57,23 @@ const INVERT_MODULE = `
 /** A well-formed filter package that must load, run, and pass verification. */
 export function validFilterAzp(): Uint8Array {
   return buildCodeAzp(INVERT_MODULE);
+}
+
+/**
+ * A valid, runnable filter package that additionally carries a payload path escaping the package
+ * (`../escape.txt`). Unlike {@link unsafePathAzp} (a bare asset package any code host would reject for
+ * having no entry), this one is refused ONLY because of the path — the control for the host-driven
+ * unsafe-path check is {@link validFilterAzp}, which differs from it in nothing else.
+ */
+export function unsafePathFilterAzp(): Uint8Array {
+  const { manifest, payload } = readAzp(validFilterAzp());
+  const { files: _files, ...rest } = manifest;
+  const { LICENSE: lic, "signature.json": _sig, ...others } = payload;
+  return writeAzp({
+    manifest: rest,
+    payload: { ...others, "../escape.txt": enc("nope") },
+    license: new TextDecoder().decode(lic ?? new Uint8Array()),
+  }).azp;
 }
 
 /** A valid package with its payload corrupted — a host MUST refuse it (digest mismatch). */

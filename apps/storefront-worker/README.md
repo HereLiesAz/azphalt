@@ -174,8 +174,23 @@ For a subscription, add `"interval": "month"` or `"year"`. If the store app sell
 a different Play product id, add `"playProductId"`. Subscription checkout is refused until a
 Stripe webhook secret is configured.
 
-A seller connects their Stripe Express account at `/connect/onboard`; the Worker persists the
-seller-to-account mapping and refreshes capability flags from Stripe.
+Seller payout accounts are bound only with the operator's authority, because a `sellerId` is public (it
+appears in `listings.json`) and binding a Stripe account to it decides who gets paid. The operator
+mints a per-seller **invite code** — `POST /api/admin/connect/invite` `{ sellerId }` with
+`Authorization: Bearer $ADMIN_TOKEN` — and gives it to that seller (the code is
+`HMAC-SHA256(ADMIN_TOKEN, "connect-invite:" + sellerId)`: stateless, bound to one id, revoked for
+everyone by rotating `ADMIN_TOKEN`). The seller then self-onboards at `/connect/onboard`
+(`?sellerId=…&invite=…`), which posts `{ sellerId, inviteCode, email?, country? }` to
+`POST /api/connect/onboard`; the operator's bearer token is also accepted there. Without one of the two
+the endpoint answers `401`, so nobody can onboard their own bank account against someone else's id.
+`GET /api/connect/status?sellerId=` is public but returns only readiness flags; the Stripe account id
+and `refresh=1` are operator-only. At checkout the `stripeAccountId` in the reviewed listing wins over
+a stored mapping. A checkout session is fulfilled only once its `payment_status` is `paid`
+(`checkout.session.async_payment_succeeded` covers delayed methods); refunds and disputes are not yet
+handled, so revoke an entitlement through `/api/admin/revocations` when you refund.
+
+Known limit: ratings are one-per-browser only for honest browsers — a client that discards its
+cookie can add more, and the per-IP `WRITE_LIMITER` binding is the only brake. Bind it in production.
 
 ## Uploading paid package bytes
 
@@ -191,6 +206,12 @@ curl -X PUT \
 ~~~
 
 Checkout is refused until the listed package/version exists in protected storage.
+
+**Size.** The upload endpoint accepts up to 100 MB (the free plan's request limit), but a Worker
+isolate has 128 MB of memory and both the upload and a full paid download hold the package in memory
+more than once (the request body, then the stored chunks and the merged buffer). In practice keep
+paid packages **under about 40 MB**, and put heavy assets behind a `remoteUrl` as the package format
+intends.
 
 ## Deploying
 

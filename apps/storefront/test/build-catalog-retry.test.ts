@@ -2,7 +2,7 @@
  * The tarball download's retry behaviour.
  *
  * This exists because a deploy failed on it. `build-catalog --check` gates
- * `.github/workflows/deploy-storefront.yml`, it pulls 128 tarballs, and one of them died mid-download
+ * `.github/workflows/deploy-storefront.yml`, it pulls ~150 tarballs, and one of them died mid-download
  * with undici's `TypeError: terminated` — an aborted socket, nothing to do with the catalog. An
  * identical re-run passed. The retry that was already there wrapped only the `fetch` call, which
  * resolves when the *headers* arrive, so it covered the handshake and left the several seconds of
@@ -43,7 +43,7 @@ function abortsMidStream(bytes: Uint8Array): Response {
 
 // `.slice().buffer` rather than the view itself: `BodyInit` does not accept a
 // `Uint8Array<ArrayBufferLike>` under the current lib types, and slicing yields a standalone,
-// correctly-sized ArrayBuffer. Same pattern as `app/api/download/[id]/route.ts`.
+// correctly-sized ArrayBuffer. Same pattern as the Worker's download route.
 const ok = (bytes: Uint8Array) => new Response(bytes.slice().buffer, { status: 200 });
 
 afterEach(() => vi.unstubAllGlobals());

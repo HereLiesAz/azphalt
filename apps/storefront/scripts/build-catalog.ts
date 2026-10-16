@@ -47,7 +47,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import tar from "tar-stream";
-import { signAzp, writeAzp } from "@azphalt/azp";
+import { readAzp, signAzp, unsafePathReason, verifyAzp, writeAzp } from "@azphalt/azp";
 import type { Manifest } from "@azphalt/azdk";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -120,6 +120,10 @@ const opt = (name: string): string | undefined => {
 const update = has("update");
 const latest = has("latest");
 const only = opt("only");
+if (has("only") && (!only || only.startsWith("--"))) {
+  console.error("build-catalog: --only needs a package id (e.g. --only com.example.pkg)");
+  process.exit(1);
+}
 
 /**
  * Verify without writing: rebuild every package and confirm its `integrity` still matches the
@@ -239,9 +243,49 @@ async function headSha(repo: string): Promise<string> {
  * stage's failure into one rejection is what makes the retry in [fetchTree] possible at all, and it
  * destroys the half-finished streams instead of leaving them attached to a dead socket.
  */
+/** Ceilings on one upstream repo tarball, so a pinned repo that grows a huge blob fails loudly, not by OOM. */
+const MAX_TREE_FILE_BYTES = 128 * 1024 * 1024;
+const MAX_TREE_TOTAL_BYTES = 512 * 1024 * 1024;
+
+/**
+ * Run the real `.azp` verifier over a package BEFORE it is signed. `writeAzp` digests whatever it is
+ * handed and never validates, so without this a malformed manifest or an unsafe path was signed with
+ * the store key and shipped; the store's own signature must mean "this passed the same checks a host
+ * runs".
+ */
+function assertVerifies(label: string, azp: Uint8Array): void {
+  const v = verifyAzp(azp);
+  if (!v.ok) throw new Error(`${label}: built package does not verify — ${v.errors.join("; ")}`);
+}
+
+/**
+ * Why a committed `registry/packages/<file>` is not what its catalog entry says it is, or `undefined`
+ * when it is. Re-packs the file without its signature and compares the unsigned digest to `integrity`.
+ */
+export function committedFileProblem(
+  path: string,
+  entry: { integrity: string; bytes?: number },
+  expectSigned: boolean,
+): string | undefined {
+  const bytes = new Uint8Array(readFileSync(path));
+  if (entry.bytes !== undefined && bytes.length !== entry.bytes) {
+    return `${path} is ${bytes.length} bytes but the catalog records ${entry.bytes}`;
+  }
+  const v = verifyAzp(bytes);
+  if (!v.ok) return `committed package does not verify — ${v.errors.join("; ")}`;
+  if (expectSigned && !v.signed) return "the catalog says signed but the committed package carries no signature";
+  const { manifest, payload } = readAzp(bytes);
+  const { files: _drop, ...clean } = manifest as Manifest & { files?: unknown };
+  const { LICENSE, "signature.json": _sig, ...rest } = payload;
+  const unsigned = writeAzp({ manifest: clean, payload: rest, license: Buffer.from(LICENSE ?? new Uint8Array()).toString("utf8") }).azp;
+  const got = sha256(unsigned);
+  return got === entry.integrity ? undefined : `committed package re-packs to ${got}, not the pinned ${entry.integrity}`;
+}
+
 async function extractTree(body: NonNullable<Response["body"]>): Promise<Map<string, Uint8Array>> {
   const files = new Map<string, Uint8Array>();
   const extract = tar.extract();
+  let total = 0;
 
   extract.on("entry", (header, stream, next) => {
     if (header.type !== "file") {
@@ -250,6 +294,19 @@ async function extractTree(body: NonNullable<Response["body"]>): Promise<Map<str
       return;
     }
     const rel = header.name.split("/").slice(1).join("/");
+    // A member name is attacker-influenced (it comes from the upstream repo). `code/../../x` would
+    // pass a `startsWith("code/")` filter and be packed — and signed — into the catalog, so refuse
+    // any unsafe name here rather than trusting every later filter to catch it.
+    if (rel && unsafePathReason(rel)) {
+      next(new Error(`unsafe path in tarball: ${JSON.stringify(header.name)}`));
+      stream.resume();
+      return;
+    }
+    if ((header.size ?? 0) > MAX_TREE_FILE_BYTES || (total += header.size ?? 0) > MAX_TREE_TOTAL_BYTES) {
+      next(new Error(`tarball too large at ${JSON.stringify(header.name)}`));
+      stream.resume();
+      return;
+    }
     const chunks: Buffer[] = [];
     stream.on("data", (c) => chunks.push(c as Buffer)); // tar-stream emits Buffer chunks
     stream.on("end", () => {
@@ -269,7 +326,7 @@ async function extractTree(body: NonNullable<Response["body"]>): Promise<Map<str
  * happens after the response headers arrive. `fetch` resolves as soon as the server answers, so a
  * retry wrapped around the call alone (which is all this had) covers the handshake and nothing else;
  * the bytes then stream in over seconds, and an abort during that window escaped the retry entirely.
- * It cost a deploy: `--check` gates `.github/workflows/deploy-storefront.yml`, one of 128 tarballs
+ * It cost a deploy: `--check` gates `.github/workflows/deploy-storefront.yml`, one of its ~150 tarballs
  * died with undici's `TypeError: terminated`, and an identical re-run passed. The chunk downloader in
  * `@azphalt/repository-client` reads the body inside its retry for the same reason.
  *
@@ -373,6 +430,7 @@ async function build(source: Source): Promise<Built> {
   // own (spec/package-format.md). Dropping any checked-in `files` map keeps the digests authoritative.
   const { files: _drop, ...clean } = manifest as Manifest & { files?: unknown };
   const { azp } = writeAzp({ manifest: clean, payload, license: Buffer.from(licenseBytes).toString("utf8") });
+  assertVerifies(label, azp);
 
   const integrity = sha256(azp);
   const bytes = signingKey
@@ -426,7 +484,7 @@ function buildFolder(base: string, id: string, label: string): Built {
   // reporting "the committed catalog is stale" when nothing is stale.
   //
   // The write path is the worse half: building on Windows and committing would bake CRLF licences
-  // into every first-party package and move all 24 digests, which reads as a real content change in
+  // into every first-party package and move every first-party digest, which reads as a real content change in
   // review. Remote-pinned packages never had this problem — their LICENSE comes out of a tarball,
   // which git does not touch — so it only ever showed up here.
   //
@@ -434,6 +492,7 @@ function buildFolder(base: string, id: string, label: string): Built {
   // agree with the committed catalog instead of changing it.
   const license = readFileSync(licensePath, "utf8").replace(/\r\n/g, "\n");
   const { azp } = writeAzp({ manifest: clean, payload, license });
+  assertVerifies(`${label}${id}`, azp);
 
   const integrity = sha256(azp);
   const bytes = signingKey
@@ -655,7 +714,8 @@ async function main(): Promise<void> {
       drift.push("registry/catalog.json is missing — the catalog has never been built");
     } else {
       const committed = JSON.parse(readFileSync(catalogPath, "utf8")) as {
-        packages: { id: string; version: string; integrity: string; file: string }[];
+        signed?: boolean;
+        packages: { id: string; version: string; integrity: string; file: string; bytes?: number }[];
       };
       const byId = new Map(committed.packages.map((p) => [p.id, p]));
       for (const b of built) {
@@ -666,6 +726,15 @@ async function main(): Promise<void> {
           drift.push(`${b.source.id}: committed catalog has ${c.integrity}, pinned source re-derives ${b.integrity}`);
         } else if (!existsSync(join(packagesDir, c.file))) {
           drift.push(`${b.source.id}: catalog lists ${c.file} but it is missing from registry/packages/`);
+        } else {
+          // The catalog entry only records what was *meant* to ship. What a deployment serves is the
+          // file under registry/packages/, so read it: it must verify, be signed when the catalog says
+          // so, have the recorded size, and — once its signature is set aside — re-pack to exactly the
+          // unsigned digest the lockfile pins. (Comparing raw bytes would break whenever a key is
+          // configured; the unsigned digest is signature-agnostic by design.) Without this, swapping
+          // any .azp for different bytes left the check green.
+          const problem = committedFileProblem(join(packagesDir, c.file), c, Boolean(committed.signed));
+          if (problem) drift.push(`${b.source.id}: ${problem}`);
         }
         byId.delete(b.source.id);
       }
@@ -691,6 +760,17 @@ async function main(): Promise<void> {
 
   // Rewrite the whole packages dir on a full build so a package dropped from the lockfile stops being
   // served. A `--only` run is a partial build and must leave its siblings in place.
+  // `id` and `version` come from a committed lockfile, but they still land in a filesystem path —
+  // reject anything that isn't a plain name rather than trusting the review that let it in. This runs
+  // BEFORE anything is deleted: validating after the wipe left registry/packages/ empty (while
+  // catalog.json still listed every package) whenever one version string had a character outside the set.
+  for (const b of built) {
+    if (!/^[A-Za-z0-9._@-]+$/.test(b.file.replace(/\.azp$/, ""))) {
+      console.error(`build-catalog: refusing unsafe output filename for ${b.source.id}`);
+      process.exit(1);
+    }
+  }
+
   mkdirSync(packagesDir, { recursive: true });
   if (!only) {
     for (const name of readdirSync(packagesDir)) {
@@ -698,19 +778,14 @@ async function main(): Promise<void> {
     }
   }
 
-  for (const b of built) {
-    // `id` and `version` come from a committed lockfile, but they still land in a filesystem path —
-    // reject anything that isn't a plain name rather than trusting the review that let it in.
-    if (!/^[A-Za-z0-9._@-]+$/.test(b.file.replace(/\.azp$/, ""))) {
-      console.error(`build-catalog: refusing unsafe output filename for ${b.source.id}`);
-      process.exit(1);
-    }
-    writeFileSync(join(packagesDir, b.file), b.bytes);
-  }
+  for (const b of built) writeFileSync(join(packagesDir, b.file), b.bytes);
 
   const catalog = {
     "//": "Generated by scripts/build-catalog.ts from registry/sources.json. Do not edit by hand.",
-    signed: Boolean(signingKey),
+    // True only when EVERY emitted package carries a signature. `Boolean(signingKey)` was wrong both
+    // ways: a keyless run that reused committed signed bytes said "unsigned", and a keyed run that
+    // mixed reused-signed with fresh packages could not say "mixed".
+    signed: built.every((b) => verifyAzp(b.bytes).signed),
     packages: built
       .map((b) => ({
         id: b.source.id,

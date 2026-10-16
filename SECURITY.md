@@ -12,9 +12,14 @@ Security fixes land on `main` and ship in the next release. Only the latest rele
 
 ## Reporting a vulnerability
 
-Open an issue at [github.com/HereLiesAz/azphalt/issues](https://github.com/HereLiesAz/azphalt/issues) and put `[security]` at the start of the title.
+**Report privately.** Use GitHub's private vulnerability reporting:
+[github.com/HereLiesAz/azphalt/security/advisories/new](https://github.com/HereLiesAz/azphalt/security/advisories/new).
+Include the affected package or app and its version, what an attacker can do, and the steps to reproduce.
 
-Include the affected package or app and its version, what an attacker can do, and the steps to reproduce. Issues are public: describe the impact and the affected code, and leave out a working exploit. The maintainer will ask for the details needed to reproduce it.
+If that page is unavailable, open a public issue titled `[security] private report requested` with **no
+details** — not the affected code, not the impact — and the maintainer will arrange a private channel.
+A public issue is never the place for the vulnerability itself: it is readable by everyone, including
+the people you are reporting it against, from the moment it is filed.
 
 ## What is in scope
 

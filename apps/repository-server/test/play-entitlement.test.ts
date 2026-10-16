@@ -49,7 +49,7 @@ const get = (path: string, headers: Record<string, string> = {}): RepoRequest =>
 /** A verifier that accepts exactly one token, standing in for the Play Developer API call. */
 function fixture(opts: { verifier?: PlayPurchaseVerifier } = {}) {
   const store = new InMemoryStore();
-  const registry = new Registry(store);
+  const registry = new Registry(store, { requireSignature: false });
   const marketplace = new Marketplace(registry, store);
   return (async () => {
     await registry.publish(azp("com.demo.paid"));
@@ -115,7 +115,7 @@ describe("POST /entitlements/play", () => {
 
   it("answers 501 when the paid lane is not configured", async () => {
     const store = new InMemoryStore();
-    const registry = new Registry(store);
+    const registry = new Registry(store, { requireSignature: false });
     const handle = createRepositoryHandler({ registry, index: { name: "R", version: "0.1" } });
     const res = await handle(post("/entitlements/play", { packageId: "a", productId: "b", purchaseToken: "c" }));
     expect(res.status).toBe(501);

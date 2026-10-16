@@ -119,28 +119,34 @@ public class Billing(private val context: Context) {
 
         try {
             val productId = playProductId(packageId)
-            val query = QueryProductDetailsParams.newBuilder()
-                .setProductList(
-                    listOf(
-                        QueryProductDetailsParams.Product.newBuilder()
-                            .setProductId(productId)
-                            .setProductType(BillingClient.ProductType.INAPP)
-                            .build(),
-                    ),
-                )
-                .build()
 
-            val details: ProductDetails = c.queryProductDetails(query).productDetailsList?.firstOrNull()
+            // A package is sold either once (INAPP) or as a subscription (SUBS); the registry supports
+            // both, and only looking at INAPP made every subscription listing unbuyable here.
+            suspend fun details(type: String): ProductDetails? = c.queryProductDetails(
+                QueryProductDetailsParams.newBuilder()
+                    .setProductList(
+                        listOf(
+                            QueryProductDetailsParams.Product.newBuilder().setProductId(productId).setProductType(type).build(),
+                        ),
+                    )
+                    .build(),
+            ).productDetailsList?.firstOrNull()
+
+            val oneTime = details(BillingClient.ProductType.INAPP)
+            val details: ProductDetails = oneTime
+                ?: details(BillingClient.ProductType.SUBS)
                 ?: return PurchaseOutcome.Failed("“$packageId” is not available for purchase on this account")
+            val productType = if (oneTime != null) BillingClient.ProductType.INAPP else BillingClient.ProductType.SUBS
 
+            val paramsBuilder = BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(details)
+            if (productType == BillingClient.ProductType.SUBS) {
+                // Billing requires an offer to be chosen for a subscription; take the first (base) one.
+                val offer = details.subscriptionOfferDetails?.firstOrNull()?.offerToken
+                    ?: return PurchaseOutcome.Failed("“$packageId” has no subscription offer available")
+                paramsBuilder.setOfferToken(offer)
+            }
             val flow = BillingFlowParams.newBuilder()
-                .setProductDetailsParamsList(
-                    listOf(
-                        BillingFlowParams.ProductDetailsParams.newBuilder()
-                            .setProductDetails(details)
-                            .build(),
-                    ),
-                )
+                .setProductDetailsParamsList(listOf(paramsBuilder.build()))
                 .build()
 
             val purchase = when (val awaited = awaitPurchase(c, activity, flow)) {
@@ -151,7 +157,7 @@ public class Billing(private val context: Context) {
                 // handing the existing purchase back through the listener. Look it up instead of
                 // treating the missing record as a cancellation.
                 AwaitedPurchase.AlreadyOwnedElsewhere ->
-                    queryOwnedPurchase(c, productId) ?: return PurchaseOutcome.Failed(
+                    queryOwnedPurchase(c, productId, productType) ?: return PurchaseOutcome.Failed(
                         "Already owned, but Play did not return the purchase record. Try again after restarting the app.",
                     )
             }
@@ -170,9 +176,12 @@ public class Billing(private val context: Context) {
                     repository = repository,
                 )
             } catch (e: Exception) {
+                // The purchase is deliberately left unacknowledged (below), so Play refunds it after three
+                // days if no licence is ever issued. Nothing in this app retries the exchange on its own,
+                // so say what is actually true: try again, or the payment comes back.
                 return PurchaseOutcome.Failed(
                     "Paid, but the licence could not be issued: ${e.message ?: "registry unreachable"}. " +
-                        "It will be granted automatically when the registry is reachable again.",
+                        "Open the package and try again — if it still fails, Play refunds the purchase automatically.",
                 )
             }
 
@@ -227,9 +236,9 @@ public class Billing(private val context: Context) {
 
     /** Look up an existing owned purchase of [productId] via `queryPurchasesAsync`, Play's documented
      *  remediation for `ITEM_ALREADY_OWNED` when the billing flow itself didn't return the purchase. */
-    private suspend fun queryOwnedPurchase(c: BillingClient, productId: String): Purchase? {
+    private suspend fun queryOwnedPurchase(c: BillingClient, productId: String, productType: String): Purchase? {
         val result = c.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
+            QueryPurchasesParams.newBuilder().setProductType(productType).build(),
         )
         if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) return null
         return result.purchasesList.firstOrNull { productId in it.products }

@@ -18,6 +18,19 @@ const CREDENTIAL_KEY_RE = /(key|token|secret|password|passwd|api[-_]?key|authori
 // Bounded quantifier ({1,128}, not +): an input id is short, and an unbounded `[^}]+` before `\}`
 // backtracks O(n) per `${input:` start — polynomial on a crafted value (CodeQL js/polynomial-redos).
 const INPUT_REF_RE = /\$\{input:([^}]{1,128})\}/g;
+const CHECKSUM_RE = /^sha256-[0-9a-f]{64}$/;
+
+/** An `https://` URL with no embedded credentials, or an `${input:…}` placeholder for one. */
+function httpsOrInputUrl(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  if (/^\$\{input:[^}]{1,128}\}$/.test(value)) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.username === "" && url.password === "";
+  } catch {
+    return false;
+  }
+}
 
 function referencedInputs(value: string): string[] {
   const ids: string[] = [];
@@ -77,7 +90,9 @@ export function validateMcpManifest(manifest: Manifest): string[] {
       if (wasi) {
         if (wasi.module === "") {
           if (!wasi.remoteUrl) errors.push(`mcp: ${sid} wasi with empty module needs a remoteUrl`);
+          else if (!httpsOrInputUrl(wasi.remoteUrl)) errors.push(`mcp: ${sid} wasi.remoteUrl must be an https:// URL`);
           if (!wasi.checksum) errors.push(`mcp: ${sid} remote wasi needs a checksum`);
+          else if (!CHECKSUM_RE.test(wasi.checksum)) errors.push(`mcp: ${sid} wasi.checksum must be sha256-<hex>`);
         } else if (typeof wasi.module !== "string") {
           errors.push(`mcp: ${sid} wasi needs a module (path or "")`);
         } else if (!Object.hasOwn(files, wasi.module)) {
@@ -99,6 +114,7 @@ export function validateMcpManifest(manifest: Manifest): string[] {
 
     if (server.remote) {
       if (!server.remote.url) errors.push(`mcp: ${sid} remote needs a url`);
+      else if (!httpsOrInputUrl(server.remote.url)) errors.push(`mcp: ${sid} remote.url must be an https:// URL`);
       if (server.remote.type !== "http" && server.remote.type !== "sse") {
         errors.push(`mcp: ${sid} remote type must be http or sse`);
       }

@@ -29,7 +29,13 @@ function detectAudioFormat(bytes: Uint8Array): string {
   if (asciiAt(bytes, 0, 4) === "RIFF" && asciiAt(bytes, 8, 12) === "WAVE") return "wav";
   // MP3: an ID3v2 tag, or a bare MPEG audio frame sync (11 set bits).
   if (asciiAt(bytes, 0, 3) === "ID3") return "mp3";
-  if (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) return "mp3";
+  // 11 sync bits alone also match ADTS AAC (layer bits `00`) and reserved MPEG versions, so require a
+  // real MPEG audio layer (Layer I/II/III = 01/10/11, never 00) and a non-reserved version (not 01).
+  if (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) {
+    const version = (bytes[1] >> 3) & 0x3;
+    const layer = (bytes[1] >> 1) & 0x3;
+    if (version !== 1 && layer !== 0) return "mp3";
+  }
   // OGG: the "OggS" capture pattern.
   if (asciiAt(bytes, 0, 4) === "OggS") return "ogg";
   // FLAC: the "fLaC" stream marker.

@@ -29,10 +29,11 @@
   },
   "dependencies": {
     "@azphalt/azdk": "workspace:*",
-    "@azphalt/azp": "workspace:*"
+    "@azphalt/azp": "workspace:*",
+    "@azphalt/registry": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"
   },

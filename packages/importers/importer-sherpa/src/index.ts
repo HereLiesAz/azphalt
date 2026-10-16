@@ -1,6 +1,23 @@
 import { writeAzp } from "@azphalt/azp";
 import type { Manifest, AssetContribution } from "@azphalt/azdk";
 
+/** Strip any directory component from a caller-supplied filename and reject traversal/empty names. */
+function safeFilename(filename: string): string {
+  const base = filename.replace(/^.*[\\/]/, "");
+  if (base === "" || base === "." || base === ".." || base.includes("\0")) {
+    throw new Error("unsafe filename: " + JSON.stringify(filename));
+  }
+  return base;
+}
+
+/** Only https remote model URLs — never http/file/javascript. */
+function requireHttps(url: string): string {
+  let u: URL;
+  try { u = new URL(url); } catch { throw new Error("invalid remoteUrl: " + JSON.stringify(url)); }
+  if (u.protocol !== "https:") throw new Error("remoteUrl must be https://");
+  return url;
+}
+
 export interface ImportOptions {
   id: string;
   name?: string;
@@ -30,7 +47,7 @@ export function importSherpa(bytes: Uint8Array | null, opts: ImportOptions): Uin
   let assetPath = "";
   if (bytes && !opts.remoteUrl) {
     validateSherpa(bytes);
-    assetPath = `assets/${opts.filename}`;
+    assetPath = `assets/${safeFilename(opts.filename)}`;
     payload[assetPath] = bytes;
   }
 
@@ -41,9 +58,9 @@ export function importSherpa(bytes: Uint8Array | null, opts: ImportOptions): Uin
   };
 
   if (opts.role) asset.role = opts.role;
-  if (opts.remoteUrl) asset.remoteUrl = opts.remoteUrl;
+  if (opts.remoteUrl) asset.remoteUrl = requireHttps(opts.remoteUrl);
   if (opts.checksum) asset.checksum = opts.checksum;
-  if (opts.byteSize) asset.byteSize = opts.byteSize;
+  if (opts.byteSize != null && Number.isFinite(opts.byteSize) && opts.byteSize > 0) asset.byteSize = opts.byteSize;
 
   const manifest: Omit<Manifest, "files"> = {
     azphalt: "0.1",

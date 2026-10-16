@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import models.PackageSummary
+import models.installCount
 import theme.azTurnstileEntrance
 
 /** The still frame non-active card previews hold, so one card animates at a time within a carousel. */
@@ -49,7 +50,7 @@ fun buildSections(packages: List<PackageSummary>): List<CatalogSection> {
         if (items.isNotEmpty()) sections += CatalogSection(title, subtitle, items.take(limit))
     }
 
-    add("Popular", "Most installed across every host", packages.sortedByDescending { it.downloads })
+    add("Popular", "Most installed across every host", packages.sortedByDescending { it.installCount })
     add(
         "Top rated",
         "Highest rated by the community",
@@ -67,12 +68,12 @@ fun buildSections(packages: List<PackageSummary>): List<CatalogSection> {
         add(
             c.replaceFirstChar { it.uppercase() },
             null,
-            packages.filter { c in it.mediaDomains }.sortedByDescending { it.downloads },
+            packages.filter { c in it.mediaDomains }.sortedByDescending { it.installCount },
         )
     }
 
     // Anything with no category still gets a home.
-    add("More extensions", null, packages.filter { it.mediaDomains.isEmpty() }.sortedByDescending { it.downloads })
+    add("More extensions", null, packages.filter { it.mediaDomains.isEmpty() }.sortedByDescending { it.installCount })
 
     return sections
 }

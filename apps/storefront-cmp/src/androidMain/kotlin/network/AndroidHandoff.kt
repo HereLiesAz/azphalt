@@ -66,6 +66,7 @@ actual fun downloadUrl(id: String, version: String): String =
     "$DEFAULT_REPOSITORY/packages/$id/versions/$version/download"
 
 actual fun openExternal(url: String) {
+    if (!isSafeExternalUrl(url, allowMarket = true)) return
     val context = AndroidAppContext.get() ?: return
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

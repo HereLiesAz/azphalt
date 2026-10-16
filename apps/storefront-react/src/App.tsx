@@ -17,6 +17,9 @@ import {
   isMature,
   isPaid,
   priceLabel,
+  installCount,
+  safeHref,
+  hostOf,
   startCheckout,
   type LlmBlock,
   type PackageSummary,
@@ -145,17 +148,17 @@ function LlmDisclosure({ llm }: { llm: LlmBlock }) {
       <div style={{ fontWeight: 800, fontSize: 16 }}>Before you install</div>
       {row("Runs", llm.tier === "sandbox-weights"
         ? "Open weights in your own private GitHub Actions sandbox. Prompts stay there."
-        : `A third-party service${llm.endpoint?.baseUrl ? " at " + new URL(llm.endpoint.baseUrl).host : ""}. Prompts leave your sandbox.`)}
+        : `A third-party service${hostOf(llm.endpoint?.baseUrl) ? " at " + hostOf(llm.endpoint?.baseUrl) : ""}. Prompts leave your sandbox.`)}
       {dh && row("Prompts", <>
         {PROMPT_HANDLING[dh.prompts ?? "unknown"] ?? PROMPT_HANDLING.unknown}
         {dh.operator && <> Operator: {dh.operator}.</>}
         {dh.modelPinned === false && <> The model behind it can change without notice.</>}
-        {dh.terms && <> <a href={dh.terms} target="_blank" rel="noreferrer">Terms</a></>}
+        {safeHref(dh.terms) && <> <a href={safeHref(dh.terms)} target="_blank" rel="noopener noreferrer">Terms</a></>}
       </>)}
       {llm.endpoint?.defaultModel && row("Model", llm.endpoint.defaultModel)}
       {license && row("Model licence", <>
         {license.spdx ?? "unspecified"}{license.commercialUse === false && " · non-commercial"}
-        {license.url && <> <a href={license.url} target="_blank" rel="noreferrer">Read</a></>}
+        {safeHref(license.url) && <> <a href={safeHref(license.url)} target="_blank" rel="noopener noreferrer">Read</a></>}
       </>)}
       {size > 0 && row("Download", `${formatBytes(size)} of weights, cached in the sandbox`)}
       {req && row("Runner needs", [
@@ -299,7 +302,7 @@ function PackageCard({
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 6, fontSize: 11.5, fontWeight: 700 }}>
           {ratingLabel && <span>{ratingLabel}</span>}
-          {(pkg.downloads ?? 0) > 0 && <span style={{ opacity: 0.7 }}>{formatCount(pkg.downloads as number)} installs</span>}
+          {installCount(pkg) > 0 && <span style={{ opacity: 0.7 }}>{formatCount(installCount(pkg))} installs</span>}
         </div>
       </div>
     </button>
@@ -319,7 +322,7 @@ function buildSections(packages: PackageSummary[]): CatalogSection[] {
   const add = (title: string, subtitle: string | undefined, items: PackageSummary[], limit = 14) => {
     if (items.length) out.push({ title, subtitle, items: items.slice(0, limit) });
   };
-  const byDownloads = (a: PackageSummary, b: PackageSummary) => (b.downloads ?? 0) - (a.downloads ?? 0);
+  const byDownloads = (a: PackageSummary, b: PackageSummary) => installCount(b) - installCount(a);
 
   add("Popular", "Most installed across every host", [...packages].sort(byDownloads));
   add(
@@ -541,7 +544,7 @@ function Detail({
 
       <div style={{ display: "flex", gap: 16, marginTop: 12, fontSize: 16, fontWeight: 700 }}>
         <span style={{ color: ratingLabel ? "var(--primary)" : "var(--on-surface-variant)" }}>{ratingLabel ?? "No ratings yet"}</span>
-        {(pkg.downloads ?? 0) > 0 && <span style={{ color: "var(--on-surface-variant)" }}>{formatCount(pkg.downloads as number)} installs</span>}
+        {installCount(pkg) > 0 && <span style={{ color: "var(--on-surface-variant)" }}>{formatCount(installCount(pkg))} installs</span>}
       </div>
 
       <p style={{ fontSize: 16, color: "var(--on-surface-variant)", marginTop: 20 }}>{pkg.description ?? "No description available."}</p>
@@ -755,7 +758,7 @@ function StorefrontApp() {
       return matchesQuery && matchesPrice && matchesCat && matchesApp && matchesOwned;
     });
     const by = {
-      popular: (a: PackageSummary, b: PackageSummary) => (b.downloads ?? 0) - (a.downloads ?? 0),
+      popular: (a: PackageSummary, b: PackageSummary) => installCount(b) - installCount(a),
       rating: (a: PackageSummary, b: PackageSummary) => (b.rating ?? -1) - (a.rating ?? -1),
       recent: (a: PackageSummary, b: PackageSummary) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
       name: (a: PackageSummary, b: PackageSummary) => a.name.localeCompare(b.name),
@@ -840,6 +843,8 @@ function SellerOnboardingPage() {
   const params = new URLSearchParams(window.location.search);
   const initialSeller = params.get("sellerId") ?? "";
   const [sellerId, setSellerId] = useState(initialSeller);
+  // The operator issues one code per seller id; it may arrive as ?invite= on the link they send.
+  const [inviteCode, setInviteCode] = useState(params.get("invite") ?? "");
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("US");
   const [status, setStatus] = useState("");
@@ -863,11 +868,16 @@ function SellerOnboardingPage() {
       setStatus("Enter a seller ID.");
       return;
     }
+    if (!inviteCode.trim()) {
+      setStatus("Enter the invite code the store operator gave you for this seller ID.");
+      return;
+    }
     setBusy(true);
     setStatus("");
     try {
       const result = await startSellerOnboarding({
         sellerId: id,
+        inviteCode: inviteCode.trim(),
         email: email.trim() || undefined,
         country: country.trim().toUpperCase() || undefined,
       });
@@ -892,10 +902,12 @@ function SellerOnboardingPage() {
       <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
       <h1 style={{ fontSize: 44, marginTop: 32 }}>Sell on Azphalt</h1>
       <p style={{ color: "var(--on-surface-variant)" }}>
-        Connect a Stripe Express account. Stripe handles identity verification and payout details; Azphalt stores only the connected-account id and readiness flags.
+        Connect a Stripe Express account. Stripe handles identity verification and payout details; Azphalt stores only the connected-account id and readiness flags. Selling needs an invite code from the store operator, tied to your seller ID, so nobody can connect their bank account to an ID that isn't theirs.
       </p>
       <label style={{ display: "block", marginTop: 22, fontWeight: 800 }}>Seller ID</label>
       <input value={sellerId} onChange={(e) => setSellerId(e.target.value)} placeholder="seller_yourname" style={{ width: "100%", padding: 12, marginTop: 6 }} />
+      <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Invite code</label>
+      <input value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} autoComplete="off" spellCheck={false} placeholder="from the store operator" style={{ width: "100%", padding: 12, marginTop: 6 }} />
       <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Email (optional)</label>
       <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" style={{ width: "100%", padding: 12, marginTop: 6 }} />
       <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Country</label>
