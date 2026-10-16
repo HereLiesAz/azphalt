@@ -29,3 +29,15 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+
+  # The create-azphalt templates are standalone manifests (not in pnpm-workspace.yaml), so the root
+  # entry never sees them. CLAUDE.md requires them to track the repository's versions.
+  - package-ecosystem: "npm"
+    directories:
+      - "/packages/create-azphalt/templates/*"
+    schedule:
+      interval: "weekly"
+    versioning-strategy: "increase"
+    groups:
+      templates:
+        patterns: ["*"]
