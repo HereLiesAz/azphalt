@@ -150,3 +150,38 @@ describe("publish zip cap", () => {
     expect("message" in r && r.message).toMatch(/too large|not a valid/i);
   });
 });
+
+describe("free download vs the catalog", () => {
+  const catalog = [{ id: "com.example.free", version: "1.0.0", name: "F", kind: "asset", file: "f.azp", integrity: "sha256-x", bytes: 10 }];
+  const env = () =>
+    ({
+      ...baseVars,
+      ASSETS: assets({ "/index.html": "x", "/catalog.json": JSON.stringify(catalog), "/listings.json": "[]" }),
+      STATE: durableState(),
+    }) as never;
+  const dl = () => new Request("https://azphalt.store/packages/com.example.free/versions/1.0.0/download");
+
+  it("serves the file when its size matches the catalog", async () => {
+    const real = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(new Uint8Array(10), { status: 200, headers: { "content-length": "10" } })) as typeof fetch;
+    try {
+      expect((await worker.fetch(dl(), env())).status).toBe(200);
+    } finally {
+      globalThis.fetch = real;
+    }
+  });
+
+  it("refuses a file whose size disagrees (deploy skew, or a swapped file)", async () => {
+    const real = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(new Uint8Array(11), { status: 200, headers: { "content-length": "11" } })) as typeof fetch;
+    try {
+      const res = await worker.fetch(dl(), env());
+      expect(res.status).toBe(502);
+      expect(JSON.stringify(await res.json())).toMatch(/disagree/);
+    } finally {
+      globalThis.fetch = real;
+    }
+  });
+});

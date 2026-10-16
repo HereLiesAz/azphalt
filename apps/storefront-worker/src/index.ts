@@ -897,7 +897,10 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
   const listing = activeListing(await getListings(req, env), packageId);
   if (!listing) return REPO_ERROR(404, "not_found", "no paid listing for " + packageId);
   // The product must be the one this package is sold as; otherwise any cheap product would unlock it.
-  if (productId !== (listing.playProductId || packageId)) {
+  // The store app derives the product id from the package id the same way (lowercase, anything outside
+  // [a-z0-9_.] becomes "_" — Play SKUs allow nothing else), so a package id with "-" or capitals is
+  // still purchasable without every listing needing an explicit `playProductId`.
+  if (productId !== (listing.playProductId || playSkuFor(packageId))) {
     return REPO_ERROR(402, "payment_required", "that product does not entitle this package");
   }
 
@@ -1172,6 +1175,11 @@ async function adminConnectInvite(req: Request, env: Env): Promise<Response> {
   const sellerId = typeof body?.sellerId === "string" ? body.sellerId.trim() : "";
   if (!sellerId || sellerId.length > 128) return json({ error: "sellerId is required" }, 400);
   return json({ sellerId, inviteCode: await connectInvite(env, sellerId) });
+}
+
+/** The Play SKU a package id is sold under when its listing sets no `playProductId`. Mirrors the store app. */
+function playSkuFor(packageId: string): string {
+  return packageId.toLowerCase().replace(/[^a-z0-9_.]/g, "_");
 }
 
 async function connectOnboard(req: Request, env: Env): Promise<Response> {
@@ -1647,6 +1655,20 @@ async function download(req: Request, env: Env, id: string, version: string): Pr
     }
     if (upstream.status !== 200 && upstream.status !== 206) {
       return json({ error: { code: "bad_gateway", message: "the package store answered " + upstream.status } }, 502);
+    }
+    // The catalog was exported at deploy time, but these bytes come from the git branch, which moves the
+    // moment a PR merges. If the store's file is not the size the catalog recorded, the two are out of
+    // step (or the file was swapped) — refuse rather than hand out bytes the catalog never described.
+    // (`integrity` is the digest of the UNSIGNED container, so size is the check available without
+    // buffering the whole body; the clients' `expectedDigest` covers the rest.)
+    if (typeof publicPkg.bytes === "number") {
+      const total =
+        upstream.status === 206
+          ? Number(/\/(\d+)\s*$/.exec(upstream.headers.get("content-range") || "")?.[1])
+          : Number(upstream.headers.get("content-length"));
+      if (Number.isFinite(total) && total !== publicPkg.bytes) {
+        return json({ error: { code: "bad_gateway", message: "the package store and the catalog disagree about " + id + "@" + version } }, 502);
+      }
     }
     const out = new Headers();
     out.set("content-type", "application/vnd.azphalt.package");

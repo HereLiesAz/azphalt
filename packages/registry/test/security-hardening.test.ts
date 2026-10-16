@@ -94,3 +94,20 @@ describe("subscription entitlement expiry", () => {
     expect(verifyEntitlement(perp, { trustedKeys: [pub], packageId: "com.x.y" }).valid).toBe(true);
   });
 });
+
+describe("reports and semver", () => {
+  it("refuses a report for a package or version the registry does not hold", async () => {
+    const reg = new Registry(new InMemoryStore());
+    const k = generateSigningKey();
+    await reg.publish(pkg("com.acme.real", "1.0.0", k));
+    await expect(reg.report({ packageId: "com.nope.ghost", reason: "malware" as never })).rejects.toThrow(/unknown package/);
+    await expect(reg.report({ packageId: "com.acme.real", version: "9.9.9", reason: "malware" as never })).rejects.toThrow(/unknown version/);
+    await expect(reg.report({ packageId: "com.acme.real", version: "1.0.0", reason: "malware" as never })).resolves.toBeTruthy();
+  });
+
+  it("orders numeric prerelease identifiers past 2^53 correctly", async () => {
+    const { compareSemver } = await import("../src/index");
+    expect(compareSemver("1.0.0-rc.9007199254740993", "1.0.0-rc.9007199254740992")).toBeGreaterThan(0);
+    expect(compareSemver("1.0.0", "1.0.0-rc.1")).toBeGreaterThan(0);
+  });
+});

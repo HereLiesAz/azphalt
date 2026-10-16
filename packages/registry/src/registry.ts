@@ -133,8 +133,9 @@ export function compareSemver(a: string, b: string): number {
   if (!pa) return -1;
   if (!pb) return 1;
   for (let i = 1; i <= 3; i++) {
-    const d = Number(pa[i]) - Number(pb[i]);
-    if (d !== 0) return d < 0 ? -1 : 1;
+    const x = BigInt(pa[i]);
+    const y = BigInt(pb[i]);
+    if (x !== y) return x < y ? -1 : 1;
   }
   const preA = pa[4];
   const preB = pb[4];
@@ -153,7 +154,7 @@ export function compareSemver(a: string, b: string): number {
     // therefore alphanumeric (and outranks numeric identifiers).
     const nx = /^(0|[1-9]\d*)$/.test(x);
     const ny = /^(0|[1-9]\d*)$/.test(y);
-    if (nx && ny) return Number(x) - Number(y) < 0 ? -1 : 1;
+    if (nx && ny) return BigInt(x) < BigInt(y) ? -1 : 1; // BigInt: identifiers can exceed 2^53
     if (nx) return -1; // numeric identifiers are lower than alphanumeric
     if (ny) return 1;
     return x < y ? -1 : 1;
@@ -541,7 +542,7 @@ export class Registry {
     const wasYanked = Boolean(v.yanked);
     await this.store.putVersion({ ...v, yanked }, bytes);
     if (yanked && !wasYanked) {
-      await this.store.putRevocation({ id, version, reason, revokedAt: new Date().toISOString() });
+      await this.store.putRevocation({ id, version, reason, revokedAt: this.clock() });
     }
   }
 
@@ -572,6 +573,15 @@ export class Registry {
   }): Promise<ReportResult> {
     if (!this.store.putReport || !this.store.getReports) {
       throw new RegistryError("this registry store does not support reporting");
+    }
+    // A report must name a package this registry actually holds (and, when it names a version, that
+    // version). Otherwise reports for arbitrary ids pile up in storage — a free write-amplification
+    // path for anyone who can reach the endpoint.
+    if (!(await this.store.getVersions(input.packageId)).length) {
+      throw new RegistryError(`cannot report unknown package: ${input.packageId}`);
+    }
+    if (input.version && !(await this.store.getVersion(input.packageId, input.version))) {
+      throw new RegistryError(`cannot report unknown version: ${input.packageId}@${input.version}`);
     }
     const report: Report = {
       packageId: input.packageId,
