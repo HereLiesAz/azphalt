@@ -57,6 +57,56 @@ describe("Stripe Connect is operator-only", () => {
     expect(res.status).toBe(401);
   });
 
+  it("an invite code is bound to its sellerId: it works for that seller and no other", async () => {
+    const env = makeEnv();
+    const mint = await worker.fetch(
+      new Request("https://azphalt.store/api/admin/connect/invite", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: "Bearer admin-secret" },
+        body: JSON.stringify({ sellerId: "seller_1" }),
+      }),
+      env,
+    );
+    const { inviteCode } = (await mint.json()) as { inviteCode: string };
+    expect(inviteCode).toMatch(/^[A-Za-z0-9_-]{20,}$/);
+
+    const onboard = (sellerId: string, code: string) =>
+      worker.fetch(
+        new Request("https://azphalt.store/api/connect/onboard", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ sellerId, inviteCode: code }),
+        }),
+        env,
+      );
+    // Another seller's id with this code, and a made-up code, are refused before Stripe is touched.
+    expect((await onboard("seller_2", inviteCode)).status).toBe(401);
+    expect((await onboard("seller_1", "nope")).status).toBe(401);
+    // The right code gets past authorization (it then reaches Stripe, which must never be a real
+    // network call in a test — so fetch is stubbed to fail, giving a 502 rather than a 401).
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      throw new Error("no network in tests");
+    }) as typeof fetch;
+    try {
+      expect((await onboard("seller_1", inviteCode)).status).toBe(502);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
+  it("minting an invite needs the operator token", async () => {
+    const res = await worker.fetch(
+      new Request("https://azphalt.store/api/admin/connect/invite", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sellerId: "seller_1" }),
+      }),
+      makeEnv(),
+    );
+    expect(res.status).toBe(401);
+  });
+
   it("status reports an unknown seller without touching Stripe", async () => {
     const res = await worker.fetch(new Request("https://azphalt.store/api/connect/status?sellerId=seller_1"), makeEnv());
     expect(await res.json()).toEqual({ onboarded: false });

@@ -174,10 +174,15 @@ For a subscription, add `"interval": "month"` or `"year"`. If the store app sell
 a different Play product id, add `"playProductId"`. Subscription checkout is refused until a
 Stripe webhook secret is configured.
 
-Seller payout accounts are bound by the operator, not by the seller: `POST /api/connect/onboard`
-(`{ sellerId, email?, country? }`) requires `Authorization: Bearer $ADMIN_TOKEN` and returns a Stripe
-Express onboarding link to hand to that seller. A `sellerId` is public (it appears in `listings.json`),
-so an unauthenticated endpoint would let anyone bind their own bank account to someone else's id.
+Seller payout accounts are bound only with the operator's authority, because a `sellerId` is public (it
+appears in `listings.json`) and binding a Stripe account to it decides who gets paid. The operator
+mints a per-seller **invite code** — `POST /api/admin/connect/invite` `{ sellerId }` with
+`Authorization: Bearer $ADMIN_TOKEN` — and gives it to that seller (the code is
+`HMAC-SHA256(ADMIN_TOKEN, "connect-invite:" + sellerId)`: stateless, bound to one id, revoked for
+everyone by rotating `ADMIN_TOKEN`). The seller then self-onboards at `/connect/onboard`
+(`?sellerId=…&invite=…`), which posts `{ sellerId, inviteCode, email?, country? }` to
+`POST /api/connect/onboard`; the operator's bearer token is also accepted there. Without one of the two
+the endpoint answers `401`, so nobody can onboard their own bank account against someone else's id.
 `GET /api/connect/status?sellerId=` is public but returns only readiness flags; the Stripe account id
 and `refresh=1` are operator-only. At checkout the `stripeAccountId` in the reviewed listing wins over
 a stored mapping. A checkout session is fulfilled only once its `payment_status` is `paid`

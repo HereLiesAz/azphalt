@@ -1153,23 +1153,49 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   }
 }
 
+/**
+ * The invite code that lets one seller onboard themselves: `HMAC-SHA256(ADMIN_TOKEN, "connect-invite:" +
+ * sellerId)`, base64url. Stateless (nothing to store or expire), bound to a single sellerId, and
+ * unforgeable without the operator's token — rotating `ADMIN_TOKEN` revokes every outstanding code.
+ */
+async function connectInvite(env: Env, sellerId: string): Promise<string> {
+  const mac = await hmac(env.ADMIN_TOKEN ?? "", "connect-invite:" + sellerId);
+  let binary = "";
+  for (const b of mac) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** `POST /api/admin/connect/invite` `{ sellerId }` — mint the code to hand to that seller. Bearer `ADMIN_TOKEN`. */
+async function adminConnectInvite(req: Request, env: Env): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  const body = await readJson(req);
+  const sellerId = typeof body?.sellerId === "string" ? body.sellerId.trim() : "";
+  if (!sellerId || sellerId.length > 128) return json({ error: "sellerId is required" }, 400);
+  return json({ sellerId, inviteCode: await connectInvite(env, sellerId) });
+}
+
 async function connectOnboard(req: Request, env: Env): Promise<Response> {
   if (!env.STRIPE_SECRET_KEY) return json({ error: "Stripe Connect onboarding is not configured" }, 404);
-  // Binding a Stripe account to a sellerId decides who gets paid, and sellerIds are public in
-  // listings.json — so only the operator may do it. An unauthenticated caller could otherwise
-  // onboard their own bank account against someone else's id before the real seller does.
-  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
   if (!(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
 
-  let body: { sellerId?: unknown; email?: unknown; country?: unknown };
+  let body: { sellerId?: unknown; email?: unknown; country?: unknown; inviteCode?: unknown };
   try {
-    body = await req.json() as { sellerId?: unknown; email?: unknown; country?: unknown };
+    body = await req.json() as { sellerId?: unknown; email?: unknown; country?: unknown; inviteCode?: unknown };
   } catch {
     return json({ error: "invalid JSON body" }, 400);
   }
 
   const sellerId = typeof body.sellerId === "string" ? body.sellerId.trim() : "";
   if (!sellerId || sellerId.length > 128) return json({ error: "sellerId is required" }, 400);
+  // Binding a Stripe account to a sellerId decides who gets paid, and sellerIds are public in
+  // listings.json. So it needs authority over THAT id: the operator's token, or the invite code the
+  // operator issued for it. Without this, anyone could onboard their own bank account against someone
+  // else's id before the real seller does.
+  const invited =
+    typeof body.inviteCode === "string" &&
+    !!env.ADMIN_TOKEN &&
+    timingSafeEqual(body.inviteCode, await connectInvite(env, sellerId));
+  if (!adminAuthorized(req, env) && !invited) return json({ error: "an invite code from the operator is required" }, 401);
   const email = typeof body.email === "string" && body.email.trim() ? body.email.trim() : undefined;
   const country = typeof body.country === "string" && body.country.trim() ? body.country.trim().toUpperCase() : undefined;
 
@@ -2471,6 +2497,7 @@ async function handle(req: Request, env: Env): Promise<Response> {
       if (req.method === "POST" && path === "/api/webhooks/stripe") return webhook(req, env);
       if (req.method === "GET" && path === "/api/purchases") return purchases(req, env);
       if (req.method === "POST" && path === "/api/connect/onboard") return connectOnboard(req, env);
+      if (req.method === "POST" && path === "/api/admin/connect/invite") return adminConnectInvite(req, env);
       if (req.method === "GET" && path === "/api/connect/status") return connectStatus(req, env);
       if (req.method === "POST" && path === "/api/ratings") return rate(req, env);
       if (path === "/reports" || path === "/api/reports") {
