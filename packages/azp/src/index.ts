@@ -196,9 +196,15 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     if (path !== "manifest.json") payload[path] = data;
   }
 
+  // The message text `unsafe path: <path>` is pinned by the conformance fixtures other hosts vendor,
+  // so keep it byte-stable; the specific reason is not part of the wire contract. A path is reported
+  // once even if it also appears as a manifest.files key.
+  const unsafeReported = new Set<string>();
   for (const path of Object.keys(payload)) {
-    const reason = unsafePathReason(path);
-    if (reason) errors.push(`${reason}: ${path}`);
+    if (unsafePathReason(path)) {
+      errors.push(`unsafe path: ${path}`);
+      unsafeReported.add(path);
+    }
   }
 
   errors.push(...validateManifestCore(manifest));
@@ -208,9 +214,8 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     return { ok: false, errors, signed };
   }
   for (const [path, want] of Object.entries(manifest.files)) {
-    const reason = unsafePathReason(path);
-    if (reason) {
-      errors.push(`manifest.files key ${reason}: ${path}`);
+    if (unsafePathReason(path)) {
+      if (!unsafeReported.has(path)) errors.push(`unsafe path: ${path}`);
       continue;
     }
     const data = Object.hasOwn(payload, path) ? payload[path] : undefined;

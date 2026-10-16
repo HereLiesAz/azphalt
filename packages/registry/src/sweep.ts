@@ -40,7 +40,11 @@ export interface ScanOptions {
 // A manifest value whose KEY looks like a credential must be an `${input:…}` reference, never a literal.
 // NB: `authorization` (not bare `auth`) so it doesn't false-match the very common `author` field.
 const CREDENTIAL_KEY_RE = /(key|token|secret|password|passwd|api[-_]?key|authorization|credential|bearer)/i;
-const INPUT_REF_RE = /\$\{input:[^}]{1,128}\}/;
+// Global so every `${input:…}` placeholder can be stripped from a value — a credential-keyed value is
+// safe only if what REMAINS after removing its placeholders is not itself a secret. Anchoring instead
+// (`^…$`) would wrongly reject legitimate composed values like `Bearer ${input:token}` while STILL
+// passing `sk-live-abc${input:x}` if it were unanchored — stripping handles both correctly.
+const INPUT_REF_RE = /\$\{input:[^}]{1,128}\}/g;
 
 const RANK: Record<ScanVerdict, number> = { pass: 0, flag: 1, block: 2 };
 function worst(checks: ScanCheck[]): ScanVerdict {
@@ -58,13 +62,17 @@ function secretScan(manifest: Manifest): ScanCheck {
     }
     if (typeof node === "object") {
       for (const [k, v] of Object.entries(node)) {
-        // The `files` digest map is keyed by file PATHS (which may contain substrings like "tokens/")
-        // and its values are integrity digests, never secrets — skip it entirely.
-        if (k === "files") continue;
+        // The top-level `manifest.files` digest map is keyed by file PATHS (which may contain
+        // substrings like "tokens/") and holds integrity digests, never secrets — skip ONLY it, not
+        // every nested object that happens to be named `files` (that was an evasion gap).
+        if (k === "files" && path === "manifest") continue;
         // A value that is a content digest (`sha256-…`) is never a credential, whatever its key.
         const isDigest = typeof v === "string" && /^sha256-/i.test(v);
-        if (typeof v === "string" && !isDigest && CREDENTIAL_KEY_RE.test(k) && v.length >= 8 && !INPUT_REF_RE.test(v)) {
-          hits.push(`${path}.${k}`);
+        if (typeof v === "string" && !isDigest && CREDENTIAL_KEY_RE.test(k)) {
+          // Strip every `${input:…}` placeholder; a leftover ≥8-char literal is a real secret, so
+          // `${input:x}` and `Bearer ${input:x}` pass while `sk-live-abc${input:x}` is blocked.
+          const leftover = v.replace(INPUT_REF_RE, "").trim();
+          if (leftover.length >= 8) hits.push(`${path}.${k}`);
         }
         walk(v, `${path}.${k}`);
       }
@@ -90,7 +98,8 @@ const KNOWN_CAPABILITIES: ReadonlySet<string> = new Set<string>([
   "assets",
   "time",
   "audio",
-  "storage",
+  // `storage` is deferred — it is NOT part of 0.1 (spec/capability-model.md), has no host API to
+  // grant, and so is treated as off-contract here rather than silently accepted.
 ]);
 
 /**

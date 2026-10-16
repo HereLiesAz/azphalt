@@ -55,7 +55,7 @@ describe("path safety", () => {
     });
     const r = verifyAzp(azp);
     expect(r.ok).toBe(false);
-    expect(r.errors.join("\n")).toMatch(/backslash/);
+    expect(r.errors.join("\n")).toMatch(/unsafe path/);
   });
 });
 

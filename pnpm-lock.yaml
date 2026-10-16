@@ -816,6 +816,9 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../azp
+      '@azphalt/registry':
+        specifier: workspace:*
+        version: link:../registry
     devDependencies:
       '@types/node':
         specifier: ^26.6.4
