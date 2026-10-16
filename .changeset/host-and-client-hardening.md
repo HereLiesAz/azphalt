@@ -6,7 +6,6 @@
 "@azphalt/web-handoff": minor
 "@azphalt/conformance": minor
 "@azphalt/azdk": minor
-"@azphalt/repository-server": minor
 ---
 
 Harden the host side — the clients, runtimes and conformance suite that consume `.azp` packages:

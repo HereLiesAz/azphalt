@@ -1,7 +1,5 @@
 ---
 "@azphalt/registry": minor
-"@azphalt/submit-check": minor
-"@azphalt/repository-server": patch
 "@azphalt/azp": patch
 ---
 
