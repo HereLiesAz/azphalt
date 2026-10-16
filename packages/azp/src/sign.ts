@@ -1,13 +1,16 @@
 /**
- * Ed25519 signing for `.azp` packages. Signs the canonical `manifest.json` bytes — which
- * transitively cover the payload through the `manifest.files` digests — and stores a detached
+ * Ed25519 signing for `.azp` packages. Signs the **raw `manifest.json` bytes as stored** (there is
+ * no re-canonicalization — verifier and signer must agree on the exact bytes; `readAzp` rejects a
+ * manifest with duplicate keys so those bytes are unambiguous) — which transitively cover the
+ * payload through the `manifest.files` digests — and stores a detached
  * `signature.json`. Per `spec/package-format.md` § Signing, a signature is **tamper-evidence, not
  * identity**, until the trust model is settled: {@link verifyAzp} confirms the signature is
  * internally consistent (the payload matches the signed manifest, and the signature matches the
  * embedded key), not that the key belongs to any particular author or registry.
  */
 import { createPrivateKey, createPublicKey, generateKeyPairSync, sign as cryptoSign } from "node:crypto";
-import { strToU8, unzipSync, zipSync } from "fflate";
+import { strToU8, zipSync } from "fflate";
+import { safeUnzip } from "./safe-unzip.js";
 import { EPOCH } from "./index.js";
 
 export interface SigningKey {
@@ -41,7 +44,7 @@ export interface AzpSignature {
   publicKey: string;
   /** Optional signer-chosen key identifier. */
   keyId?: string;
-  /** Base64 Ed25519 signature over the canonical `manifest.json` bytes. */
+  /** Base64 Ed25519 signature over the raw `manifest.json` bytes as stored. */
   signature: string;
   /** Optional counter-signature from a registry vouching for {@link publicKey}. */
   countersignature?: AzpCountersignature;
@@ -68,7 +71,7 @@ export interface SignOptions {
  * bytes; the input is not mutated. Re-signing replaces any existing `signature.json`.
  */
 export function signAzp(azp: Uint8Array, opts: SignOptions): Uint8Array {
-  const files = unzipSync(azp);
+  const files = safeUnzip(azp);
   const manifestBytes = files["manifest.json"];
   if (!manifestBytes) throw new Error("azp: manifest.json is missing");
 

@@ -10,7 +10,8 @@
  * only enforces the cryptography.
  */
 import { createPrivateKey, createPublicKey, sign as cryptoSign, verify as cryptoVerify } from "node:crypto";
-import { strToU8, strFromU8, unzipSync, zipSync } from "fflate";
+import { strToU8, strFromU8, zipSync } from "fflate";
+import { safeUnzip } from "./safe-unzip.js";
 import { EPOCH, verifyAzp, readAzp } from "./index.js";
 import type { AzpSignature, AzpCountersignature } from "./sign.js";
 
@@ -156,7 +157,7 @@ export interface CountersignOptions {
  * new `.azp` bytes; the input is not mutated.
  */
 export function countersign(azp: Uint8Array, opts: CountersignOptions): Uint8Array {
-  const files = unzipSync(azp);
+  const files = safeUnzip(azp);
   const sigRaw = files["signature.json"];
   if (!sigRaw) throw new Error("azp: cannot counter-sign an unsigned package (no signature.json)");
   const sig = JSON.parse(strFromU8(sigRaw)) as AzpSignature;

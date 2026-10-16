@@ -32,6 +32,26 @@ const KNOWN_ROLES: readonly AppRole[] = ["companion", "host"];
  */
 const REVERSE_DNS = /^[^\s.]+(\.[^\s.]+)+$/;
 
+/**
+ * A safe install/launch URL for a listing a storefront renders as a clickable link: an `https://`
+ * URL, or a same-origin relative path (`/…`). Anything carrying another scheme — `javascript:`,
+ * `file:`, `data:`, cleartext `http:` — is rejected so a published listing cannot smuggle an XSS or
+ * a local-file link into the store UI. `allowMarket` additionally permits a `market://` deep link,
+ * which Android store installs use.
+ */
+function safeLinkUrl(value: unknown, allowMarket = false): boolean {
+  if (typeof value !== "string" || value.length === 0) return false;
+  if (value.startsWith("/") && !value.startsWith("//")) return true; // same-origin relative
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:") return true;
+    if (allowMarket && url.protocol === "market:") return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function validateAppManifest(manifest: Manifest): string[] {
   const errors: string[] = [];
   const app = manifest.app;
@@ -55,11 +75,24 @@ export function validateAppManifest(manifest: Manifest): string[] {
     const android = platforms.android;
     const pwa = platforms.pwa;
     if (!android && !pwa) errors.push("app: platforms needs at least one of android / pwa");
-    if (android && (typeof android.packageId !== "string" || android.packageId.length === 0)) {
-      errors.push("app: platforms.android needs a non-empty string packageId");
+    if (android) {
+      if (typeof android.packageId !== "string" || android.packageId.length === 0) {
+        errors.push("app: platforms.android needs a non-empty string packageId");
+      }
+      if (android.install !== undefined && !safeLinkUrl(android.install, true)) {
+        errors.push("app: platforms.android.install must be an https:// or market:// URL");
+      }
     }
-    if (pwa && pwa.startUrl !== undefined && (typeof pwa.startUrl !== "string" || pwa.startUrl.length === 0)) {
-      errors.push("app: platforms.pwa startUrl, when present, must be a non-empty string");
+    if (pwa) {
+      if (pwa.startUrl !== undefined && !safeLinkUrl(pwa.startUrl)) {
+        errors.push("app: platforms.pwa.startUrl must be an https:// URL or a same-origin path");
+      }
+      if (pwa.manifestUrl !== undefined && !safeLinkUrl(pwa.manifestUrl)) {
+        errors.push("app: platforms.pwa.manifestUrl must be an https:// URL or a same-origin path");
+      }
+      if (pwa.shareTargetUrl !== undefined && !safeLinkUrl(pwa.shareTargetUrl)) {
+        errors.push("app: platforms.pwa.shareTargetUrl must be an https:// URL or a same-origin path");
+      }
     }
   }
 

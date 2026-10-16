@@ -4,9 +4,12 @@
  * package; {@link signAzp} adds an Ed25519 `signature.json`, and {@link verifyAzp} validates it
  * when present. A signature is tamper-evidence, not identity, until the trust model is settled.
  */
-import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
+import { zipSync, strToU8, strFromU8 } from "fflate";
 import { createHash, createPublicKey, verify as cryptoVerify } from "node:crypto";
 import type { Manifest } from "@azphalt/azdk";
+import { safeUnzip } from "./safe-unzip.js";
+import { unsafePathReason } from "./paths.js";
+import { parseJsonNoDuplicateKeys } from "./parse-json.js";
 import { validateAppManifest } from "./app.js";
 import { validateMcpManifest } from "./mcp.js";
 import { validatePackManifest } from "./pack.js";
@@ -75,16 +78,84 @@ export interface ReadResult {
 
 /** Open a `.azp` and parse its manifest. Does not verify integrity — call {@link verifyAzp}. */
 export function readAzp(bytes: Uint8Array): ReadResult {
-  const files = unzipSync(bytes);
+  const files = safeUnzip(bytes);
   const manifestRaw = files["manifest.json"];
   if (!manifestRaw) throw new Error("azp: manifest.json is missing");
-  const manifest = JSON.parse(strFromU8(manifestRaw)) as Manifest;
+  const manifest = parseJsonNoDuplicateKeys<Manifest>(strFromU8(manifestRaw));
 
-  const payload: Record<string, Uint8Array> = {};
+  // Null-prototype so a payload entry literally named `__proto__` or `constructor` is an ordinary
+  // own key (`payload["__proto__"] = bytes` on a plain object would otherwise mutate the prototype).
+  const payload: Record<string, Uint8Array> = Object.create(null);
   for (const [path, data] of Object.entries(files)) {
     if (path !== "manifest.json") payload[path] = data;
   }
   return { manifest, payload };
+}
+
+/** Kinds `verifyAzp` recognizes. Anything else is rejected rather than waved through unvalidated. */
+const KNOWN_KINDS = new Set<string>([
+  "asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable", "workflow", "role", "llm",
+]);
+
+/**
+ * Validate the manifest fields every kind shares, plus path-safety of the entry/asset references a
+ * host materializes. Returns error strings ([] when clean); never throws.
+ */
+function validateManifestCore(manifest: Manifest): string[] {
+  const errors: string[] = [];
+  const str = (v: unknown): v is string => typeof v === "string" && v.length > 0;
+
+  if (!str(manifest.azphalt)) errors.push("manifest.azphalt (format version) is required");
+  if (!str(manifest.id)) errors.push("manifest.id is required");
+  if (!str(manifest.name)) errors.push("manifest.name is required");
+  if (!str(manifest.version)) errors.push("manifest.version is required");
+  if (!str(manifest.license)) errors.push("manifest.license is required");
+  if (!str(manifest.compat)) errors.push("manifest.compat is required");
+
+  if (typeof manifest.kind !== "string" || !KNOWN_KINDS.has(manifest.kind)) {
+    errors.push(`manifest.kind "${String(manifest.kind)}" is not a known kind`);
+  }
+
+  const files = manifest.files ?? {};
+  // A bundled `entry` and every bundled asset `path` must be a safe name that is actually in the
+  // archive (an `asset` package otherwise got no path checks at all).
+  if (manifest.entry !== undefined) {
+    if (typeof manifest.entry !== "string" || manifest.entry.length === 0) {
+      errors.push("manifest.entry, when present, must be a non-empty string");
+    } else {
+      const reason = unsafePathReason(manifest.entry);
+      if (reason) errors.push(`manifest.entry ${reason}: ${manifest.entry}`);
+      else if (!Object.hasOwn(files, manifest.entry)) errors.push(`manifest.entry "${manifest.entry}" is not in manifest.files`);
+    }
+  }
+  if (Array.isArray(manifest.assets)) {
+    manifest.assets.forEach((asset, idx) => {
+      const path = (asset as { path?: unknown }).path;
+      const remote = (asset as { remoteUrl?: unknown }).remoteUrl;
+      const members = (asset as { files?: unknown }).files;
+      const hasMembers = Array.isArray(members) && members.length > 0;
+      if (typeof path === "string" && path.length > 0) {
+        const reason = unsafePathReason(path);
+        if (reason) errors.push(`assets[${idx}].path ${reason}: ${path}`);
+        else if (!Object.hasOwn(files, path)) errors.push(`assets[${idx}].path "${path}" is not in manifest.files`);
+      } else if ((typeof remote !== "string" || remote.length === 0) && !hasMembers) {
+        // A model asset may deliver nothing at the top level and instead list bundled/remote members.
+        errors.push(`assets[${idx}] needs a bundled path, a remoteUrl, or files[] members`);
+      }
+      // Each bundled member path must also be safe and listed.
+      if (hasMembers) {
+        (members as unknown[]).forEach((m, mi) => {
+          const mp = (m as { path?: unknown }).path;
+          if (typeof mp === "string" && mp.length > 0) {
+            const reason = unsafePathReason(mp);
+            if (reason) errors.push(`assets[${idx}].files[${mi}].path ${reason}: ${mp}`);
+            else if (!Object.hasOwn(files, mp)) errors.push(`assets[${idx}].files[${mi}].path "${mp}" is not in manifest.files`);
+          }
+        });
+      }
+    });
+  }
+  return errors;
 }
 
 export interface VerifyResult {
@@ -101,7 +172,7 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
 
   let files: Record<string, Uint8Array>;
   try {
-    files = unzipSync(bytes);
+    files = safeUnzip(bytes);
   } catch (e) {
     return { ok: false, errors: [(e as Error).message], signed: false };
   }
@@ -110,26 +181,39 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
   if (!manifestRaw) return { ok: false, errors: ["azp: manifest.json is missing"], signed: false };
   let manifest: Manifest;
   try {
-    manifest = JSON.parse(strFromU8(manifestRaw)) as Manifest;
+    manifest = parseJsonNoDuplicateKeys<Manifest>(strFromU8(manifestRaw));
   } catch (e) {
     return { ok: false, errors: [`azp: manifest.json is not valid JSON: ${(e as Error).message}`], signed: false };
   }
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+    return { ok: false, errors: ["azp: manifest.json is not an object"], signed: false };
+  }
 
-  const payload: Record<string, Uint8Array> = {};
+  // Null-prototype payload map — a `__proto__`/`constructor` entry name is then an ordinary key, not
+  // a prototype mutation, and `Object.hasOwn` lookups below can't be fooled by inherited properties.
+  const payload: Record<string, Uint8Array> = Object.create(null);
   for (const [path, data] of Object.entries(files)) {
     if (path !== "manifest.json") payload[path] = data;
   }
 
   for (const path of Object.keys(payload)) {
-    if (path.startsWith("/") || path.split("/").includes("..")) errors.push(`unsafe path: ${path}`);
+    const reason = unsafePathReason(path);
+    if (reason) errors.push(`${reason}: ${path}`);
   }
 
-  if (!manifest.files) {
+  errors.push(...validateManifestCore(manifest));
+
+  if (!manifest.files || typeof manifest.files !== "object" || Array.isArray(manifest.files)) {
     errors.push("manifest.files is missing");
     return { ok: false, errors, signed };
   }
   for (const [path, want] of Object.entries(manifest.files)) {
-    const data = payload[path];
+    const reason = unsafePathReason(path);
+    if (reason) {
+      errors.push(`manifest.files key ${reason}: ${path}`);
+      continue;
+    }
+    const data = Object.hasOwn(payload, path) ? payload[path] : undefined;
     if (!data) {
       errors.push(`missing payload for ${path}`);
       continue;
@@ -142,24 +226,26 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     }
   }
 
-  if (manifest.kind === "mcp") {
-    errors.push(...validateMcpManifest(manifest));
-  } else if (manifest.kind === "pack") {
-    errors.push(...validatePackManifest(manifest));
-  } else if (manifest.kind === "app") {
-    errors.push(...validateAppManifest(manifest));
-  } else if (manifest.kind === "skill") {
-    errors.push(...validateSkillManifest(manifest));
-  } else if (manifest.kind === "script") {
-    errors.push(...validateScriptManifest(manifest));
-  } else if (manifest.kind === "composable") {
-    errors.push(...validateComposableManifest(manifest));
-  } else if (manifest.kind === "workflow") {
-    errors.push(...validateWorkflowManifest(manifest));
-  } else if (manifest.kind === "role") {
-    errors.push(...validateRoleManifest(manifest));
-  } else if (manifest.kind === "llm") {
-    errors.push(...validateLlmManifest(manifest));
+  // Kind-specific validators are third-party-input-driven; a malformed block must become an error
+  // string, never a thrown exception that turns "ok:false" into an uncaught crash in the caller.
+  const kindValidators: Partial<Record<string, (m: Manifest) => string[]>> = {
+    mcp: validateMcpManifest,
+    pack: validatePackManifest,
+    app: validateAppManifest,
+    skill: validateSkillManifest,
+    script: validateScriptManifest,
+    composable: validateComposableManifest,
+    workflow: validateWorkflowManifest,
+    role: validateRoleManifest,
+    llm: validateLlmManifest,
+  };
+  const validate = kindValidators[manifest.kind];
+  if (validate) {
+    try {
+      errors.push(...validate(manifest));
+    } catch (e) {
+      errors.push(`azp: ${manifest.kind} validation failed: ${(e as Error).message}`);
+    }
   }
 
   const sigRaw = payload["signature.json"];
@@ -193,6 +279,9 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
   return { ok: errors.length === 0, errors, signed };
 }
 
+export { unsafePathReason, isUnsafePath } from "./paths.js";
+export { safeUnzip, MAX_ENTRIES, MAX_ENTRY_BYTES, MAX_TOTAL_BYTES } from "./safe-unzip.js";
+export { parseJsonNoDuplicateKeys } from "./parse-json.js";
 export { generateSigningKey, signAzp } from "./sign.js";
 export type { SigningKey, SignOptions, AzpSignature, AzpCountersignature } from "./sign.js";
 export { verifyTrust, countersign, trustStoreFromKeys } from "./trust.js";

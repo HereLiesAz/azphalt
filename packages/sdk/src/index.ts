@@ -13,7 +13,11 @@
 export const FORMAT_VERSION = "0.1" as const;
 
 /* ───────────────────────────── Manifest ───────────────────────────── */
-export type Kind = "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill" | "script" | "composable";
+export type Kind =
+  | "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill" | "script" | "composable"
+  // Header kinds with their own validators (validateLlmManifest / validateRoleManifest /
+  // validateWorkflowManifest) and live packages in the registry — previously missing from this union.
+  | "llm" | "role" | "workflow";
 export type Runtime = "js" | "wasm";
 
 /** 
