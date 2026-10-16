@@ -22,6 +22,10 @@ import { strFromU8, unzipSync } from "fflate";
 export const MAX_PUBLISH_BYTES = 4 * 1024 * 1024;
 export const MAX_BINARY_FILES = 30;
 const MAX_FILES = 500;
+/** Uncompressed-size ceilings. The 4 MB cap is on the *compressed* upload; without these a 4 MB deflate
+ * stream can inflate ~1000x and blow the 128 MB isolate before any check runs (unauthenticated). */
+const MAX_ENTRY_BYTES = 32 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 64 * 1024 * 1024;
 const PUBLISHERS_PATH = "apps/storefront/registry/publishers.json";
 /** Reverse-DNS: dot-separated labels, no empty label (so no `..`, which a git branch name forbids). */
 const REVERSE_DNS = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$/;
@@ -110,7 +114,19 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
 
   let files: Record<string, Uint8Array>;
   try {
-    files = unzipSync(bytes);
+    // `filter` sees each entry's header before it is inflated, so a bomb is refused without being
+    // decompressed. Count and size are both bounded.
+    let entries = 0;
+    let total = 0;
+    files = unzipSync(bytes, {
+      filter(file) {
+        if (++entries > MAX_FILES) throw new Error(`too many files (more than ${MAX_FILES})`);
+        if (file.originalSize > MAX_ENTRY_BYTES) throw new Error(`entry "${file.name}" is too large`);
+        total += file.originalSize;
+        if (total > MAX_TOTAL_BYTES) throw new Error("package is too large when uncompressed");
+        return true;
+      },
+    });
   } catch (error) {
     return bad("not a valid .azp container: " + (error instanceof Error ? error.message : String(error)));
   }
@@ -131,7 +147,13 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
   if (typeof manifest.id !== "string" || !REVERSE_DNS.test(manifest.id)) errors.push("manifest.id must be a reverse-DNS id");
   if (typeof manifest.version !== "string" || !SEMVER.test(manifest.version)) errors.push("manifest.version must be semver");
   for (const path of paths) {
-    if (path.startsWith("/") || path.split("/").includes("..") || path.includes("\\")) errors.push(`unsafe path: ${path}`);
+    // Same shapes as @azphalt/azp's unsafePathReason (kept inline: this Worker can't load node:crypto).
+    if (
+      path.length === 0 || path.includes("\0") || path.startsWith("/") || path.includes("\\") ||
+      /^[A-Za-z]:/.test(path) || path.split("/").some((seg) => seg === "" || seg === "." || seg === "..")
+    ) {
+      errors.push(`unsafe path: ${path}`);
+    }
   }
   if (!manifest.files || typeof manifest.files !== "object") {
     errors.push("manifest.files is missing");

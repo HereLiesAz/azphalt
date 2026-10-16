@@ -772,6 +772,19 @@ async function resolveReport(req: Request, env: Env, reportId: string): Promise<
   const reasonOverride = optionalText(body?.reason, 200);
   if (reasonOverride === null) return json({ error: "invalid reason" }, 400);
 
+  // For a yank, work out the version and write the revocation FIRST, and only then mark the report
+  // resolved. The other order left a report showing "yanked" (with its buttons hidden) while the
+  // package stayed downloadable whenever the version could not be determined.
+  let revocation: Revocation | undefined;
+  if (action === "yank") {
+    const reports = await stateJson<{ id: number; reason: string; packageId: string; version?: string }[]>(env, "/reports");
+    const target = reports.find((r) => String(r.id) === reportId);
+    if (!target) return json({ error: "report not found" }, 404);
+    const version = target.version || await servedVersion(req, env, target.packageId);
+    if (!version) return json({ error: "the reported package is no longer served" }, 409);
+    revocation = await yank(env, target.packageId, version, reasonOverride || target.reason);
+  }
+
   const res = await state(env).fetch(new Request("https://state.internal/report/" + reportId + "/resolution", {
     method: "PUT",
     headers: { "content-type": "application/json" },
@@ -779,13 +792,7 @@ async function resolveReport(req: Request, env: Env, reportId: string): Promise<
   }));
   if (res.status === 404) return json({ error: "report not found" }, 404);
   const report = await res.json() as { packageId: string; version?: string };
-  if (action === "dismiss") return json({ report });
-
-  const reports = await stateJson<{ id: number; reason: string }[]>(env, "/reports");
-  const reason = reasonOverride || reports.find((r) => String(r.id) === reportId)?.reason;
-  const version = report.version || await servedVersion(req, env, report.packageId);
-  if (!version) return json({ error: "the reported package is no longer served" }, 409);
-  return json({ report, revocation: await yank(env, report.packageId, version, reason) });
+  return json(revocation ? { report, revocation } : { report });
 }
 
 const MAX_UPDATES_BODY = 1024 * 1024;
@@ -1058,7 +1065,9 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   }
 
   const knownSeller = await storedSeller(env, listing.sellerId);
-  const destination = knownSeller?.accountId || listing.stripeAccountId;
+  // The account in the reviewed listing (git) outranks a runtime-stored one, so a stored mapping can
+  // never silently redirect payouts away from what a maintainer reviewed and merged.
+  const destination = listing.stripeAccountId || knownSeller?.accountId;
   if (!destination) {
     return json({ error: "seller has not connected a Stripe payout account" }, 409);
   }
@@ -1146,6 +1155,11 @@ async function checkout(req: Request, env: Env): Promise<Response> {
 
 async function connectOnboard(req: Request, env: Env): Promise<Response> {
   if (!env.STRIPE_SECRET_KEY) return json({ error: "Stripe Connect onboarding is not configured" }, 404);
+  // Binding a Stripe account to a sellerId decides who gets paid, and sellerIds are public in
+  // listings.json — so only the operator may do it. An unauthenticated caller could otherwise
+  // onboard their own bank account against someone else's id before the real seller does.
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  if (!(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
 
   let body: { sellerId?: unknown; email?: unknown; country?: unknown };
   try {
@@ -1205,12 +1219,15 @@ async function connectStatus(req: Request, env: Env): Promise<Response> {
   try {
     let seller = await storedSeller(env, sellerId);
     if (!seller) return json({ onboarded: false });
-    if (url.searchParams.get("refresh") === "1") {
+    const admin = adminAuthorized(req, env);
+    // `refresh` makes the Worker call Stripe, so it is operator-only (it was an anonymous amplifier).
+    if (admin && url.searchParams.get("refresh") === "1") {
       seller = await refreshSeller(env, sellerId, seller.accountId);
     }
     return json({
       onboarded: true,
-      accountId: seller.accountId,
+      // The Stripe account id is only for the operator; the public needs readiness, not identity.
+      ...(admin ? { accountId: seller.accountId } : {}),
       chargesEnabled: seller.chargesEnabled,
       payoutsEnabled: seller.payoutsEnabled,
       detailsSubmitted: seller.detailsSubmitted,
@@ -1302,7 +1319,11 @@ async function webhook(req: Request, env: Env): Promise<Response> {
   const object = event.data?.object || {};
 
   try {
-    if (event.type === "checkout.session.completed") {
+    if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
+      // A completed session whose payment is still processing (`unpaid`) must not be fulfilled yet;
+      // `async_payment_succeeded` re-delivers it once the funds settle.
+      const paid = object.payment_status === "paid" || object.payment_status === "no_payment_required";
+      if (!paid) return json({ received: true, fulfilled: false });
       const metadata = (object.metadata || {}) as Record<string, unknown>;
       const packageId = typeof metadata.packageId === "string" ? metadata.packageId : "";
       const buyerId = typeof metadata.buyerId === "string" ? metadata.buyerId : "";
@@ -1422,7 +1443,10 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
 
   const paymentStatus = typeof remote.payment_status === "string" ? remote.payment_status : "";
   const status = typeof remote.status === "string" ? remote.status : "";
-  if (paymentStatus !== "paid" && paymentStatus !== "no_payment_required" && status !== "complete") {
+  // `status === "complete"` only means the buyer finished the form; a delayed-notification method
+  // (bank debit) is complete but still `unpaid`. Fulfil only on settled funds.
+  void status;
+  if (paymentStatus !== "paid" && paymentStatus !== "no_payment_required") {
     return json({ status: "pending" }, 202);
   }
 
@@ -1490,8 +1514,20 @@ async function purchases(req: Request, env: Env): Promise<Response> {
   );
 }
 
+/** Constant-time string compare (no early exit on the first differing byte, length folded in). */
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const x = enc.encode(a);
+  const y = enc.encode(b);
+  let diff = x.length ^ y.length;
+  const n = Math.max(x.length, y.length);
+  for (let i = 0; i < n; i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
+}
+
 function adminAuthorized(req: Request, env: Env): boolean {
-  return !!env.ADMIN_TOKEN && req.headers.get("authorization") === "Bearer " + env.ADMIN_TOKEN;
+  if (!env.ADMIN_TOKEN) return false;
+  return timingSafeEqual(req.headers.get("authorization") ?? "", "Bearer " + env.ADMIN_TOKEN);
 }
 
 async function adminUpload(req: Request, env: Env, id: string, version: string): Promise<Response> {
@@ -2380,8 +2416,33 @@ async function serveStorefront(req: Request, env: Env): Promise<Response> {
   return shell.ok ? shell : response;
 }
 
+/**
+ * Baseline hardening headers for every response (API, assets, docs). No blanket CSP here — the store
+ * and docs ship inline bootstrap scripts a strict policy would break — but clickjacking (the store's
+ * moderation page takes an admin token), MIME sniffing, referrer leakage and downgrade are closed.
+ */
+const SECURITY_HEADERS: Record<string, string> = {
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "content-security-policy": "frame-ancestors 'none'",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+};
+
+function withSecurityHeaders(res: Response): Response {
+  if (res.status === 101) return res;
+  const headers = new Headers(res.headers);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) if (!headers.has(name)) headers.set(name, value);
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
+    return withSecurityHeaders(await handle(req, env));
+  },
+};
+
+async function handle(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
 
@@ -2396,6 +2457,14 @@ export default {
           billingModel: "free-tier-hard-stop",
         });
       }
+
+      // The admin surface is bearer-token gated; throttle it per client so the token can't be guessed
+      // online. (Where no limiter is bound this is a no-op, as for every public write.)
+      const adminSurface =
+        path.startsWith("/api/admin/") ||
+        /^\/(?:api\/)?reports\/\d+\/resolve$/.test(path) ||
+        (req.method === "GET" && (path === "/reports" || path === "/api/reports"));
+      if (adminSurface && !(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
 
       if (req.method === "GET" && path === "/api/packages") return apiPackages(req, env);
       if (req.method === "POST" && path === "/api/checkout") return checkout(req, env);
@@ -2491,5 +2560,4 @@ export default {
       console.error("worker request failed", error);
       return json({ error: "internal error" }, 500);
     }
-  },
-};
+}

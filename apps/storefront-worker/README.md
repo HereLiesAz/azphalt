@@ -174,8 +174,18 @@ For a subscription, add `"interval": "month"` or `"year"`. If the store app sell
 a different Play product id, add `"playProductId"`. Subscription checkout is refused until a
 Stripe webhook secret is configured.
 
-A seller connects their Stripe Express account at `/connect/onboard`; the Worker persists the
-seller-to-account mapping and refreshes capability flags from Stripe.
+Seller payout accounts are bound by the operator, not by the seller: `POST /api/connect/onboard`
+(`{ sellerId, email?, country? }`) requires `Authorization: Bearer $ADMIN_TOKEN` and returns a Stripe
+Express onboarding link to hand to that seller. A `sellerId` is public (it appears in `listings.json`),
+so an unauthenticated endpoint would let anyone bind their own bank account to someone else's id.
+`GET /api/connect/status?sellerId=` is public but returns only readiness flags; the Stripe account id
+and `refresh=1` are operator-only. At checkout the `stripeAccountId` in the reviewed listing wins over
+a stored mapping. A checkout session is fulfilled only once its `payment_status` is `paid`
+(`checkout.session.async_payment_succeeded` covers delayed methods); refunds and disputes are not yet
+handled, so revoke an entitlement through `/api/admin/revocations` when you refund.
+
+Known limit: ratings are one-per-browser only for honest browsers — a client that discards its
+cookie can add more, and the per-IP `WRITE_LIMITER` binding is the only brake. Bind it in production.
 
 ## Uploading paid package bytes
 
