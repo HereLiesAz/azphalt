@@ -10,9 +10,13 @@ It is the server counterpart to [`@azphalt/repository-client`](../../packages/re
 | --- | --- |
 | `GET /.well-known/azphalt-repository.json` | The repository index (name, version, auth). |
 | `GET /packages?q=&kind=&types=&tags=&mediaDomains=&capabilities=&app=&sort=&page=` | Paginated search/browse. `kind` is a comma list of package kinds to keep (e.g. `kind=app` for a host directory); `types` is a comma list of `AssetType`s; `tags` AND-filters over searchable text; `mediaDomains` keeps packages whose media domains intersect the list; `capabilities` is the set the host can grant, keeping only packages whose required capabilities are a subset of it; `app` scopes results to a host app (see below); `sort` is `popular`, `recent`, `rating`, or `name` (anything else keeps the natural order). |
-| `GET /packages/{id}` | Full metadata, version history, and the latest `Manifest`. |
+| `GET /packages/{id}` | Full metadata, version history, and the latest `Manifest`. A `private` package's detail is gated like its download (401/402). |
 | `GET /packages/{id}/versions/{version}/download` | The binary `.azp` (`Content-Type: application/vnd.azphalt.package` — see [`spec/package-format.md`](../../spec/package-format.md) § Media type). Gated for paid packages. |
 | `GET /revocations?since=` | `{ revocations: [{ id, version, reason?, revokedAt }] }` — versions pulled after publish, newest first. `since` (an ISO-8601 instant) limits it to later revocations; an invalid date is a 400. |
+| `POST /installs` | Record install/uninstall transitions against single-use report tokens (`spec/state-reporting.md`). `501` when the store keeps no install statistics. |
+| `POST /entitlements/play` | Exchange a Google Play purchase for a store-signed entitlement (`501` unless configured). |
+| `POST /packages` | Publish — always `501 not_implemented` here; this facade serves a registry filled some other way (the registry library itself requires a signed publish and pins the publisher key). |
+| `HEAD` on any `GET` route | Routed like `GET`; a `HEAD` on a download returns the size headers without serving or counting a download. |
 | `POST /updates` | Batch update check. The body is a JSON array of `{ id, version }` (the installed library); the response is `{ updates: [{ id, latest }] }`, listing only ids with a strictly newer non-yanked version. Other methods get a 405. |
 
 ## App scoping

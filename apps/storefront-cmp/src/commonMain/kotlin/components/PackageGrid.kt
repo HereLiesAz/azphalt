@@ -64,7 +64,26 @@ internal fun paletteFor(id: String): Pair<Color, Color> {
 }
 
 internal fun priceLabel(pkg: PackageSummary): String =
-    pkg.price?.let { "$" + (it.amountCents / 100) + "." + (it.amountCents % 100).toString().padStart(2, '0') } ?: "FREE"
+    pkg.price?.let { formatMoney(it.amountCents, it.currency) } ?: "FREE"
+
+/** Currencies with no minor unit: the amount is already whole units (Stripe: JPY, KRW, …). */
+private val ZERO_DECIMAL = setOf("JPY", "KRW", "VND", "CLP", "ISK", "UGX", "XAF", "XOF")
+private val SYMBOLS = mapOf("USD" to "$", "EUR" to "€", "GBP" to "£", "JPY" to "¥", "CAD" to "CA$", "AUD" to "A$")
+
+/**
+ * Format [amount] (minor units) in [currency]. Checkout charges the listing's own currency, so the
+ * label must show it — a hardcoded "$" displayed a EUR or JPY price as dollars. Unknown currencies
+ * show their code rather than a guessed symbol.
+ */
+internal fun formatMoney(amount: Int, currency: String): String {
+    val code = currency.uppercase()
+    val prefix = SYMBOLS[code] ?: "$code "
+    return if (code in ZERO_DECIMAL) {
+        "$prefix$amount"
+    } else {
+        "$prefix${amount / 100}.${(amount % 100).toString().padStart(2, '0')}"
+    }
+}
 
 internal fun isPaid(pkg: PackageSummary): Boolean = pkg.price != null || pkg.priceStatus == "paid"
 

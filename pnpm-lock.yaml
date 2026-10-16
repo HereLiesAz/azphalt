@@ -253,6 +253,9 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1(supports-color@10.2.2)
+      express-rate-limit:
+        specifier: ^8.7.1
+        version: 8.7.1(express@5.2.1(supports-color@10.2.2))(supports-color@10.2.2)
 
   apps/repository-server:
     dependencies:
@@ -720,6 +723,9 @@ importers:
       '@types/node':
         specifier: ^26.6.4
         version: 26.6.4
+      fflate:
+        specifier: ^0.8.3
+        version: 0.8.3
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -816,6 +822,9 @@ importers:
       '@azphalt/azp':
         specifier: workspace:*
         version: link:../azp
+      '@azphalt/registry':
+        specifier: workspace:*
+        version: link:../registry
     devDependencies:
       '@types/node':
         specifier: ^26.6.4
@@ -2721,6 +2730,12 @@ packages:
 
   express-rate-limit@8.7.0:
     resolution: {integrity: sha512-hOwV7WOxXfjRpAM1DSJWZDXx3GhplwD8IfwuwvogD8i1Qnkgosw/H45s4ZnFAUHDAhPjlY9hLBvJhKmGMyY26g==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      express: '>= 4.11'
+
+  express-rate-limit@8.7.1:
+    resolution: {integrity: sha512-2FXbqkygil3mZiXzEtM0IjE/UBmBNot0J1GEVrJT4JbrvwOSoEtqtO+wHbiMQELWe1eNvHoYRg2dkjOid+6JkA==}
     engines: {node: '>= 16'}
     peerDependencies:
       express: '>= 4.11'
@@ -5079,6 +5094,14 @@ snapshots:
   expect-type@1.4.0: {}
 
   express-rate-limit@8.7.0(express@5.2.1(supports-color@10.2.2))(supports-color@10.2.2):
+    dependencies:
+      debug: 4.4.3(supports-color@10.2.2)
+      express: 5.2.1(supports-color@10.2.2)
+      ip-address: 10.7.2
+    transitivePeerDependencies:
+      - supports-color
+
+  express-rate-limit@8.7.1(express@5.2.1(supports-color@10.2.2))(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       express: 5.2.1(supports-color@10.2.2)

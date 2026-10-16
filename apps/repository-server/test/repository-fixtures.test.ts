@@ -98,7 +98,7 @@ const INDEX: RepositoryIndex = {
 /** A deterministic seeded repo: a free grade, a consigned (paid) pack, and an app-scoped companion. */
 async function seed() {
   const store = new InMemoryStore();
-  const registry = new Registry(store);
+  const registry = new Registry(store, { requireSignature: false });
   const marketplace = new Marketplace(registry, store);
   await registry.publish(azp("com.demo.free", { name: "Free Grade", description: "an open-lane LUT", author: "Az" }));
   await registry.publish(azp("com.demo.free", { name: "Free Grade", version: "1.1.0", author: "Az" }));

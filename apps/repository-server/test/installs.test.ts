@@ -32,7 +32,7 @@ function azp(id: string): Uint8Array {
 }
 
 async function fixture(store: RegistryStore = new InMemoryStore()) {
-  const registry = new Registry(store);
+  const registry = new Registry(store, { requireSignature: false });
   const marketplace = new Marketplace(registry, store as InMemoryStore);
   await registry.publish(azp(ID));
   const handle = createRepositoryHandler({ registry, marketplace, index: { name: "R", version: "0.1" } });

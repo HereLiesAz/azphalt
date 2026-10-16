@@ -127,6 +127,23 @@ export class AzpError extends Error {
 
 /** Memory ceiling (bytes) and wall-clock timeout (ms) for a single sandboxed run — DoS/OOM guards. */
 const MEMORY_LIMIT = 64 * 1024 * 1024;
+/**
+ * Ceilings for the raw-wasm path, which has no QuickJS heap limit. A module's declared (or grown)
+ * linear memory and the module itself are bounded; `alloc` is checked against the same ceiling so
+ * `alloc` returning 2^31-1 can't make the host grow memory by gigabytes. NOTE: synchronous wasm cannot
+ * be interrupted from the same thread, so a non-terminating entry still blocks that thread — a host
+ * that runs untrusted `runtime:"wasm"` packages must run this in a Worker/process it can terminate.
+ */
+export const MAX_WASM_MODULE_BYTES = 16 * 1024 * 1024;
+export const MAX_WASM_MEMORY_BYTES = 512 * 1024 * 1024;
+/** Layers one guest may create, and the bytes they may hold in total (host memory the QuickJS limit doesn't see). */
+const MAX_GUEST_LAYERS = 64;
+const MAX_GUEST_LAYER_BYTES = 256 * 1024 * 1024;
+
+/** Own-property lookup on a plain record: `"constructor"` / `"__proto__"` are not entries. */
+function own<T>(rec: Record<string, T> | undefined, key: string): T | undefined {
+  return rec && Object.hasOwn(rec, key) ? rec[key] : undefined;
+}
 const TIMEOUT_MS = 2000;
 
 /**
@@ -338,10 +355,10 @@ function installHostFunctions(vm: QuickJSContext, world: World, granted: Set<Cap
   const num = (h: QuickJSHandle) => vm.getNumber(h);
 
   if (granted.has("params")) {
-    inject(vm, "__paramNumber", (kH) => vm.newNumber(Number(world.params?.[str(kH)])));
-    inject(vm, "__paramBool", (kH) => (world.params?.[str(kH)] ? vm.true : vm.false));
-    inject(vm, "__paramString", (kH) => vm.newString(String(world.params?.[str(kH)] ?? "")));
-    inject(vm, "__paramJson", (kH) => vm.newString(JSON.stringify(world.params?.[str(kH)] ?? null)));
+    inject(vm, "__paramNumber", (kH) => vm.newNumber(Number(own(world.params as Record<string, unknown> | undefined, str(kH)))));
+    inject(vm, "__paramBool", (kH) => (own(world.params as Record<string, unknown> | undefined, str(kH)) ? vm.true : vm.false));
+    inject(vm, "__paramString", (kH) => vm.newString(String(own(world.params as Record<string, unknown> | undefined, str(kH)) ?? "")));
+    inject(vm, "__paramJson", (kH) => vm.newString(JSON.stringify(own(world.params as Record<string, unknown> | undefined, str(kH)) ?? null)));
   }
 
   if (granted.has("canvas")) {
@@ -379,6 +396,11 @@ function installHostFunctions(vm: QuickJSContext, world: World, granted: Set<Cap
   if (granted.has("layers")) {
     inject(vm, "__layerList", () => vm.newString(JSON.stringify(world.layers.map((l) => l.id))));
     inject(vm, "__layerCreate", (nameH) => {
+      const layerBytes = world.canvas.width * world.canvas.height * 4;
+      const held = world.layers.reduce((n, l) => n + l.bytes.length, 0);
+      if (world.layers.length >= MAX_GUEST_LAYERS || held + layerBytes > MAX_GUEST_LAYER_BYTES) {
+        throw new Error("layer limit reached");
+      }
       const id = `layer-${world.layers.length}`;
       world.layers.push({
         id,
@@ -435,7 +457,7 @@ function installHostFunctions(vm: QuickJSContext, world: World, granted: Set<Cap
 
   if (granted.has("assets")) {
     inject(vm, "__assetRead", (pathH) => {
-      const bytes = world.assets[str(pathH)];
+      const bytes = own(world.assets, str(pathH));
       if (!bytes) throw new Error(`asset not found in package: ${str(pathH)}`);
       return vm.newArrayBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
     });
@@ -616,7 +638,11 @@ async function runContribution(
   tx?: TransitionInput,
 ): Promise<SandboxResult> {
   const { manifest, payload } = loadExtension(azp);
-  const granted = new Set<Capability>(opts.capabilities ?? manifest.capabilities ?? []);
+  // A host may narrow the grant, never widen it: granted ⊆ declared. (The SDK says the extension
+  // *requests* and the host grants; a caller passing extra capabilities must not mint authority the
+  // package never declared and the user never saw.)
+  const declared = new Set<Capability>(manifest.capabilities ?? []);
+  const granted = new Set<Capability>((opts.capabilities ?? [...declared]).filter((c) => declared.has(c)));
   const entry = manifest.entry;
   if (!entry) throw new AzpError("manifest has no 'entry' module");
   if (!payload[entry]) throw new AzpError(`entry module not found in package: ${entry}`);
@@ -651,7 +677,7 @@ async function runContribution(
   vm.runtime.setModuleLoader(
     (name) => {
       if (name === "@azphalt/azdk") return SDK_SHIM;
-      const src = payload[name];
+      const src = own(payload, name);
       if (src) return decoder.decode(src);
       return { error: new Error(`module not found in package: ${name}`) };
     },
@@ -685,13 +711,16 @@ async function runContribution(
     const driver = `
       import * as __mod from ${JSON.stringify(entry)};
       globalThis.__error = null;
+      globalThis.__settled = false;
       try {
         const __f = __mod[${JSON.stringify(c.entry)}];
         if (typeof __f !== 'function' || __f[Symbol.for('azphalt.contribution')] !== ${JSON.stringify(kind)}) {
           throw new Error(${JSON.stringify(`export '${c.entry}' is not a ${kind} contribution`)});
         }
-        Promise.resolve(__f(globalThis.__ctx)).catch(function (e) { globalThis.__error = String((e && e.message) || e); });
-      } catch (e) { globalThis.__error = String((e && e.message) || e); }
+        Promise.resolve(__f(globalThis.__ctx)).then(
+          function () { globalThis.__settled = true; },
+          function (e) { globalThis.__settled = true; globalThis.__error = String((e && e.message) || e); });
+      } catch (e) { globalThis.__settled = true; globalThis.__error = String((e && e.message) || e); }
     `;
     unwrap(vm, vm.evalCode(driver, "azphalt:driver", { type: "module" }));
     drainJobs(vm);
@@ -700,6 +729,12 @@ async function runContribution(
     const err = vm.dump(errH);
     errH.dispose();
     if (err) throw new AzpError(`sandbox: ${String(err)}`);
+    // A contribution whose promise never settles (an `await` on a promise nothing resolves) would
+    // otherwise be reported as success with whatever half-edited world it left behind.
+    const settledH = vm.getProp(vm.global, "__settled");
+    const settled = vm.dump(settledH);
+    settledH.dispose();
+    if (settled !== true) throw new AzpError("sandbox: the contribution never completed (unresolved promise)");
 
     return readback(internal, targetLayerId);
   } finally {
@@ -839,6 +874,25 @@ function wasmEnv(internal: World, granted: Set<Capability>, getMem: () => WebAss
  * module exports `alloc(size) -> ptr`, ask it for a buffer; absent `alloc`, fall back to `0` (the
  * minimal-module convention the hand-assembled fixtures use).
  */
+/** Instantiate with the module-size cap, then refuse a module whose declared memory is already over the ceiling. */
+async function instantiateBounded(wasmBytes: Uint8Array, env: Record<string, unknown>): Promise<WebAssembly.Instance> {
+  if (wasmBytes.length > MAX_WASM_MODULE_BYTES) {
+    throw new AzpError(`wasm: module is ${wasmBytes.length} bytes (limit ${MAX_WASM_MODULE_BYTES})`);
+  }
+  let instance: WebAssembly.Instance;
+  try {
+    // `WebAssembly.instantiate` accepts a Uint8Array view directly — no copy needed.
+    instance = (await WebAssembly.instantiate(wasmBytes as BufferSource, { env: env as WebAssembly.ModuleImports })).instance;
+  } catch (e) {
+    throw new AzpError(`wasm: instantiation failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  const m = instance.exports.memory;
+  if (m instanceof WebAssembly.Memory && m.buffer.byteLength > MAX_WASM_MEMORY_BYTES) {
+    throw new AzpError(`wasm: declared memory ${m.buffer.byteLength} bytes exceeds ${MAX_WASM_MEMORY_BYTES}`);
+  }
+  return instance;
+}
+
 function allocOrZero(instance: WebAssembly.Instance, size: number): number {
   const alloc = instance.exports.alloc;
   if (typeof alloc !== "function") return 0;
@@ -864,14 +918,7 @@ async function runWasmFilter(
     return mem;
   });
 
-  let instance: WebAssembly.Instance;
-  try {
-    // `WebAssembly.instantiate` accepts a Uint8Array view directly — no copy needed.
-    const source = await WebAssembly.instantiate(wasmBytes as BufferSource, { env });
-    instance = source.instance;
-  } catch (e) {
-    throw new AzpError(`wasm: instantiation failed: ${e instanceof Error ? e.message : String(e)}`);
-  }
+  const instance = await instantiateBounded(wasmBytes, env);
   const memory = instance.exports.memory as WebAssembly.Memory | undefined;
   mem = memory instanceof WebAssembly.Memory ? memory : undefined;
   const entry = instance.exports[entryName] as ((ptr: number, w: number, h: number, stride: number) => void) | undefined;
@@ -883,6 +930,7 @@ async function runWasmFilter(
   const stride = target.width * 4 * bytesPerChannel(target.depth);
   const ptr = allocOrZero(instance, target.bytes.length);
   const need = ptr + target.bytes.length;
+  if (need > MAX_WASM_MEMORY_BYTES) throw new AzpError(`wasm: needs ${need} bytes of memory (limit ${MAX_WASM_MEMORY_BYTES})`);
   if (memory.buffer.byteLength < need) {
     try {
       memory.grow(Math.ceil((need - memory.buffer.byteLength) / 65536));
@@ -942,13 +990,7 @@ async function runWasmTransition(
   // `progress` is the transition's only extra input — a nullary import, present for transitions only.
   env.txProgress = () => tx.progress;
 
-  let instance: WebAssembly.Instance;
-  try {
-    const source = await WebAssembly.instantiate(wasmBytes as BufferSource, { env });
-    instance = source.instance;
-  } catch (e) {
-    throw new AzpError(`wasm: instantiation failed: ${e instanceof Error ? e.message : String(e)}`);
-  }
+  const instance = await instantiateBounded(wasmBytes, env);
   const memory = instance.exports.memory as WebAssembly.Memory | undefined;
   mem = memory instanceof WebAssembly.Memory ? memory : undefined;
   const entry = instance.exports[entryName] as
@@ -969,6 +1011,7 @@ async function runWasmTransition(
   const toPtr = useAlloc ? allocOrZero(instance, len) : len;
   const outPtr = useAlloc ? allocOrZero(instance, len) : 2 * len;
   const need = Math.max(fromPtr, toPtr, outPtr) + len;
+  if (need > MAX_WASM_MEMORY_BYTES) throw new AzpError(`wasm: needs ${need} bytes of memory (limit ${MAX_WASM_MEMORY_BYTES})`);
   if (memory.buffer.byteLength < need) {
     try {
       memory.grow(Math.ceil((need - memory.buffer.byteLength) / 65536));

@@ -17,6 +17,8 @@ export interface ChatOptions {
   model?: string;
   maxTokens?: number;
   temperature?: number;
+  /** Values for the package's `${input:…}` placeholders (e.g. a user-supplied `baseUrl`). */
+  inputs?: Record<string, string>;
   fetch?: typeof fetch;
   signal?: AbortSignal;
 }
@@ -27,6 +29,21 @@ export interface ChatResult {
   outputTokens?: number;
 }
 
+/** Resolve a `${input:id}` base URL from [inputs] and require the result to be a credential-free https URL. */
+function resolveBaseUrl(baseUrl: string, inputs: Record<string, string> | undefined): string {
+  const ref = /^\$\{input:([^}]{1,128})\}$/.exec(baseUrl);
+  const resolved = ref ? inputs?.[ref[1]] : baseUrl;
+  if (!resolved) throw new Error(`the endpoint URL needs the "${ref?.[1] ?? "?"}" input`);
+  let url: URL;
+  try {
+    url = new URL(resolved);
+  } catch {
+    throw new Error("the endpoint URL is not a valid URL");
+  }
+  if (url.protocol !== "https:" || url.username || url.password) throw new Error("the endpoint URL must be https:// with no credentials");
+  return resolved;
+}
+
 export async function chatLlm(opts: ChatOptions): Promise<ChatResult> {
   const llm = llmBlock(opts.manifest);
   const { endpoint } = llm;
@@ -35,11 +52,16 @@ export async function chatLlm(opts: ChatOptions): Promise<ChatResult> {
   const model = opts.model || endpoint.defaultModel;
   if (!model) throw new Error("no model named and the package declares no defaultModel");
 
+  const baseUrl = resolveBaseUrl(endpoint.baseUrl, opts.inputs);
   const tags = opts.sessionKey ? await sessionTags(opts.sessionKey, opts.turn ?? 0) : [];
   const messages = translate(opts.messages, tags);
-  const res = await (opts.fetch ?? fetch)(endpoint.baseUrl.replace(/\/$/, "") + "/chat/completions", {
+  const res = await (opts.fetch ?? fetch)(baseUrl.replace(/\/$/, "") + "/chat/completions", {
     method: "POST",
-    headers: { "content-type": "application/json", ...(opts.key ? { authorization: `Bearer ${opts.key}` } : {}) },
+    // Send the key only to an endpoint that declared it takes one — never leak a bearer to `auth: none`.
+    headers: {
+      "content-type": "application/json",
+      ...(opts.key && endpoint.auth !== "none" ? { authorization: `Bearer ${opts.key}` } : {}),
+    },
     body: JSON.stringify({
       model,
       messages,
@@ -53,7 +75,11 @@ export async function chatLlm(opts: ChatOptions): Promise<ChatResult> {
     choices?: { message?: { content?: string | null } }[];
     usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
-  const text = body.choices?.[0]?.message?.content ?? "";
+  const content = body.choices?.[0]?.message?.content ?? "";
+  // Third-party JSON: a non-string `content` (an array would make `text.includes(tag)` an array
+  // membership test and slip past the tag check) is a malformed answer, not text.
+  if (typeof content !== "string") throw new Error("model endpoint returned non-text content; rejected");
+  const text = content;
   if (containsSessionTag(text, tags)) throw new Error("output contained a session tag; rejected");
   return { text, inputTokens: body.usage?.prompt_tokens, outputTokens: body.usage?.completion_tokens };
 }

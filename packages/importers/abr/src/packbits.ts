@@ -21,5 +21,9 @@ export function decodePackBits(src: Uint8Array, expected: number): Uint8Array {
     }
     // n === 128: no-op
   }
+  // A well-formed row decodes to exactly `expected` bytes. A short row that runs out of source with
+  // output still unfilled is malformed — fail loudly rather than silently zero-filling the remainder,
+  // which would turn a truncated or crafted brush into a blank-but-accepted bitmap.
+  if (o < expected) throw new Error("packbits: row underflows expected length");
   return out;
 }

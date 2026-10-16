@@ -19,13 +19,15 @@ const { install, setup } = await installLlm({
   owner: "me", repo: "azphalt-llm",   // a private repository used only for llm sandboxes
   createIfMissing: true,
   azp: azpBytes,
+  consented: true,                    // required: only after the user saw `consent` and agreed
+  trustedKeys: [publisherKey],        // base64 SPKI keys you trust; a signature alone is not identity
   inputs: { providerKey: "…" },       // stored as sealed Actions secrets, never committed
   onProgress: (seq, message) => console.log(seq, message),
 });
 // Persist `install`. `setup.status` is "completed" once the sandbox answered a smoke test.
 ~~~
 
-The package is verified before anything is written. The sandbox must be private. The payload lands in `llm/<package id>/`, the runner workflow in `.github/workflows/azphalt-llm-<package id>.yml`, in one commit, so several packages can share one sandbox.
+The package is verified before anything is written, and refused if it is unsigned (unless `allowUnsigned`), if the signer is not in `trustedKeys`, or if the user's `consented` is not `true`. The runner workflow is audited first (`auditWorkflow`): it may reference only the secrets the manifest declares, never use `pull_request_target`, and never request write on a scope beyond the manifest's ceiling — a textual tripwire, not a proof, so a signature you trust still matters. The sandbox must be private. The payload lands in `llm/<package id>/`, the runner workflow in `.github/workflows/azphalt-llm-<package id>.yml`, in one commit, so several packages can share one sandbox.
 
 ## Run a task
 

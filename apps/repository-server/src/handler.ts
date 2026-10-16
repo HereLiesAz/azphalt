@@ -248,10 +248,21 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     return json(200, body);
   }
 
-  async function detail(id: string): Promise<RepoResponse> {
+  async function detail(id: string, req: RepoRequest): Promise<RepoResponse> {
     const pkg = await registry.getPackage(id);
     if (!pkg) return fail(404, `unknown package: ${id}`);
     const latest = await registry.latest(id);
+    // A `private` package is hidden from browse, but its detail (manifest, version history, digests)
+    // is just as revealing as its bytes — so it runs through the same access gate as the download.
+    if (pkg.summary.visibility === "private") {
+      const decision = await authorizer.authorize({
+        token: bearer(req.headers.authorization),
+        packageId: id,
+        version: latest?.version ?? pkg.summary.version,
+      });
+      if (!decision.authenticated) return fail(401, "authentication required to view a private package");
+      if (!decision.licensed) return fail(402, "access grant required for this private package");
+    }
     return json(200, {
       id: pkg.summary.id,
       name: pkg.summary.name,
@@ -330,6 +341,18 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     // does NOT count a download (the host counts the transfer); a full `200` below does.
     const range = parseRange(req.headers.range);
     const contentDisposition = `attachment; filename="${id}-${version}.azp"`;
+    if (req.method === "HEAD") {
+      return {
+        status: 200,
+        headers: {
+          "content-type": MEDIA_TYPE,
+          "content-length": String(resolved.size),
+          "accept-ranges": "bytes",
+          "content-disposition": contentDisposition,
+        },
+        body: "",
+      };
+    }
     if (range) {
       try {
         const { bytes, start, end, totalSize } = await registry.serveRange(id, version, range);
@@ -501,7 +524,9 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     if (req.path === "/packages" && req.method === "POST") {
       return fail(501, "this repository does not accept publishes");
     }
-    if (req.method !== "GET") return fail(405, `method not allowed: ${req.method}`);
+    // HEAD is routed exactly like GET (the Node server already treats it so); the body is dropped by
+    // the transport. A HEAD on a download is answered below without serving or counting a download.
+    if (req.method !== "GET" && req.method !== "HEAD") return fail(405, `method not allowed: ${req.method}`);
     if (req.path === "/.well-known/azphalt-repository.json") return json(200, index);
     if (req.path === "/revocations") return await revocations(req);
 
@@ -512,7 +537,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
       if (segs[0] !== "packages") return fail(404, "not found");
 
       if (segs.length === 1) return await search(req);
-      if (segs.length === 2) return await detail(segs[1]);
+      if (segs.length === 2) return await detail(segs[1], req);
       if (segs.length === 5 && segs[2] === "versions" && segs[4] === "download") {
         return await download(segs[1], segs[3], req);
       }

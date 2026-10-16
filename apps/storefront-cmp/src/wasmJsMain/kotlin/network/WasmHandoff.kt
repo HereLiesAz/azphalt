@@ -110,5 +110,6 @@ actual fun downloadUrl(id: String, version: String): String =
 actual fun openExternal(url: String) {
     // `_blank` with `noopener` so the opened tab cannot reach back into this one through
     // `window.opener` — the host listings are third-party URLs from the registry.
+    if (!isSafeExternalUrl(url)) return
     window.open(url, "_blank", "noopener,noreferrer")
 }

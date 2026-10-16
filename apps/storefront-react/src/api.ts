@@ -15,6 +15,8 @@ export interface PackageSummary {
   priceStatus?: string;
   capabilities?: string[];
   downloads?: number;
+  /** Counted installs (the Worker merges `installs`/`uninstalls` into each entry). Preferred over `downloads`. */
+  installs?: number;
   rating?: number | null;
   ratingCount?: number;
   updatedAt?: string;
@@ -168,6 +170,8 @@ export async function downloadPurchase(packageId: string, token: string): Promis
 
 export async function startSellerOnboarding(input: {
   sellerId: string;
+  /** The code the store operator issued for this seller id (`POST /api/admin/connect/invite`). */
+  inviteCode?: string;
   email?: string;
   country?: string;
 }): Promise<{ url?: string; accountId?: string; error?: string }> {
@@ -304,9 +308,45 @@ export async function resolveReport(token: string, id: number, action: "dismiss"
 
 export function priceLabel(p: PackageSummary): string {
   if (!p.price) return "FREE";
-  const dollars = Math.floor(p.price.amountCents / 100);
-  const cents = String(p.price.amountCents % 100).padStart(2, "0");
-  return `$${dollars}.${cents}`;
+  // Format in the listing's own currency (checkout charges `listing.currency`; a hardcoded "$" showed
+  // a EUR or JPY price as dollars) and honour that currency's minor-unit exponent.
+  const currency = (p.price.currency || "USD").toUpperCase();
+  try {
+    const fmt = new Intl.NumberFormat("en", { style: "currency", currency });
+    const digits = fmt.resolvedOptions().maximumFractionDigits ?? 2;
+    return fmt.format(p.price.amountCents / 10 ** digits);
+  } catch {
+    return `${(p.price.amountCents / 100).toFixed(2)} ${currency}`; // unknown currency code
+  }
+}
+
+/** How many installs to show: the counted figure when the Worker supplies one, else downloads. */
+export function installCount(p: PackageSummary): number {
+  return p.installs ?? p.downloads ?? 0;
+}
+
+/**
+ * A URL that is safe to put in an `href` or `window.open`: `https:` only. Listing URLs are third-party
+ * data (a manifest's `terms`, a model licence `url`), so `javascript:` / `data:` / `file:` / cleartext
+ * `http:` must never reach the page.
+ */
+export function safeHref(url: unknown): string | undefined {
+  if (typeof url !== "string") return undefined;
+  try {
+    return new URL(url).protocol === "https:" ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The host of a URL, or undefined when it is not a valid URL (never throws into a render). */
+export function hostOf(url: unknown): string | undefined {
+  if (typeof url !== "string") return undefined;
+  try {
+    return new URL(url).host;
+  } catch {
+    return undefined;
+  }
 }
 
 export function isPaid(p: PackageSummary): boolean {

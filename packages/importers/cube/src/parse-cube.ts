@@ -38,13 +38,15 @@ export function parseCube(text: string): CubeLut {
       continue;
     }
     if (upper.startsWith("LUT_1D_SIZE")) {
+      if (dimensions !== undefined) throw new Error("cube: multiple LUT size declarations");
       dimensions = 1;
-      size = parseInt(parts[1], 10);
+      size = intField(parts[1], "LUT_1D_SIZE");
       continue;
     }
     if (upper.startsWith("LUT_3D_SIZE")) {
+      if (dimensions !== undefined) throw new Error("cube: multiple LUT size declarations");
       dimensions = 3;
-      size = parseInt(parts[1], 10);
+      size = intField(parts[1], "LUT_3D_SIZE");
       continue;
     }
     if (upper.startsWith("DOMAIN_MIN")) {
@@ -63,15 +65,24 @@ export function parseCube(text: string): CubeLut {
       continue;
     }
 
-    // Otherwise: a data row of three floats.
-    if (parts.length < 3) {
+    // Otherwise: a data row of exactly three floats — extra columns are malformed, not ignored.
+    if (parts.length !== 3) {
       throw new Error(`cube: malformed data on line ${i + 1}: "${lines[i]}"`);
     }
     entries.push([num(parts[0]), num(parts[1]), num(parts[2])]);
   }
 
-  if (dimensions === undefined || size === undefined || !Number.isFinite(size) || size < 2) {
-    throw new Error("cube: missing or invalid LUT_1D_SIZE / LUT_3D_SIZE");
+  if (dimensions === undefined || size === undefined) {
+    throw new Error("cube: missing LUT_1D_SIZE / LUT_3D_SIZE");
+  }
+  // Bound the size so `size**3` can't be used to force a huge allocation. The `.cube` spec caps a 3D
+  // LUT at 256 per side and a 1D LUT at 65536; reject anything outside that.
+  const maxSize = dimensions === 1 ? 65536 : 256;
+  if (size < 2 || size > maxSize) {
+    throw new Error(`cube: LUT size ${size} out of range (2..${maxSize} for ${dimensions}D)`);
+  }
+  for (let c = 0; c < 3; c++) {
+    if (domainMin[c] >= domainMax[c]) throw new Error("cube: DOMAIN_MIN must be below DOMAIN_MAX");
   }
   const expected = dimensions === 1 ? size : size * size * size;
   if (entries.length !== expected) {
@@ -84,7 +95,18 @@ export function parseCube(text: string): CubeLut {
 }
 
 function num(s: string | undefined): number {
+  // Reject trailing garbage ("33abc") that Number() tolerates via leading/trailing — Number("33abc")
+  // is NaN, but Number("33 ") is 33; parts are already whitespace-split, so a strict finite check is
+  // enough and "33abc" → NaN → throw.
   const n = Number(s);
-  if (!Number.isFinite(n)) throw new Error(`cube: expected a number, got "${s}"`);
+  if (s === undefined || s.trim() === "" || !Number.isFinite(n)) {
+    throw new Error(`cube: expected a number, got "${s}"`);
+  }
   return n;
+}
+
+/** A strict non-negative integer field — rejects "33abc", floats, and empty. */
+function intField(s: string | undefined, label: string): number {
+  if (s === undefined || !/^\d+$/.test(s)) throw new Error(`cube: ${label} must be an integer, got "${s}"`);
+  return parseInt(s, 10);
 }

@@ -97,3 +97,20 @@ describe("importGltf", () => {
     ).toThrow();
   });
 });
+
+describe("GLB header validation", () => {
+  it("rejects a GLB that is not version 2 or declares an impossible length", async () => {
+    const { parseGltf } = await import("../src/parse-gltf.js");
+    const glb = (version: number, length: number) => {
+      const b = new Uint8Array(12);
+      const v = new DataView(b.buffer);
+      v.setUint32(0, 0x46546c67, true); // "glTF"
+      v.setUint32(4, version, true);
+      v.setUint32(8, length, true);
+      return b;
+    };
+    expect(() => parseGltf(glb(2, 12))).not.toThrow();
+    expect(() => parseGltf(glb(1, 12))).toThrow(/unsupported GLB version/);
+    expect(() => parseGltf(glb(2, 4))).toThrow(/impossible length/);
+  });
+});

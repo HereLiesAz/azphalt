@@ -239,7 +239,13 @@ public suspend fun exchangePlayPurchase(
     purchaseToken: String,
     repository: String? = null,
 ): String = withContext(Dispatchers.IO) {
-    val base = (repository ?: DEFAULT_REPOSITORY).trimEnd('/')
+    // A Play purchase token is a credential for the user's purchase: it goes to the flagship store's
+    // verifier and nowhere else. `repository` can come from another app's intent extra, so honouring it
+    // here would let any app that launches the store point this POST (token, product and package) at a
+    // server it controls. A non-flagship repository cannot validate this app's Play purchases anyway —
+    // verification is bound to this app's package name on the flagship Worker — so the override is ignored.
+    @Suppress("UNUSED_VARIABLE") val ignoredOverride = repository
+    val base = DEFAULT_REPOSITORY.trimEnd('/')
     val body = buildJsonObject {
         put("packageId", packageId)
         put("productId", productId)

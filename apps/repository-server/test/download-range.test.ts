@@ -30,7 +30,7 @@ function azp(id: string): Uint8Array {
 
 async function fixture() {
   const store = new InMemoryStore();
-  const registry = new Registry(store);
+  const registry = new Registry(store, { requireSignature: false });
   const marketplace = new Marketplace(registry, store);
   await registry.publish(azp("com.demo.free"));
   await registry.publish(azp("com.demo.paid"));

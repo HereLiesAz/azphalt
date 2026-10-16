@@ -98,3 +98,56 @@ describe("RepositoryClient.download — resumable & concurrent", () => {
     await expect(new RepositoryClient({ url: "https://r.example" }).download("com.x.pack", "1.0.0")).rejects.toThrowError(/402/);
   });
 });
+
+describe("RepositoryClient.download — integrity and hostile servers", () => {
+  const sha = async (b: Uint8Array) =>
+    "sha256-" + Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", b as Uint8Array<ArrayBuffer>))).map((x) => x.toString(16).padStart(2, "0")).join("");
+
+  it("accepts bytes that match expectedDigest and rejects ones that don't", async () => {
+    const buf = bytes(300);
+    global.fetch = rangeServer(buf) as unknown as typeof fetch;
+    const client = new RepositoryClient({ url: "https://r.example" });
+    await expect(client.download("com.x.pack", "1.0.0", { chunkSize: 100, expectedDigest: await sha(buf) })).resolves.toHaveLength(300);
+    await expect(client.download("com.x.pack", "1.0.0", { chunkSize: 100, expectedDigest: "sha256-" + "0".repeat(64) })).rejects.toThrow(/integrity/);
+  });
+
+  it("refuses a server-declared total above maxBytes instead of allocating it", async () => {
+    global.fetch = (() =>
+      Promise.resolve({
+        status: 206,
+        headers: hdr({ "content-range": "bytes 0-99/99999999999" }),
+        arrayBuffer: () => Promise.resolve(new Uint8Array(100).buffer),
+      })) as unknown as typeof fetch;
+    const client = new RepositoryClient({ url: "https://r.example" });
+    await expect(client.download("com.x.pack", "1.0.0", { chunkSize: 100 })).rejects.toThrow(/limit/);
+  });
+
+  it("rejects a short chunk rather than leaving a zero-filled hole", async () => {
+    const buf = bytes(300);
+    const honest = rangeServer(buf);
+    global.fetch = ((url: string, options?: { headers?: Record<string, string> }) => {
+      const range = options?.headers?.Range ?? "";
+      if (range.startsWith("bytes=100-")) {
+        return Promise.resolve({
+          status: 206,
+          headers: hdr({ "content-range": "bytes 100-199/300" }),
+          arrayBuffer: () => Promise.resolve(new Uint8Array(10).buffer), // 10 bytes, not 100
+        });
+      }
+      return honest(url, options);
+    }) as unknown as typeof fetch;
+    const client = new RepositoryClient({ url: "https://r.example" });
+    await expect(client.download("com.x.pack", "1.0.0", { chunkSize: 100, retries: 0 })).rejects.toThrow(/unexpected body/);
+  });
+
+  it("URL-encodes id and version so a hostile pack member cannot redirect the request", async () => {
+    const seen: string[] = [];
+    global.fetch = ((url: string) => {
+      seen.push(url);
+      return Promise.resolve({ status: 200, headers: hdr({}), arrayBuffer: () => Promise.resolve(new Uint8Array(1).buffer) });
+    }) as unknown as typeof fetch;
+    const client = new RepositoryClient({ url: "https://r.example" });
+    await client.download("../../admin", "1.0.0?x=1", {});
+    expect(seen[0]).toBe("https://r.example/packages/..%2F..%2Fadmin/versions/1.0.0%3Fx%3D1/download");
+  });
+});

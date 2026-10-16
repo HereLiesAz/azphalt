@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "test": "node --test \"test/*.test.js\""
   },
   "dependencies": {
     "@azphalt/azp": "workspace:*",
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1"
   }
 }

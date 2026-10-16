@@ -103,7 +103,7 @@ public data class BrowseRequest(
                 mediaDomains = list(Handoff.EXTRA_MEDIA_DOMAINS),
                 kinds = list(Handoff.EXTRA_KINDS),
                 compat = source.getStringExtra(Handoff.EXTRA_COMPAT),
-                repository = source.getStringExtra(Handoff.EXTRA_REPOSITORY),
+                repository = safeRepository(source.getStringExtra(Handoff.EXTRA_REPOSITORY)),
                 id = source.getStringExtra(Handoff.EXTRA_ID) ?: source.data?.getQueryParameter(Handoff.EXTRA_ID),
                 multiple = source.getBooleanExtra(Handoff.EXTRA_MULTIPLE, false),
                 // Never from the link form: `azphalt://browse?...` returns nothing, so a URL long
@@ -228,4 +228,19 @@ public fun handoffResult(context: Context, packages: List<AcquiredPackage>): Int
 public fun grantTo(context: Context, callingPackage: String?, uri: Uri) {
     if (callingPackage.isNullOrBlank()) return
     context.grantUriPermission(callingPackage, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+}
+
+/**
+ * A repository URL from another app's intent, accepted only when it is a plain `https://` URL with no
+ * embedded credentials. The extra is attacker-influenced (any installed app can launch the exported
+ * browse activity), so a cleartext, `file:`, `content:` or user-info URL is dropped and the store falls
+ * back to its own default repository instead of fetching a catalog from, or sending a bearer to, an
+ * arbitrary host.
+ */
+internal fun safeRepository(raw: String?): String? {
+    val value = raw?.trim().orEmpty()
+    if (value.isEmpty()) return null
+    val uri = runCatching { java.net.URI(value) }.getOrNull() ?: return null
+    if (uri.scheme != "https" || uri.host.isNullOrEmpty() || uri.userInfo != null) return null
+    return value
 }

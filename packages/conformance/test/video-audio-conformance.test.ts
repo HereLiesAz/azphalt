@@ -1,6 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { runFilter, runTransition } from "@azphalt/runtime-wasm";
 import { runVideoAudioConformance, type VideoAudioHost } from "../src/index";
+import { readAzp, writeAzp } from "@azphalt/azp";
+import type { Capability } from "@azphalt/azdk";
+
+/**
+ * Emulate a host that ignores the manifest's declared capabilities: rewrite the package so it
+ * *declares* every capability in [widen], then hand it to the real runtime. (`runtime-wasm` itself no
+ * longer lets a caller grant beyond what a package declared, so a broken host has to be simulated by
+ * lying about the declaration — which is exactly what "granting regardless" amounts to.)
+ */
+function widenDeclared(azp: Uint8Array, widen: Capability[]): Uint8Array {
+  const { manifest, payload } = readAzp(azp);
+  const { files: _files, ...rest } = manifest;
+  const license = new TextDecoder().decode(payload["LICENSE"] ?? new Uint8Array());
+  const { LICENSE: _l, "signature.json": _s, ...others } = payload;
+  return writeAzp({ manifest: { ...rest, capabilities: widen }, payload: others, license }).azp;
+}
+
 
 /**
  * The reference conforming **temporal** host: `@azphalt/runtime-wasm` already exposes the
@@ -30,7 +47,7 @@ describe("@azphalt/conformance — video/audio host", () => {
     const broken: VideoAudioHost = {
       ...temporalHost,
       runFilter: (azp, world, opts) =>
-        runFilter(azp, world, { ...opts, capabilities: ["audio", "params", "bitmap"] }),
+        runFilter(widenDeclared(azp, ["audio", "params", "bitmap"]), world, opts),
     };
     const report = await runVideoAudioConformance(broken);
     expect(report.ok).toBe(false);

@@ -69,8 +69,13 @@ export interface ExtractResult {
 
 /** Extract one payload entry (e.g. `assets/grade.cube`) from a `.azp` as base64. */
 export function extractAsset(bytes: Uint8Array, assetPath: string): ExtractResult {
+  // Verify before handing bytes out: `readAzp` does not check digests or paths, and this tool's output
+  // is meant to be applied by a controller — so a tampered or unsafe package must not yield an asset.
+  const verified = verifyAzp(bytes);
+  if (!verified.ok) throw new Error(`refusing to extract from an invalid package: ${verified.errors.join("; ")}`);
   const { payload } = readAzp(bytes);
-  const data = payload[assetPath];
+  // `readAzp` returns a null-prototype map, so a name like "__proto__" is an ordinary (absent) key.
+  const data = Object.hasOwn(payload, assetPath) ? payload[assetPath] : undefined;
   if (!data) throw new Error(`asset not found: ${assetPath}`);
   return { path: assetPath, bytesBase64: Buffer.from(data).toString("base64") };
 }

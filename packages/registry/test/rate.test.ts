@@ -1,19 +1,21 @@
 /** User ratings: Registry.rate folds a 1–5 star vote into the aggregate getRating returns. */
 import { describe, it, expect } from "vitest";
-import { writeAzp } from "@azphalt/azp";
+import { writeAzp, signAzp, generateSigningKey } from "@azphalt/azp";
 import { Registry, InMemoryStore, RegistryError } from "../src/index";
 
 const license = "MIT License\n";
 const enc = (s: string) => new TextEncoder().encode(s);
+const fkey = generateSigningKey();
+const sign = (bytes: Uint8Array) => signAzp(bytes, { privateKey: fkey.privateKey });
 
 async function seeded() {
   const reg = new Registry(new InMemoryStore());
   await reg.publish(
-    writeAzp({
+    sign(writeAzp({
       manifest: { azphalt: "0.1", id: "com.acme.brush", name: "Brush", version: "1.0.0", kind: "asset", license: "MIT", compat: ">=0.1", assets: [{ type: "brush", path: "assets/b" }] },
       payload: { "assets/b": enc("brush") },
       license,
-    }).azp,
+    }).azp),
   );
   return reg;
 }
@@ -53,11 +55,11 @@ describe("Registry.rate", () => {
     (store as { addRating?: unknown }).addRating = undefined;
     const reg = new Registry(store);
     await reg.publish(
-      writeAzp({
+      sign(writeAzp({
         manifest: { azphalt: "0.1", id: "com.acme.x", name: "X", version: "1.0.0", kind: "asset", license: "MIT", compat: ">=0.1", assets: [{ type: "brush", path: "a" }] },
         payload: { a: enc("x") },
         license,
-      }).azp,
+      }).azp),
     );
     await expect(reg.rate("com.acme.x", 5)).rejects.toBeInstanceOf(RegistryError);
   });

@@ -83,8 +83,15 @@ val versionParts: List<Int> = run {
         .map { it.trim() }
         .filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
         .associate { it.substringBefore("=").trim() to it.substringAfter("=").trim() }
-    listOf("major", "minor", "patch", "build").map { key ->
-        values[key]?.toIntOrNull() ?: error("$versionFile: '$key' is missing or not a whole number")
+    // Same precedence as `tools/version.mjs`'s readVersion: the canonical `versionMajor…versionBuild`
+    // key wins and the short `major…build` alias is the fallback. Reading only the alias let the
+    // Android app and installers report a different version from the web store whenever the two key
+    // sets disagreed (the shared release workflow writes the canonical set).
+    listOf("Major" to "major", "Minor" to "minor", "Patch" to "patch", "Build" to "build").map { (suffix, alias) ->
+        val canonical = "version$suffix"
+        val raw = values[canonical] ?: values[alias]
+            ?: error("$versionFile: missing '$canonical' (or '$alias')")
+        raw.toIntOrNull()?.takeIf { it >= 0 } ?: error("$versionFile: '$canonical' must be a non-negative whole number, got '$raw'")
     }
 }
 
