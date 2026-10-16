@@ -7,6 +7,12 @@ pluginManagement {
     }
 }
 
+// Resolution pins for the build's OWN tooling (the settings/plugin classpath) — added for Dependabot
+// security alerts on libraries the Gradle plugins drag in. `buildscript.configurations.classpath` only
+// governs that classpath; it does not change the app's runtime or compile dependencies, which are
+// declared in the project build files. NOTE: `useVersion` forces an exact version, so a pin below what
+// a plugin would otherwise resolve is a downgrade, not a floor — drop an entry once the plugin that
+// needed it ships a fixed transitive version.
 buildscript {
     configurations.classpath {
         resolutionStrategy.eachDependency {

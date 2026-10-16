@@ -60,7 +60,7 @@ describe("pack lifecycle — end-to-end over @azphalt/repository-client", () => 
 
   beforeAll(async () => {
     const store = new InMemoryStore();
-    const registry = new Registry(store);
+    const registry = new Registry(store, { requireSignature: false });
     const marketplace = new Marketplace(registry, store);
     await registry.publish(assetAzp("com.demo.free-lut"));
     await registry.publish(assetAzp("com.demo.paid-lut"));

@@ -143,6 +143,10 @@ export async function checkAudioCapabilityGating(host: VideoAudioHost): Promise<
   const id = "audio-capability-gating";
   const title = "An ungranted `audio` capability is absent, not an erroring stub";
   const audio: ConformanceAudio = { samples: [0.1, 0.2], sampleRate: 48000, channels: 2 };
+  // Baseline: the host must run a well-formed audio filter, or "it errored" is also what a host that
+  // refuses everything does, which is not gating.
+  const base = await tryRun(() => host.runFilter(fx.audioAzp(), { params: {}, bitmap: oneByOne, audio }));
+  if (base.error) return fail(id, title, `the host cannot run a valid audio package, so a refusal proves nothing: ${base.error.message}`);
   const { error } = await tryRun(() =>
     host.runFilter(fx.audioUngrantedAzp(), { params: {}, bitmap: oneByOne, audio }),
   );

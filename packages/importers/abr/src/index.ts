@@ -45,7 +45,8 @@ export function importAbr(abrBytes: Uint8Array, licenseText: string, opts: AbrIm
   const brush = sampled[index];
   if (!brush) throw new UnsupportedAbrError(`brushIndex ${index} out of range (${sampled.length} sampled brushes)`);
 
-  const stem = opts.assetName ?? slug(opts.name ?? brush.name ?? "brush");
+  // Always slug — a caller-supplied assetName like "../../x" must not become a traversal path.
+  const stem = slug(opts.assetName ?? opts.name ?? brush.name ?? "brush");
   const assetPath = `assets/${stem}.png`;
   const png = encodeGrayPng(brush.width, brush.height, brush.gray!);
 

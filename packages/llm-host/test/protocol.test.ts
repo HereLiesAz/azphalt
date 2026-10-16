@@ -138,7 +138,7 @@ describe("installLlm", () => {
     const gh = fakeGitHub(f.routes);
     const { install: done, setup } = await installLlm({
       github: { token: "setup-token", fetch: gh.fetch }, owner: "me", repo: "sandbox",
-      azp: kiloAzp, inputs: { providerKey: "sk-123" }, runSetup: false,
+      azp: kiloAzp, inputs: { providerKey: "sk-123" }, runSetup: false, consented: true,
     });
     expect(setup).toBeUndefined();
     expect(done.workflowFile).toBe("azphalt-llm-com.hereliesaz.azphalt.llm.kilo.yml");
@@ -152,19 +152,19 @@ describe("installLlm", () => {
 
   it("refuses a public sandbox", async () => {
     const gh = fakeGitHub(installRoutes({ isPrivate: false }).routes);
-    await expect(installLlm({ github: { token: "t", fetch: gh.fetch }, owner: "me", repo: "sandbox", azp: kiloAzp, runSetup: false }))
+    await expect(installLlm({ github: { token: "t", fetch: gh.fetch }, owner: "me", repo: "sandbox", azp: kiloAzp, runSetup: false, consented: true }))
       .rejects.toThrow(/private/);
   });
 
   it("refuses a tampered package", async () => {
     const bad = kiloAzp.slice();
     bad[bad.length - 40] ^= 0xff;
-    await expect(installLlm({ github: { token: "t" }, owner: "me", repo: "sandbox", azp: bad })).rejects.toThrow();
+    await expect(installLlm({ github: { token: "t" }, owner: "me", repo: "sandbox", azp: bad, consented: true })).rejects.toThrow();
   });
 
   it("requires required inputs", async () => {
     const azp = new Uint8Array(readFileSync(registry + "com.hereliesaz.azphalt.llm.groq-1.0.0.azp"));
-    await expect(installLlm({ github: { token: "t" }, owner: "me", repo: "sandbox", azp })).rejects.toThrow(/providerKey/);
+    await expect(installLlm({ github: { token: "t" }, owner: "me", repo: "sandbox", azp, consented: true })).rejects.toThrow(/providerKey/);
   });
 });
 

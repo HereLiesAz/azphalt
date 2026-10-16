@@ -3,7 +3,7 @@
  *
  *   pnpm --filter @azphalt/storefront gen-llm-packages
  *
- * Twelve packages share one setup script, one runner and one workflow shape; writing them by hand
+ * The `llm` packages share one setup script, one runner and one workflow shape; writing them by hand
  * would let them drift. The table below is the only per-package input. Each package gets:
  *
  * - `manifest.json` — the signed `llm` block;

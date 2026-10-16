@@ -4,7 +4,7 @@
  * rolling delimiters.
  */
 export { llmBlock, llmConsent, type LlmConsent } from "./consent.js";
-export { installLlm, type InstallOptions, type InstallResult } from "./install.js";
+export { installLlm, auditWorkflow, type InstallOptions, type InstallResult } from "./install.js";
 export {
   findRun,
   parseResult,

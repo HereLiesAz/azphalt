@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { writeAzp } from "@azphalt/azp";
+import { writeAzp, signAzp, generateSigningKey } from "@azphalt/azp";
 import { Registry, InMemoryStore, RegistryError } from "../src/index";
 
 const license = "MIT License\n";
 const base = { azphalt: "0.1", version: "1.0.0", license: "MIT", compat: ">=0.1" };
+const fkey = generateSigningKey();
 
 function packAzp() {
-  return writeAzp({
+  return signAzp(writeAzp({
     manifest: {
       ...base,
       id: "com.acme.base-set",
@@ -21,7 +22,7 @@ function packAzp() {
     },
     payload: {},
     license,
-  }).azp;
+  }).azp, { privateKey: fkey.privateKey });
 }
 
 describe("registry — pack packages", () => {

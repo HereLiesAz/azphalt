@@ -49,8 +49,21 @@ export interface AbrFile {
   brushes: AbrBrush[];
 }
 
+/**
+ * Total decoded-bitmap bytes a single `.abr` may expand to across all its brushes. A crafted file
+ * can declare a huge `width`×`height` (up to the per-brush cap) in dozens of brushes while carrying
+ * only a few KB of RLE input, so the per-brush bound alone lets a tiny file force gigabytes of
+ * allocation. This cumulative budget is the real stop.
+ */
+const MAX_TOTAL_DECODED_BYTES = 256 * 1024 * 1024;
+
+/** Mutable allocation budget threaded through a single parse. */
+interface Budget {
+  remaining: number;
+}
+
 /** Bounds (long) + depth + compression + bitmap — shared by the v1/2 and v6 sampled layouts. */
-function readSampledTail(r: Reader): Pick<AbrBrush, "bounds" | "depth" | "width" | "height" | "gray"> {
+function readSampledTail(r: Reader, budget: Budget): Pick<AbrBrush, "bounds" | "depth" | "width" | "height" | "gray"> {
   const top = r.i32();
   const left = r.i32();
   const bottom = r.i32();
@@ -61,6 +74,12 @@ function readSampledTail(r: Reader): Pick<AbrBrush, "bounds" | "depth" | "width"
   const height = bottom - top;
   if (width <= 0 || height <= 0 || width * height > 64_000_000) {
     throw new UnsupportedAbrError(`implausible brush bounds ${width}x${height}`);
+  }
+  // Charge this bitmap against the whole-file budget before allocating, so N brushes each just under
+  // the per-brush cap can't sum to an OOM.
+  budget.remaining -= width * height;
+  if (budget.remaining < 0) {
+    throw new UnsupportedAbrError("total decoded brush bitmap size exceeds limit");
   }
   if (depth !== 8) throw new UnsupportedAbrError(`unsupported brush depth ${depth} (only 8-bit)`);
 
@@ -80,17 +99,17 @@ function readSampledTail(r: Reader): Pick<AbrBrush, "bounds" | "depth" | "width"
   return { bounds: { top, left, bottom, right }, depth, width, height, gray };
 }
 
-function readSampledV12(r: Reader, version: number): AbrBrush {
+function readSampledV12(r: Reader, version: number, budget: Budget): AbrBrush {
   const name = version === 2 ? r.unicode() : undefined;
   r.u32(); // misc
   const spacing = r.u16();
   r.u8(); // anti-aliasing flag
   r.skip(8); // short bounds: 4 × i16 (long bounds below are authoritative)
-  const tail = readSampledTail(r);
+  const tail = readSampledTail(r, budget);
   return { ...tail, name, kind: "sampled", spacing };
 }
 
-function parseV12(r: Reader, version: number): AbrFile {
+function parseV12(r: Reader, version: number, budget: Budget): AbrFile {
   const count = r.u16();
   const brushes: AbrBrush[] = [];
   for (let i = 0; i < count; i++) {
@@ -98,7 +117,7 @@ function parseV12(r: Reader, version: number): AbrFile {
     const size = r.u32();
     const end = r.pos + size;
     if (type === 2) {
-      brushes.push(readSampledV12(r, version));
+      brushes.push(readSampledV12(r, version, budget));
     } else {
       brushes.push({ kind: "computed", bounds: { top: 0, left: 0, bottom: 0, right: 0 }, depth: 0, width: 0, height: 0 });
     }
@@ -125,7 +144,7 @@ function extractBrushParams(desc: Uint8Array): Record<string, unknown> {
   return out;
 }
 
-function parseV6(r: Reader, version: number): AbrFile {
+function parseV6(r: Reader, version: number, budget: Budget): AbrFile {
   const subVersion = r.u16();
   let sampData: Uint8Array | undefined;
   let descData: Uint8Array | undefined;
@@ -150,7 +169,7 @@ function parseV6(r: Reader, version: number): AbrFile {
       if (entryLen === 0 || entryLen > sr.remaining) break;
       const end = sr.pos + entryLen;
       const name = sr.unicode();
-      const tail = readSampledTail(sr);
+      const tail = readSampledTail(sr, budget);
       brushes.push({ ...tail, name, kind: "sampled", params });
       const pad = end % 4 ? 4 - (end % 4) : 0;
       sr.seek(Math.min(end + pad, sr.length)); // 4-byte aligned; clamp so trailing padding past EOF ends the loop
@@ -167,7 +186,8 @@ function parseV6(r: Reader, version: number): AbrFile {
 export function parseAbr(bytes: Uint8Array): AbrFile {
   const r = new Reader(bytes);
   const version = r.u16();
-  if (version === 1 || version === 2) return parseV12(r, version);
-  if (version === 6 || version === 7 || version === 10) return parseV6(r, version);
+  const budget: Budget = { remaining: MAX_TOTAL_DECODED_BYTES };
+  if (version === 1 || version === 2) return parseV12(r, version, budget);
+  if (version === 6 || version === 7 || version === 10) return parseV6(r, version, budget);
   throw new UnsupportedAbrError(`unsupported .abr version ${version}`);
 }

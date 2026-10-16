@@ -7,6 +7,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { writeAzp, verifyAzp } from "@azphalt/azp";
+import { scanPackage } from "@azphalt/registry";
 import type { Manifest } from "@azphalt/azdk";
 
 export interface SubmissionResult {
@@ -18,8 +19,11 @@ export interface SubmissionResult {
   errors: string[];
 }
 
-const ID_RE = /^[a-z0-9]+(\.[a-z0-9-]+)+$/i; // reverse-DNS, ≥2 dot-separated labels
-const SEMVER_RE = /^\d+\.\d+\.\d+(?:[-+].+)?$/;
+const ID_RE = /^[a-z0-9]+(\.[a-z0-9-]+)+$/; // reverse-DNS, lowercase (matches the registry gate)
+// The official SemVer 2.0.0 grammar — same as the registry, so the gate can't pass a version the
+// registry then rejects (e.g. `01.2.3`, `1.0.0-`).
+const SEMVER_RE =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
 const REQUIRED = ["azphalt", "name", "version", "kind", "license", "compat"] as const;
 /**
  * Every kind `spec/package-format.md` § Package kind defines.
@@ -115,6 +119,12 @@ export function validateSubmission(dir: string): SubmissionResult {
       const { azp } = writeAzp({ manifest: clean, payload, license });
       const v = verifyAzp(azp);
       if (!v.ok) errors.push(...v.errors.map((e) => `verifyAzp: ${e}`));
+      else {
+        // The same security sweep the registry runs at publish: a submission carrying a literal
+        // credential or an off-contract capability must fail here, not later at publish time.
+        const scan = scanPackage(azp);
+        for (const c of scan.checks) if (c.verdict === "block") errors.push(`sweep ${c.id}: ${c.detail ?? "blocked"}`);
+      }
     } catch (e) {
       errors.push(`packaging failed: ${(e as Error).message}`);
     }

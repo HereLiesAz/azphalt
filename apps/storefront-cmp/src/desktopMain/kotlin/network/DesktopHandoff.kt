@@ -45,6 +45,7 @@ actual fun downloadUrl(id: String, version: String): String =
     "${API_BASE.trimEnd('/')}/packages/$id/versions/$version/download"
 
 actual fun openExternal(url: String) {
+    if (!isSafeExternalUrl(url)) return
     runCatching {
         val desktop = Desktop.getDesktop()
         if (desktop.isSupported(Desktop.Action.BROWSE)) desktop.browse(URI(url))

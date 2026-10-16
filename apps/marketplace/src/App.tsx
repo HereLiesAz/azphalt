@@ -92,7 +92,7 @@ function DynamicPackageCard({
           {pkg.author || 'Unknown Author'}
         </motion.p>
         <div className="pkg-tags">
-          {pkg.types.map((t: string) => (
+          {(pkg.types ?? []).map((t: string) => (
             <span key={t} className="tag">{t}</span>
           ))}
         </div>
@@ -139,15 +139,19 @@ function App() {
   }, [search, searchControls]);
 
   useEffect(() => {
+    // Ignore a response for a package that is no longer selected: picking A then B quickly used to let
+    // A's slower reply land last and show A's details under B.
+    let current = true;
     if (selectedPkg) {
       setPkgDetail(null);
       // Simulate ambient color extraction based on package (deterministic mock)
       const colors = ['#1a0f14', '#0f1a18', '#140f1a', '#1a180f'];
       setThemeColor(colors[selectedPkg.id.length % colors.length]);
-      client.getPackage(selectedPkg.id).then(setPkgDetail).catch(console.error);
+      client.getPackage(selectedPkg.id).then((d) => { if (current) setPkgDetail(d); }).catch(console.error);
     } else {
       setThemeColor('var(--md-sys-color-background)');
     }
+    return () => { current = false; };
   }, [selectedPkg]);
 
   const handleInstall = async () => {

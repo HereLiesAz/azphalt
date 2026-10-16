@@ -5,13 +5,17 @@ import { Registry, InMemoryStore, RegistryError, scanPackage } from "../src/inde
 const license = "MIT License\n";
 const base = { azphalt: "0.1", version: "1.0.0", license: "MIT", compat: ">=0.1" };
 const enc = (s: string) => new TextEncoder().encode(s);
+// The registry now requires a signature at publish; sign fixtures with one key (pinning is per-id,
+// so one key across these distinct ids is fine).
+const fkey = generateSigningKey();
+const sign = (bytes: Uint8Array) => signAzp(bytes, { privateKey: fkey.privateKey });
 
 function assetAzp(id = "com.acme.brush") {
-  return writeAzp({
+  return sign(writeAzp({
     manifest: { ...base, id, name: "Brush", kind: "asset" as const, assets: [{ type: "brush", path: "assets/b.brush" }] },
     payload: { "assets/b.brush": enc("brush") },
     license,
-  }).azp;
+  }).azp);
 }
 
 describe("security sweep", () => {
@@ -126,11 +130,11 @@ describe("publish + reporting", () => {
 
 describe("visibility (private / unlisted hosting)", () => {
   function visAzp(id: string, visibility: "public" | "unlisted" | "private") {
-    return writeAzp({
+    return sign(writeAzp({
       manifest: { ...base, id, name: id, kind: "asset" as const, visibility, assets: [{ type: "brush", path: "assets/b" }] },
       payload: { "assets/b": enc("x") },
       license,
-    }).azp;
+    }).azp);
   }
 
   it("hides unlisted and private packages from browse but keeps them resolvable by id", async () => {

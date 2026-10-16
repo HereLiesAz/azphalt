@@ -30,7 +30,7 @@ function azp(id: string, extra: Partial<Omit<Manifest, "files" | "id">> = {}): U
 /** A seeded repository: a free package and a consigned (paid) one with a demo license. */
 async function seededRepo() {
   const store = new InMemoryStore();
-  const registry = new Registry(store);
+  const registry = new Registry(store, { requireSignature: false });
   const marketplace = new Marketplace(registry, store);
   await registry.publish(azp("com.demo.free", { name: "Free Pack", description: "open lane grades" }));
   await registry.publish(azp("com.demo.paid", { name: "Paid Pack", description: "premium cinematic" }));
@@ -61,7 +61,7 @@ describe("repository handler — spec/repository-api.md", () => {
   });
 
   it("advertises supportedTypes + profiles in the discovery index when set (#27 item 5)", async () => {
-    const registry = new Registry();
+    const registry = new Registry(undefined, { requireSignature: false });
     const index: RepositoryIndex = { name: "Video Repo", version: "0.1", supportedTypes: ["audio", "lut", "transition"], profiles: ["video-audio"] };
     const handle = createRepositoryHandler({ registry, index });
     const res = await handle({ method: "GET", path: "/.well-known/azphalt-repository.json", query: new URLSearchParams(), headers: {} });
@@ -119,7 +119,7 @@ describe("repository handler — spec/repository-api.md", () => {
   });
 
   it("surfaces `latest` and localized name/description on detail + summary", async () => {
-    const registry = new Registry();
+    const registry = new Registry(undefined, { requireSignature: false });
     await registry.publish(azp("com.demo.i18n", { version: "1.0.0", name: "Explosions" }));
     // The summary reflects the LATEST version's manifest, so the localized fields live on 1.2.0.
     await registry.publish(
@@ -149,7 +149,7 @@ describe("repository handler — spec/repository-api.md", () => {
 
   describe("POST /updates — batch update check (#42)", () => {
     it("returns only ids with a strictly newer installable version", async () => {
-      const registry = new Registry();
+      const registry = new Registry(undefined, { requireSignature: false });
       await registry.publish(azp("com.demo.a", { version: "1.0.0" }));
       await registry.publish(azp("com.demo.a", { version: "1.2.0" }));
       await registry.publish(azp("com.demo.b", { version: "2.0.0" }));
@@ -284,7 +284,7 @@ describe("repository handler — spec/repository-api.md", () => {
 
   it("scopes browse/search by the ?app= parameter and reports targetApps", async () => {
     const store = new InMemoryStore();
-    const registry = new Registry(store);
+    const registry = new Registry(store, { requireSignature: false });
     await registry.publish(azp("com.demo.global", { name: "Global" }));
     await registry.publish(azp("com.demo.forx", { name: "For X", targetApps: ["com.app.x"] }));
     const handle = createRepositoryHandler({ registry, index: INDEX });
@@ -303,7 +303,7 @@ describe("repository handler — spec/repository-api.md", () => {
   });
 
   it("surfaces ranking metadata and filters by media domain + capability subset", async () => {
-    const registry = new Registry();
+    const registry = new Registry(undefined, { requireSignature: false });
     await registry.publish(azp("com.demo.brush", { name: "Brush", capabilities: ["bitmap"], assets: [{ type: "brush", path: "assets/x.cube" }] }));
     await registry.publish(azp("com.demo.sfx", { name: "SFX", capabilities: ["audio"], assets: [{ type: "audio", path: "assets/x.cube" }] }));
     const handle = createRepositoryHandler({ registry, index: INDEX });
@@ -322,7 +322,7 @@ describe("repository handler — spec/repository-api.md", () => {
   });
 
   it("sorts by name via the `sort` parameter", async () => {
-    const registry = new Registry();
+    const registry = new Registry(undefined, { requireSignature: false });
     await registry.publish(azp("com.demo.zeb", { name: "Zebra" }));
     await registry.publish(azp("com.demo.app", { name: "Apple" }));
     const handle = createRepositoryHandler({ registry, index: INDEX });
@@ -331,7 +331,7 @@ describe("repository handler — spec/repository-api.md", () => {
   });
 
   it("serves the /revocations feed for yanked versions", async () => {
-    const registry = new Registry();
+    const registry = new Registry(undefined, { requireSignature: false });
     await registry.publish(azp("com.demo.bad", { version: "1.0.0" }));
     await registry.publish(azp("com.demo.bad", { version: "1.1.0" }));
     await registry.yank("com.demo.bad", "1.0.0", true, "malware");
@@ -350,7 +350,7 @@ describe("repository handler — spec/repository-api.md", () => {
   it("gates a buy-once download with an offline-verified entitlement token", async () => {
     const reg = generateSigningKey();
     const store = new InMemoryStore();
-    const registry = new Registry(store);
+    const registry = new Registry(store, { requireSignature: false });
     const marketplace = new Marketplace(registry, store);
     await registry.publish(azp("com.demo.buyonce", { name: "Buy Once" }));
     await marketplace.listForSale("com.demo.buyonce", "seller", { amountCents: 500, currency: "USD" });

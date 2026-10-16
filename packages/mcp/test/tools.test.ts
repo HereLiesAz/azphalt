@@ -74,3 +74,18 @@ describe("mcp tools", () => {
     expect(() => extractAsset(sampleAzp(), "assets/nope.cube")).toThrow(/not found/);
   });
 });
+
+describe("extractAsset verifies before extracting", () => {
+  it("refuses a package whose payload no longer matches its digests (valid zip, wrong bytes)", async () => {
+    const { unzipSync, zipSync } = await import("fflate");
+    const files = unzipSync(sampleAzp());
+    files["assets/grade.cube"] = new TextEncoder().encode("TAMPERED");
+    const tampered = zipSync(files);
+    expect(() => extractAsset(tampered, "assets/grade.cube")).toThrow(/invalid package/);
+  });
+
+  it("does not resolve inherited prototype names as assets", () => {
+    expect(() => extractAsset(sampleAzp(), "__proto__")).toThrow(/asset not found/);
+    expect(() => extractAsset(sampleAzp(), "constructor")).toThrow(/asset not found/);
+  });
+});

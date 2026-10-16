@@ -223,6 +223,13 @@ export class Marketplace {
 
     const now = new Date().toISOString();
     const prior = await this.store.getListing(packageId);
+    // A listing is owned by the seller who first created it. A later call with a different sellerId
+    // must not silently re-point the payout to someone else — that is a payout-hijack (checkout pays
+    // listing.sellerId). Only the original seller can update their own listing. The transport is still
+    // responsible for authenticating that the caller IS `sellerId`; this stops the cross-seller case.
+    if (prior && prior.sellerId !== sellerId) {
+      throw new RegistryError(`package ${packageId} is already listed by a different seller`);
+    }
     const listing: Listing = {
       packageId,
       sellerId,

@@ -33,6 +33,17 @@ export interface RegistryOptions {
   denylistKeys?: readonly string[];
   /** Trusted reports against a version needed to auto-quarantine it (default 3). */
   quarantineThreshold?: number;
+  /**
+   * Require every publish to carry a valid Ed25519 signature (spec/repository-api.md § 9). Defaults
+   * to `true` — an open registry that accepts unsigned packages lets anyone take over any id. Set
+   * `false` only for a closed/test deployment that gates publishing some other way.
+   */
+  requireSignature?: boolean;
+  /**
+   * Pin each package id to the publisher key of its first version: a later version signed by a
+   * different key is rejected (spec/repository-api.md § 9). Defaults to `true`.
+   */
+  enforcePublisherPinning?: boolean;
   /** Injected ISO-8601 clock for deterministic tests. */
   now?: () => string;
 }
@@ -104,7 +115,7 @@ export interface ByteRangeSpec {
   suffix?: number;
 }
 
-const ID_RE = /^[a-z0-9]+(\.[a-z0-9-]+)+$/i; // reverse-DNS, at least two dot-separated labels
+const ID_RE = /^[a-z0-9]+(\.[a-z0-9-]+)+$/; // reverse-DNS, lowercase (case-insensitive ids enable squatting)
 // Official SemVer 2.0.0 grammar (https://semver.org): no leading zeroes in numeric identifiers, no
 // empty prerelease/build identifiers. Capture groups: 1=major, 2=minor, 3=patch, 4=prerelease, 5=build.
 const SEMVER_RE =
@@ -122,8 +133,9 @@ export function compareSemver(a: string, b: string): number {
   if (!pa) return -1;
   if (!pb) return 1;
   for (let i = 1; i <= 3; i++) {
-    const d = Number(pa[i]) - Number(pb[i]);
-    if (d !== 0) return d < 0 ? -1 : 1;
+    const x = BigInt(pa[i]);
+    const y = BigInt(pb[i]);
+    if (x !== y) return x < y ? -1 : 1;
   }
   const preA = pa[4];
   const preB = pb[4];
@@ -142,7 +154,7 @@ export function compareSemver(a: string, b: string): number {
     // therefore alphanumeric (and outranks numeric identifiers).
     const nx = /^(0|[1-9]\d*)$/.test(x);
     const ny = /^(0|[1-9]\d*)$/.test(y);
-    if (nx && ny) return Number(x) - Number(y) < 0 ? -1 : 1;
+    if (nx && ny) return BigInt(x) < BigInt(y) ? -1 : 1; // BigInt: identifiers can exceed 2^53
     if (nx) return -1; // numeric identifiers are lower than alphanumeric
     if (ny) return 1;
     return x < y ? -1 : 1;
@@ -181,6 +193,13 @@ export class Registry {
     const verified = verifyAzp(azpBytes);
     if (!verified.ok) throw new RegistryError("invalid .azp package", verified.errors);
 
+    // A publish MUST be signed (spec/repository-api.md § 9) unless a closed deployment opts out.
+    // Without this, `verifyAzp` passes unsigned packages and anyone can claim any id.
+    const requireSignature = this.options.requireSignature ?? true;
+    if (requireSignature && !verified.signed) {
+      throw new RegistryError("package must be signed (no signature.json)");
+    }
+
     const manifest: Manifest = readAzp(azpBytes).manifest;
     if (!manifest.id || !ID_RE.test(manifest.id)) {
       throw new RegistryError(`invalid package id: ${JSON.stringify(manifest.id)}`);
@@ -193,9 +212,32 @@ export class Registry {
       throw new RegistryError("invalid pack package: must have at least one entry");
     }
 
-    const existing = await this.store.getVersion(manifest.id, manifest.version);
-    if (existing) {
+    const publisherKey = extractPublisherKey(azpBytes);
+    // A revoked publisher key cannot publish (also enforced by the sweep, but fail fast here).
+    if (publisherKey && this.options.denylistKeys?.includes(publisherKey)) {
+      throw new RegistryError("publisher key is revoked");
+    }
+
+    const prior = await this.store.getVersions(manifest.id);
+    const exact = prior.find((v) => v.version === manifest.version);
+    if (exact) {
       throw new RegistryError(`version already published: ${manifest.id}@${manifest.version}`);
+    }
+    // Versions are immutable *by precedence*, not just by exact string: `1.0.0+evil` must not slip in
+    // alongside `1.0.0` as a distinct, same-precedence artifact a yank could later flip `latest` to.
+    const samePrecedence = prior.find((v) => compareSemver(v.version, manifest.version) === 0);
+    if (samePrecedence) {
+      throw new RegistryError(`version collides in precedence with ${manifest.id}@${samePrecedence.version}`);
+    }
+    // Publisher pinning: a package id belongs to the key that first published it.
+    if ((this.options.enforcePublisherPinning ?? true) && prior.length > 0) {
+      const pinned = [...prior]
+        .sort((a, b) => (a.publishedAt < b.publishedAt ? -1 : 1))
+        .map((v) => v.publisherKey)
+        .find((k) => k);
+      if (pinned && publisherKey !== pinned) {
+        throw new RegistryError(`publisher key does not match the key pinned to ${manifest.id}`);
+      }
     }
 
     // Security sweep (spec/marketplace-integrity.md § 1). `block` refuses indexing; the report is
@@ -214,7 +256,6 @@ export class Registry {
 
     // Provenance / anti-clone (spec/marketplace-integrity.md § 4). Flags (never blocks) get folded
     // into the scan report so a host badges them and moderation gets the evidence.
-    const publisherKey = extractPublisherKey(azpBytes);
     const cloneChecks = await this.cloneCheck(manifest, publisherKey);
     if (cloneChecks.length > 0) {
       scan.checks.push(...cloneChecks);
@@ -249,18 +290,25 @@ export class Registry {
     return this.store.getVersion(id, version);
   }
 
-  /** The newest non-yanked version (falling back to the newest yanked one if all are yanked). */
+  /**
+   * The newest non-yanked version, or `undefined` when there is none. A package whose only version(s)
+   * are yanked — e.g. auto-quarantined by {@link report} — must NOT resolve here, or quarantine would
+   * be defeated: `serve(id)` with no version, `getSummary`, browse, and search all key off this. The
+   * yanked bytes remain reachable only by an explicit `serve(id, version)` for the revocation-feed
+   * transition, never as the implicit latest.
+   */
   async latest(id: string): Promise<PackageVersion | undefined> {
     const vs = await this.versions(id);
-    if (vs.length === 0) return undefined;
-    return vs.find((v) => !v.yanked) ?? vs[0];
+    return vs.find((v) => !v.yanked);
   }
 
   /** The aggregate summary for [id], or `undefined` if unknown. */
   async getSummary(id: string): Promise<PackageSummary | undefined> {
     const vs = await this.versions(id);
-    if (vs.length === 0) return undefined;
-    const latest = vs.find((v) => !v.yanked) ?? vs[0];
+    // No non-yanked version → the package is not installable, so it is absent from browse, search, and
+    // detail (quarantine). Moderation reaches yanked versions through the reports/admin path instead.
+    const latest = vs.find((v) => !v.yanked);
+    if (!latest) return undefined;
     const m = latest.manifest;
 
     const assetTypes = [...new Set((m.assets ?? []).map((a) => a.type))] as AssetType[];
@@ -494,7 +542,7 @@ export class Registry {
     const wasYanked = Boolean(v.yanked);
     await this.store.putVersion({ ...v, yanked }, bytes);
     if (yanked && !wasYanked) {
-      await this.store.putRevocation({ id, version, reason, revokedAt: new Date().toISOString() });
+      await this.store.putRevocation({ id, version, reason, revokedAt: this.clock() });
     }
   }
 
@@ -525,6 +573,15 @@ export class Registry {
   }): Promise<ReportResult> {
     if (!this.store.putReport || !this.store.getReports) {
       throw new RegistryError("this registry store does not support reporting");
+    }
+    // A report must name a package this registry actually holds (and, when it names a version, that
+    // version). Otherwise reports for arbitrary ids pile up in storage — a free write-amplification
+    // path for anyone who can reach the endpoint.
+    if (!(await this.store.getVersions(input.packageId)).length) {
+      throw new RegistryError(`cannot report unknown package: ${input.packageId}`);
+    }
+    if (input.version && !(await this.store.getVersion(input.packageId, input.version))) {
+      throw new RegistryError(`cannot report unknown version: ${input.packageId}@${input.version}`);
     }
     const report: Report = {
       packageId: input.packageId,

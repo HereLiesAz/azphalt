@@ -22,6 +22,10 @@ import { strFromU8, unzipSync } from "fflate";
 export const MAX_PUBLISH_BYTES = 4 * 1024 * 1024;
 export const MAX_BINARY_FILES = 30;
 const MAX_FILES = 500;
+/** Uncompressed-size ceilings. The 4 MB cap is on the *compressed* upload; without these a 4 MB deflate
+ * stream can inflate ~1000x and blow the 128 MB isolate before any check runs (unauthenticated). */
+const MAX_ENTRY_BYTES = 32 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 64 * 1024 * 1024;
 const PUBLISHERS_PATH = "apps/storefront/registry/publishers.json";
 /** Reverse-DNS: dot-separated labels, no empty label (so no `..`, which a git branch name forbids). */
 const REVERSE_DNS = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$/;
@@ -95,6 +99,87 @@ function fromBase64(value: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+/**
+ * Parse JSON, refusing duplicate object keys. A copy of `@azphalt/azp`'s `parseJsonNoDuplicateKeys`
+ * (kept inline because that package imports `node:crypto`, which a Worker cannot load): the signature
+ * is over the raw manifest bytes, so a manifest with two `"files"` objects verifies under `JSON.parse`
+ * (last wins) yet reads differently to a verifier that keeps the first.
+ */
+function parseJsonNoDuplicateKeys<T = unknown>(text: string): T {
+  // Frames: one per open `{`/`[`. For objects we collect keys and remember whether the next string
+  // is a key (true just after `{` or `,` inside an object) or a value.
+  interface Frame {
+    object: boolean;
+    keys?: Set<string>;
+    expectKey: boolean;
+  }
+  const stack: Frame[] = [];
+  let expectingKey = false; // top-level is a value position
+
+  let i = 0;
+  const n = text.length;
+  while (i < n) {
+    const c = text[i];
+    if (c === '"') {
+      // Read a full JSON string (with escapes) and advance i past the closing quote.
+      const start = i;
+      i++;
+      let raw = "";
+      while (i < n) {
+        const ch = text[i];
+        if (ch === "\\") {
+          raw += ch + (text[i + 1] ?? "");
+          i += 2;
+          continue;
+        }
+        if (ch === '"') break;
+        raw += ch;
+        i++;
+      }
+      i++; // past closing quote
+      const top = stack[stack.length - 1];
+      if (top && top.object && expectingKey) {
+        // This string is an object key. Decode just enough to compare (JSON.parse the token).
+        const key = JSON.parse(text.slice(start, i)) as string;
+        if (top.keys!.has(key)) throw new Error(`duplicate manifest key: ${JSON.stringify(key)}`);
+        top.keys!.add(key);
+        expectingKey = false; // now expect `:` then a value
+      }
+      continue;
+    }
+    if (c === "{") {
+      stack.push({ object: true, keys: new Set(), expectKey: true });
+      expectingKey = true;
+      i++;
+      continue;
+    }
+    if (c === "[") {
+      stack.push({ object: false, expectKey: false });
+      expectingKey = false;
+      i++;
+      continue;
+    }
+    if (c === "}" || c === "]") {
+      stack.pop();
+      expectingKey = false;
+      i++;
+      continue;
+    }
+    if (c === ",") {
+      const top = stack[stack.length - 1];
+      expectingKey = !!(top && top.object);
+      i++;
+      continue;
+    }
+    // `:` and whitespace and primitive characters — a key is only ever a string, so after `:` the
+    // next string is a value; expectingKey stays false until the next `,`/`{`.
+    i++;
+  }
+
+  return JSON.parse(text) as T;
+}
+
+
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes as Uint8Array<ArrayBuffer>));
   return Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -110,7 +195,19 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
 
   let files: Record<string, Uint8Array>;
   try {
-    files = unzipSync(bytes);
+    // `filter` sees each entry's header before it is inflated, so a bomb is refused without being
+    // decompressed. Count and size are both bounded.
+    let entries = 0;
+    let total = 0;
+    files = unzipSync(bytes, {
+      filter(file) {
+        if (++entries > MAX_FILES) throw new Error(`too many files (more than ${MAX_FILES})`);
+        if (file.originalSize > MAX_ENTRY_BYTES) throw new Error(`entry "${file.name}" is too large`);
+        total += file.originalSize;
+        if (total > MAX_TOTAL_BYTES) throw new Error("package is too large when uncompressed");
+        return true;
+      },
+    });
   } catch (error) {
     return bad("not a valid .azp container: " + (error instanceof Error ? error.message : String(error)));
   }
@@ -121,7 +218,7 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
   if (!manifestRaw) return bad("manifest.json is missing");
   let manifest: Inspected["manifest"];
   try {
-    manifest = JSON.parse(strFromU8(manifestRaw));
+    manifest = parseJsonNoDuplicateKeys(strFromU8(manifestRaw)) as Inspected["manifest"];
   } catch (error) {
     return bad("manifest.json is not valid JSON: " + (error instanceof Error ? error.message : String(error)));
   }
@@ -131,7 +228,13 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
   if (typeof manifest.id !== "string" || !REVERSE_DNS.test(manifest.id)) errors.push("manifest.id must be a reverse-DNS id");
   if (typeof manifest.version !== "string" || !SEMVER.test(manifest.version)) errors.push("manifest.version must be semver");
   for (const path of paths) {
-    if (path.startsWith("/") || path.split("/").includes("..") || path.includes("\\")) errors.push(`unsafe path: ${path}`);
+    // Same shapes as @azphalt/azp's unsafePathReason (kept inline: this Worker can't load node:crypto).
+    if (
+      path.length === 0 || path.includes("\0") || path.startsWith("/") || path.includes("\\") ||
+      /^[A-Za-z]:/.test(path) || path.split("/").some((seg) => seg === "" || seg === "." || seg === "..")
+    ) {
+      errors.push(`unsafe path: ${path}`);
+    }
   }
   if (!manifest.files || typeof manifest.files !== "object") {
     errors.push("manifest.files is missing");

@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { writeAzp } from "@azphalt/azp";
+import { writeAzp, signAzp, generateSigningKey } from "@azphalt/azp";
 import { Registry, InMemoryStore, RegistryError } from "../src/index";
 
 const license = "MIT License\n";
 const base = { azphalt: "0.1", version: "1.0.0", license: "MIT", compat: ">=0.1" };
+const fkey = generateSigningKey();
 
 function mcpAzp() {
   const wasm = new Uint8Array([0x00, 0x61, 0x73, 0x6d, 1, 0, 0, 0]);
@@ -14,11 +15,11 @@ function mcpAzp() {
     ],
     offers: { tools: ["read_file"] },
   };
-  return writeAzp({
+  return signAzp(writeAzp({
     manifest: { ...base, id: "com.acme.fs-mcp", name: "Filesystem MCP", kind: "mcp" as const, mcp },
     payload: { "server/fs.wasm": wasm },
     license,
-  }).azp;
+  }).azp, { privateKey: fkey.privateKey });
 }
 
 describe("registry — mcp packages", () => {
@@ -46,6 +47,6 @@ describe("registry — mcp packages", () => {
     }).azp;
 
     const registry = new Registry(new InMemoryStore());
-    await expect(registry.publish(bad)).rejects.toBeInstanceOf(RegistryError);
+    await expect(registry.publish(signAzp(bad, { privateKey: fkey.privateKey }))).rejects.toBeInstanceOf(RegistryError);
   });
 });

@@ -70,6 +70,24 @@ export interface DownloadOptions {
   signal?: AbortSignal;
   /** Progress callback, invoked as bytes arrive: `(received, total)`. */
   onProgress?: (received: number, total: number) => void;
+  /**
+   * The container's expected `sha256-<hex>` digest (the version's `digest` from the repository detail
+   * or catalog). When given, the downloaded bytes are hashed and a mismatch throws — corruption,
+   * truncation and a swapped artifact are all caught before a host trusts the file.
+   */
+  expectedDigest?: string;
+  /**
+   * Hard ceiling on the download size in bytes (default 1 GiB). The total comes from the server's
+   * `Content-Range`, so without a ceiling a hostile server could make the client allocate an arbitrary
+   * buffer.
+   */
+  maxBytes?: number;
+}
+
+/** `sha256-<lowercase-hex>` of `bytes`, via WebCrypto (browser, Node, and Workers all have it). */
+async function sha256Digest(bytes: Uint8Array): Promise<string> {
+  const buf = await globalThis.crypto.subtle.digest("SHA-256", bytes as Uint8Array<ArrayBuffer>);
+  return "sha256-" + Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /** A `202 Accepted` from `POST /packages`: queued for review, not yet served (`repository-api.md` § 9). */
@@ -183,7 +201,7 @@ export class RepositoryClient {
   }
 
   public async getPackage(id: string): Promise<Manifest> {
-    const res = await fetch(`${this.baseUrl}/packages/${id}`, { headers: this.headers });
+    const res = await fetch(`${this.baseUrl}/packages/${encodeURIComponent(id)}`, { headers: this.headers });
     if (!res.ok) throw new Error(`Get package failed: ${res.status}`);
     return res.json();
   }
@@ -193,7 +211,7 @@ export class RepositoryClient {
    * `id` isn't a pack. See {@link resolvePack} for a ready-to-install form with versions filled in.
    */
   public async getPack(id: string): Promise<PackManifest> {
-    const res = await fetch(`${this.baseUrl}/packages/${id}`, { headers: this.headers });
+    const res = await fetch(`${this.baseUrl}/packages/${encodeURIComponent(id)}`, { headers: this.headers });
     if (!res.ok) throw new Error(`Get pack failed: ${res.status}`);
     const detail = (await res.json()) as PackageDetail;
     // The Repository API's detail carries `kind`/`pack` on the nested `manifest` (the spec's
@@ -215,7 +233,7 @@ export class RepositoryClient {
     const entries = await Promise.all(
       pack.entries.map(async (e): Promise<ResolvedPackEntry> => {
         if (e.version) return { ...e, version: e.version };
-        const res = await fetch(`${this.baseUrl}/packages/${e.id}`, { headers: this.headers });
+        const res = await fetch(`${this.baseUrl}/packages/${encodeURIComponent(e.id)}`, { headers: this.headers });
         if (!res.ok) throw new Error(`Resolve pack member ${e.id} failed: ${res.status}`);
         const d = (await res.json()) as PackageDetail;
         const version = d.latest ?? d.version;
@@ -238,7 +256,19 @@ export class RepositoryClient {
    * `401` (no token) and `402` (unlicensed) on a paid package throw, as before.
    */
   public async download(id: string, version: string, opts: DownloadOptions = {}): Promise<Uint8Array> {
-    const url = `${this.baseUrl}/packages/${id}/versions/${version}/download`;
+    const bytes = await this.downloadRaw(id, version, opts);
+    if (opts.expectedDigest !== undefined) {
+      const got = await sha256Digest(bytes);
+      if (got !== opts.expectedDigest) {
+        throw new Error(`Download failed integrity check: expected ${opts.expectedDigest}, got ${got}`);
+      }
+    }
+    return bytes;
+  }
+
+  private async downloadRaw(id: string, version: string, opts: DownloadOptions): Promise<Uint8Array> {
+    const maxBytes = opts.maxBytes ?? 1024 * 1024 * 1024;
+    const url = `${this.baseUrl}/packages/${encodeURIComponent(id)}/versions/${encodeURIComponent(version)}/download`;
     const chunkSize = Math.max(1, opts.chunkSize ?? 8 * 1024 * 1024);
     const concurrency = Math.max(1, opts.concurrency ?? 4);
     const retries = Math.max(0, opts.retries ?? 3);
@@ -249,6 +279,7 @@ export class RepositoryClient {
     if (first.status === 402) throw new Error("402 Payment Required: You do not have a license for this paid asset.");
     if (first.status !== 200 && first.status !== 206) throw new Error(`Download failed: ${first.status}`);
     const firstBytes = first.bytes!;
+    if (firstBytes.length > maxBytes) throw new Error(`Download exceeds the ${maxBytes}-byte limit`);
 
     // `200` ⇒ the server ignored Range and sent everything; nothing left to parallelize.
     const total = first.status === 206 ? totalFromContentRange(first.headers.get("content-range")) : firstBytes.length;
@@ -257,6 +288,7 @@ export class RepositoryClient {
       return firstBytes;
     }
 
+    if (total > maxBytes) throw new Error(`Download of ${total} bytes exceeds the ${maxBytes}-byte limit`);
     const out = new Uint8Array(total);
     out.set(firstBytes, 0);
     let received = firstBytes.length;
@@ -277,6 +309,11 @@ export class RepositoryClient {
         const { start, end } = windows[i];
         const chunk = await this.getChunk(url, start, end, retries, opts.signal);
         if (chunk.status !== 200 && chunk.status !== 206) throw new Error(`Download chunk failed: ${chunk.status}`);
+        // A short or oversized window would leave zero-filled holes (or throw a RangeError) inside the
+        // file; it must be exactly the window we asked for.
+        if (chunk.status !== 206 || chunk.bytes!.length !== end - start + 1) {
+          throw new Error(`Download chunk ${start}-${end} returned an unexpected body (${chunk.status}, ${chunk.bytes!.length} bytes)`);
+        }
         out.set(chunk.bytes!, start);
         received += chunk.bytes!.length;
         opts.onProgress?.(received, total);

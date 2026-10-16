@@ -20,7 +20,7 @@ repo's Actions runs rather than committed as source under `.github/workflows/`.*
 for those filenames will not find them; this document describes their behavior as configured in that
 shared catalog, and that is the repo to check or change if the behavior described here and what
 actually runs disagree — as they currently do for the versioning loop below, which has been observed
-freezing `d` (build/`versionCode`) instead of bumping it. Treat that gap as a known open issue, not a
+freezing `d` (build/`versionCode`) instead of bumping it. Treat that gap as a known open issue, not an
 error in the description.
 
 ## Versioning the apps
@@ -35,6 +35,15 @@ error in the description.
 | `d` | build | Automatic. **Never resets.** | Every compile. |
 
 Everything that reports a version reads it from that file: the Android `versionName`, the Android `versionCode` (which is `d` alone), the Gradle project version, the desktop installers, and the version shown in the web store's footer. Nothing hardcodes a version anywhere else — if you find one, it is a bug.
+
+**Who writes the file.** `tools/version.mjs` is the writer for everything in this repository (local
+bumps, Gradle's compile-time bump). The shared release workflow also writes it from the central repo —
+that is the one other writer, and it is why `.version-state.json` exists: the workflow records the
+`run_id`, `source_sha` and `version` it last released there, so a re-run can tell whether it already
+bumped. Nothing in this repository reads that file; don't edit it by hand. Both readers of
+`version.properties` — `tools/version.mjs` and the Gradle build — take the canonical
+`versionMajor…versionBuild` keys first and fall back to the short `major…build` aliases, so a file
+carrying only one of the two sets still yields the same version everywhere.
 
 `d` is `versionCode` because Play requires that number to increase monotonically forever and accepts each value exactly once. `d` never resets and never decreases by construction; anything derived from `a.b.c` goes backwards the moment a component resets.
 

@@ -18,6 +18,25 @@ describe("malformed-input hardening", () => {
     expect(() => decodePackBits(new Uint8Array([0xfd]), 4)).toThrow(/packbits/); // repeat with no value byte
   });
 
+  it("PackBits throws on an under-filled row rather than silently zero-filling", () => {
+    // One literal byte decodes to 1 output byte but the row expects 5 — must fail, not pad with zeros.
+    expect(() => decodePackBits(new Uint8Array([0x00, 0xaa]), 5)).toThrow(/underflow/);
+    // Empty source, non-zero expected.
+    expect(() => decodePackBits(new Uint8Array([]), 3)).toThrow(/underflow/);
+  });
+
+  it("descriptor nesting is bounded (deep Objc chain throws, not stack overflow)", () => {
+    // Build a descriptor nesting Objc objects far past MAX_DEPTH: each body is name(u16=0) + classKey
+    // (u32=0 + 4 ascii) + count(u32=1) + itemKey(u32=0 + 4 ascii) + OSType("Objc") then the child.
+    const w = new Writer();
+    for (let i = 0; i < 200; i++) {
+      w.unicode("").u32(0).ascii("Objc").u32(1).u32(0).ascii("Chld").ascii("Objc");
+    }
+    // innermost: a body with count 0
+    w.unicode("").u32(0).ascii("Objc").u32(0);
+    expect(() => readDescriptor(w.build())).toThrow(/too deep/);
+  });
+
   it("descriptor rejects an absurd item count instead of looping/allocating", () => {
     const bytes = new Writer().unicode("").u32(0).ascii("Brsh").u32(0xffffffff).build();
     expect(() => readDescriptor(bytes)).toThrow(/exceeds remaining/);
