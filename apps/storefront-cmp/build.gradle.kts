@@ -188,7 +188,7 @@ kotlin {
                     // `project.dependencies.platform(...)`, not a bare `platform(...)`: a multiplatform
                     // source set's dependency block is a KotlinDependencyHandler, which has no
                     // platform() of its own, so the BOM has to be built through the project's handler.
-                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:35.0.0"))
+                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:35.0.2"))
                     implementation("com.google.firebase:firebase-analytics")
                 }
             }
