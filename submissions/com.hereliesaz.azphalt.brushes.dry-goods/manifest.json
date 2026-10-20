@@ -1,0 +1,208 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.brushes.dry-goods",
+  "name": "Dry Goods",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0",
+  "compat": ">=0.1",
+  "description": "Pigment on tooth: graphite that side-shades with tilt, tumbling vine charcoal, crumbling sidewalk chalk and a waxy oil pastel that drags over itself.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/graphite.png",
+      "tags": [
+        "pencil",
+        "tilt",
+        "shading"
+      ],
+      "params": {
+        "name": "Graphite",
+        "spacing": 0.08,
+        "opacity": 0.65,
+        "opacityJitter": 0.15,
+        "substrateResponse": 0.85,
+        "grainStrength": 0.7,
+        "contact": {
+          "enabled": true,
+          "stiffness": 0.9,
+          "drag": 0.1,
+          "tiltCoupling": 0.85,
+          "orientationCoupling": 0.7,
+          "pressureCoupling": 0.15,
+          "tipGeometry": {
+            "kind": "pencil",
+            "pencilSideCoverage": 1.2
+          }
+        },
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "opacity",
+            "outputMin": 0.15,
+            "outputMax": 1,
+            "curve": {
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.6,
+                  "y": 0.45
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.75,
+            "outputMax": 1
+          },
+          {
+            "sensor": "tilt",
+            "parameter": "opacity",
+            "outputMin": 0.55,
+            "outputMax": 1,
+            "inputMax": 1.2,
+            "invert": true
+          }
+        ],
+        "grain": "assets/grain-paper-tooth.png",
+        "grainScale": 1
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/vine-charcoal.png",
+      "tags": [
+        "charcoal",
+        "ragged",
+        "build-up"
+      ],
+      "params": {
+        "name": "Vine Charcoal",
+        "spacing": 0.07,
+        "opacity": 0.8,
+        "roundness": 0.7,
+        "sizeJitter": 0.15,
+        "opacityJitter": 0.3,
+        "scatter": 0.06,
+        "buildUp": true,
+        "substrateResponse": 1,
+        "grainStrength": 0.85,
+        "dynamics": [
+          {
+            "sensor": "randomDab",
+            "parameter": "rotation",
+            "outputMin": 0,
+            "outputMax": 360
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "opacity",
+            "outputMin": 0.3,
+            "outputMax": 1
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.6,
+            "outputMax": 1
+          }
+        ],
+        "grain": "assets/grain-paper-tooth.png",
+        "grainScale": 1
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/sidewalk-chalk.png",
+      "tags": [
+        "chalk",
+        "chunky",
+        "crumble"
+      ],
+      "params": {
+        "name": "Sidewalk Chalk",
+        "spacing": 0.1,
+        "opacity": 0.9,
+        "count": 2,
+        "scatter": 0.12,
+        "sizeJitter": 0.25,
+        "opacityJitter": 0.35,
+        "substrateResponse": 1,
+        "grainStrength": 1,
+        "dynamics": [
+          {
+            "sensor": "randomDab",
+            "parameter": "rotation",
+            "outputMin": 0,
+            "outputMax": 360
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.5,
+            "outputMax": 1
+          },
+          {
+            "sensor": "speed",
+            "parameter": "opacity",
+            "outputMin": 0.6,
+            "outputMax": 1,
+            "inputMax": 2.5,
+            "invert": true
+          }
+        ],
+        "grain": "assets/grain-paper-tooth.png",
+        "grainScale": 1
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/oil-pastel.png",
+      "tags": [
+        "pastel",
+        "wax",
+        "blend"
+      ],
+      "params": {
+        "name": "Oil Pastel",
+        "spacing": 0.05,
+        "opacity": 0.95,
+        "roundness": 0.85,
+        "followStroke": true,
+        "buildUp": true,
+        "substrateResponse": 0.65,
+        "grainStrength": 0.55,
+        "impastoThicknessRate": 0.15,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "opacity",
+            "outputMin": 0.45,
+            "outputMax": 1
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.7,
+            "outputMax": 1
+          }
+        ],
+        "grain": "assets/grain-paper-tooth.png",
+        "grainScale": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,289 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.brushes.loaded-hair",
+  "name": "Loaded Hair",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0",
+  "compat": ">=0.1",
+  "description": "Physical bristle brushes and a trowel: a square flat, a long rigger for line, a fan for softening, a stubby scrub, a glazing mop and a trowel that leaves real paint height.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/square-flat.png",
+      "tags": [
+        "bristle",
+        "flat",
+        "edges"
+      ],
+      "params": {
+        "name": "Square Flat",
+        "spacing": 0.04,
+        "opacity": 1,
+        "hardness": 0.75,
+        "followStroke": true,
+        "substrateResponse": 0.4,
+        "grainStrength": 0.35,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.6,
+            "outputMax": 1
+          }
+        ],
+        "contact": {
+          "enabled": true,
+          "stiffness": 0.6,
+          "drag": 0.6,
+          "tufts": {
+            "enabled": true,
+            "morphology": "flat"
+          },
+          "tipGeometry": {
+            "kind": "bristle",
+            "population": {
+              "enabled": true,
+              "bristleDiameterPx": 1.15,
+              "packingFraction": 0.72
+            }
+          }
+        },
+        "grain": "assets/grain-canvas.png",
+        "grainScale": 1
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/rigger.png",
+      "tags": [
+        "bristle",
+        "line",
+        "long"
+      ],
+      "params": {
+        "name": "Rigger",
+        "spacing": 0.03,
+        "opacity": 1,
+        "followStroke": true,
+        "taper": {
+          "startLengthPx": 30,
+          "minSize": 0.3,
+          "minOpacity": 1
+        },
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.2,
+            "outputMax": 1,
+            "curve": {
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.4
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        ],
+        "contact": {
+          "enabled": true,
+          "stiffness": 0.35,
+          "drag": 0.8,
+          "tufts": {
+            "enabled": true,
+            "morphology": "rigger"
+          },
+          "tipGeometry": {
+            "kind": "bristle",
+            "population": {
+              "enabled": true,
+              "bristleDiameterPx": 1.0,
+              "packingFraction": 0.8
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/fan-softener.png",
+      "tags": [
+        "bristle",
+        "fan",
+        "blend"
+      ],
+      "params": {
+        "name": "Fan Softener",
+        "spacing": 0.06,
+        "opacity": 0.55,
+        "followStroke": true,
+        "buildUp": true,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "opacity",
+            "outputMin": 0.3,
+            "outputMax": 1
+          }
+        ],
+        "contact": {
+          "enabled": true,
+          "stiffness": 0.5,
+          "drag": 0.6,
+          "tufts": {
+            "enabled": true,
+            "morphology": "fan"
+          },
+          "tipGeometry": {
+            "kind": "bristle",
+            "population": {
+              "enabled": true,
+              "bristleDiameterPx": 1.2,
+              "packingFraction": 0.5
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/scrub.png",
+      "tags": [
+        "bristle",
+        "dry",
+        "texture"
+      ],
+      "params": {
+        "name": "Scrub",
+        "spacing": 0.05,
+        "opacity": 0.9,
+        "followStroke": true,
+        "substrateResponse": 1,
+        "grainStrength": 0.8,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "opacity",
+            "outputMin": 0.35,
+            "outputMax": 1
+          },
+          {
+            "sensor": "speed",
+            "parameter": "opacity",
+            "outputMin": 0.4,
+            "outputMax": 1,
+            "inputMax": 2.5,
+            "invert": true
+          }
+        ],
+        "contact": {
+          "enabled": true,
+          "stiffness": 0.7,
+          "drag": 0.5,
+          "tufts": {
+            "enabled": true,
+            "morphology": "flat"
+          },
+          "tipGeometry": {
+            "kind": "bristle",
+            "population": {
+              "enabled": true,
+              "bristleDiameterPx": 1.6,
+              "packingFraction": 0.45
+            }
+          }
+        },
+        "grain": "assets/grain-canvas.png",
+        "grainScale": 1
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/glaze-mop.png",
+      "tags": [
+        "wash",
+        "glaze",
+        "soft"
+      ],
+      "params": {
+        "name": "Glaze Mop",
+        "spacing": 0.08,
+        "opacity": 0.25,
+        "hardness": 0,
+        "sizeJitter": 0.05,
+        "buildUp": true,
+        "airbrushDabsPerSecond": 6,
+        "airbrushStillnessRadiusPx": 6,
+        "substrateResponse": 0.15,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "opacity",
+            "outputMin": 0.3,
+            "outputMax": 1
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.7,
+            "outputMax": 1
+          }
+        ]
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/trowel.png",
+      "tags": [
+        "knife",
+        "impasto",
+        "thick"
+      ],
+      "params": {
+        "name": "Trowel",
+        "spacing": 0.03,
+        "isotropicSpacing": false,
+        "roundness": 0.22,
+        "followStroke": true,
+        "opacity": 1,
+        "hardness": 0.95,
+        "impastoThicknessRate": 0.6,
+        "impastoMaterial": {
+          "version": 2,
+          "enabled": true,
+          "initialLoad": 1,
+          "wetness": 0.6,
+          "pickupRate": 0.3,
+          "levelingRate": 0.1,
+          "viscosity": 0.8,
+          "yieldLikeStrength": 0.7,
+          "substrateResponse": 0.3,
+          "baseRoughness": 0.6,
+          "wetSpecularStrength": 0.5
+        },
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.7,
+            "outputMax": 1
+          }
+        ]
+      }
+    }
+  ]
+}

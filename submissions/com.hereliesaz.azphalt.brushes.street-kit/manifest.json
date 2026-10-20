@@ -1,0 +1,214 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.brushes.street-kit",
+  "name": "Street Kit",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0",
+  "compat": ">=0.1",
+  "description": "Wall work: a needle cap for lettering, a spitting cap, overspray haze, a nap roller and a dripping mop marker. Tuned to pool where you linger and ghost out on fast passes.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/needle-cap.png",
+      "tags": [
+        "spray",
+        "fine",
+        "lettering"
+      ],
+      "params": {
+        "name": "Needle Cap",
+        "spacing": 0.05,
+        "opacity": 0.6,
+        "hardness": 0.2,
+        "buildUp": true,
+        "airbrushDabsPerSecond": 18,
+        "airbrushStillnessRadiusPx": 4,
+        "substrateResponse": 0.3,
+        "grainStrength": 0.25,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.6,
+            "outputMax": 1
+          },
+          {
+            "sensor": "speed",
+            "parameter": "opacity",
+            "outputMin": 0.45,
+            "outputMax": 1,
+            "inputMax": 2.5,
+            "invert": true
+          },
+          {
+            "sensor": "speed",
+            "parameter": "size",
+            "outputMin": 0.8,
+            "outputMax": 1,
+            "inputMax": 2.5,
+            "invert": true
+          }
+        ],
+        "grain": "assets/grain-concrete.png",
+        "grainScale": 1
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/spit-cap.png",
+      "tags": [
+        "spray",
+        "droplets",
+        "texture"
+      ],
+      "params": {
+        "name": "Spit Cap",
+        "spacing": 0.35,
+        "opacity": 0.85,
+        "opacityJitter": 0.4,
+        "sizeJitter": 0.3,
+        "scatter": 0.35,
+        "scatterLongitudinal": 0.35,
+        "count": 2,
+        "countJitter": 0.5,
+        "dynamics": [
+          {
+            "sensor": "randomDab",
+            "parameter": "rotation",
+            "outputMin": 0,
+            "outputMax": 360
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "scatter",
+            "outputMin": 0.6,
+            "outputMax": 1
+          },
+          {
+            "sensor": "speed",
+            "parameter": "opacity",
+            "outputMin": 0.5,
+            "outputMax": 1,
+            "inputMax": 3,
+            "invert": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/overspray.png",
+      "tags": [
+        "spray",
+        "haze",
+        "glow"
+      ],
+      "params": {
+        "name": "Overspray",
+        "spacing": 0.2,
+        "opacity": 0.12,
+        "hardness": 0,
+        "buildUp": true,
+        "airbrushDabsPerSecond": 20,
+        "airbrushStillnessRadiusPx": 8,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "opacity",
+            "outputMin": 0.4,
+            "outputMax": 1
+          },
+          {
+            "sensor": "speed",
+            "parameter": "size",
+            "outputMin": 1,
+            "outputMax": 1.35,
+            "inputMax": 3
+          }
+        ]
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/nap-roller.png",
+      "tags": [
+        "roller",
+        "flat",
+        "buff"
+      ],
+      "params": {
+        "name": "Nap Roller",
+        "spacing": 0.03,
+        "isotropicSpacing": false,
+        "roundness": 0.2,
+        "followStroke": true,
+        "opacity": 0.95,
+        "substrateResponse": 0.6,
+        "grainStrength": 0.5,
+        "dynamics": [
+          {
+            "sensor": "speed",
+            "parameter": "opacity",
+            "outputMin": 0.55,
+            "outputMax": 1,
+            "inputMax": 3,
+            "invert": true
+          },
+          {
+            "sensor": "distance",
+            "parameter": "opacity",
+            "outputMin": 0.6,
+            "outputMax": 1,
+            "inputMax": 900,
+            "invert": true
+          }
+        ],
+        "grain": "assets/grain-concrete.png",
+        "grainScale": 1
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/mop-marker.png",
+      "tags": [
+        "marker",
+        "ink",
+        "tag"
+      ],
+      "params": {
+        "name": "Mop Marker",
+        "spacing": 0.04,
+        "opacity": 0.92,
+        "hardness": 0.85,
+        "airbrushDabsPerSecond": 6,
+        "airbrushStillnessRadiusPx": 4,
+        "blot": {
+          "lengthPx": 40,
+          "sizeMultiplier": 1.25,
+          "opacityMultiplier": 1.1
+        },
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.7,
+            "outputMax": 1
+          },
+          {
+            "sensor": "speed",
+            "parameter": "opacity",
+            "outputMin": 0.6,
+            "outputMax": 1,
+            "inputMax": 3,
+            "invert": true
+          }
+        ]
+      }
+    }
+  ]
+}

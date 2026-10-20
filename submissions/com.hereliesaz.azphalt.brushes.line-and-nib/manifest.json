@@ -1,0 +1,212 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.brushes.line-and-nib",
+  "name": "Line & Nib",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0",
+  "compat": ">=0.1",
+  "description": "Committed line: a flexing brush pen, a dead-steady fineliner, a 45-degree italic nib, a starving dry pen and a ballpoint that skips on light pressure.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/brush-pen.png",
+      "tags": [
+        "ink",
+        "pressure",
+        "taper"
+      ],
+      "params": {
+        "name": "Brush Pen",
+        "spacing": 0.04,
+        "opacity": 1,
+        "hardness": 0.95,
+        "taper": {
+          "startLengthPx": 24,
+          "minSize": 0.15,
+          "minOpacity": 1
+        },
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.08,
+            "outputMax": 1,
+            "curve": {
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.4
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          },
+          {
+            "sensor": "speed",
+            "parameter": "size",
+            "outputMin": 0.7,
+            "outputMax": 1,
+            "inputMax": 3,
+            "invert": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/fineliner.png",
+      "tags": [
+        "ink",
+        "technical",
+        "steady"
+      ],
+      "params": {
+        "name": "Fineliner",
+        "spacing": 0.04,
+        "opacity": 1,
+        "hardness": 1,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.85,
+            "outputMax": 1
+          }
+        ]
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/italic-nib.png",
+      "tags": [
+        "calligraphy",
+        "nib",
+        "broad"
+      ],
+      "params": {
+        "name": "Italic Nib",
+        "spacing": 0.03,
+        "isotropicSpacing": false,
+        "roundness": 0.16,
+        "angle": 45,
+        "opacity": 1,
+        "hardness": 0.95,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.55,
+            "outputMax": 1
+          }
+        ]
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/dry-pen.png",
+      "tags": [
+        "ink",
+        "dry",
+        "texture"
+      ],
+      "params": {
+        "name": "Dry Pen",
+        "spacing": 0.06,
+        "opacity": 0.95,
+        "scatter": 0.03,
+        "substrateResponse": 0.75,
+        "grainStrength": 0.6,
+        "dynamics": [
+          {
+            "sensor": "randomDab",
+            "parameter": "rotation",
+            "outputMin": 0,
+            "outputMax": 360
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.4,
+            "outputMax": 1
+          },
+          {
+            "sensor": "speed",
+            "parameter": "opacity",
+            "outputMin": 0.35,
+            "outputMax": 1,
+            "inputMax": 2.5,
+            "invert": true
+          },
+          {
+            "sensor": "randomDab",
+            "parameter": "opacity",
+            "outputMin": 0.55,
+            "outputMax": 1
+          }
+        ],
+        "grain": "assets/grain-paper.png",
+        "grainScale": 1
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/ballpoint.png",
+      "tags": [
+        "pen",
+        "sketch",
+        "everyday"
+      ],
+      "params": {
+        "name": "Ballpoint",
+        "spacing": 0.05,
+        "opacity": 0.85,
+        "substrateResponse": 0.5,
+        "grainStrength": 0.4,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "opacity",
+            "outputMin": 0.12,
+            "outputMax": 1,
+            "curve": {
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.35,
+                  "y": 0.15
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          },
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.8,
+            "outputMax": 1
+          }
+        ],
+        "grain": "assets/grain-paper.png",
+        "grainScale": 1
+      }
+    }
+  ]
+}
