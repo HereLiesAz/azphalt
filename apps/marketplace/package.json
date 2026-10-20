@@ -14,17 +14,17 @@
     "@azphalt/azdk": "workspace:*",
     "@azphalt/repository-client": "workspace:*",
     "@azphalt/web-handoff": "workspace:*",
-    "framer-motion": "^14.1.0",
-    "lucide-react": "^1.55.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "framer-motion": "^14.3.0",
+    "lucide-react": "^1.59.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
-    "oxlint": "^1.87.0",
+    "oxlint": "^1.88.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.4"
   }
