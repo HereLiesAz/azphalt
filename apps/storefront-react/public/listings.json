@@ -1,1 +1,112 @@
-[]
+[
+  {
+    "packageId": "com.hereliesaz.azphalt.pro.noir-ink",
+    "sellerId": "hereliesaz",
+    "amountCents": 299,
+    "currency": "USD",
+    "status": "paused",
+    "package": {
+      "version": "1.0.0",
+      "name": "Noir Ink Pro",
+      "kind": "asset",
+      "description": "Monochrome illustration brushes: a wet sumi brush with real hair splay, a dry crosshatch comb, flung splatter, an ink wash that dries with a ring, and a nib that blots when it lands.",
+      "author": "HereLiesAz",
+      "targetApps": [
+        "com.hereliesaz.graffux"
+      ],
+      "types": [
+        "brush"
+      ],
+      "bytes": 412606,
+      "integrity": "sha256-0ea2e74115b6c22bee3502cd6fda655ba6287ea2701969edb66ff2c022fb8a97"
+    }
+  },
+  {
+    "packageId": "com.hereliesaz.azphalt.pro.painterly",
+    "sellerId": "hereliesaz",
+    "amountCents": 299,
+    "currency": "USD",
+    "status": "paused",
+    "package": {
+      "version": "1.0.0",
+      "name": "Painterly Pro",
+      "kind": "asset",
+      "description": "One standout in each medium: heavy oil that leaves real paint height, a matte gouache flat, compressed charcoal that side-shades with tilt, a watercolour bloom with a cauliflower edge, and an impasto knife.",
+      "author": "HereLiesAz",
+      "targetApps": [
+        "com.hereliesaz.graffux"
+      ],
+      "types": [
+        "brush"
+      ],
+      "bytes": 660445,
+      "integrity": "sha256-d10fdd61a75833586b19df39ceb90ddbb059cab57e9c26b562000263a2efb518"
+    }
+  },
+  {
+    "packageId": "com.hereliesaz.azphalt.pro.print-shop",
+    "sellerId": "hereliesaz",
+    "amountCents": 299,
+    "currency": "USD",
+    "status": "paused",
+    "package": {
+      "version": "1.0.0",
+      "name": "Print Shop Pro",
+      "kind": "asset",
+      "description": "Print-room texture without the press: a halftone screen locked to the canvas, riso grain that mixes your two colours, a screenprint squeegee pull, a stipple pen and a linocut gouge.",
+      "author": "HereLiesAz",
+      "targetApps": [
+        "com.hereliesaz.graffux"
+      ],
+      "types": [
+        "brush"
+      ],
+      "bytes": 520025,
+      "integrity": "sha256-62fba783547bbd86fd6eb1da7d0050aea655b3a50ff5f0628f6610219c107a46"
+    }
+  },
+  {
+    "packageId": "com.hereliesaz.azphalt.pro.street-and-mural",
+    "sellerId": "hereliesaz",
+    "amountCents": 299,
+    "currency": "USD",
+    "status": "paused",
+    "package": {
+      "version": "1.0.0",
+      "name": "Street & Mural Pro",
+      "kind": "asset",
+      "description": "Five wall brushes tuned for real can and marker control: a feathered fat cap that pools where you linger, a mop marker that blots on touchdown, torn wheat-paste, a sprayed stencil edge and a nap roller with lap marks.",
+      "author": "HereLiesAz",
+      "targetApps": [
+        "com.hereliesaz.graffux"
+      ],
+      "types": [
+        "brush"
+      ],
+      "bytes": 618646,
+      "integrity": "sha256-d7c30d7f6d18f6c39a5b75fc38ee84512d9e0ec2dd602f9358e14e7b57431294"
+    }
+  },
+  {
+    "packageId": "com.hereliesaz.azphalt.pro.wild-growth",
+    "sellerId": "hereliesaz",
+    "amountCents": 299,
+    "currency": "USD",
+    "status": "paused",
+    "package": {
+      "version": "1.0.0",
+      "name": "Wild Growth Pro",
+      "kind": "asset",
+      "description": "Nature scatter brushes that paint in two colours at once: tumbling leaves, grass tufts, streaked bark, piled cloud puffs and slanting rain.",
+      "author": "HereLiesAz",
+      "targetApps": [
+        "com.hereliesaz.graffux"
+      ],
+      "types": [
+        "brush"
+      ],
+      "bytes": 435845,
+      "integrity": "sha256-aad71f6e1e830174463bddbf1cc37e50da5daba4a73fc9f1e3cac0d2ed7e1b5d"
+    }
+  }
+]
