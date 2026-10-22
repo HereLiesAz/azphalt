@@ -3,7 +3,7 @@
  * exactly which extensions this store serves and from which commit.
  *
  * For every pinned source this fetches the repo tarball **at its exact commit sha**, packs
- * `code/ ui/ assets/` + `LICENSE` + `manifest.json` into a `.azp` via `writeAzp`, signs it when
+ * `code/ ui/ assets/ fonts/` + `LICENSE` + `manifest.json` into a `.azp` via `writeAzp`, signs it when
  * `AZPHALT_PACKAGE_SIGNING_KEY` is set, and writes the bytes to `registry/packages/`. Those bytes
  * are committed, and the deployment serves them and nothing else.
  *
@@ -88,7 +88,7 @@ const submissionsDir = resolve(__dirname, "..", "..", "..", "submissions");
  * depend on whatever incidental files happened to be checked in. The allowlist is what makes the
  * output a function of the extension's actual content.
  */
-const PAYLOAD_DIRS = ["code/", "ui/", "assets/"];
+const PAYLOAD_DIRS = ["code/", "ui/", "assets/", "fonts/"];
 
 /** A lockfile entry: one extension, pinned to one commit. */
 interface Source {

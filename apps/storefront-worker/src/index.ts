@@ -2494,9 +2494,34 @@ function withSecurityHeaders(res: Response): Response {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
+/**
+ * The read-only Repository API paths (`spec/repository-api.md` § 1–5) other origins may call: a web host
+ * (Morphont's browser build, say) browses and installs from here. Public, unauthenticated data, so `*` —
+ * no credentials are ever honoured cross-origin. Writes, admin and payments stay same-origin.
+ */
+const PUBLIC_READ = /^\/(?:packages(?:\/[^/]+(?:\/versions\/[^/]+\/download)?)?|revocations|\.well-known\/azphalt(?:-repository)?\.json)$/;
+
+const CORS_HEADERS: Record<string, string> = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, OPTIONS",
+  "access-control-allow-headers": "range",
+  "access-control-expose-headers": "content-length, content-range, accept-ranges",
+  "access-control-max-age": "86400",
+};
+
+function withCors(req: Request, res: Response): Response {
+  if (!PUBLIC_READ.test(new URL(req.url).pathname) || (req.method !== "GET" && req.method !== "OPTIONS")) return res;
+  const headers = new Headers(res.headers);
+  for (const [name, value] of Object.entries(CORS_HEADERS)) headers.set(name, value);
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
-    return withSecurityHeaders(await handle(req, env));
+    if (req.method === "OPTIONS" && PUBLIC_READ.test(new URL(req.url).pathname)) {
+      return withSecurityHeaders(withCors(req, new Response(null, { status: 204 })));
+    }
+    return withSecurityHeaders(withCors(req, await handle(req, env)));
   },
 };
 
