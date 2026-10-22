@@ -9,7 +9,7 @@
 | `id` | ✔ | Reverse-DNS, globally unique. **Convention: `com.<your-vendor>.azphalt.<name>`** — your reverse-DNS vendor prefix, an `azphalt` namespace segment marking it an azphalt package, then the package name (e.g. `com.hereliesaz.azphalt.halftone`). The `azphalt` segment keeps every author's packages in one predictable sub-namespace and clear of their non-azphalt reverse-DNS ids; hosts and registries treat the whole string as an opaque identity. |
 | `name` | ✔ | Human-readable. |
 | `version` | ✔ | Semver. |
-| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script` \| `composable` \| `workflow` \| `role` \| `llm` *(proposed)*. |
+| `kind` | ✔ | `asset` \| `code` \| `mixed` \| `app` \| `mcp` \| `pack` \| `skill` \| `script` \| `composable` \| `font` \| `workflow` \| `role` \| `llm` *(proposed)*. |
 | `license` | ✔ | SPDX id. The standard's Apache-2.0 licence permits closed/sold extensions; author's choice. For an `asset`-kind package it governs the asset **content** (CC ids blessed) — see § assets → Content rights. |
 | `compat` | ✔ | Min host API version, e.g. `">=0.1"`. |
 | `description`, `author`, `homepage` | — | Metadata. |
@@ -24,6 +24,7 @@
 | `mcp` | mcp | MCP server header: transports, `inputs`, `offers`. See § `mcp` and mcp-server.md. |
 | `pack` | pack | The packages the pack references. See § `pack` and pack.md. |
 | `skill` | skill | The bundled Agent Skills. See § `skill` and skill.md. |
+| `font` | font | The font family and its faces. See font.md. |
 | `script` | script | Interpreter, entry and dependencies of a native script. See § `script` and script.md. |
 | `composable` | composable | UI element descriptions for a host's own renderer. See § `composable` and composable.md. |
 | `workflow` | workflow | Declarative workflow/orchestration data. See § `workflow` and workflow.md. |

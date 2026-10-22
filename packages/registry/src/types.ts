@@ -7,7 +7,7 @@
  * package can live in the registry forever with no listing, and the money model never leaks into the
  * open lane.
  */
-import type { AppSummary, AssetType, Capability, ContentMaturity, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/azdk";
+import type { AppSummary, AssetType, Capability, ContentMaturity, FontSummary, Kind, Manifest, MediaDomain, PreviewRef } from "@azphalt/azdk";
 import type { ScanReport } from "./sweep.js";
 
 /** One published, immutable version of a package. */
@@ -108,6 +108,8 @@ export interface PackageSummary {
    * listing (`spec/web-handoff.md` § Host directory). `roles` is always explicit here.
    */
   app?: AppSummary;
+  /** On a `kind:"font"` package only: the reduced `font` block (`spec/font.md`). */
+  font?: FontSummary;
   /** Discovery/access visibility (`public` default; `unlisted`/`private` hidden from browse). */
   visibility: "public" | "unlisted" | "private";
   /** The developer's content-maturity self-attestation (`general` default; `mature` = 18+, gated). */

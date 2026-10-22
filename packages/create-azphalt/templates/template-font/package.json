@@ -1,0 +1,14 @@
+{
+  "name": "my-azphalt-font",
+  "version": "0.1.0",
+  "description": "A font (kind:\"font\") package for azphalt \u2014 a compiled font family the store can list and install.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@azphalt/azp": "^0.5.0"
+  },
+  "license": "MIT",
+  "author": "Your Name"
+}

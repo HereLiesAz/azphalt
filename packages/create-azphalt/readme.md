@@ -84,6 +84,7 @@ project name is appended:
 | **Companion App** | Developers | A `kind:"app"` header that lets a host launch your Android app or PWA via a handoff. | `build` |
 | **MCP Server** | Developers | A `kind:"mcp"` header that declares how a host reaches your MCP server (local or remote). | `build` |
 | **Skill** | Developers | A `kind:"skill"` bundle of one or more Agent Skills (`SKILL.md`) for an AI-agent host. | `build` |
+| **Font** | Developers | A `kind:"font"` package: a compiled font family (ttf/otf/woff2) the store lists and apps install. | `build` |
 | **Script** | Developers | A `kind:"script"` native script (bash/Python/PowerShell) a host installs and runs like a package-manager package. | `build` |
 | **Extension Pack** | Developers | A `kind:"pack"` header that bundles a recommended / base set of packages (any author) for your app. | `build` |
 | **Composable** | Developers | A `kind:"composable"` header describing UI element(s) rendered from templates your host already links — no code, no new template ids. | `build` |

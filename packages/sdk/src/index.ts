@@ -14,7 +14,7 @@ export const FORMAT_VERSION = "0.1" as const;
 
 /* ───────────────────────────── Manifest ───────────────────────────── */
 export type Kind =
-  | "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill" | "script" | "composable"
+  | "asset" | "code" | "mixed" | "app" | "mcp" | "pack" | "skill" | "script" | "composable" | "font"
   // Header kinds with their own validators (validateLlmManifest / validateRoleManifest /
   // validateWorkflowManifest) and live packages in the registry — previously missing from this union.
   | "llm" | "role" | "workflow";
@@ -511,6 +511,15 @@ export interface Manifest {
   skill?: SkillManifest;
 
   /**
+   * For a `kind: "font"` package — one or more compiled **font files** (a family, static or variable)
+   * an app installs for its own text rendering or hands to the OS. Like {@link SkillManifest} it is a
+   * header that DOES bundle a real payload (`fonts/<file>`), and it declares no azphalt `capabilities`
+   * and no `/code` sandbox `entry`/`runtime` — a font is data a text engine reads, never code. See
+   * {@link FontManifest} and `spec/font.md`.
+   */
+  font?: FontManifest;
+
+  /**
    * For a `kind: "script"` package — a native script (bash, Python, PowerShell, …) that runs
    * outside the azphalt sandbox with real OS access, the way a package manager's `.deb`/`pkg`
    * entry does. Like {@link McpManifest} it declares no azphalt `capabilities` and no `/code`
@@ -930,6 +939,88 @@ export interface SkillEntry {
   name?: string;
   /** Short description, mirroring the `SKILL.md` frontmatter `description`. */
   description?: string;
+}
+
+/* ───────────────────────────── Font (kind: "font") ───────────────────────────── */
+
+/** The container formats a bundled font file may have. `ttf`/`otf` are SFNT (either outline flavour); `woff2` is Brotli-compressed SFNT. */
+export type FontFormat = "ttf" | "otf" | "woff2";
+
+/** One design axis of a variable font, as its `fvar` table declares it. */
+export interface FontAxis {
+  /** The four-character OpenType axis tag (`wght`, `wdth`, `slnt`, a custom `SERF`, …). */
+  tag: string;
+  /** Human-readable axis name (advisory; the font's `name` table is authoritative). */
+  name?: string;
+  min: number;
+  /** The default instance's value on this axis. `min <= default <= max`. */
+  default: number;
+  max: number;
+}
+
+/** One bundled font file ("face" in CSS terms) at `fonts/<name>.<format>`. */
+export interface FontFaceEntry {
+  /** In-package path, under `fonts/`, listed in `manifest.files`. */
+  path: string;
+  format: FontFormat;
+  /** Style name, e.g. `Regular`, `Bold Italic` (advisory). */
+  style?: string;
+  /** CSS-style weight `1..1000` of a static face (advisory; a variable face ranges over its `wght` axis). */
+  weight?: number;
+  italic?: boolean;
+  /** True for a variable font. Then {@link axes} lists every axis; false/absent means a static face with no axes. */
+  variable?: boolean;
+  axes?: FontAxis[];
+}
+
+/**
+ * The `font` block of a `kind: "font"` package. The family is what a user picks; each face is a file.
+ * The metadata exists so a store card / host browse list can show a family, its axes and a specimen
+ * without extracting the font; where a font file declares the same facts (an `fvar` table), the file is
+ * authoritative and `verifyAzp` cross-checks the two. See `spec/font.md`.
+ */
+export interface FontManifest {
+  /** The family name a user sees and an app registers the faces under. */
+  family: string;
+  /** Who drew it (free text; `manifest.author` remains the publisher). */
+  designer?: string;
+  /** ISO 15924 script codes the family covers, e.g. `["Latn", "Cyrl"]`. */
+  scripts?: string[];
+  /** BCP 47 language tags the family is designed for, e.g. `["en", "fr"]`. */
+  languages?: string[];
+  /** A short specimen line a store card sets in the font (<= 200 characters). */
+  sampleText?: string;
+  /** One or more files; at least one is required. */
+  faces: FontFaceEntry[];
+}
+
+/** The reduced `font` block a browse summary carries: enough for a card, never the file list. */
+export interface FontSummary {
+  family: string;
+  designer?: string;
+  /** True when any face is variable. */
+  variable: boolean;
+  /** Union of the axis tags across variable faces, in first-seen order. */
+  axes: string[];
+  /** Number of bundled faces. */
+  faces: number;
+  scripts?: string[];
+  sampleText?: string;
+}
+
+/** Reduce a full {@link FontManifest} to the {@link FontSummary} a browse response carries. */
+export function toFontSummary(font: FontManifest): FontSummary {
+  const axes: string[] = [];
+  for (const face of font.faces ?? []) for (const a of face.axes ?? []) if (!axes.includes(a.tag)) axes.push(a.tag);
+  return {
+    family: font.family,
+    ...(font.designer ? { designer: font.designer } : {}),
+    variable: (font.faces ?? []).some((f) => f.variable === true),
+    axes,
+    faces: (font.faces ?? []).length,
+    ...(font.scripts?.length ? { scripts: font.scripts } : {}),
+    ...(font.sampleText ? { sampleText: font.sampleText } : {}),
+  };
 }
 
 /* ───────────────────────────── Script (kind: "script") ───────────────────────────── */
@@ -1446,6 +1537,14 @@ export interface PackageSummary {
    * explicit and a reader never has to know the rule.
    */
   app?: AppSummary;
+
+  /**
+   * On a `kind:"font"` summary only: the **reduced** `font` block — family, designer, whether it is
+   * variable, its axis tags, face count, scripts and a specimen line (`spec/font.md`). The file list
+   * stays in the detail. This is what lets a browse grid set each card in its own family's metadata
+   * without a detail fetch per listing.
+   */
+  font?: FontSummary;
 
   /* Discovery / ranking metadata — a gallery ranks and previews on these without a download. */
   /** Total served downloads across all versions. */
