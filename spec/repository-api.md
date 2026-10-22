@@ -35,6 +35,8 @@ Provides global metadata about the repository, its supported API versions, and i
 
 Both are advisory hints; absent means "unspecified — query to learn". They never replace verifying an individual `.azp` before use.
 
+**Cross-origin.** The read-only endpoints (§ 1–5) MAY be served with `Access-Control-Allow-Origin: *` so a web host on another origin can browse and download; azphalt.store does. They carry public data only, so no credentials are honoured cross-origin.
+
 ### 2. Search Packages
 `GET /packages`
 
@@ -42,7 +44,7 @@ Queries the repository for available packages. Host applications should use quer
 
 **Query Parameters:**
 - `q` (string): Text search query.
-- `kind` (string): Comma-separated list of package `kind`s to filter by — `asset` · `code` · `mixed` · `app` · `mcp` · `pack` · `skill` · `script` · `composable` · `workflow` · `role`. A host with no code sandbox passes `kind=asset`; a storefront building the host directory passes `kind=app` (see **web-handoff.md** § Host directory).
+- `kind` (string): Comma-separated list of package `kind`s to filter by — `asset` · `code` · `mixed` · `app` · `mcp` · `pack` · `skill` · `script` · `composable` · `font` · `workflow` · `role`. A host with no code sandbox passes `kind=asset`; a storefront building the host directory passes `kind=app` (see **web-handoff.md** § Host directory).
 - `types` (string): Comma-separated list of `AssetType`s to filter by (e.g., `types=brush,vector`).
 - `tags` (string): Comma-separated list of tags to filter by.
 - `app` (string): The requesting host app's reverse-DNS id, for **app scoping** (see below).
@@ -84,7 +86,7 @@ Queries the repository for available packages. Host applications should use quer
 
 The ranking/preview fields (`downloads`, `rating`, `ratingCount`, `updatedAt`, `byteSize`, `mediaDomains`, `preview`) let a gallery **rank, sort, and preview without downloading or executing** a package. `rating`/`ratingCount` are present only when the repository tracks ratings; everything else is always computed. A repository MAY omit any optional field it does not track.
 
-**Kind.** Each summary carries `kind` (`"asset"` · `"code"` · `"mixed"` · `"app"` · `"mcp"` · `"pack"` · `"skill"` · `"script"` · `"composable"` · `"workflow"` · `"role"` · `"llm"`), so a host tells package classes apart straight from the browse list. A companion host filtering an app-scoped catalog (below) to the `companion` profile keeps the `kind:"app"` entries — no per-package detail round-trip to learn a package is a **companion** (`companion-app.md`).
+**Kind.** Each summary carries `kind` (`"asset"` · `"code"` · `"mixed"` · `"app"` · `"mcp"` · `"pack"` · `"skill"` · `"script"` · `"composable"` · `"font"` · `"workflow"` · `"role"` · `"llm"`), so a host tells package classes apart straight from the browse list. A companion host filtering an app-scoped catalog (below) to the `companion` profile keeps the `kind:"app"` entries — no per-package detail round-trip to learn a package is a **companion** (`companion-app.md`).
 
 **The `app` summary.** A `kind:"app"` summary carries a **reduced** `app` object: `roles`, `hostId`, and `platforms` — and **not** `handoffs`. The three included fields answer *"what is this app, and where do I get it"*, which is what a browse list needs; `handoffs` answers *"how do I call it"*, which only matters once a host is about to, and can be long. A repository MUST resolve the `roles` default before serving, so a summary always states `["companion"]` explicitly rather than leaving the reader to know the rule.
 

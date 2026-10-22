@@ -8,6 +8,14 @@ const registryDir = resolve(root, "apps/storefront/registry");
 const outDir = resolve(root, "apps/storefront-react/public");
 
 const { readAzp } = await import("@azphalt/azp");
+
+/** The browse card of a `kind:"font"` package — the same shape as the SDK's `toFontSummary`. */
+function fontSummary(font) {
+  const faces = font.faces ?? [];
+  const axes = [];
+  for (const face of faces) for (const axis of face.axes ?? []) if (!axes.includes(axis.tag)) axes.push(axis.tag);
+  return { family: font.family, ...(font.designer ? { designer: font.designer } : {}), variable: faces.some((f) => f.variable === true), axes, faces: faces.length, ...(font.scripts?.length ? { scripts: font.scripts } : {}), ...(font.sampleText ? { sampleText: font.sampleText } : {}) };
+}
 const generated = JSON.parse(await readFile(resolve(registryDir, "catalog.json"), "utf8"));
 const previewsDoc = JSON.parse(await readFile(resolve(registryDir, "previews.json"), "utf8").catch(() => '{"previews":{}}'));
 const previews = previewsDoc.previews ?? {};
@@ -31,6 +39,7 @@ for (const item of generated.packages ?? []) {
     app: manifest.app,
     pack: manifest.pack,
     llm: manifest.llm,
+    ...(manifest.kind === "font" && manifest.font ? { font: fontSummary(manifest.font) } : {}),
     manifest,
     preview: previews[manifest.id] ?? manifest.preview,
     integrity: item.integrity,

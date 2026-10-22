@@ -76,3 +76,24 @@ describe("azphalt.store serves the storefront", () => {
     expect(await res.json()).toMatchObject({ packages: [], total: 0 });
   });
 });
+
+describe("cross-origin reads", () => {
+  it("lets another origin read the public Repository API", async () => {
+    const res = await get("https://azphalt.store/packages?kind=font", { Origin: "https://morphont.example" });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("access-control-allow-origin")).toBe("*");
+  });
+
+  it("answers a preflight for a public read", async () => {
+    const res = await worker.fetch(new Request("https://azphalt.store/packages/a.b/versions/1.0.0/download", { method: "OPTIONS" }), env());
+    expect(res.status).toBe(204);
+    expect(res.headers.get("access-control-allow-methods")).toContain("GET");
+  });
+
+  it("keeps writes and the storefront same-origin", async () => {
+    const page = await get("https://azphalt.store/", { Origin: "https://morphont.example" });
+    expect(page.headers.get("access-control-allow-origin")).toBeNull();
+    const publish = await worker.fetch(new Request("https://azphalt.store/packages", { method: "POST", body: "x" }), env());
+    expect(publish.headers.get("access-control-allow-origin")).toBeNull();
+  });
+});
