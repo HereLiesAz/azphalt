@@ -284,6 +284,7 @@ function PackageCard({
           <div style={{ display: "flex", gap: 6 }}>
             <Pill text={pkg.kind.toUpperCase()} bg={rgba(on, 0.16)} fg={on} />
             {pkg.llm && <Pill text={llmTierLabel(pkg.llm)} bg={rgba(on, 0.16)} fg={on} />}
+            {pkg.font?.variable && <Pill text={`VARIABLE · ${pkg.font.axes.join(" ")}`} bg={rgba(on, 0.16)} fg={on} />}
             {isMature(pkg) && <Pill text="18+" bg="var(--secondary-container)" fg="var(--on-secondary-container)" />}
             {/* Sits with kind and maturity rather than with the price: it describes the viewer's
                 relationship to the package, not the package's terms. Without it the install
@@ -534,6 +535,7 @@ function Detail({
           <div style={{ display: "flex", gap: 6 }}>
             <Pill text={pkg.kind.toUpperCase()} bg={rgba(on, 0.16)} fg={on} />
             {pkg.llm && <Pill text={llmTierLabel(pkg.llm)} bg={rgba(on, 0.16)} fg={on} />}
+            {pkg.font?.variable && <Pill text={`VARIABLE · ${pkg.font.axes.join(" ")}`} bg={rgba(on, 0.16)} fg={on} />}
             {isMature(pkg) && <Pill text="18+" bg="var(--secondary-container)" fg="var(--on-secondary-container)" />}
           </div>
           <Pill text={`v${pkg.version}`} bg={rgba(on, 0.16)} fg={on} />

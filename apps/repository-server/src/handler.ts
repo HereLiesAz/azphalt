@@ -177,6 +177,7 @@ export function createRepositoryHandler(opts: RepositoryHandlerOptions): Reposit
     // host directory in web-handoff.md § Host directory could not be built from a browse response at
     // all, which is the whole reason `?kind=app` exists.
     ...(s.app ? { app: s.app } : {}),
+    ...(s.font ? { font: s.font } : {}),
     downloads: s.downloads,
     ...(s.installs !== undefined ? { installs: s.installs, uninstalls: s.uninstalls } : {}),
     rating: s.rating,

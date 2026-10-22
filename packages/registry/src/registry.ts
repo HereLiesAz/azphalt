@@ -6,7 +6,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { digest, readAzp, verifyAzp } from "@azphalt/azp";
-import { toAppSummary } from "@azphalt/azdk";
+import { toAppSummary, toFontSummary } from "@azphalt/azdk";
 import type { AssetType, Capability, Manifest, MediaDomain } from "@azphalt/azdk";
 import { InMemoryStore, type RegistryStore } from "./store.js";
 import { nameContains, packageSimilarity } from "./similarity.js";
@@ -343,6 +343,7 @@ export class Registry {
       // (spec/repository-api.md § The `app` summary). This is what lets a storefront build the host
       // directory from one browse request instead of a detail fetch per listing.
       ...(m.kind === "app" && m.app ? { app: toAppSummary(m.app) } : {}),
+      ...(m.kind === "font" && m.font ? { font: toFontSummary(m.font) } : {}),
       visibility: m.visibility ?? "public",
       maturity: m.maturity ?? "general",
       contributes,

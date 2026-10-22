@@ -14,6 +14,7 @@ import { validateAppManifest } from "./app.js";
 import { validateMcpManifest } from "./mcp.js";
 import { validatePackManifest } from "./pack.js";
 import { validateSkillManifest } from "./skill.js";
+import { validateFontManifest } from "./font.js";
 import { validateScriptManifest } from "./script.js";
 import { validateComposableManifest } from "./composable.js";
 import { validateWorkflowManifest } from "./workflow.js";
@@ -94,7 +95,7 @@ export function readAzp(bytes: Uint8Array): ReadResult {
 
 /** Kinds `verifyAzp` recognizes. Anything else is rejected rather than waved through unvalidated. */
 const KNOWN_KINDS = new Set<string>([
-  "asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable", "workflow", "role", "llm",
+  "asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable", "font", "workflow", "role", "llm",
 ]);
 
 /**
@@ -233,11 +234,12 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
 
   // Kind-specific validators are third-party-input-driven; a malformed block must become an error
   // string, never a thrown exception that turns "ok:false" into an uncaught crash in the caller.
-  const kindValidators: Partial<Record<string, (m: Manifest) => string[]>> = {
+  const kindValidators: Partial<Record<string, (m: Manifest, payload: Record<string, Uint8Array>) => string[]>> = {
     mcp: validateMcpManifest,
     pack: validatePackManifest,
     app: validateAppManifest,
     skill: validateSkillManifest,
+    font: validateFontManifest,
     script: validateScriptManifest,
     composable: validateComposableManifest,
     workflow: validateWorkflowManifest,
@@ -247,7 +249,7 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
   const validate = kindValidators[manifest.kind];
   if (validate) {
     try {
-      errors.push(...validate(manifest));
+      errors.push(...validate(manifest, payload));
     } catch (e) {
       errors.push(`azp: ${manifest.kind} validation failed: ${(e as Error).message}`);
     }
@@ -297,6 +299,8 @@ export { validateAppManifest } from "./app.js";
 export { validateMcpManifest } from "./mcp.js";
 export { validatePackManifest } from "./pack.js";
 export { validateSkillManifest } from "./skill.js";
+export { validateFontManifest, fontSignatureMatches } from "./font.js";
+export { readSfntInfo, readSfntTables, type SfntInfo, type SfntTable } from "./sfnt.js";
 export { validateScriptManifest } from "./script.js";
 export { validateComposableManifest } from "./composable.js";
 export { validateWorkflowManifest } from "./workflow.js";

@@ -1,0 +1,22 @@
+{
+  "azphalt": "0.1",
+  "id": "com.example.azphalt.my-font",
+  "name": "My Font",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "OFL-1.1",
+  "compat": ">=0.1",
+  "kind": "font",
+  "font": {
+    "family": "My Font",
+    "sampleText": "Sphinx of black quartz, judge my vow",
+    "faces": [
+      {
+        "path": "fonts/MyFont-Regular.ttf",
+        "format": "ttf",
+        "style": "Regular",
+        "weight": 400
+      }
+    ]
+  }
+}

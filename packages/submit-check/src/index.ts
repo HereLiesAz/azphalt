@@ -40,7 +40,7 @@ const REQUIRED = ["azphalt", "name", "version", "kind", "license", "compat"] as 
  * like `app`/`mcp`/`pack` — see `spec/composable.md`.
  * `llm` carries its sandbox setup script as payload — see `spec/llm.md`.
  */
-const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable", "workflow", "role", "llm"];
+const KINDS = ["asset", "code", "mixed", "app", "mcp", "pack", "skill", "script", "composable", "font", "workflow", "role", "llm"];
 
 /** All files under `dir`, as `/`-separated paths relative to `dir`. */
 function walk(dir: string, prefix = ""): string[] {
