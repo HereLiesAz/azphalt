@@ -498,6 +498,50 @@
       "bytes": 4999
     },
     {
+      "id": "com.hereliesaz.azphalt.brushes.dry-goods",
+      "version": "1.0.0",
+      "name": "Dry Goods",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-llhPZ8Zyaaurn1tbDnXt2sbijLnHK6N+i6xCMt86cJA=",
+      "file": "com.hereliesaz.azphalt.brushes.dry-goods-1.0.0.azp",
+      "bytes": 137261
+    },
+    {
+      "id": "com.hereliesaz.azphalt.brushes.line-and-nib",
+      "version": "1.0.0",
+      "name": "Line & Nib",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-aelbNWTztUsS0MLpNIjQ139rN++pQUxJD4haLc1tOlo=",
+      "file": "com.hereliesaz.azphalt.brushes.line-and-nib-1.0.0.azp",
+      "bytes": 78889
+    },
+    {
+      "id": "com.hereliesaz.azphalt.brushes.loaded-hair",
+      "version": "1.0.0",
+      "name": "Loaded Hair",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-hHHoxqdhnqkFtWnae/CnulPS2okcbz3TdQtU/ON18ng=",
+      "file": "com.hereliesaz.azphalt.brushes.loaded-hair-1.0.0.azp",
+      "bytes": 86275
+    },
+    {
+      "id": "com.hereliesaz.azphalt.brushes.street-kit",
+      "version": "1.0.0",
+      "name": "Street Kit",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-3wnrOhscCdQLz/ALvrs4/w0WlHVIiVZYI6az2+MpjsY=",
+      "file": "com.hereliesaz.azphalt.brushes.street-kit-1.0.0.azp",
+      "bytes": 110609
+    },
+    {
       "id": "com.hereliesaz.azphalt.camera-controller",
       "version": "1.0.0",
       "name": "Camera Controller",
