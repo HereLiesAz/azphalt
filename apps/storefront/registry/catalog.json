@@ -1081,6 +1081,61 @@
       "bytes": 336875
     },
     {
+      "id": "com.hereliesaz.azphalt.kinetic.noir-ink",
+      "version": "1.0.0",
+      "name": "Noir Ink Kinetic",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-KxyE4SpIrRvU/26v9NWcMKsonT59acdi0xZFBkLuPFg=",
+      "file": "com.hereliesaz.azphalt.kinetic.noir-ink-1.0.0.azp",
+      "bytes": 209633
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.painterly",
+      "version": "1.0.0",
+      "name": "Painterly Kinetic",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-fzTpAgrFe24GVgnVu0yw5GcQ7KbSlHkH1bV0P90HprE=",
+      "file": "com.hereliesaz.azphalt.kinetic.painterly-1.0.0.azp",
+      "bytes": 397438
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.print-shop",
+      "version": "1.0.0",
+      "name": "Print Shop Kinetic",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-dP2caZNKypl6ynfQHSUEEQoQDB7MEn0ryJObUFcyWr0=",
+      "file": "com.hereliesaz.azphalt.kinetic.print-shop-1.0.0.azp",
+      "bytes": 426956
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.spray-caps",
+      "version": "1.0.0",
+      "name": "Spray Caps",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-pxkKmvt47S4BgOx9vLynHKpVsv/852TNXTIPhIlmHfU=",
+      "file": "com.hereliesaz.azphalt.kinetic.spray-caps-1.0.0.azp",
+      "bytes": 851192
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.street-and-mural",
+      "version": "1.0.0",
+      "name": "Street & Mural Kinetic",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-cfu1qilyGet/iaDmx5lZLMgW0rcr/OTx3GCookY+ZCk=",
+      "file": "com.hereliesaz.azphalt.kinetic.street-and-mural-1.0.0.azp",
+      "bytes": 423741
+    },
+    {
       "id": "com.hereliesaz.azphalt.kinetic.voltage",
       "version": "1.0.0",
       "name": "Voltage",
@@ -1101,6 +1156,17 @@
       "integrity": "sha256-NIJBjpEROC4zpjmyhjW3+HFPulLlPtQlS1U0+IRP1js=",
       "file": "com.hereliesaz.azphalt.kinetic.weave-1.0.0.azp",
       "bytes": 113706
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.wild-growth",
+      "version": "1.0.0",
+      "name": "Wild Growth Kinetic",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-s6lw52V8qUHeQQX1Oq7PMDgiJoJsrbwtavmY66Hb194=",
+      "file": "com.hereliesaz.azphalt.kinetic.wild-growth-1.0.0.azp",
+      "bytes": 294515
     },
     {
       "id": "com.hereliesaz.azphalt.lama",
