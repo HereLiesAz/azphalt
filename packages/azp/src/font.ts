@@ -71,13 +71,15 @@ export function validateFontManifest(manifest: Manifest, payload?: Record<string
   if (manifest.entry || manifest.runtime) errors.push("font: a font package must not declare entry/runtime");
   if (manifest.capabilities && manifest.capabilities.length > 0) errors.push("font: a font package must not declare capabilities");
   if (manifest.assets && manifest.assets.length > 0) errors.push("font: a font package must not declare assets (its files are font.faces)");
-  for (const other of ["app", "mcp", "pack", "skill", "script", "composable"] as const) {
-    if (manifest[other]) errors.push(`font: a font package must not declare a ${other} block`);
+  for (const other of ["app", "mcp", "pack", "skill", "script", "composable", "workflow", "role", "llm", "contributes"] as const) {
+    if ((manifest as Record<string, unknown>)[other] !== undefined) errors.push(`font: a font package must not declare a ${other} block`);
   }
 
   if (typeof font.family !== "string" || font.family.trim().length === 0) errors.push("font: family is required");
   else if (font.family.length > 128) errors.push("font: family is longer than 128 characters");
-  if (font.designer !== undefined && typeof font.designer !== "string") errors.push("font: designer must be a string");
+  if (font.designer !== undefined && (typeof font.designer !== "string" || font.designer.length > 128)) {
+    errors.push("font: designer must be a string of at most 128 characters");
+  }
   if (font.sampleText !== undefined && (typeof font.sampleText !== "string" || font.sampleText.length > MAX_SAMPLE)) {
     errors.push(`font: sampleText must be a string of at most ${MAX_SAMPLE} characters`);
   }
@@ -116,6 +118,11 @@ export function validateFontManifest(manifest: Manifest, payload?: Record<string
     } else if (!face.path.toLowerCase().endsWith("." + face.format)) {
       errors.push(`font: ${where}.path "${face.path}" does not end in its format ".${face.format}"`);
     }
+    if (face.style !== undefined && (typeof face.style !== "string" || face.style.length > 64)) {
+      errors.push(`font: ${where}.style must be a string of at most 64 characters`);
+    }
+    if (face.italic !== undefined && typeof face.italic !== "boolean") errors.push(`font: ${where}.italic must be true or false`);
+    if (face.variable !== undefined && typeof face.variable !== "boolean") errors.push(`font: ${where}.variable must be true or false`);
     if (face.weight !== undefined && (!Number.isInteger(face.weight) || face.weight < 1 || face.weight > 1000)) {
       errors.push(`font: ${where}.weight must be an integer from 1 to 1000`);
     }
@@ -142,6 +149,8 @@ export function validateFontManifest(manifest: Manifest, payload?: Record<string
       errors.push(`font: "${face.path}" is not a readable font`);
       return;
     }
+    // A font, not just an SFNT header: the tables a text engine needs to map and draw characters.
+    for (const missing of info.missingTables) errors.push(`font: "${face.path}" has no ${missing} table`);
     if ((face.variable === true) !== info.variable) {
       errors.push(`font: ${where} is declared ${face.variable === true ? "variable" : "static"} but the file is ${info.variable ? "variable" : "static"}`);
       return;
@@ -161,9 +170,17 @@ export function validateFontManifest(manifest: Manifest, payload?: Record<string
     }
   });
 
-  // Nothing under fonts/ may ride along undeclared: the card describes exactly what an install writes.
+  // Nothing may ride along: the card describes exactly what an install writes. Besides the faces, a
+  // font package carries its LICENSE and the in-package images its `preview` names -- nothing else.
+  const previews = new Set(
+    [manifest.preview?.image, manifest.preview?.clip].filter((p): p is string => typeof p === "string" && !/^https:/i.test(p)),
+  );
   for (const path of Object.keys(files)) {
-    if (path.startsWith("fonts/") && !seen.has(path)) errors.push(`font: "${path}" is not declared by any face`);
+    if (path.startsWith("fonts/")) {
+      if (!seen.has(path)) errors.push(`font: "${path}" is not declared by any face`);
+    } else if (path !== "LICENSE" && !previews.has(path)) {
+      errors.push(`font: a font package can't carry "${path}" (only its faces, LICENSE and preview images)`);
+    }
   }
 
   return errors;

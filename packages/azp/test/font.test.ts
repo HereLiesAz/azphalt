@@ -4,13 +4,15 @@ import { readSfntInfo } from "../src/sfnt";
 import type { Manifest } from "@azphalt/azdk";
 
 /** Builds a minimal SFNT with `name`, `OS/2` and (optionally) `fvar` tables. */
-function sfnt(opts: { family: string; style?: string; weight?: number; axes?: Array<[string, number, number, number]> }): Uint8Array {
+function sfnt(opts: { family: string; style?: string; weight?: number; axes?: Array<[string, number, number, number]>; bare?: boolean; nameRecords?: number }): Uint8Array {
   const utf16 = (s: string) => {
     const b = new Uint8Array(s.length * 2);
     for (let i = 0; i < s.length; i++) { b[i * 2] = s.charCodeAt(i) >> 8; b[i * 2 + 1] = s.charCodeAt(i) & 255; }
     return b;
   };
   const names: Array<[number, string]> = [[1, opts.family], [2, opts.style ?? "Regular"]];
+  // Hostile padding: many records all pointing at one long string (nameId 1 on a Mac platform).
+  for (let i = 0; i < (opts.nameRecords ?? 0); i++) names.push([1, "x".repeat(30000)]);
   const strs = names.map(([, s]) => utf16(s));
   const nameLen = 6 + names.length * 12 + strs.reduce((n, s) => n + s.length, 0);
   const name = new DataView(new ArrayBuffer(nameLen));
@@ -24,6 +26,8 @@ function sfnt(opts: { family: string; style?: string; weight?: number; axes?: Ar
   });
   const os2 = new DataView(new ArrayBuffer(64)); os2.setUint16(4, opts.weight ?? 400);
   const tables: Array<[string, Uint8Array]> = [["OS/2", new Uint8Array(os2.buffer)], ["name", new Uint8Array(name.buffer)]];
+  // The tables any usable font has (contents don't matter to these checks).
+  if (!opts.bare) tables.push(["head", new Uint8Array(54)], ["cmap", new Uint8Array(4)], ["glyf", new Uint8Array(4)]);
   if (opts.axes) {
     const fv = new DataView(new ArrayBuffer(16 + opts.axes.length * 20));
     fv.setUint16(4, 16); fv.setUint16(8, opts.axes.length); fv.setUint16(10, 20);
@@ -120,5 +124,32 @@ describe("validateFontManifest", () => {
     m.font!.faces = [{ path: "fonts/Fancy.woff2", format: "woff2" }];
     expect(validateFontManifest(m, { "fonts/Fancy.woff2": new Uint8Array([0x77, 0x4f, 0x46, 0x32, 0]) })).toEqual([]);
     expect(fontSignatureMatches(new Uint8Array([0, 0, 0, 0]), "woff2")).toBe(false);
+  });
+  it("reads a hostile name table in bounded time", () => {
+    const font = sfnt({ family: "Fancy", nameRecords: 2000 });
+    const t0 = Date.now();
+    const info = readSfntInfo(font);
+    expect(info?.family).toBe("Fancy");
+    expect(Date.now() - t0).toBeLessThan(500);
+  });
+  it("requires the tables a font needs", () => {
+    expect(has(validateFontManifest(base(), { "fonts/Fancy.ttf": sfnt({ family: "Fancy", axes: [["wght", 100, 400, 900]], bare: true }) }), "has no head table")).toBe(true);
+  });
+  it("carries nothing but faces, LICENSE and previews", () => {
+    const m = base();
+    m.files!["code/main.js"] = "sha256-c";
+    expect(has(validateFontManifest(m), "can't carry \"code/main.js\"")).toBe(true);
+    const p = base();
+    p.files!["preview/card.png"] = "sha256-d";
+    (p as { preview?: unknown }).preview = { image: "preview/card.png" };
+    expect(validateFontManifest(p)).toEqual([]);
+    const w = base();
+    (w as { workflow?: unknown }).workflow = {};
+    expect(has(validateFontManifest(w), "must not declare a workflow block")).toBe(true);
+  });
+  it("bounds the browse-card strings", () => {
+    const m = base();
+    m.font!.designer = "d".repeat(200);
+    expect(has(validateFontManifest(m), "designer must be a string of at most 128")).toBe(true);
   });
 });

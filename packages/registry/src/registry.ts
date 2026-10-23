@@ -81,6 +81,8 @@ export function mediaDomainsForManifest(m: Manifest): MediaDomain[] {
     else if (c === "audio") set.add("audio");
   }
   if ((m.contributes?.transitions?.length ?? 0) > 0) set.add("video");
+  // A font package's faces live in its `font` block, not in `assets`.
+  if (m.kind === "font") set.add("font");
   return [...set];
 }
 

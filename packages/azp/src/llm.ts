@@ -33,7 +33,7 @@ const CREDENTIAL_NAME_KEYS = new Set(["authInput", "input"]);
 // Bounded quantifier; see mcp.ts (CodeQL js/polynomial-redos).
 const INPUT_REF_RE = /\$\{input:([^}]{1,128})\}/g;
 const FULL_INPUT_REF_RE = /^\$\{input:([^}]{1,128})\}$/;
-const FORBIDDEN_BLOCKS = ["app", "mcp", "pack", "skill", "script", "composable", "workflow", "role"] as const;
+const FORBIDDEN_BLOCKS = ["app", "mcp", "pack", "skill", "script", "composable", "workflow", "role", "font"] as const;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
