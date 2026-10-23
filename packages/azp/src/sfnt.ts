@@ -28,9 +28,14 @@ export interface SfntInfo {
   axes: FontAxis[];
   /** Outline flavour: `glyf` (TrueType) or `CFF ` / `CFF2` (PostScript). */
   outlines: "truetype" | "cff" | "cff2" | "unknown";
+  /** Tables every usable font needs that this one lacks: `head`, `cmap`, and an outline table. */
+  missingTables: string[];
 }
 
 const MAX_TABLES = 128;
+/** Name records read at most, and code units kept per string: real fonts have tens and ~100. */
+const MAX_NAME_RECORDS = 1024;
+const MAX_NAME_UNITS = 256;
 
 /** The SFNT table directory, or undefined if `bytes` isn't a single (non-collection) SFNT font. */
 export function readSfntTables(bytes: Uint8Array): Map<string, SfntTable> | undefined {
@@ -57,26 +62,30 @@ function readName(bytes: Uint8Array, view: DataView, table: SfntTable | undefine
   const out = new Map<number, string>();
   if (!table || table.length < 6) return out;
   const base = table.offset;
-  const count = view.getUint16(base + 2);
+  // Bounded work however the table is built: a crafted font can point 65535 records at one 64 KB string.
+  const count = Math.min(view.getUint16(base + 2), MAX_NAME_RECORDS);
   const stringOffset = view.getUint16(base + 4);
+  const settled = new Set<number>();
   for (let i = 0; i < count; i++) {
     const rec = base + 6 + i * 12;
     if (rec + 12 > base + table.length) break;
     const platform = view.getUint16(rec);
     const nameId = view.getUint16(rec + 6);
-    if (!wanted.includes(nameId)) continue;
+    if (!wanted.includes(nameId) || settled.has(nameId)) continue;
     const length = view.getUint16(rec + 8);
     const offset = view.getUint16(rec + 10);
     const start = base + stringOffset + offset;
     if (start + length > base + table.length) continue;
-    let text = "";
+    const units: number[] = [];
     if (platform === 0 || platform === 3) {
-      for (let j = 0; j + 1 < length; j += 2) text += String.fromCharCode(view.getUint16(start + j));
+      for (let j = 0; j + 1 < length && units.length < MAX_NAME_UNITS; j += 2) units.push(view.getUint16(start + j));
     } else {
-      for (let j = 0; j < length; j++) text += String.fromCharCode(bytes[start + j]);
+      for (let j = 0; j < length && units.length < MAX_NAME_UNITS; j++) units.push(bytes[start + j]);
     }
+    const text = String.fromCharCode(...units);
     // Prefer a Windows or Unicode record over a Mac one, and never overwrite a better one.
     if (text && (!out.has(nameId) || platform === 3)) out.set(nameId, text);
+    if (text && platform === 3) settled.add(nameId);
   }
   return out;
 }
@@ -136,6 +145,11 @@ export function readSfntInfo(bytes: Uint8Array): SfntInfo | undefined {
       variable: !!fvar,
       axes,
       outlines,
+      missingTables: [
+        ...(tables.has("head") ? [] : ["head"]),
+        ...(tables.has("cmap") ? [] : ["cmap"]),
+        ...(outlines === "unknown" ? ["outline (glyf, CFF or CFF2)"] : []),
+      ],
     };
   } catch {
     return undefined;

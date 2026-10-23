@@ -42,8 +42,9 @@ capability model is untouched.
 }
 ~~~
 
-Layout: `manifest.json`, `LICENSE`, `signature.json`, and one file per face under `fonts/`. Source files
-(`.glyphs`, `.ufo`, an editor's project) are **not** part of the package; it is the compiled font only.
+Layout: `manifest.json`, `LICENSE`, `signature.json`, one file per face under `fonts/`, and the in-package
+images a `preview` names (if any). Nothing else may be in the payload. Source files (`.glyphs`, `.ufo`, an
+editor's project) are **not** part of the package; it is the compiled font only.
 
 ## Rules (`validateFontManifest`)
 
@@ -52,17 +53,23 @@ Layout: `manifest.json`, `LICENSE`, `signature.json`, and one file per face unde
   in its `format` (`ttf`, `otf` or `woff2`). Nothing under `fonts/` may be undeclared.
 - `variable: true` ⇔ `axes` non-empty. Each axis has a unique four-character `tag` and finite
   `min <= default <= max`.
-- `scripts` are ISO 15924 codes; `languages` are BCP 47 tags; `sampleText` ≤ 200 characters.
-- No `entry`/`runtime`, `capabilities`, `assets`, or `app`/`mcp`/`pack`/`skill`/`script`/`composable` block.
+- `scripts` are ISO 15924 codes; `languages` are BCP 47 tags; `sampleText` ≤ 200 characters; `designer`
+  ≤ 128; a face's `style` ≤ 64; `italic` and `variable` are booleans.
+- No `entry`/`runtime`, `capabilities`, `assets`, `contributes`, or
+  `app`/`mcp`/`pack`/`skill`/`script`/`composable`/`workflow`/`role`/`llm` block — and those kinds forbid
+  a `font` block in turn.
+- No payload file but the declared faces, `LICENSE` and in-package `preview` images.
 - **Given the payload**, each face's bytes must carry its format's file signature, be ≤ 32 MiB, and — for
-  `ttf`/`otf` — the font's own `fvar` table must agree with the declared variability and axes. The file is
+  `ttf`/`otf` — have the `head`, `cmap` and an outline (`glyf`, `CFF ` or `CFF2`) table, and the font's
+  own `fvar` table must agree with the declared variability and axes. The file is
   authoritative; a card cannot advertise axes the font does not have. WOFF2 is Brotli-compressed and is
   checked by signature only.
 
 ## Browse summary
 
-`GET /packages` rows for a font carry `font: { family, designer?, variable, axes: string[], faces }`
-(`FontSummary`); `?kind=font` filters to them.
+`GET /packages` rows for a font carry `font: { family, designer?, variable, axes: string[], faces,
+scripts?, sampleText? }` (`FontSummary`) and `mediaDomains: ["font"]`; `?kind=font` or
+`?mediaDomains=font` filters to them.
 
 ## Importer
 

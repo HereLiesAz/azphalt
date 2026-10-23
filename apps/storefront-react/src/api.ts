@@ -38,7 +38,7 @@ export interface PackageSummary {
    */
   llm?: LlmBlock;
   /** Present only on a `kind:"font"` listing (`spec/font.md`): enough for a card, never the file list. */
-  font?: { family: string; designer?: string; variable: boolean; axes: string[]; faces: number };
+  font?: { family: string; designer?: string; variable: boolean; axes: string[]; faces: number; scripts?: string[]; sampleText?: string };
 }
 
 /** The parts of a `kind:"llm"` block the store discloses before install. */

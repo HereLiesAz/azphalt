@@ -7,7 +7,7 @@
 // writeAzp() computes the integrity digests (the manifest's `files` map) for you.
 import fs from "node:fs";
 import path from "node:path";
-import { writeAzp } from "@azphalt/azp";
+import { verifyAzp, writeAzp } from "@azphalt/azp";
 
 const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf-8"));
 
@@ -34,6 +34,13 @@ const license = fs.existsSync("LICENSE")
   : manifest.license || "All Rights Reserved";
 
 const { azp } = writeAzp({ manifest, payload, license });
+// Check it the way the store will, so a package that would be rejected is never written.
+const { errors } = verifyAzp(azp);
+if (errors.length > 0) {
+  console.error("This package wouldn't be accepted:\n" + errors.map((e) => "  - " + e).join("\n"));
+  console.error("Put each face in fonts/ and list it in manifest.json font.faces[] (see readme.md).");
+  process.exit(1);
+}
 // Sanitize the name into a safe, cross-platform filename (no path separators or special chars).
 const safeName = manifest.name.toLowerCase().replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "");
 const out = `${safeName}-${manifest.version}.azp`;
