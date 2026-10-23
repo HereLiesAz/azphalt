@@ -1,0 +1,291 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.kinetic.print-shop",
+  "name": "Print Shop Kinetic",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "The print room, misbehaving as it should: a canvas-locked halftone whose dots swell with pressure and shrink with haste, riso drums that drift out of register and starve, a squeegee that floods where you dawdle and leaves a ridge where you lift, a stipple pen that only counts time, and a gouge that chips and skips.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "preview": {
+    "image": "assets/preview.png"
+  },
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/halftone-dot.png",
+      "tags": [
+        "halftone",
+        "comic",
+        "screen"
+      ],
+      "params": {
+        "name": "Halftone Screen",
+        "spacing": 0.19,
+        "opacity": 1,
+        "hardness": 1,
+        "program": {
+          "state": {},
+          "step": [
+            "// a 45-degree screen locked to the canvas; ink becomes dot area, never a soft edge",
+            "hide = 1;",
+            "let pitch = max(diameter * 0.19, 2.2);",
+            "let rad = diameter * 0.5;",
+            "let s = 0.70710678;",
+            "let cu = floor((px + py) * s / pitch);",
+            "let cv = floor((py - px) * s / pitch);",
+            "let slow = 1 - 0.6 * smoothstep(0.25, 3, layerSpeed);",
+            "let ink = pow(clamp(pressure, 0, 1), 0.7) * slow;",
+            "for i in 0..64 {",
+            "  let iu = cu + mod(i, 8) - 3.5 + 0.5;",
+            "  let iv = cv + floor(i / 8) - 3.5 + 0.5;",
+            "  let cx = (iu - iv) * s * pitch;",
+            "  let cy = (iu + iv) * s * pitch;",
+            "  let d = hypot(cx - px, cy - py) / rad;",
+            "  if (d < 1) {",
+            "    let tone = ink * (1 - d * d) * (1 - 0.35 * d);",
+            "    let dot = pitch * 1.42 * sqrt(tone);",
+            "    if (dot > pitch * 0.18) { emit { x: cx, y: cy, size: dot, alpha: 1, angle: 0, tip: 1 }; }",
+            "  }",
+            "}",
+            "gapMul = clamp(pitch / max(stepPx, 0.01), 0.5, 2);"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/riso-drum.png",
+      "tags": [
+        "riso",
+        "print",
+        "grain"
+      ],
+      "params": {
+        "name": "Riso Grain",
+        "spacing": 0.12,
+        "opacity": 0.95,
+        "program": {
+          "state": {
+            "load": 1,
+            "mx": 0,
+            "my": 0,
+            "sk": 0
+          },
+          "init": "let a = rand() * 360; mx = cos(a); my = sin(a); sk = rands();",
+          "step": [
+            "// two drums: the second registers a little off and drifts as the sheet skews; fast passes starve the drum",
+            "hide = 1;",
+            "let want = 1 - 0.75 * smoothstep(0.2, 2.5, layerSpeed);",
+            "want *= 1 - 0.3 * smoothstep(diameter * 20, diameter * 160, dist);",
+            "let k = clamp(stepPx / (diameter * 2.5), 0, 1);",
+            "if (index == 0) { load = 0.95; }",
+            "load = lerp(load, want, k);",
+            "let band = 0.86 + 0.14 * noise(dist / (diameter * 1.7));",
+            "let ink = clamp(load * band, 0, 1);",
+            "let off = diameter * (0.09 + 0.09 * noise(dist / (diameter * 18) + 3)) * (1 + 0.5 * sk);",
+            "let starve = 1 - ink;",
+            "let j = diameter * 0.12 * starve;",
+            "emit { x: px + mx * off + rands() * j, y: py + my * off + rands() * j, alpha: baseAlpha * pow(ink, 1.8) * 0.6, angle: rand() * 360, hue: 28, sat: 1.15, val: 0.92 };",
+            "let sz = diameter * (1 - 0.18 * starve);",
+            "emit { x: px + rands() * j, y: py + rands() * j, size: sz, alpha: baseAlpha * pow(ink, 1.6), angle: rand() * 360 };",
+            "gapMul = 1 + 1.6 * starve;"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/squeegee-lane.png",
+      "tags": [
+        "screenprint",
+        "flat",
+        "streak"
+      ],
+      "params": {
+        "name": "Squeegee Pull",
+        "spacing": 0.03,
+        "opacity": 1,
+        "program": {
+          "tickMs": 20,
+          "state": {
+            "hx": 1,
+            "hy": 0,
+            "bead": 1,
+            "pool": 0
+          },
+          "step": [
+            "if (index == 0) { hx = cos(heading); hy = sin(heading); }",
+            "else if (phase <= 1 && stepPx > 0.01) { hx = lerp(hx, cos(heading), 0.08); hy = lerp(hy, sin(heading), 0.08); }",
+            "let hl = hypot(hx, hy); hx = hl > 0.001 ? hx / hl : 1; hy = hl > 0.001 ? hy / hl : 0;",
+            "let nx = -hy; let ny = hx;",
+            "// a squeegee: the blade lays what the mesh lets through. Slow floods, fast starves into streaks,",
+            "// what is left on the blade is dumped as a ridge where it lifts.",
+            "hide = 1;",
+            "let W = diameter;",
+            "let lanes = 18;",
+            "let lw = W / lanes;",
+            "if (phase <= 1) {",
+            "  let linger = dt / max(stepPx, 0.3) * W;",
+            "  let flood = (0.22 + 0.78 * (1 - exp(-linger / 90))) * (0.75 + 0.25 * bead);",
+            "  let firm = 0.8 + 0.25 * (1 - clamp(pressure, 0, 1));",
+            "  let wet = wetAt(px, py, W * 0.45);",
+            "  for i in 0..18 {",
+            "    let t = (i + 0.5) / lanes * 2 - 1;",
+            "    let st = noise2(i * 1.9 + 7, dist / (W * 2.5));",
+            "    let cov = clamp(flood * firm * 1.35 - (1 - st) * (1 - flood) * 1.9 + wet * 0.002, 0, 1);",
+            "    cov *= 1 - 0.35 * smoothstep(0.8, 1, abs(t));",
+            "    if (cov > 0.02) {",
+            "      emit { x: px + nx * t * W * 0.5, y: py + ny * t * W * 0.5, size: lw * 10, alpha: cov * 0.8, angle: heading, tip: 0.2 };",
+            "    }",
+            "  }",
+            "  spray(px, py, W * 0.5, flood * stepPx * 0.6);",
+            "  bead = max(0.15, bead - flood * stepPx / (W * 60));",
+            "  pool = max(0, pool - stepPx / W * 0.08);",
+            "  gapMul = clamp(max(lw * 1.2, 1.6) / max(stepPx, 0.01), 0.3, 3);",
+            "}",
+            "if (phase == 2) {",
+            "  // held: ink keeps coming through the mesh and pools along the blade, then squeezes out of its ends",
+            "  spray(px, py, W * 0.5, dt * 0.1);",
+            "  pool = min(1.4, pool + dt / 1400);",
+            "  let wet = wetAt(px, py, W * 0.45);",
+            "  for i in 0..18 {",
+            "    let t = (i + 0.5) / lanes * 2 - 1;",
+            "    emit { x: px + nx * t * W * 0.5, y: py + ny * t * W * 0.5, size: lw * 3.2, alpha: 0.25, angle: heading, tip: 0.55 };",
+            "  }",
+            "  if (wet > 40) {",
+            "    let sq = clamp((wet - 40) / 120, 0, 1);",
+            "    for e in 0..2 {",
+            "      let sd = e * 2 - 1;",
+            "      emit { x: px + nx * sd * W * (0.5 + 0.12 * sq) + hx * W * 0.05 * rands(), y: py + ny * sd * W * (0.5 + 0.12 * sq) + hy * W * 0.05 * rands(), size: W * (0.12 + 0.2 * sq), alpha: 0.9, tip: 1, angle: rand() * 360 };",
+            "    }",
+            "  }",
+            "}",
+            "if (phase == 3) {",
+            "  // the pull ridge: the blade's leftover ink, a lumpy bead across the end",
+            "  let h = 0.55 + 0.6 * bead + 0.5 * pool;",
+            "  for i in 0..24 {",
+            "    let t = (i + 0.5) / 24 * 2.08 - 1.04;",
+            "    let lump = 0.75 + 0.5 * noise(i * 0.7 + 11);",
+            "    emit { x: px + nx * t * W * 0.5 + hx * W * 0.07, y: py + ny * t * W * 0.5 + hy * W * 0.07, size: W * 0.11 * h * lump, alpha: 1, angle: heading, tip: 1 };",
+            "  }",
+            "  spray(px, py, W * 0.5, 60 * h);",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/stipple-dot.png",
+      "tags": [
+        "stipple",
+        "dots",
+        "shading"
+      ],
+      "params": {
+        "name": "Stipple Pen",
+        "spacing": 0.25,
+        "opacity": 1,
+        "program": {
+          "tickMs": 16,
+          "state": {
+            "acc": 0
+          },
+          "step": [
+            "// the pen taps at its own pace: dots land per millisecond, not per pixel, so density is time at the spot",
+            "hide = 1;",
+            "let rad = diameter * 0.5;",
+            "let pr = clamp(pressure, 0, 1);",
+            "if (phase != 3) {",
+            "  acc += dt * 0.07 * (0.35 + 0.65 * pr) + stepPx / diameter * 1.6;",
+            "}",
+            "for i in 0..48 {",
+            "  if (acc >= 1) {",
+            "    acc -= 1;",
+            "    let r = rad * sqrt(rand()) * (0.6 + 0.4 * rand());",
+            "    let a = rand() * 360;",
+            "    let x = px + cos(a) * r;",
+            "    let y = py + sin(a) * r;",
+            "    let wet = wetAt(x, y, diameter * 0.08);",
+            "    let bleed = 1 + 0.9 * smoothstep(20, 140, wet);",
+            "    let ds = diameter * (0.085 + 0.06 * rand()) * (0.7 + 0.5 * pr) * bleed;",
+            "    emit { x: x, y: y, size: ds, alpha: 1, angle: rand() * 360, tip: 1 };",
+            "    spray(x, y, ds * 0.9, 12);",
+            "  }",
+            "}",
+            "acc = min(acc, 2);"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/lino-gouge.png",
+      "tags": [
+        "linocut",
+        "carve",
+        "line"
+      ],
+      "params": {
+        "name": "Lino Gouge",
+        "spacing": 0.03,
+        "isotropicSpacing": false,
+        "followStroke": true,
+        "opacity": 1,
+        "hardness": 1,
+        "taper": {
+          "startLengthPx": 40,
+          "minSize": 0.2,
+          "minOpacity": 1
+        },
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.35,
+            "outputMax": 1
+          }
+        ],
+        "program": {
+          "state": {
+            "hx": 1,
+            "hy": 0,
+            "seg": -1,
+            "skip": 0
+          },
+          "step": [
+            "if (index == 0) { hx = cos(heading); hy = sin(heading); }",
+            "else if (phase <= 1 && stepPx > 0.01) { hx = lerp(hx, cos(heading), 0.35); hy = lerp(hy, sin(heading), 0.35); }",
+            "let hl = hypot(hx, hy); hx = hl > 0.001 ? hx / hl : 1; hy = hl > 0.001 ? hy / hl : 0;",
+            "let nx = -hy; let ny = hx;",
+            "// a V-gouge in cold lino: it wanders in width, rides up and skips when rushed or turned hard,",
+            "// and throws chips off its walls",
+            "let D = diameter;",
+            "sizeMul = (0.86 + 0.22 * noise(dist / (D * 3.5))) * (0.95 + 0.05 * hash(index));",
+            "let risk = 0.6 * smoothstep(0.8, 3, layerSpeed) + 0.9 * smoothstep(20, 70, abs(turn));",
+            "let sg = floor(dist / (D * 0.9));",
+            "if (sg != seg) {",
+            "  seg = sg;",
+            "  if (skip <= 0 && index > 3 && rand() < 0.012 + risk * 0.35) {",
+            "    skip = D * (1.1 + 1.2 * rand());",
+            "    emit { x: px + hx * D * 0.4, y: py + hy * D * 0.4, size: D * 0.8, tip: 0.3, angle: heading + rands() * 20, alpha: 1 };",
+            "  }",
+            "  if (rand() < 0.22 + 0.5 * risk) {",
+            "    let sd = rand() < 0.5 ? -1 : 1;",
+            "    let cl = D * (0.45 + 0.5 * rand());",
+            "    emit { x: px + nx * sd * D * 0.42 + hx * cl * 0.3, y: py + ny * sd * D * 0.42 + hy * cl * 0.3, size: cl, tip: 0.22 + 0.1 * rand(), angle: heading + sd * (18 + 25 * rand()), alpha: 1 };",
+            "  }",
+            "}",
+            "if (skip > 0) { skip -= stepPx; hide = 1; }",
+            "if (phase == 3) { emit { x: px + hx * D * 0.3, y: py + hy * D * 0.3, size: D * 1.1, tip: 0.28, angle: heading + rands() * 8, alpha: 1 }; }"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,358 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.kinetic.noir-ink",
+  "name": "Noir Ink Kinetic",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Ink that behaves like ink: a sumi brush that loads, splays and runs dry, a dry comb that cross-hatches on the return pass, splatter thrown as far as you fling it, a wash that stays wet and dries to a ring, and a nib that pools where you rest and catches on the upstroke.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "preview": {
+    "image": "assets/preview.png"
+  },
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/sumi-hair.png",
+      "tags": [
+        "ink",
+        "sumi",
+        "calligraphy"
+      ],
+      "params": {
+        "name": "Wet Sumi",
+        "spacing": 0.06,
+        "opacity": 1,
+        "hardness": 0.9,
+        "followStroke": true,
+        "program": {
+          "state": {
+            "load": 1,
+            "splay": 0
+          },
+          "step": [
+            "// Wet Sumi: a comb of hairs. It loads at touchdown (longer dwell, more ink), spends ink with",
+            "// every px laid, and the outer hairs run dry first. Pressure splays the hairs; a slow brush",
+            "// lays ink into the wet ledger and crossing still-wet ink bleeds.",
+            "hide = 1;",
+            "let pr = clamp(pressure, 0, 1);",
+            "if (index == 0) { load = clamp(0.8 + dwell / 2000, 0.8, 1.0); splay = pr; }",
+            "splay = lerp(splay, pr, 0.3);",
+            "let lay = stepPx / sqrt(max(diameter, 1) * 26);",
+            "load = max(0, load - lay * 0.028 * (0.5 + splay));",
+            "let w = diameter * (0.35 + 0.75 * splay);",
+            "let hd = heading + 90;",
+            "let cx = cos(hd);",
+            "let cy = sin(hd);",
+            "let slow = clamp(dt / max(stepPx, 0.1) / 6, 0, 1);",
+            "let ahead = wetAt(px + cos(heading) * diameter * 0.8, py + sin(heading) * diameter * 0.8, diameter * 0.4);",
+            "let bleed = clamp(ahead / 60, 0, 1);",
+            "for i in 0..14 {",
+            "  let u = (i + 0.5) / 14 - 0.5;",
+            "  let h = hash(i * 7.31 + 3);",
+            "  let need = abs(u) * 0.75 + h * 0.3;",
+            "  let ink = clamp((load * 1.15 - need) * 3.5, 0, 1);",
+            "  let streak = noise(dist / max(diameter, 1) * 0.9 + i * 13.7);",
+            "  let dry = smoothstep(0.75 * (1 - load), 0.75 * (1 - load) + 0.25, streak + 0.25 * ink);",
+            "  let a = clamp(ink * (0.35 + 0.65 * dry) + 0.15 * load, 0, 1);",
+            "  if (a > 0.03) {",
+            "    let off = u * w + (h - 0.5) * diameter * 0.08;",
+            "    emit { x: px + cx * off, y: py + cy * off, size: diameter * (0.2 + 0.12 * h) * (0.7 + 0.5 * splay), alpha: a, angle: heading, tip: 1 };",
+            "  }",
+            "}",
+            "spray(px, py, w * 0.5, (8 + 50 * slow) * load);",
+            "if (bleed > 0.05) {",
+            "  emit { x: px, y: py, size: w * (1.3 + 0.6 * bleed), alpha: 0.12 * bleed * load, angle: heading, tip: 0.8 };",
+            "}",
+            "if (slow > 0.6) {",
+            "  emit { x: px, y: py, size: w * 1.05, alpha: 0.35 * load * (slow - 0.6), angle: heading, tip: 0.7 };",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/hatch-sliver.png",
+      "tags": [
+        "crosshatch",
+        "dry brush",
+        "texture"
+      ],
+      "params": {
+        "name": "Dry Hatch",
+        "spacing": 0.08,
+        "opacity": 1,
+        "hardness": 1,
+        "program": {
+          "state": {
+            "lastk": -1,
+            "dir": 1,
+            "load": 1
+          },
+          "step": [
+            "// Dry Hatch: a dry comb that lays parallel slivers at the hand's habitual 45 degrees,",
+            "// one every third of a diameter. Turn back over your own line and the hatch flips to the",
+            "// opposite diagonal, so a return pass cross-hatches. Speed skips the comb on the tooth.",
+            "hide = 1;",
+            "let pr = clamp(pressure, 0, 1);",
+            "if (index == 0) { lastk = -1; dir = (cos(heading) >= 0 ? 1 : -1); load = 1; }",
+            "let cxh = cos(heading);",
+            "if (dir > 0 && cxh < -0.45) { dir = -1; }",
+            "if (dir < 0 && cxh > 0.45) { dir = 1; }",
+            "let gap = diameter * (0.34 - 0.08 * pr);",
+            "let k = floor(dist / max(gap, 0.5));",
+            "if (k != lastk) {",
+            "  lastk = k;",
+            "  load = max(0.55, load - 0.004);",
+            "  let fast = clamp(layerSpeed / 2.5, 0, 1);",
+            "  let ang = (dir > 0 ? -45 : 45) + (hash(k * 1.7) - 0.5) * 10;",
+            "  let L = diameter * (1.1 + 0.7 * pr) * (0.85 + 0.3 * hash(k * 3.1 + 2));",
+            "  let ca = cos(ang);",
+            "  let sa = sin(ang);",
+            "  let jx = (hash(k * 5.3) - 0.5) * gap * 0.3;",
+            "  for s in 0..3 {",
+            "    let t = (s - 1) * 0.31;",
+            "    let g = noise2(k * 0.73 + s * 3.1, dist * 0.01);",
+            "    let a = load * (0.45 + 0.55 * pr) * smoothstep(0.2 + 0.45 * fast, 0.35 + 0.45 * fast, g + 0.15 * (1 - abs(t) * 2));",
+            "    if (a > 0.04) {",
+            "      emit { x: px + jx + ca * t * L, y: py + sa * t * L, size: L * 0.42, alpha: min(1, a * 1.3), angle: ang, tip: 1 };",
+            "    }",
+            "  }",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/ink-drop.png",
+      "tags": [
+        "splatter",
+        "ink",
+        "texture"
+      ],
+      "params": {
+        "name": "Flung Splatter",
+        "spacing": 0.35,
+        "opacity": 1,
+        "hardness": 1,
+        "program": {
+          "state": {
+            "vel": 0,
+            "ph": 0
+          },
+          "step": [
+            "// Flung Splatter: drops thrown off the brush by the hand. Slow, they fall beside the line;",
+            "// at speed they fly ahead, farther and more of them, stretched along their flight. A sharp",
+            "// turn flings a burst out along the old direction.",
+            "hide = 1;",
+            "let pr = clamp(pressure, 0, 1);",
+            "if (index == 0) { vel = 0; ph = heading; }",
+            "vel = lerp(vel, layerSpeed, 0.35);",
+            "let v = clamp(vel, 0, 4);",
+            "let n = (0.5 + v * 1.6) * (0.5 + pr) * stepPx / max(diameter, 1) * 2.2;",
+            "let k = floor(n) + gate(1 - fract(n), rand());",
+            "for i in 0..20 {",
+            "  if (i < k) {",
+            "    let thr = diameter * (0.15 + pow(rand(), 2) * (0.4 + v * 2.2));",
+            "    let side = rands() * diameter * (0.55 + 0.2 * v);",
+            "    let big = pow(rand(), 4);",
+            "    let sz = diameter * (0.06 + 0.42 * big) * (0.8 + 0.4 * pr);",
+            "    let el = clamp(1 - v * 0.18 * (1 - big) * thr / max(diameter, 1), 0.3, 1);",
+            "    emit { x: px + cos(heading) * thr - sin(heading) * side, y: py + sin(heading) * thr + cos(heading) * side, size: sz / sqrt(el), tip: el, angle: heading, alpha: 1 };",
+            "  }",
+            "}",
+            "let tn = abs(turn);",
+            "if (tn > 40 && v > 0.4 && index > 2) {",
+            "  let m = min(16, floor(4 + v * 3 + tn * 0.05));",
+            "  for j in 0..16 {",
+            "    if (j < m) {",
+            "      let fa = ph + rands() * 14;",
+            "      let far = diameter * (0.6 + rand() * (1 + v * 2.5));",
+            "      let sz = diameter * (0.05 + 0.25 * pow(rand(), 3));",
+            "      let el = clamp(1 - 0.12 * v * far / max(diameter, 1), 0.25, 1);",
+            "      emit { x: px + cos(fa) * far, y: py + sin(fa) * far, size: sz / sqrt(el), tip: el, angle: fa, alpha: 1 };",
+            "    }",
+            "  }",
+            "}",
+            "ph = heading;"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/wash-pool.png",
+      "tags": [
+        "wash",
+        "ink",
+        "tone"
+      ],
+      "params": {
+        "name": "Ring Wash",
+        "spacing": 0.1,
+        "opacity": 1,
+        "hardness": 0.3,
+        "buildUp": true,
+        "program": {
+          "state": {
+            "sx": 0,
+            "sy": 0,
+            "grow": 0,
+            "started": 0
+          },
+          "step": [
+            "// Ring Wash: a dilute wash that stays wet (the ledger). Its body barely builds; where it runs",
+            "// over wash that is still wet it darkens, and its pigment migrates to the edge of the wet",
+            "// patch, drying to a tide line. Hold still and the pool spreads and settles darker.",
+            "hide = 1;",
+            "let pr = clamp(pressure, 0, 1);",
+            "let r = diameter * 0.5 * (1 + grow);",
+            "let dts = dt / 1000;",
+            "if (index == 0) { sx = px; sy = py; grow = 0; started = 0; }",
+            "let prior = (phase == 1 ? wetAt(px + cos(heading) * r * 1.4, py + sin(heading) * r * 1.4, r * 0.5) : 0);",
+            "let wetness = clamp(prior / 80, 0, 1);",
+            "if (phase == 2) {",
+            "  grow = min(0.9, grow + dts * 0.5);",
+            "  spray(px, py, r, 120 * dts);",
+            "  emit { x: px, y: py, size: 2 * r, alpha: 0.02 + 0.03 * pr, angle: hash(index) * 360, tip: 1 };",
+            "} else if (phase != 3) {",
+            "  grow = max(0, grow - stepPx / max(diameter, 1) * 0.25);",
+            "  spray(px, py, r, 10 + 30 * pr);",
+            "  emit { x: px, y: py, size: 2 * r, alpha: (0.012 + 0.014 * pr) * (1 + 2.5 * wetness), angle: hash(index * 1.3) * 360, tip: 1 };",
+            "  // tide line along both edges, only where the paper just outside is dry",
+            "  let hd = heading + 90;",
+            "  for s in 0..2 {",
+            "    let sg = s * 2 - 1;",
+            "    let ex = px + cos(hd) * r * 0.86 * sg;",
+            "    let ey = py + sin(hd) * r * 0.86 * sg;",
+            "    let out = wetAt(px + cos(hd) * (r + 8) * sg, py + sin(hd) * (r + 8) * sg, 4);",
+            "    let edge = 1 - clamp(out / 25, 0, 1);",
+            "    if (edge > 0.05) {",
+            "      emit { x: ex, y: ey, size: diameter * 0.3, alpha: (0.11 + 0.07 * pr) * edge, tip: 1 };",
+            "    }",
+            "  }",
+            "  if (started == 0 && index > 0) {",
+            "    started = 1;",
+            "    for j in 0..32 {",
+            "      let a = heading + 90 + j * 180 / 31;",
+            "      emit { x: sx + cos(a) * r * 0.86, y: sy + sin(a) * r * 0.86, size: diameter * 0.3, alpha: 0.07 + 0.04 * pr, tip: 1 };",
+            "    }",
+            "  }",
+            "}",
+            "if (phase == 3) {",
+            "  let n = (grow > 0.05 ? 60 : 32);",
+            "  for j in 0..60 {",
+            "    if (j < n) {",
+            "      let a = (grow > 0.05 ? j * 6 : heading - 90 + j * 180 / 31);",
+            "      emit { x: px + cos(a) * r * 0.86, y: py + sin(a) * r * 0.86, size: diameter * 0.3 * (1 + 0.3 * grow), alpha: 0.07 + 0.05 * grow, tip: 1 };",
+            "    }",
+            "  }",
+            "}"
+          ],
+          "tickMs": 24
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/steel-nib.png",
+      "tags": [
+        "nib",
+        "pen",
+        "line"
+      ],
+      "params": {
+        "name": "Blotting Nib",
+        "spacing": 0.05,
+        "opacity": 1,
+        "hardness": 0.98,
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.25,
+            "outputMax": 1,
+            "curve": {
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.4
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        ],
+        "program": {
+          "state": {
+            "grab": 1,
+            "skip": 0
+          },
+          "step": [
+            "// Blotting Nib: a steel nib. Ink keeps flowing while it rests, pooling in the wet ledger into",
+            "// a blot that grows with the dwell; speed thins the line. Pushing the nib upstroke makes it",
+            "// catch on the paper: the line skips, then spits a fan of spatter and a small blot.",
+            "let pr = clamp(pressure, 0, 1);",
+            "let dts = dt / 1000;",
+            "if (index == 0) { grab = 0.6 + hash(1) * 0.8; skip = 0; }",
+            "let fast = clamp(layerSpeed / 3, 0, 1);",
+            "sizeMul = 1 - 0.4 * fast;",
+            "let rr = diameter * 0.5;",
+            "if (phase == 2 || phase == 0) {",
+            "  spray(px, py, max(rr * 1.2, 8), 260 * dts * (0.5 + pr));",
+            "} else if (phase == 1) {",
+            "  spray(px, py, max(rr, 8), 40 * dts);",
+            "}",
+            "let pool = wetAt(px, py, max(rr * 1.2, 8));",
+            "if (pool > 30 && phase != 3) {",
+            "  let bs = diameter * min(3.6, 0.9 + sqrt(pool - 30) * 0.12);",
+            "  emit { x: px, y: py + bs * 0.04, size: bs, alpha: 1, angle: 0, tip: 1 };",
+            "  emit { x: px, y: py, size: bs * 1.25, alpha: 0.12, angle: 0, tip: 1 };",
+            "}",
+            "if (phase == 1) {",
+            "  let push = clamp(-sin(heading) * 1.2 - 0.2, 0, 1);",
+            "  grab = grab - stepPx / max(diameter, 1) * push * (0.08 + 0.12 * pr);",
+            "  if (skip > 0) {",
+            "    skip = skip - stepPx;",
+            "    hide = 1;",
+            "    if (skip <= 0) {",
+            "      let m = 5 + floor(rand() * 5);",
+            "      for i in 0..10 {",
+            "        if (i < m) {",
+            "          let a = heading + rands() * 55;",
+            "          let far = diameter * (0.5 + 1.8 * rand());",
+            "          emit { x: px + cos(a) * far, y: py + sin(a) * far, size: diameter * (0.15 + 0.35 * pow(rand(), 2)), alpha: 1, angle: a, tip: 0.8 };",
+            "        }",
+            "      }",
+            "      emit { x: px, y: py, size: diameter * 1.7, alpha: 1, angle: 0, tip: 1 };",
+            "      spray(px, py, rr * 1.5, 25);",
+            "    }",
+            "  } else if (grab < 0) {",
+            "    skip = diameter * (0.7 + 0.6 * rand());",
+            "    grab = 0.6 + rand() * 1.4;",
+            "    alphaMul = 0.4;",
+            "  }",
+            "}",
+            "if (phase == 3 && dt > 120) {",
+            "  emit { x: px, y: py, size: diameter * 1.3, alpha: 1, angle: 0, tip: 1 };",
+            "}"
+          ],
+          "tickMs": 16
+        }
+      }
+    }
+  ]
+}
