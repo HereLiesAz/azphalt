@@ -25,7 +25,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -50,6 +49,11 @@ import theme.Ground
 import theme.Roles
 import theme.CapsuleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import theme.azTurnstileEntrance
 import util.formatCount
@@ -102,7 +106,7 @@ fun DetailScreen(
                 Capsule(label = "Back", background = Ground.Ink, labelSize = 11, height = 34.dp, onClick = onBack)
                 Button(
                     onClick = onConfirmAge,
-                    shape = RectangleShape,
+                    shape = CapsuleShape.Full,
                     colors = ButtonDefaults.buttonColors(containerColor = cs.secondary, contentColor = cs.onSecondary),
                 ) { Text("I'm 18 or older", fontWeight = FontWeight.Bold) }
             }
@@ -265,6 +269,14 @@ fun DetailScreen(
                         style = MaterialTheme.typography.headlineMedium,
                         color = if (star <= myStars) cs.tertiary else cs.onSurfaceVariant.copy(alpha = 0.35f),
                         modifier = Modifier
+                            // 48dp: the minimum touch target. TalkBack reads "N stars, button"
+                            // rather than "★" five times.
+                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                            .semantics {
+                                contentDescription = if (star == 1) "1 star" else "$star stars"
+                                role = Role.Button
+                                selected = star == myStars
+                            }
                             .clickable(enabled = !rateBusy) {
                                 myStars = star
                                 scope.launch {
@@ -275,14 +287,19 @@ fun DetailScreen(
                                             rating = r.rating
                                             ratingCount = r.ratingCount
                                         } else {
+                                            // Reset, or the row below thanks the user for a rating
+                                            // that was rejected. The web store does the same.
+                                            myStars = 0
                                             dialogText = r.error ?: "Could not submit your rating."
                                         }
                                     } catch (e: Exception) {
+                                        myStars = 0
                                         dialogText = e.message ?: "Could not submit your rating."
                                     }
                                     rateBusy = false
                                 }
                             }
+                            .wrapContentSize(Alignment.Center)
                             .padding(horizontal = 4.dp),
                     )
                 }
@@ -354,7 +371,7 @@ fun DetailScreen(
             Spacer(Modifier.height(32.dp))
             Button(
                 enabled = !busy,
-                shape = RectangleShape,
+                shape = CapsuleShape.Full,
                 modifier = Modifier.azTurnstileEntrance(index = 3),
                 onClick = {
                     when {
@@ -402,7 +419,7 @@ fun DetailScreen(
             // and on the web nothing will ever contradict it. This is how the user says so.
             if (held) {
                 Spacer(Modifier.height(10.dp))
-                TextButton(onClick = { onForget(pkg) }, shape = RectangleShape) {
+                TextButton(onClick = { onForget(pkg) }, shape = CapsuleShape.Full) {
                     Text("Not installed? Remove from my library", color = cs.onSurfaceVariant)
                 }
             }
@@ -423,8 +440,9 @@ fun DetailScreen(
 
     dialogText?.let { message ->
         AlertDialog(
+            shape = CapsuleShape.Panel,
             onDismissRequest = { dialogText = null },
-            confirmButton = { TextButton(onClick = { dialogText = null }, shape = RectangleShape) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { dialogText = null }, shape = CapsuleShape.Full) { Text("OK") } },
             title = { Text(if (isPaid(pkg)) "Checkout" else "Install") },
             text = { Text(message) },
         )
@@ -464,6 +482,7 @@ private fun NoHostSheet(
 ) {
     val cs = MaterialTheme.colorScheme
     AlertDialog(
+        shape = CapsuleShape.Panel,
         onDismissRequest = onDismiss,
         title = { Text("Install “${pkg.name}”") },
         text = {
@@ -476,7 +495,7 @@ private fun NoHostSheet(
                 )
                 Button(
                     onClick = { openExternal(downloadUrl(pkg.id, pkg.version)) },
-                    shape = RectangleShape,
+                    shape = CapsuleShape.Full,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
                 ) { Text("Download .azp", fontWeight = FontWeight.Bold) }
@@ -490,15 +509,15 @@ private fun NoHostSheet(
                     hosts.forEach { host ->
                         OutlinedButton(
                             onClick = { openExternal(host.installUrl) },
-                            shape = RectangleShape,
+                            shape = CapsuleShape.Full,
                             modifier = Modifier.fillMaxWidth(),
                         ) { Text("Get ${host.name}") }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onRetry, shape = RectangleShape) { Text("Try again") } },
-        dismissButton = { TextButton(onClick = onDismiss, shape = RectangleShape) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onRetry, shape = CapsuleShape.Full) { Text("Try again") } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = CapsuleShape.Full) { Text("Close") } },
     )
 }
 
@@ -525,6 +544,7 @@ private fun FlagDialog(
     var busy by remember { mutableStateOf(false) }
 
     AlertDialog(
+        shape = CapsuleShape.Panel,
         onDismissRequest = onDismiss,
         title = { Text(if (ipMode) "IP claim" else "Report a problem") },
         text = {
@@ -545,7 +565,7 @@ private fun FlagDialog(
                         onValueChange = { original = it },
                         label = { Text("Your package id (the original)") },
                         singleLine = true,
-                        shape = RectangleShape,
+                        shape = CapsuleShape.Full,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
@@ -553,7 +573,7 @@ private fun FlagDialog(
                         onValueChange = { signature = it },
                         label = { Text("Signature (optional)") },
                         singleLine = true,
-                        shape = RectangleShape,
+                        shape = CapsuleShape.Full,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 } else {
@@ -567,7 +587,7 @@ private fun FlagDialog(
                     value = detail,
                     onValueChange = { detail = it.take(2000) },
                     label = { Text("Details (optional)") },
-                    shape = RectangleShape,
+                    shape = CapsuleShape.Full,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -575,7 +595,7 @@ private fun FlagDialog(
         confirmButton = {
             TextButton(
                 enabled = !busy && (!ipMode || original.isNotBlank()),
-                shape = RectangleShape,
+                shape = CapsuleShape.Full,
                 onClick = {
                     scope.launch {
                         busy = true
@@ -600,6 +620,6 @@ private fun FlagDialog(
                 },
             ) { Text(if (busy) "Sending…" else "Submit") }
         },
-        dismissButton = { TextButton(onClick = onDismiss, shape = RectangleShape) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = CapsuleShape.Full) { Text("Cancel") } },
     )
 }
