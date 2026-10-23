@@ -11,6 +11,7 @@ const listings = [
     sellerId: "seller_1",
     amountCents: 500,
     currency: "USD",
+    status: "active",
     package: { version: "1.0.0", name: "Paid", kind: "code", integrity: "sha256-y" },
   },
 ];

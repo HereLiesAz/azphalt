@@ -37,6 +37,11 @@ interface Env {
   BUYER_SESSION_SECRET?: string;
   ADMIN_TOKEN?: string;
   /**
+   * Optional key material for seller invite codes. Unset, invites are keyed by an HKDF derivation of
+   * `ADMIN_TOKEN` under a distinct label, so a code never exposes a MAC made directly with the token.
+   */
+  CONNECT_INVITE_SECRET?: string;
+  /**
    * Cloudflare's rate-limiting binding (`wrangler.jsonc` § ratelimits), keyed by client IP for the
    * public write endpoints (ratings, reports). The counters live in Cloudflare's rate limiter, not in
    * this Worker's storage, so no IP address is ever written down. Absent in tests and local dev.
@@ -62,6 +67,11 @@ interface CatalogEntry {
   name: string;
   kind: string;
   file?: string;
+  /**
+   * `sha256-<hex>` of the exact file bytes served (`scripts/export-catalog.mjs`). Not `integrity`, which
+   * is the digest of the *unsigned* container and so never matches a signed file.
+   */
+  fileDigest?: string;
   price?: { amountCents: number; currency: string } | null;
   priceStatus?: string;
   [key: string]: unknown;
@@ -209,6 +219,75 @@ async function hmac(secret: string, message: string): Promise<Uint8Array> {
   );
   return new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(message)));
 }
+
+/** HMAC-SHA256 with raw key bytes. */
+async function hmacKeyBytes(key: Uint8Array<ArrayBuffer>, message: string): Promise<Uint8Array> {
+  const k = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode(message)));
+}
+
+/** HKDF-SHA256(ikm, salt "azphalt", info label) → 32 bytes: a sub-key that is independent per label. */
+async function hkdf(ikm: string, label: string): Promise<Uint8Array<ArrayBuffer>> {
+  const key = await crypto.subtle.importKey("raw", enc.encode(ikm), "HKDF", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "HKDF", hash: "SHA-256", salt: enc.encode("azphalt"), info: enc.encode(label) },
+    key,
+    256,
+  );
+  return new Uint8Array(bits);
+}
+
+/**
+ * Read a body stream into memory, giving up as soon as it passes [max] bytes. Content-Length is only a
+ * fast path for an honest client: a chunked or header-less body is counted as it arrives, so nothing
+ * larger than the cap is ever buffered. `undefined` means "too large".
+ */
+async function readCappedStream(
+  body: ReadableStream<Uint8Array> | null,
+  declaredLength: string | null,
+  max: number,
+): Promise<Uint8Array<ArrayBuffer> | undefined> {
+  if (declaredLength !== null && Number(declaredLength) > max) return undefined;
+  if (!body) return new Uint8Array(0);
+  const reader = body.getReader();
+  const parts: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await reader.cancel().catch(() => undefined);
+      return undefined;
+    }
+    parts.push(value);
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const part of parts) {
+    out.set(part, at);
+    at += part.byteLength;
+  }
+  return out;
+}
+
+function readCapped(req: Request, max: number): Promise<Uint8Array<ArrayBuffer> | undefined> {
+  return readCappedStream(req.body, req.headers.get("content-length"), max);
+}
+
+/** Parse a capped JSON body: `"too-large"`, `undefined` for invalid JSON, or the value. */
+async function readCappedJson(req: Request, max: number): Promise<unknown | "too-large"> {
+  const bytes = await readCapped(req, max);
+  if (!bytes) return "too-large";
+  try {
+    return JSON.parse(dec.decode(bytes));
+  } catch {
+    return undefined;
+  }
+}
+
+/** The default cap for a small JSON request body. */
+const MAX_JSON_BODY = 64 * 1024;
 
 function cookieValue(req: Request, name: string): string | undefined {
   const raw = req.headers.get("cookie") || "";
@@ -398,6 +477,15 @@ async function storedSeller(env: Env, sellerId: string): Promise<SellerAccount |
   return response.json() as Promise<SellerAccount>;
 }
 
+/** Store a seller only if none is stored yet; returns whichever row is stored afterwards. */
+async function insertSeller(env: Env, record: SellerAccount): Promise<SellerAccount> {
+  return stateJson<SellerAccount>(env, "/seller/" + encodeURIComponent(record.sellerId) + "?ifAbsent=1", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(record),
+  });
+}
+
 async function storeSeller(env: Env, record: SellerAccount): Promise<SellerAccount> {
   return stateJson<SellerAccount>(env, "/seller/" + encodeURIComponent(record.sellerId), {
     method: "PUT",
@@ -424,8 +512,24 @@ async function refreshSeller(env: Env, sellerId: string, accountId: string): Pro
   return storeSeller(env, sellerFromStripe(sellerId, account));
 }
 
+/**
+ * Whether a listing is open for NEW sales. A listing with no `status` is treated as paused: going live
+ * has to be a deliberate `"active"`, never the accident of a missing field.
+ */
+function isActive(listing: Listing): boolean {
+  return (listing.status ?? "paused") === "active";
+}
+
 function activeListing(listings: Listing[], id: string): Listing | undefined {
-  return listings.find((l) => l.packageId === id && (l.status || "active") === "active");
+  return listings.find((l) => l.packageId === id && isActive(l));
+}
+
+/**
+ * The listing a paid download is served under, whatever its status. Pausing a listing stops new
+ * checkouts; it must never take a package away from buyers who already paid for it.
+ */
+function anyListing(listings: Listing[], id: string): Listing | undefined {
+  return listings.find((l) => l.packageId === id);
 }
 
 function listedPackage(listing: Listing): CatalogEntry {
@@ -448,7 +552,7 @@ function marketplaceCatalog(catalog: CatalogEntry[], listings: Listing[]): Catal
   const free = catalog.map((pkg) => ({ ...pkg, price: null, priceStatus: "free" }));
   const paid = listings
     .filter((listing) =>
-      (listing.status || "active") === "active" &&
+      isActive(listing) &&
       !publicIds.has(listing.packageId)
     )
     .map(listedPackage);
@@ -489,6 +593,7 @@ async function stripe(env: Env, path: string, init: RequestInit): Promise<Record
     throw new Error("Stripe returned invalid JSON");
   }
   if (!response.ok) {
+    // Kept for the logs only: Stripe's text can name accounts (`acct_…`) and is never sent to a client.
     const error = body.error as { message?: string } | undefined;
     throw new Error(error?.message || "Stripe request failed");
   }
@@ -557,13 +662,11 @@ async function allowWrite(req: Request, env: Env): Promise<boolean> {
   return (await env.WRITE_LIMITER.limit({ key })).success;
 }
 
-async function readJson(req: Request): Promise<Record<string, unknown> | undefined> {
-  try {
-    const body = await req.json();
-    return body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : undefined;
-  } catch {
-    return undefined;
-  }
+async function readJson(req: Request, max = MAX_JSON_BODY): Promise<Record<string, unknown> | undefined> {
+  const body = await readCappedJson(req, max);
+  return body && body !== "too-large" && typeof body === "object" && !Array.isArray(body)
+    ? body as Record<string, unknown>
+    : undefined;
 }
 
 /**
@@ -585,7 +688,8 @@ async function rate(req: Request, env: Env): Promise<Response> {
 
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
   const free = catalog.some((pkg) => pkg.id === packageId);
-  const paid = !free && !!activeListing(listings, packageId);
+  // A paused listing's existing owners can still rate it; only the rater's ownership matters.
+  const paid = !free && !!anyListing(listings, packageId);
   if (!free && !paid) return json({ error: "unknown package: " + packageId }, 404);
 
   const subjects = await readBuyerSubjects(req, env);
@@ -649,7 +753,7 @@ async function fileReport(req: Request, env: Env): Promise<Response> {
   }
 
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  if (!catalog.some((pkg) => pkg.id === packageId) && !activeListing(listings, packageId)) {
+  if (!catalog.some((pkg) => pkg.id === packageId) && !anyListing(listings, packageId)) {
     return json({ error: "unknown package: " + packageId }, 404);
   }
 
@@ -683,10 +787,8 @@ async function publishPackage(req: Request, env: Env): Promise<Response> {
     const key = req.headers.get("cf-connecting-ip") || "unknown";
     if (!(await env.PUBLISH_LIMITER.limit({ key })).success) return fail(429, "rate_limited", "too many publishes");
   }
-  if (Number(req.headers.get("content-length") || "0") > MAX_PUBLISH_BYTES) {
-    return fail(413, "payload_too_large", `package exceeds ${MAX_PUBLISH_BYTES} bytes`);
-  }
-  const bytes = new Uint8Array(await req.arrayBuffer());
+  const bytes = await readCapped(req, MAX_PUBLISH_BYTES);
+  if (!bytes) return fail(413, "payload_too_large", `package exceeds ${MAX_PUBLISH_BYTES} bytes`);
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
   const result = await publish(bytes, env, {
     catalogVersion: async (id) => catalog.find((pkg) => pkg.id === id)?.version,
@@ -719,7 +821,7 @@ async function revocationFeed(req: Request, env: Env): Promise<Response> {
 /** The version a moderator's yank applies to: the one named, or the version the store serves now. */
 async function servedVersion(req: Request, env: Env, id: string): Promise<string | undefined> {
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
-  return catalog.find((pkg) => pkg.id === id)?.version ?? activeListing(listings, id)?.package.version;
+  return catalog.find((pkg) => pkg.id === id)?.version ?? anyListing(listings, id)?.package.version;
 }
 
 async function yank(env: Env, id: string, version: string, reason: string | undefined): Promise<Revocation> {
@@ -804,13 +906,9 @@ const MAX_UPDATES_ENTRIES = 5000;
  * ahead, unknown and yanked-out ids are omitted. Read-only despite the verb.
  */
 async function batchUpdates(req: Request, env: Env): Promise<Response> {
-  if (Number(req.headers.get("content-length") || "0") > MAX_UPDATES_BODY) {
-    return REPO_ERROR(413, "payload_too_large", "an update check body is at most 1 MB");
-  }
-  let parsed: unknown;
-  try {
-    parsed = await req.json();
-  } catch {
+  const parsed = await readCappedJson(req, MAX_UPDATES_BODY);
+  if (parsed === "too-large") return REPO_ERROR(413, "payload_too_large", "an update check body is at most 1 MB");
+  if (parsed === undefined) {
     return REPO_ERROR(400, "bad_request", "invalid JSON body: expected an array of { id, version }");
   }
   if (!Array.isArray(parsed)) return REPO_ERROR(400, "bad_request", "body must be a JSON array of { id, version }");
@@ -842,10 +940,9 @@ const MAX_INSTALL_BODY = 256 * 1024;
 
 /** `POST /installs` — install/uninstall transitions against report tokens (repository-api.md § 8). */
 async function reportInstalls(req: Request, env: Env): Promise<Response> {
-  if (Number(req.headers.get("content-length") || "0") > MAX_INSTALL_BODY) {
-    return REPO_ERROR(413, "payload_too_large", "at most 200 events per request");
-  }
-  const body = await readJson(req);
+  const raw = await readCappedJson(req, MAX_INSTALL_BODY);
+  if (raw === "too-large") return REPO_ERROR(413, "payload_too_large", "at most 200 events per request");
+  const body = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : undefined;
   const events = body?.events;
   if (!Array.isArray(events) || events.length > 200) {
     return REPO_ERROR(400, "bad_request", "body must be { events: [...] } with at most 200 events");
@@ -883,6 +980,8 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
   if (!env.PLAY_PACKAGE_NAME || !serviceAccount) {
     return REPO_ERROR(501, "not_implemented", "Play purchase verification is not configured");
   }
+  // Every call can cost a Google token exchange and a Play API call, so it shares the write limiter.
+  if (!(await allowWrite(req, env))) return REPO_ERROR(429, "rate_limited", "too many requests");
   const body = await readJson(req);
   if (!body) return REPO_ERROR(400, "bad_request", "body must be a JSON object");
   const { packageId, productId, purchaseToken } = body;
@@ -923,6 +1022,9 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
     issuedAt: new Date().toISOString(),
     ...(grant.expiresAt ? { expiresAt: grant.expiresAt } : {}),
   });
+  // Acknowledge only now that the licence exists: if issuing had failed, the purchase would stay
+  // unacknowledged and Play would refund it after three days instead of the buyer paying for nothing.
+  await grant.acknowledge?.();
   return json({ entitlement: encodeToken(token) });
 }
 
@@ -1042,18 +1144,23 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   if (!env.STRIPE_SECRET_KEY) {
     return json({ error: "Checkout is temporarily unavailable." }, 503);
   }
+  // Each checkout makes two Stripe calls and writes a session row, so it is throttled like any write.
+  if (!(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
 
-  let body: { packageId?: unknown };
-  try {
-    body = await req.json() as { packageId?: unknown };
-  } catch {
-    return json({ error: "invalid JSON body" }, 400);
-  }
+  const body = await readJson(req);
+  if (!body) return json({ error: "invalid JSON body" }, 400);
 
   const packageId = typeof body.packageId === "string" ? body.packageId.trim() : "";
   if (!PACKAGE_ID.test(packageId)) return json({ error: "packageId is required" }, 400);
+  // Optional: prefills Checkout's email field. Checkout always collects one, and the buyer's receipt
+  // and any licence recovery (README § Recovering a purchase) go through it.
+  const email = typeof body.email === "string" && /^[^\s@]{1,64}@[^\s@]{1,190}$/.test(body.email.trim())
+    ? body.email.trim()
+    : undefined;
 
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
+  const known = anyListing(listings, packageId);
+  if (known && !isActive(known)) return json({ error: "this package is not on sale right now" }, 409);
   const listing = activeListing(listings, packageId);
   if (!listing) return json({ error: "package is not listed for sale" }, 404);
   if (catalog.some((p) => p.id === packageId)) {
@@ -1096,6 +1203,7 @@ async function checkout(req: Request, env: Env): Promise<Response> {
     "metadata[packageId]": packageId,
     "metadata[buyerId]": buyerId,
     "metadata[interval]": listing.interval,
+    customer_email: email,
   };
 
   if (listing.interval) {
@@ -1105,6 +1213,10 @@ async function checkout(req: Request, env: Env): Promise<Response> {
     fields["subscription_data[transfer_data][destination]"] = destination;
   } else {
     fields.mode = "payment";
+    // A Customer (with the email Checkout collects) makes the purchase findable in the dashboard by
+    // email, which is how a buyer who lost the cookie and the success link gets their licence back.
+    // Subscription mode always creates one.
+    fields.customer_creation = "always";
     fields["payment_intent_data[application_fee_amount]"] = String(applicationFee);
     fields["payment_intent_data[transfer_data][destination]"] = destination;
   }
@@ -1118,7 +1230,7 @@ async function checkout(req: Request, env: Env): Promise<Response> {
         // request"). The key therefore has to cover everything that shapes the session — payout
         // destination, fee and currency too — or a seller's account change or a fee-rate change would
         // make every retry by the same buyer fail for 24 hours.
-        "idempotency-key": await idempotencyKey(["azp", packageId, buyerId, listing.amountCents, listing.currency, applicationFee, destination, listing.interval ?? ""]),
+        "idempotency-key": await idempotencyKey(["azp", packageId, buyerId, listing.amountCents, listing.currency, applicationFee, destination, listing.interval ?? "", email ?? ""]),
       },
       body: urlForm(fields),
     });
@@ -1155,21 +1267,37 @@ async function checkout(req: Request, env: Env): Promise<Response> {
       cookie ? { "set-cookie": cookie } : {},
     );
   } catch (error) {
+    // Stripe's message stays in the log: it can name the seller's account, which clients never see.
     console.error("checkout failed", error);
-    return json({ error: error instanceof Error ? error.message : "checkout failed" }, 502);
+    return json({ error: "checkout failed; please try again" }, 502);
   }
 }
 
+/** How long an invite code stays valid after it is minted. */
+const INVITE_TTL_MS = 7 * 24 * 3600 * 1000;
+
 /**
- * The invite code that lets one seller onboard themselves: `HMAC-SHA256(ADMIN_TOKEN, "connect-invite:" +
- * sellerId)`, base64url. Stateless (nothing to store or expire), bound to a single sellerId, and
- * unforgeable without the operator's token — rotating `ADMIN_TOKEN` revokes every outstanding code.
+ * The invite code that lets one seller onboard themselves: `<issuedAt base36>.<mac>`, where mac is
+ * `HMAC-SHA256(K, "connect-invite:v2:" + sellerId + ":" + issuedAt)` and K is `CONNECT_INVITE_SECRET`
+ * or, unset, `HKDF(ADMIN_TOKEN, info "azphalt connect-invite v2")`. Bound to one sellerId, expires
+ * after {@link INVITE_TTL_MS}, and never a MAC keyed by the admin token itself. Rotating either secret
+ * revokes every outstanding code.
  */
-async function connectInvite(env: Env, sellerId: string): Promise<string> {
-  const mac = await hmac(env.ADMIN_TOKEN ?? "", "connect-invite:" + sellerId);
-  let binary = "";
-  for (const b of mac) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function connectInvite(env: Env, sellerId: string, issuedAt = Date.now()): Promise<string> {
+  const key = await hkdf(env.CONNECT_INVITE_SECRET || env.ADMIN_TOKEN || "", "azphalt connect-invite v2");
+  const stamp = Math.floor(issuedAt / 1000).toString(36);
+  return stamp + "." + b64url(await hmacKeyBytes(key, "connect-invite:v2:" + sellerId + ":" + stamp));
+}
+
+async function validInvite(env: Env, sellerId: string, code: string): Promise<boolean> {
+  if (!env.ADMIN_TOKEN && !env.CONNECT_INVITE_SECRET) return false;
+  const dot = code.indexOf(".");
+  if (dot < 1) return false;
+  const issuedAt = parseInt(code.slice(0, dot), 36) * 1000;
+  if (!Number.isFinite(issuedAt)) return false;
+  const age = Date.now() - issuedAt;
+  if (age < -60_000 || age > INVITE_TTL_MS) return false;
+  return timingSafeEqual(code, await connectInvite(env, sellerId, issuedAt));
 }
 
 /** `POST /api/admin/connect/invite` `{ sellerId }` — mint the code to hand to that seller. Bearer `ADMIN_TOKEN`. */
@@ -1178,7 +1306,12 @@ async function adminConnectInvite(req: Request, env: Env): Promise<Response> {
   const body = await readJson(req);
   const sellerId = typeof body?.sellerId === "string" ? body.sellerId.trim() : "";
   if (!sellerId || sellerId.length > 128) return json({ error: "sellerId is required" }, 400);
-  return json({ sellerId, inviteCode: await connectInvite(env, sellerId) });
+  const issuedAt = Date.now();
+  return json({
+    sellerId,
+    inviteCode: await connectInvite(env, sellerId, issuedAt),
+    expiresAt: new Date(issuedAt - issuedAt % 1000 + INVITE_TTL_MS).toISOString(),
+  });
 }
 
 /** A short, stable Stripe idempotency key derived from every parameter that shapes the request. */
@@ -1210,28 +1343,58 @@ async function connectOnboard(req: Request, env: Env): Promise<Response> {
   // operator issued for it. Without this, anyone could onboard their own bank account against someone
   // else's id before the real seller does.
   const invited =
-    typeof body.inviteCode === "string" &&
-    !!env.ADMIN_TOKEN &&
-    timingSafeEqual(body.inviteCode, await connectInvite(env, sellerId));
+    typeof body.inviteCode === "string" && await validInvite(env, sellerId, body.inviteCode);
   if (!adminAuthorized(req, env) && !invited) return json({ error: "an invite code from the operator is required" }, 401);
   const email = typeof body.email === "string" && body.email.trim() ? body.email.trim() : undefined;
   const country = typeof body.country === "string" && body.country.trim() ? body.country.trim().toUpperCase() : undefined;
 
   try {
     let seller = await storedSeller(env, sellerId);
+    // A reviewed listing that pins a payout account decides where this seller is paid. Onboarding may
+    // only ever continue THAT account; anything else (a fresh account, or a different stored one) is
+    // refused, and the operator binds the pinned account with `PUT /api/admin/connect/sellers/{id}`.
+    const pinned = pinnedAccounts(await getListings(req, env), sellerId);
+    if (pinned.size > 1) return json({ error: "this seller's listings pin more than one payout account" }, 409);
+    const pin = [...pinned][0];
+    if (pin && seller?.accountId !== pin) {
+      return json({ error: "this seller's listings pin a payout account; the operator must bind it" }, 409);
+    }
     if (!seller) {
-      const account = await stripe(env, "/v1/accounts", {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: urlForm({
-          type: "express",
-          "capabilities[transfers][requested]": "true",
-          "capabilities[card_payments][requested]": "true",
-          email,
-          country,
-        }),
-      });
-      seller = await storeSeller(env, sellerFromStripe(sellerId, account));
+      // Two onboard calls at once must not create two Stripe accounts. The claim is taken atomically
+      // in the Durable Object; whoever loses it is told to retry, and the stored row is insert-only.
+      const claim = await state(env).fetch(new Request(
+        "https://state.internal/seller-claim/" + encodeURIComponent(sellerId),
+        { method: "POST" },
+      ));
+      if (claim.status === 409) return json({ error: "onboarding for this seller is already in progress; retry shortly" }, 409);
+      if (!claim.ok) throw new Error("seller claim failed");
+      const { claimedAt } = await claim.json() as { claimedAt: string };
+      try {
+        seller = await storedSeller(env, sellerId);
+        if (!seller) {
+          const account = await stripe(env, "/v1/accounts", {
+            method: "POST",
+            headers: {
+              "content-type": "application/x-www-form-urlencoded",
+              // A network retry of this same attempt reuses the account rather than making another.
+              "idempotency-key": await idempotencyKey(["azp-connect", sellerId, claimedAt]),
+            },
+            body: urlForm({
+              type: "express",
+              "capabilities[transfers][requested]": "true",
+              "capabilities[card_payments][requested]": "true",
+              email,
+              country,
+            }),
+          });
+          seller = await insertSeller(env, sellerFromStripe(sellerId, account));
+        }
+      } finally {
+        await state(env).fetch(new Request(
+          "https://state.internal/seller-claim/" + encodeURIComponent(sellerId),
+          { method: "DELETE" },
+        ));
+      }
     } else {
       seller = await refreshSeller(env, sellerId, seller.accountId);
     }
@@ -1251,8 +1414,53 @@ async function connectOnboard(req: Request, env: Env): Promise<Response> {
     if (typeof link.url !== "string" || !link.url) throw new Error("Stripe returned no onboarding URL");
     return json({ url: link.url, accountId: seller.accountId });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "onboarding failed" }, 502);
+    console.error("onboarding failed", error);
+    return json({ error: "onboarding failed; please try again" }, 502);
   }
+}
+
+/** The `stripeAccountId`s this seller's reviewed listings pin. */
+function pinnedAccounts(listings: Listing[], sellerId: string): Set<string> {
+  return new Set(
+    listings
+      .filter((l) => l.sellerId === sellerId && typeof l.stripeAccountId === "string" && l.stripeAccountId)
+      .map((l) => l.stripeAccountId as string),
+  );
+}
+
+/**
+ * `PUT /api/admin/connect/sellers/{sellerId}` `{ accountId }` — bind (or rebind) a seller to a Stripe
+ * account, e.g. after onboarding the wrong one. `DELETE` the same path unbinds it, so the seller can
+ * onboard afresh. A rebind that contradicts an account the seller's listings pin is refused: the
+ * listing is what a maintainer reviewed. Bearer `ADMIN_TOKEN`.
+ */
+async function adminBindSeller(req: Request, env: Env, sellerId: string): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  if (!sellerId || sellerId.length > 128) return json({ error: "sellerId is required" }, 400);
+  if (req.method === "DELETE") {
+    const res = await state(env).fetch(new Request(
+      "https://state.internal/seller/" + encodeURIComponent(sellerId),
+      { method: "DELETE" },
+    ));
+    return res.ok ? new Response(null, { status: 204 }) : json({ error: "seller not bound" }, 404);
+  }
+  const body = await readJson(req);
+  const accountId = typeof body?.accountId === "string" ? body.accountId.trim() : "";
+  if (!/^acct_[A-Za-z0-9]{1,64}$/.test(accountId)) return json({ error: "accountId must be a Stripe acct_ id" }, 400);
+  const pinned = pinnedAccounts(await getListings(req, env), sellerId);
+  if (pinned.size > 0 && !(pinned.size === 1 && pinned.has(accountId))) {
+    return json({ error: "this seller's listings pin a different payout account" }, 409);
+  }
+  if (!env.STRIPE_SECRET_KEY) return json({ error: "Stripe is not configured" }, 503);
+  let account: Record<string, unknown>;
+  try {
+    account = await stripe(env, "/v1/accounts/" + encodeURIComponent(accountId), { method: "GET" });
+  } catch (error) {
+    console.error("seller bind failed", error);
+    return json({ error: "could not read that account from Stripe" }, 502);
+  }
+  const seller = await storeSeller(env, sellerFromStripe(sellerId, account));
+  return json({ seller });
 }
 
 async function connectStatus(req: Request, env: Env): Promise<Response> {
@@ -1277,7 +1485,8 @@ async function connectStatus(req: Request, env: Env): Promise<Response> {
       detailsSubmitted: seller.detailsSubmitted,
     });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "seller status failed" }, 502);
+    console.error("seller status failed", error);
+    return json({ error: "seller status failed" }, 502);
   }
 }
 
@@ -1303,7 +1512,10 @@ async function validStripeWebhook(payload: string, header: string | null, env: E
   const time = Number(parsed.timestamp) * 1000;
   if (!Number.isFinite(time) || Math.abs(Date.now() - time) > 300000) return false;
   const want = bytesHex(await hmac(env.STRIPE_WEBHOOK_SECRET, parsed.timestamp + "." + payload));
-  return parsed.signatures.some((candidate) => candidate.length === want.length && candidate === want);
+  let ok = false;
+  // Every candidate is compared in constant time, and all of them are compared.
+  for (const candidate of parsed.signatures) if (timingSafeEqual(candidate, want)) ok = true;
+  return ok;
 }
 
 function objectId(value: unknown): string | undefined {
@@ -1379,6 +1591,7 @@ async function webhook(req: Request, env: Env): Promise<Response> {
       if (!packageId || !buyerId || !sessionId) return json({ received: true, fulfilled: false });
 
       await entitlementFor(env, sessionId, packageId, buyerId, interval);
+      await recordPaymentRefs(env, sessionId, object);
 
       const subscriptionId = objectId(object.subscription);
       if (subscriptionId && interval) {
@@ -1412,7 +1625,41 @@ async function webhook(req: Request, env: Env): Promise<Response> {
         interval: "month" | "year";
       };
       await entitlementFor(env, "invoice:" + invoiceId, sub.packageId, sub.subject, sub.interval);
+      await recordPaymentRefs(env, "invoice:" + invoiceId, { invoice: invoiceId, payment_intent: object.payment_intent });
       return json({ received: true, renewed: true });
+    }
+
+    // A refund or a chargeback takes away THAT purchase's licence — one entitlement, never the version
+    // every other buyer paid for. A partial refund is a goodwill gesture and keeps the licence.
+    if (event.type === "charge.refunded") {
+      if (object.refunded !== true) return json({ received: true, revoked: false });
+      const sessionId = await sessionForPayment(env, {
+        paymentIntent: objectId(object.payment_intent),
+        invoice: objectId(object.invoice),
+        charge: objectId(object.id),
+      });
+      const revoked = sessionId ? await revokeEntitlement(env, sessionId, "refund") : false;
+      return json({ received: true, revoked });
+    }
+
+    if (event.type === "charge.dispute.created" || event.type === "charge.dispute.closed") {
+      const sessionId = await sessionForPayment(env, {
+        paymentIntent: objectId(object.payment_intent),
+        charge: objectId(object.charge),
+      });
+      if (!sessionId) return json({ received: true, revoked: false });
+      if (event.type === "charge.dispute.created") {
+        return json({ received: true, revoked: await revokeEntitlement(env, sessionId, "dispute") });
+      }
+      // Won: the money came back, so the licence does too (a refund-based revocation is left alone).
+      if (object.status === "won") {
+        const res = await state(env).fetch(new Request(
+          "https://state.internal/entitlement-revocation/" + encodeURIComponent(sessionId) + "?reason=dispute",
+          { method: "DELETE" },
+        ));
+        return json({ received: true, restored: res.ok });
+      }
+      return json({ received: true, restored: false });
     }
 
     if (event.type === "customer.subscription.deleted") {
@@ -1448,7 +1695,111 @@ async function webhook(req: Request, env: Env): Promise<Response> {
   }
 }
 
+/** Remember which Stripe payment objects paid for an entitlement, so a refund or dispute can find it. */
+async function recordPaymentRefs(env: Env, sessionId: string, object: Record<string, unknown>): Promise<void> {
+  const refs = [
+    ["pi", objectId(object.payment_intent)],
+    ["in", objectId(object.invoice)],
+  ].filter((pair): pair is [string, string] => typeof pair[1] === "string" && pair[1].length > 0);
+  for (const [kind, id] of refs) {
+    await stateJson(env, "/payment-ref/" + encodeURIComponent(kind + ":" + id), {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    });
+  }
+}
+
+/**
+ * The entitlement (session id) a charge paid for: from the refs recorded at fulfilment, then a renewal
+ * invoice's own entitlement, and last — for purchases fulfilled before refs were recorded — Stripe's
+ * own lookup of the Checkout Session by payment intent.
+ */
+async function sessionForPayment(
+  env: Env,
+  refs: { paymentIntent?: string; invoice?: string; charge?: string },
+): Promise<string | undefined> {
+  const candidates = [
+    refs.paymentIntent && "pi:" + refs.paymentIntent,
+    refs.invoice && "in:" + refs.invoice,
+  ].filter((x): x is string => !!x);
+  for (const ref of candidates) {
+    const res = await state(env).fetch(new Request("https://state.internal/payment-ref/" + encodeURIComponent(ref)));
+    if (res.ok) return ((await res.json()) as { sessionId: string }).sessionId;
+  }
+  if (refs.invoice) {
+    const renewal = await state(env).fetch(
+      new Request("https://state.internal/entitlement/" + encodeURIComponent("invoice:" + refs.invoice)),
+    );
+    if (renewal.ok) return "invoice:" + refs.invoice;
+  }
+  if (refs.paymentIntent && env.STRIPE_SECRET_KEY) {
+    try {
+      const list = await stripe(
+        env,
+        "/v1/checkout/sessions?limit=1&payment_intent=" + encodeURIComponent(refs.paymentIntent),
+        { method: "GET" },
+      );
+      const data = Array.isArray(list.data) ? list.data as Record<string, unknown>[] : [];
+      if (typeof data[0]?.id === "string") return data[0].id;
+    } catch (error) {
+      console.error("checkout session lookup failed", error);
+    }
+  }
+  return undefined;
+}
+
+/** Revoke one entitlement. False when there is no such entitlement. */
+async function revokeEntitlement(env: Env, sessionId: string, reason: "refund" | "dispute"): Promise<boolean> {
+  const res = await state(env).fetch(new Request(
+    "https://state.internal/entitlement-revocation/" + encodeURIComponent(sessionId),
+    {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason, revokedAt: new Date().toISOString() }),
+    },
+  ));
+  return res.ok;
+}
+
+async function tokenRevoked(env: Env, token: EntitlementToken): Promise<boolean> {
+  const { revoked } = await stateJson<{ revoked: boolean }>(
+    env,
+    "/token-revoked?signature=" + encodeURIComponent(token.signature),
+  );
+  return revoked;
+}
+
+async function entitlementRevoked(env: Env, sessionId: string): Promise<boolean> {
+  const res = await state(env).fetch(new Request(
+    "https://state.internal/entitlement-revocation/" + encodeURIComponent(sessionId),
+  ));
+  return res.ok;
+}
+
+/**
+ * `GET /api/admin/entitlements/{sessionId}` — recover a buyer's licence. A buyer who lost both the
+ * cookie and the success link is found in the Stripe dashboard by the email Checkout collected; the
+ * Checkout Session id there returns their token here, to send back to them. Bearer `ADMIN_TOKEN`.
+ */
+async function adminEntitlement(req: Request, env: Env, sessionId: string): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  const res = await state(env).fetch(new Request("https://state.internal/entitlement/" + encodeURIComponent(sessionId)));
+  if (!res.ok) return json({ error: "no entitlement for that session" }, 404);
+  const record = await res.json() as EntitlementRecord;
+  return json({
+    sessionId: record.sessionId,
+    packageId: record.packageId,
+    issuedAt: record.issuedAt,
+    revoked: await entitlementRevoked(env, sessionId),
+    token: encodeToken(record.token),
+  });
+}
+
 async function sessionResult(req: Request, env: Env, id: string): Promise<Response> {
+  if (await entitlementRevoked(env, id)) {
+    return json({ status: "revoked", error: "this purchase was refunded or disputed" }, 403);
+  }
   const existing = await state(env).fetch(
     new Request("https://state.internal/entitlement/" + encodeURIComponent(id)),
   );
@@ -1501,6 +1852,7 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
     session.buyerId,
     session.interval,
   );
+  await recordPaymentRefs(env, id, remote);
 
   const subscriptionId = objectId(remote.subscription);
   if (subscriptionId && session.interval) {
@@ -1574,6 +1926,8 @@ function adminAuthorized(req: Request, env: Env): boolean {
   return timingSafeEqual(req.headers.get("authorization") ?? "", "Bearer " + env.ADMIN_TOKEN);
 }
 
+const MAX_PROTECTED_BYTES = 100_000_000;
+
 async function adminUpload(req: Request, env: Env, id: string, version: string): Promise<Response> {
   if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
   if (!PACKAGE_ID.test(id) || !VERSION.test(version)) return json({ error: "invalid package coordinate" }, 400);
@@ -1588,10 +1942,8 @@ async function adminUpload(req: Request, env: Env, id: string, version: string):
     return json({ error: "uploaded version does not match the reviewed paid listing" }, 409);
   }
 
-  const length = Number(req.headers.get("content-length") || "0");
-  if (length > 100000000) return json({ error: "package exceeds the free-plan 100 MB request limit" }, 413);
-  const body = new Uint8Array(await req.arrayBuffer());
-  if (body.byteLength > 100000000) return json({ error: "package exceeds the free-plan 100 MB request limit" }, 413);
+  const body = await readCapped(req, MAX_PROTECTED_BYTES);
+  if (!body) return json({ error: "package exceeds the free-plan 100 MB request limit" }, 413);
   if (typeof listing.package.bytes === "number" && listing.package.bytes !== body.byteLength) {
     return json({ error: "uploaded byte size does not match the reviewed paid listing" }, 409);
   }
@@ -1618,8 +1970,11 @@ async function adminUpload(req: Request, env: Env, id: string, version: string):
  * Mint the `azphalt-report-token` for one full download (repository-api.md § 8). Ranged responses get
  * none: one logical transfer is many range requests.
  */
-async function withReportToken(env: Env, res: Response, id: string, version: string): Promise<Response> {
+async function withReportToken(req: Request, env: Env, res: Response, id: string, version: string): Promise<Response> {
   if (res.status !== 200) return res;
+  // Each token is a Durable Object write. Past the write limit the download still goes through; it just
+  // carries no token, so that install is not counted.
+  if (!(await allowWrite(req, env))) return res;
   const { token } = await stateJson<{ token: string }>(env, "/report-token", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -1669,8 +2024,8 @@ async function download(req: Request, env: Env, id: string, version: string): Pr
     // The catalog was exported at deploy time, but these bytes come from the git branch, which moves the
     // moment a PR merges. If the store's file is not the size the catalog recorded, the two are out of
     // step (or the file was swapped) — refuse rather than hand out bytes the catalog never described.
-    // (`integrity` is the digest of the UNSIGNED container, so size is the check available without
-    // buffering the whole body; the clients' `expectedDigest` covers the rest.)
+    // (`integrity` is the digest of the UNSIGNED container and cannot be checked against signed bytes;
+    // `fileDigest`, the digest of the served file, is checked below for a full download.)
     if (typeof publicPkg.bytes === "number") {
       const total =
         upstream.status === 206
@@ -1689,10 +2044,23 @@ async function download(req: Request, env: Env, id: string, version: string): Pr
       const value = upstream.headers.get(name);
       if (value) out.set(name, value);
     }
-    return withReportToken(env, new Response(upstream.body, { status: upstream.status, headers: out }), id, version);
+    let served: BodyInit | null = upstream.body;
+    // A full download is checked byte-for-byte against the digest the catalog recorded for this file, so
+    // a same-size swap on the moving branch is refused rather than served as the catalogued package.
+    if (upstream.status === 200 && typeof publicPkg.fileDigest === "string" && /^sha256-[0-9a-f]{64}$/.test(publicPkg.fileDigest)) {
+      const cap = typeof publicPkg.bytes === "number" ? publicPkg.bytes : MAX_PUBLISH_BYTES * 4;
+      const bytes = await readCappedStream(upstream.body, upstream.headers.get("content-length"), cap);
+      if (!bytes || (await sha256Integrity(bytes)) !== publicPkg.fileDigest) {
+        return json({ error: { code: "bad_gateway", message: "the package store and the catalog disagree about " + id + "@" + version } }, 502);
+      }
+      served = bytes;
+      out.set("content-length", String(bytes.byteLength));
+    }
+    return withReportToken(req, env, new Response(served, { status: upstream.status, headers: out }), id, version);
   }
 
-  const listing = activeListing(listings, id);
+  // Any listing, paused or not: pausing stops new checkouts, never an owner's downloads.
+  const listing = anyListing(listings, id);
   if (!listing || listing.package.version !== version) {
     return json({ error: "package version not found" }, 404);
   }
@@ -1702,6 +2070,9 @@ async function download(req: Request, env: Env, id: string, version: string): Pr
   const token = decodeToken(auth.slice(7).trim());
   if (!token || !(await verifyEntitlement(env, token, id))) {
     return json({ error: "invalid or expired entitlement" }, 401);
+  }
+  if (await tokenRevoked(env, token)) {
+    return json({ error: "this entitlement was revoked after a refund or dispute" }, 403);
   }
 
   const headers = new Headers();
@@ -1720,7 +2091,7 @@ async function download(req: Request, env: Env, id: string, version: string): Pr
   out.set("content-type", "application/vnd.azphalt.package");
   out.set("content-disposition", 'attachment; filename="' + id + "-" + version + '.azp"');
   out.set("cache-control", "private, no-store");
-  return withReportToken(env, new Response(stored.body, { status: stored.status, headers: out }), id, version);
+  return withReportToken(req, env, new Response(stored.body, { status: stored.status, headers: out }), id, version);
 }
 
 function first(iter: Iterable<Record<string, unknown>>): Record<string, unknown> | undefined {
@@ -1762,6 +2133,23 @@ export class AzphaltState {
       sql.exec(
         "CREATE INDEX IF NOT EXISTS entitlements_subject_idx " +
         "ON entitlements(subject, issued_at DESC)"
+      );
+      // Per-purchase revocations (refund, chargeback). Keyed by the entitlement's session id; the token
+      // signature is what a download presents, so it is indexed too.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS entitlement_revocations (" +
+        "session_id TEXT PRIMARY KEY, signature TEXT NOT NULL, reason TEXT NOT NULL, revoked_at TEXT NOT NULL)"
+      );
+      sql.exec(
+        "CREATE INDEX IF NOT EXISTS entitlement_revocations_sig_idx ON entitlement_revocations(signature)"
+      );
+      // Stripe payment objects (`pi:<payment_intent>`, `in:<invoice>`) → the entitlement they paid for.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS payment_refs (ref TEXT PRIMARY KEY, session_id TEXT NOT NULL)"
+      );
+      // An in-flight onboarding, so two at once cannot create two Stripe accounts for one seller.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS seller_claims (seller_id TEXT PRIMARY KEY, claimed_at TEXT NOT NULL)"
       );
       sql.exec(
         "CREATE TABLE IF NOT EXISTS subscriptions (" +
@@ -1910,6 +2298,12 @@ export class AzphaltState {
           status: string;
           createdAt: string;
         };
+        // A Checkout Session expires after 24 hours and fulfilment stores its own entitlement, so a
+        // session row older than 30 days is never read again: drop those rather than grow forever.
+        sql.exec(
+          "DELETE FROM sessions WHERE created_at < ?",
+          new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
+        );
         sql.exec(
           "INSERT INTO sessions(id,package_id,buyer_id,interval,status,created_at) VALUES(?,?,?,?,?,?) " +
           "ON CONFLICT(id) DO UPDATE SET status=excluded.status",
@@ -1970,7 +2364,8 @@ export class AzphaltState {
       const subject = url.searchParams.get("subject") || "";
       return json(rows(sql.exec(
         "SELECT session_id,subject,package_id,token_json,issued_at FROM entitlements " +
-        "WHERE subject=? ORDER BY issued_at DESC",
+        "WHERE subject=? AND session_id NOT IN (SELECT session_id FROM entitlement_revocations) " +
+        "ORDER BY issued_at DESC",
         subject,
       )).map((row) => ({
         sessionId: String(row.session_id),
@@ -1981,9 +2376,87 @@ export class AzphaltState {
       })));
     }
 
+    match = path.match(/^\/entitlement-revocation\/([^/]+)$/);
+    if (match) {
+      const sessionId = decodeURIComponent(match[1]);
+      if (req.method === "GET") {
+        const row = first(sql.exec("SELECT reason,revoked_at FROM entitlement_revocations WHERE session_id=?", sessionId));
+        return row
+          ? json({ sessionId, reason: String(row.reason), revokedAt: String(row.revoked_at) })
+          : json({ error: "not found" }, 404);
+      }
+      if (req.method === "PUT") {
+        const { reason, revokedAt } = await req.json() as { reason: string; revokedAt: string };
+        const ent = first(sql.exec("SELECT token_json FROM entitlements WHERE session_id=?", sessionId));
+        if (!ent) return json({ error: "no such entitlement" }, 404);
+        const signature = String((JSON.parse(String(ent.token_json)) as EntitlementToken).signature);
+        // A refund outranks a dispute: once refunded, a later "dispute won" must not restore it.
+        sql.exec(
+          "INSERT INTO entitlement_revocations(session_id,signature,reason,revoked_at) VALUES(?,?,?,?) " +
+          "ON CONFLICT(session_id) DO UPDATE SET reason=CASE WHEN excluded.reason='refund' THEN 'refund' ELSE reason END",
+          sessionId,
+          signature,
+          reason,
+          revokedAt,
+        );
+        return json({ sessionId, revoked: true });
+      }
+      if (req.method === "DELETE") {
+        const only = url.searchParams.get("reason");
+        const removed = rows(only
+          ? sql.exec("DELETE FROM entitlement_revocations WHERE session_id=? AND reason=? RETURNING session_id", sessionId, only)
+          : sql.exec("DELETE FROM entitlement_revocations WHERE session_id=? RETURNING session_id", sessionId));
+        return json({ removed: removed.length > 0 }, removed.length > 0 ? 200 : 404);
+      }
+    }
+
+    if (req.method === "GET" && path === "/token-revoked") {
+      const signature = url.searchParams.get("signature") || "";
+      const row = first(sql.exec("SELECT 1 AS hit FROM entitlement_revocations WHERE signature=? LIMIT 1", signature));
+      return json({ revoked: !!row });
+    }
+
+    match = path.match(/^\/payment-ref\/([^/]+)$/);
+    if (match) {
+      const ref = decodeURIComponent(match[1]);
+      if (req.method === "PUT") {
+        const { sessionId } = await req.json() as { sessionId: string };
+        sql.exec("INSERT OR IGNORE INTO payment_refs(ref,session_id) VALUES(?,?)", ref, sessionId);
+        return json({ ref, sessionId });
+      }
+      if (req.method === "GET") {
+        const row = first(sql.exec("SELECT session_id FROM payment_refs WHERE ref=?", ref));
+        return row ? json({ ref, sessionId: String(row.session_id) }) : json({ error: "not found" }, 404);
+      }
+    }
+
+    match = path.match(/^\/seller-claim\/([^/]+)$/);
+    if (match) {
+      const sellerId = decodeURIComponent(match[1]);
+      if (req.method === "POST") {
+        // One Durable Object, one thread: this check-and-insert is atomic. A claim older than two
+        // minutes belongs to a request that died, and is taken over.
+        const now = new Date();
+        const stale = new Date(now.getTime() - 120_000).toISOString();
+        const held = first(sql.exec("SELECT claimed_at FROM seller_claims WHERE seller_id=? AND claimed_at >= ?", sellerId, stale));
+        if (held) return json({ error: "claimed" }, 409);
+        const claimedAt = now.toISOString();
+        sql.exec("INSERT OR REPLACE INTO seller_claims(seller_id,claimed_at) VALUES(?,?)", sellerId, claimedAt);
+        return json({ sellerId, claimedAt });
+      }
+      if (req.method === "DELETE") {
+        sql.exec("DELETE FROM seller_claims WHERE seller_id=?", sellerId);
+        return json({ released: true });
+      }
+    }
+
     match = path.match(/^\/seller\/([^/]+)$/);
     if (match) {
       const sellerId = decodeURIComponent(match[1]);
+      if (req.method === "DELETE") {
+        const removed = rows(sql.exec("DELETE FROM seller_accounts WHERE seller_id=? RETURNING seller_id", sellerId));
+        return json({ removed: removed.length > 0 }, removed.length > 0 ? 200 : 404);
+      }
       if (req.method === "GET") {
         const row = first(sql.exec(
           "SELECT seller_id,account_id,charges_enabled,payouts_enabled,details_submitted,updated_at " +
@@ -2002,6 +2475,23 @@ export class AzphaltState {
       }
       if (req.method === "PUT") {
         const seller = await req.json() as SellerAccount;
+        if (url.searchParams.get("ifAbsent") === "1") {
+          const existing = first(sql.exec(
+            "SELECT seller_id,account_id,charges_enabled,payouts_enabled,details_submitted,updated_at " +
+            "FROM seller_accounts WHERE seller_id=?",
+            sellerId,
+          ));
+          if (existing) {
+            return json({
+              sellerId: String(existing.seller_id),
+              accountId: String(existing.account_id),
+              chargesEnabled: Number(existing.charges_enabled) === 1,
+              payoutsEnabled: Number(existing.payouts_enabled) === 1,
+              detailsSubmitted: Number(existing.details_submitted) === 1,
+              updatedAt: String(existing.updated_at),
+            });
+          }
+        }
         sql.exec(
           "INSERT INTO seller_accounts(seller_id,account_id,charges_enabled,payouts_enabled,details_submitted,updated_at) " +
           "VALUES(?,?,?,?,?,?) ON CONFLICT(seller_id) DO UPDATE SET account_id=excluded.account_id, " +
@@ -2570,6 +3060,13 @@ async function handle(req: Request, env: Env): Promise<Response> {
       if (req.method === "POST" && path === "/entitlements/play") return playEntitlement(req, env);
       if (req.method === "POST" && path === "/api/admin/revocations") return adminRevoke(req, env);
 
+      let adminMatch = path.match(/^\/api\/admin\/connect\/sellers\/([^/]+)$/);
+      if (adminMatch && (req.method === "PUT" || req.method === "DELETE")) {
+        return adminBindSeller(req, env, decodeURIComponent(adminMatch[1]));
+      }
+      adminMatch = path.match(/^\/api\/admin\/entitlements\/([^/]+)$/);
+      if (adminMatch && req.method === "GET") return adminEntitlement(req, env, decodeURIComponent(adminMatch[1]));
+
       let match = path.match(/^\/packages\/([^/]+)$/);
       if (match && req.method === "GET") {
         return repositoryDetail(req, env, decodeURIComponent(match[1]));
@@ -2613,7 +3110,7 @@ async function handle(req: Request, env: Env): Promise<Response> {
         const id = decodeURIComponent(match[1]);
         const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
         const publicPkg = catalog.find((p) => p.id === id);
-        const listing = activeListing(listings, id);
+        const listing = anyListing(listings, id);
         const version = publicPkg?.version || listing?.package.version;
         if (!version) return json({ error: "package not found" }, 404);
         return download(req, env, id, version);

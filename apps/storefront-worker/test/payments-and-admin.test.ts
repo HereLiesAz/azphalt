@@ -3,7 +3,7 @@
  * fulfilment of unpaid checkout sessions, security headers, and the Worker's zip-bomb cap.
  */
 import { describe, expect, it } from "vitest";
-import { generateKeyPairSync, createHmac } from "node:crypto";
+import { generateKeyPairSync, createHash, createHmac } from "node:crypto";
 import { zipSync, strToU8 } from "fflate";
 import worker from "../src/index";
 import { inspectAzp } from "../src/publish";
@@ -68,7 +68,7 @@ describe("Stripe Connect is operator-only", () => {
       env,
     );
     const { inviteCode } = (await mint.json()) as { inviteCode: string };
-    expect(inviteCode).toMatch(/^[A-Za-z0-9_-]{20,}$/);
+    expect(inviteCode).toMatch(/^[0-9a-z]+\.[A-Za-z0-9_-]{40,}$/);
 
     const onboard = (sellerId: string, code: string) =>
       worker.fetch(
@@ -119,9 +119,46 @@ describe("fulfilment only on settled payment", () => {
     expect(await res.json()).toEqual({ received: true, fulfilled: false });
   });
 
-  it("fulfils once the payment is paid", async () => {
-    const res = await worker.fetch(signedWebhook("whsec_test", session("paid")), makeEnv());
+  it("fulfils once the payment is paid: the entitlement exists and opens the paid download", async () => {
+    const bytes = new Uint8Array([80, 75, 3, 4, 1, 2, 3]);
+    const listing = {
+      packageId: "com.example.paid",
+      sellerId: "seller_1",
+      amountCents: 500,
+      currency: "USD",
+      status: "active",
+      package: { version: "1.0.0", name: "Paid", kind: "asset", bytes: bytes.length, integrity: "sha256-" + createHash("sha256").update(bytes).digest("hex") },
+    };
+    const env = makeEnv({
+      ASSETS: assets({ "/index.html": "x", "/catalog.json": "[]", "/listings.json": JSON.stringify([listing]) }),
+    });
+    const upload = await worker.fetch(
+      new Request("https://azphalt.store/api/admin/packages/com.example.paid/1.0.0", {
+        method: "PUT",
+        headers: { authorization: "Bearer admin-secret" },
+        body: bytes,
+      }),
+      env,
+    );
+    expect(upload.status).toBe(200);
+
+    const res = await worker.fetch(signedWebhook("whsec_test", session("paid")), env);
     expect(await res.json()).toEqual({ received: true, fulfilled: true });
+
+    const result = await worker.fetch(new Request("https://azphalt.store/api/checkout/session/cs_1"), env);
+    expect(result.status).toBe(200);
+    const { status, packageId, token } = (await result.json()) as { status: string; packageId: string; token: string };
+    expect(status).toBe("ready");
+    expect(packageId).toBe("com.example.paid");
+
+    const dl = await worker.fetch(
+      new Request("https://azphalt.store/packages/com.example.paid/versions/1.0.0/download", {
+        headers: { authorization: "Bearer " + token },
+      }),
+      env,
+    );
+    expect(dl.status).toBe(200);
+    expect(new Uint8Array(await dl.arrayBuffer())).toEqual(bytes);
   });
 
   it("rejects a webhook with a bad signature", async () => {

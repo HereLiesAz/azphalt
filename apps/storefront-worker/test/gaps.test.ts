@@ -12,6 +12,7 @@ const listings = [
     sellerId: "seller_1",
     amountCents: 500,
     currency: "USD",
+    status: "active",
     package: { version: "1.0.0", name: "Paid", kind: "code", integrity: "sha256-y" },
   },
   {
@@ -19,6 +20,7 @@ const listings = [
     sellerId: "seller_1",
     amountCents: 300,
     currency: "USD",
+    status: "active",
     interval: "month",
     package: { version: "1.0.0", name: "Sub", kind: "code", integrity: "sha256-z" },
   },

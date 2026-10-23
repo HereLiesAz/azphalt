@@ -31,6 +31,22 @@ export interface PlayConfig {
 export interface PlayGrant {
   subject: string;
   expiresAt?: string;
+  /**
+   * Acknowledges the purchase with Google, when it is still unacknowledged. The caller runs it only
+   * AFTER issuing the licence, so a purchase that never became a licence stays unacknowledged and Play
+   * refunds it. Best effort: a failure is swallowed (the store app acknowledges too).
+   */
+  acknowledge?: () => Promise<void>;
+}
+
+function bestEffort(run: () => Promise<unknown>): () => Promise<void> {
+  return async () => {
+    try {
+      await run();
+    } catch {
+      // Best effort; see PlayGrant.acknowledge.
+    }
+  };
 }
 
 /** Google could not be asked (network, 5xx, or our own credentials refused): a 502, never a 402. */
@@ -127,8 +143,9 @@ async function accessToken(account: ServiceAccount, fetchImpl: FetchLike): Promi
  * the same subject. A purchase that carries the app's `obfuscatedExternalAccountId` uses that instead,
  * which also ties separate purchases to one buyer.
  *
- * An unacknowledged purchase is acknowledged here, because Play refunds one left unacknowledged for
- * three days; a failed acknowledgement does not fail the exchange (the store app acknowledges too).
+ * An unacknowledged purchase comes back with {@link PlayGrant.acknowledge}, for the caller to run once
+ * the licence is issued: Play refunds a purchase left unacknowledged for three days, which is the right
+ * outcome only when no licence came of it.
  */
 export async function verifyPlayPurchase(
   config: PlayConfig,
@@ -160,20 +177,18 @@ export async function verifyPlayPurchase(
   // 0 purchased, 1 cancelled, 2 pending.
   if (purchase.purchaseState !== 0) return null;
 
-  if (purchase.acknowledgementState === 0) {
-    try {
-      await fetchImpl(url + ":acknowledge", {
+  const acknowledge = purchase.acknowledgementState === 0
+    ? bestEffort(() => fetchImpl(url + ":acknowledge", {
         method: "POST",
         headers: { authorization: "Bearer " + token, "content-type": "application/json" },
         body: "{}",
-      });
-    } catch {
-      // Best effort; see above.
-    }
-  }
+      }))
+    : undefined;
 
-  if (purchase.obfuscatedExternalAccountId) return { subject: "play-account:" + purchase.obfuscatedExternalAccountId };
-  if (purchase.orderId) return { subject: "play-order:" + purchase.orderId };
+  if (purchase.obfuscatedExternalAccountId) {
+    return { subject: "play-account:" + purchase.obfuscatedExternalAccountId, acknowledge };
+  }
+  if (purchase.orderId) return { subject: "play-order:" + purchase.orderId, acknowledge };
   // A completed purchase with neither is not something Play produces; refuse rather than invent one.
   return null;
 }
@@ -191,7 +206,7 @@ const ENTITLING_STATES = new Set(["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STA
  * renewal, so stripping that suffix keeps one buyer one subject across renewals and restores. An
  * `obfuscatedExternalAccountId`, when the app set one, is used instead.
  *
- * An unacknowledged subscription is acknowledged here, for the same reason as a one-time purchase.
+ * An unacknowledged subscription comes back with {@link PlayGrant.acknowledge}, as for a one-time purchase.
  */
 export async function verifyPlaySubscription(
   config: PlayConfig,
@@ -224,21 +239,17 @@ export async function verifyPlaySubscription(
   const expiry = item?.expiryTime ? new Date(item.expiryTime) : undefined;
   if (!item || !expiry || Number.isNaN(expiry.getTime()) || expiry.getTime() <= Date.now()) return null;
 
-  if (sub.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING") {
-    try {
-      await fetchImpl(
+  const acknowledge = sub.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING"
+    ? bestEffort(() => fetchImpl(
         base + "/subscriptions/" + encodeURIComponent(productId) + "/tokens/" + encodeURIComponent(purchaseToken) + ":acknowledge",
         { method: "POST", headers: { authorization: "Bearer " + token, "content-type": "application/json" }, body: "{}" },
-      );
-    } catch {
-      // Best effort, as for one-time purchases.
-    }
-  }
+      ))
+    : undefined;
 
   const expiresAt = expiry.toISOString();
   const account = sub.externalAccountIdentifiers?.obfuscatedExternalAccountId;
-  if (account) return { subject: "play-account:" + account, expiresAt };
+  if (account) return { subject: "play-account:" + account, expiresAt, acknowledge };
   const order = (item.latestSuccessfulOrderId || sub.latestOrderId || "").replace(/\.\.\d+$/, "");
-  if (order) return { subject: "play-order:" + order, expiresAt };
+  if (order) return { subject: "play-order:" + order, expiresAt, acknowledge };
   return null;
 }

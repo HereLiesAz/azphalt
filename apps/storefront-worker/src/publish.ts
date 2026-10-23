@@ -19,6 +19,15 @@
  */
 import { strFromU8, unzipSync } from "fflate";
 
+/**
+ * `manifest.kind` as it may appear in the pull request body: a short lowercase word, or `unknown`. The
+ * raw value is unvalidated here (the submission check validates it), so it could otherwise carry
+ * `@mentions`, links or markdown into a bot-authored PR.
+ */
+export function safeKind(kind: unknown): string {
+  return typeof kind === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(kind) ? kind : "unknown";
+}
+
 export const MAX_PUBLISH_BYTES = 4 * 1024 * 1024;
 export const MAX_BINARY_FILES = 30;
 const MAX_FILES = 500;
@@ -226,7 +235,10 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
 
   const errors: string[] = [];
   if (typeof manifest.id !== "string" || !REVERSE_DNS.test(manifest.id)) errors.push("manifest.id must be a reverse-DNS id");
+  // The id becomes a git ref (`publish/<id>/<version>`), and no ref component may end in `.lock`.
+  else if (/\.lock$/i.test(manifest.id)) errors.push("manifest.id must not end in .lock");
   if (typeof manifest.version !== "string" || !SEMVER.test(manifest.version)) errors.push("manifest.version must be semver");
+  else if (/\.lock$/i.test(manifest.version)) errors.push("manifest.version must not end in .lock");
   for (const path of paths) {
     // Same shapes as @azphalt/azp's unsafePathReason (kept inline: this Worker can't load node:crypto).
     if (
@@ -477,7 +489,7 @@ export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishCo
       head: branch,
       base: "main",
       body: [
-        `Opened by \`POST /packages\` on the store for **${id}** ${version} (\`${String(manifest.kind ?? "")}\`).`,
+        `Opened by \`POST /packages\` on the store for **${id}** ${version} (\`${safeKind(manifest.kind)}\`).`,
         "",
         pin
           ? "The package is signed by the publisher key pinned for this id."
