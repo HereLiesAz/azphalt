@@ -82,7 +82,8 @@ export interface CheckoutResponse {
 }
 
 export interface CheckoutStatus {
-  status: "pending" | "ready";
+  /** `revoked`: the purchase was refunded or disputed, so no licence is issued for it. */
+  status: "pending" | "ready" | "revoked";
   packageId?: string;
   token?: string;
 }
@@ -137,6 +138,7 @@ export async function fetchCheckoutStatus(sessionId: string): Promise<CheckoutSt
     cache: "no-store",
   });
   if (res.status === 202) return { status: "pending" };
+  if (res.status === 403) return { status: "revoked" };
   if (!res.ok) throw new Error(`checkout status ${res.status}`);
   return (await res.json()) as CheckoutStatus;
 }

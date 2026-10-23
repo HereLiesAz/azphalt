@@ -952,6 +952,10 @@ function CheckoutSuccessPage() {
           setStatus("Purchase ready.");
           return;
         }
+        if (result.status === "revoked") {
+          setStatus("This purchase was refunded or disputed, so it no longer carries a licence.");
+          return;
+        }
         setStatus("Payment received. Preparing your license…");
       } catch (error) {
         if (!cancelled) setStatus(error instanceof Error ? error.message : "Could not check purchase.");
