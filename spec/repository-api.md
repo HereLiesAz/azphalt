@@ -133,7 +133,7 @@ The registry issues it (Ed25519 over the canonical claims) at purchase; the host
 **Response (200 OK):**
 Headers: `Content-Type:` the `.azp` media type — **package-format.md § Media type**, which is its one
 normative definition — plus `Accept-Ranges: bytes`.
-Body: (binary fflate archive)
+Body: the `.azp` package (a ZIP archive, `spec/package-format.md`), as `application/vnd.azphalt.package`.
 
 **Range requests (resumable & parallel downloads).** A server SHOULD support HTTP byte ranges so a
 host can resume an interrupted transfer and fetch a large `.azp` (e.g. a multi-hundred-MB model) as

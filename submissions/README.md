@@ -128,8 +128,9 @@ To enable it:
 openssl genpkey -algorithm ed25519          # store the PEM as the AZPHALT_PACKAGE_SIGNING_KEY secret
 ~~~
 
-This is a *different* key from `AZPHALT_SIGNING_KEY`, which the storefront uses to issue entitlement
-tokens — they are separate trust roles and must not be shared.
+This is a *different* key from the storefront's entitlement-signing key (`ENTITLEMENT_PRIVATE_KEY_PKCS8_B64`
+on the Worker, or the keypair it generates and keeps in its Durable Object when that is unset) —
+they are separate trust roles and must not be shared.
 
 ## Licensing
 
