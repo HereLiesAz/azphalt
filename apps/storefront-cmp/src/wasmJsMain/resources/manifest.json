@@ -1,11 +1,11 @@
 {
-  "name": "Azphalt Storefront",
+  "name": "Azphalt Store",
   "short_name": "Azphalt",
-  "description": "Azphalt Consignment Marketplace Storefront",
+  "description": "The Azphalt Store: portable extensions for any app that speaks Azphalt",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#05050A",
-  "theme_color": "#6C47FF",
+  "background_color": "#e8c81e",
+  "theme_color": "#e8c81e",
   "icons": [
     {
       "src": "icon.svg",

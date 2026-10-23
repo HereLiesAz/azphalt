@@ -1,76 +1,24 @@
 package theme
 
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Azphalt's Material 3 Expressive theme. A vibrant, high-chroma tri-color palette (violet / pink /
- * amber) on a warm near-white surface, emphasized typography, and large friendly shapes — the
- * opposite of a sterile, uniform look. See https://m3.material.io/styles.
+ * The store's Material theme, which is a thin adapter for the Capsule system (`Capsule.kt`): a printed
+ * yellow page, ink text, Jost, and full-capsule shapes. Material only sees it so stray framework
+ * components (dialogs, text fields, menus) land on the page colours instead of Material's defaults.
+ *
+ * The old violet / pink / amber light and dark schemes are gone; nothing read them once the Capsule
+ * system replaced them.
  */
-private val AzphaltLightColors = lightColorScheme(
-    primary = Color(0xFF6C47FF),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFE7DEFF),
-    onPrimaryContainer = Color(0xFF20005E),
-    secondary = Color(0xFFFF3D81),
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFFFD9E2),
-    onSecondaryContainer = Color(0xFF3E0021),
-    tertiary = Color(0xFFEF9A00),
-    onTertiary = Color(0xFF1F1400),
-    tertiaryContainer = Color(0xFFFFDE9E),
-    onTertiaryContainer = Color(0xFF271900),
-    background = Color(0xFFFCF8FF),
-    onBackground = Color(0xFF1B1B22),
-    surface = Color(0xFFFCF8FF),
-    onSurface = Color(0xFF1B1B22),
-    surfaceVariant = Color(0xFFE6E0EC),
-    onSurfaceVariant = Color(0xFF48454F),
-    surfaceContainerHighest = Color(0xFFEDE7F4),
-    outline = Color(0xFF79767F),
-    outlineVariant = Color(0xFFCAC4D0),
-    error = Color(0xFFBA1A1A),
-    onError = Color(0xFFFFFFFF),
-)
-
-/** The default: a vibrant expressive palette on a near-black canvas (matches the PWA theme color). */
-private val AzphaltDarkColors = darkColorScheme(
-    primary = Color(0xFFBBA6FF),
-    onPrimary = Color(0xFF25005B),
-    primaryContainer = Color(0xFF4A2DB5),
-    onPrimaryContainer = Color(0xFFE9DEFF),
-    secondary = Color(0xFFFF9CBE),
-    onSecondary = Color(0xFF5C0A2C),
-    secondaryContainer = Color(0xFF8E2A54),
-    onSecondaryContainer = Color(0xFFFFD9E2),
-    tertiary = Color(0xFFFFCB5C),
-    onTertiary = Color(0xFF3A2A00),
-    tertiaryContainer = Color(0xFF6E5200),
-    onTertiaryContainer = Color(0xFFFFDF9E),
-    background = Color(0xFF0C0C13),
-    onBackground = Color(0xFFE7E1EE),
-    surface = Color(0xFF12121B),
-    onSurface = Color(0xFFE7E1EE),
-    surfaceVariant = Color(0xFF48454F),
-    onSurfaceVariant = Color(0xFFCAC4D0),
-    surfaceContainerHighest = Color(0xFF25232D),
-    outline = Color(0xFF948F9C),
-    outlineVariant = Color(0xFF48454F),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
-)
 
 /** Emphasized type scale — bold, tight display sizes for an expressive voice. */
 private val AzphaltType = Typography(
@@ -94,8 +42,9 @@ private val AzphaltType = Typography(
  *
  * These were five zeros, which is what made the store hard-cornered everywhere regardless of what any
  * call site asked for. In the Capsule system the rule is the opposite and just as absolute: radius is
- * 999px, always, never a rounded rectangle. The one exception is the record tile, which is not a
- * pressable thing and is drawn directly rather than through a theme token.
+ * 999px, always, never a rounded rectangle. The exceptions are records, which are not pressable:
+ * the record tile, drawn directly, and dialogs, which pass `CapsuleShape.Panel` at every `AlertDialog`
+ * call site because the default (`extraLarge`, a 50% radius) would clip a tall dialog's content.
  */
 private val AzphaltShapes = Shapes(
     extraSmall = CapsuleShape.Full,
@@ -135,7 +84,8 @@ private val CapsuleColors = lightColorScheme(
     surface = Ground.Page,
     onSurface = Ground.Ink,
     surfaceVariant = Ground.Page,
-    onSurfaceVariant = Ground.inkAt(0.62f),
+    // Opaque, not ink at 62%: that was about 4.0:1 on the yellow, under the 4.5:1 AA floor. ~5.7:1.
+    onSurfaceVariant = Color(0xFF50461F),
     surfaceTint = Color.Transparent,
     surfaceDim = Ground.Page,
     surfaceBright = Ground.Page,
@@ -148,7 +98,8 @@ private val CapsuleColors = lightColorScheme(
     inverseOnSurface = Ground.Page,
     inversePrimary = Ground.Page,
     outline = Ground.inkAt(0.22f),
-    error = Hues.Bg[6],
+    // Hues.Bg[6] (#c6392f) is only ~3.3:1 on the yellow; this red is ~5.6:1, readable at body size.
+    error = Color(0xFF8A1C14),
     onError = Color.White,
 )
 

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import theme.CapsuleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -177,9 +177,10 @@ private fun HandoffFlow(
 
     failure?.let { message ->
         AlertDialog(
+            shape = CapsuleShape.Panel,
             onDismissRequest = { failure = null },
             confirmButton = {
-                TextButton(onClick = { failure = null }, shape = RectangleShape) { Text("OK") }
+                TextButton(onClick = { failure = null }, shape = CapsuleShape.Full) { Text("OK") }
             },
             title = { Text("Couldn't finish") },
             text = { Text(message) },

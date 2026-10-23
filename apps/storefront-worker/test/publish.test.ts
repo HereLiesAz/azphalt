@@ -9,7 +9,7 @@ const catalog = [
   { id: "com.example.pinned", version: "1.0.0", name: "Pinned", kind: "asset", file: "p.azp", integrity: "sha256-y" },
 ];
 const listings = [
-  { packageId: "com.example.paid", sellerId: "s", amountCents: 500, currency: "USD", package: { version: "1.0.0", name: "Paid", kind: "code", integrity: "sha256-z" } },
+  { packageId: "com.example.paid", sellerId: "s", amountCents: 500, currency: "USD", status: "active", package: { version: "1.0.0", name: "Paid", kind: "code", integrity: "sha256-z" } },
 ];
 
 function build(id: string, version: string, key?: { privateKey: string }, payload: Record<string, Uint8Array> = {}) {

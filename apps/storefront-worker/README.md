@@ -62,9 +62,14 @@ every purchase reads as `402`.
 The service account needs Play Console access to the app with *View financial data* (to read orders)
 and *Manage orders* (to acknowledge them).
 
-`STRIPE_WEBHOOK_SECRET` is required for subscriptions and renewal/cancellation events. One-time
-purchases can still fulfil from the Stripe Checkout session on the success page if the webhook is
-delayed. `ADMIN_TOKEN` protects paid-package uploads and the moderation queue.
+`STRIPE_WEBHOOK_SECRET` is required for subscriptions, renewals, cancellations, refunds and disputes.
+Only the *first* fulfilment of a one-time purchase has a fallback without it: the success page polls
+the Checkout Session from Stripe (`GET /api/checkout/session/{id}`). Renewals, cancellations, refunds
+and disputes arrive only by webhook. Register the endpoint for `checkout.session.completed`,
+`checkout.session.async_payment_succeeded`, `invoice.paid`, `customer.subscription.deleted`,
+`account.updated`, `charge.refunded`, `charge.dispute.created` and `charge.dispute.closed`.
+`ADMIN_TOKEN` protects paid-package uploads, seller binding and the moderation queue; make it a random
+token of at least 32 bytes. An optional `CONNECT_INVITE_SECRET` keys seller invite codes (§ Listings).
 
 There is **no GitHub secret**. `POST /packages` asks the central gateway Worker (`workflows`, from
 HereLiesAz/workflows) for a token over the `GITHUB_TOKENS` service binding: its `RepositoryTokens`
@@ -116,12 +121,19 @@ page is a form over the same endpoint.
   download answers `404`.
 
 Public writes are limited to 10 a minute per IP by Cloudflare's rate-limit binding (`WRITE_LIMITER`);
-the counters live in Cloudflare, so the Worker never stores an address.
+the counters live in Cloudflare, so the Worker never stores an address. The same limiter covers
+`POST /api/checkout` (two Stripe calls and a session row each), `POST /entitlements/play` (a Google
+token exchange and a Play API call each), seller onboarding, the admin surface, and the minting of
+install-report tokens: past the limit a download still succeeds, but carries no report token.
+
+Request bodies are capped by counting the bytes as they arrive, not by trusting `Content-Length`: a
+chunked or header-less body is cut off at the cap (4 MB publish, 1 MB `/updates`, 256 KB `/installs`,
+64 KB for other JSON, 100 MB paid uploads).
 
 ## Install counts
 
 `spec/repository-api.md` § 8 and `spec/state-reporting.md` § 4. Every full `200` download (free or
-paid) carries an `azphalt-report-token` header: 32 random bytes, stored with only the package and
+paid), within the write limit, carries an `azphalt-report-token` header: 32 random bytes, stored with only the package and
 version, deleted unspent after 30 days. Ranged `206` responses carry none. `POST /installs` spends a
 token for an `installed` event (it must have been minted for the same package) and returns a receipt;
 an `uninstalled` event spends that receipt. `activated`/`deactivated` are accepted and not counted.
@@ -135,8 +147,10 @@ installs.
 for an OAuth token, and reads the purchase from the Android Publisher API. A completed purchase gets
 the same store-signed entitlement a web purchase does, issued to `play-account:<obfuscatedExternalAccountId>`
 when the app set one, otherwise `play-order:<orderId>` (stable across reinstalls, which restore the same
-token). An unacknowledged purchase is acknowledged. The product must be the listing's `playProductId`,
-or the package id when that is unset.
+token). An unacknowledged purchase is acknowledged only after the entitlement has been issued, so a
+purchase that never became a licence stays unacknowledged and Play refunds it after three days. The
+product must be the listing's `playProductId`, or the package id when that is unset. The exchange
+needs an active listing (a new sale), and is rate-limited like any other write.
 
 A listing with an `interval` is sold as a Play subscription and checked through
 `purchases.subscriptionsv2`. It entitles only while the subscription is active or in its grace period
@@ -170,6 +184,12 @@ The public storefront overlay is `apps/storefront-react/public/listings.json`:
 ]
 ~~~
 
+`status` decides who can **buy**, never who can **download**: `"active"` is on sale; `"paused"` stops
+new checkouts (and hides the card), while everyone who already paid keeps downloading it. A listing with
+no `status` is paused. `node tools/validate-listings.mjs` checks the file (a positive integer
+`amountCents` of at least 50, an ISO currency in capitals, `status` present, `sha256-<hex>` integrity,
+well-formed `interval`, `stripeAccountId` and `playProductId`); it runs in `pnpm test`.
+
 For a subscription, add `"interval": "month"` or `"year"`. If the store app sells the package under
 a different Play product id, add `"playProductId"`. Subscription checkout is refused until a
 Stripe webhook secret is configured.
@@ -177,17 +197,59 @@ Stripe webhook secret is configured.
 Seller payout accounts are bound only with the operator's authority, because a `sellerId` is public (it
 appears in `listings.json`) and binding a Stripe account to it decides who gets paid. The operator
 mints a per-seller **invite code** — `POST /api/admin/connect/invite` `{ sellerId }` with
-`Authorization: Bearer $ADMIN_TOKEN` — and gives it to that seller (the code is
-`HMAC-SHA256(ADMIN_TOKEN, "connect-invite:" + sellerId)`: stateless, bound to one id, revoked for
-everyone by rotating `ADMIN_TOKEN`). The seller then self-onboards at `/connect/onboard`
+`Authorization: Bearer $ADMIN_TOKEN` — and gives it to that seller. The code is
+`<issuedAt base36>.<HMAC-SHA256(K, "connect-invite:v2:" + sellerId + ":" + issuedAt)>`, where `K` is
+`CONNECT_INVITE_SECRET` or, unset, `HKDF-SHA256(ADMIN_TOKEN, info "azphalt connect-invite v2")`: bound to
+one id, valid for **7 days**, never a MAC made with the admin token itself, and revoked for everyone by
+rotating the key. The seller then self-onboards at `/connect/onboard`
 (`?sellerId=…&invite=…`), which posts `{ sellerId, inviteCode, email?, country? }` to
 `POST /api/connect/onboard`; the operator's bearer token is also accepted there. Without one of the two
 the endpoint answers `401`, so nobody can onboard their own bank account against someone else's id.
 `GET /api/connect/status?sellerId=` is public but returns only readiness flags; the Stripe account id
 and `refresh=1` are operator-only. At checkout the `stripeAccountId` in the reviewed listing wins over
-a stored mapping. A checkout session is fulfilled only once its `payment_status` is `paid`
-(`checkout.session.async_payment_succeeded` covers delayed methods); refunds and disputes are not yet
-handled, so revoke an entitlement through `/api/admin/revocations` when you refund.
+a stored mapping.
+
+Binding rules:
+
+- If any of a seller's listings pins a `stripeAccountId`, onboarding only ever continues **that**
+  account. A seller with no stored account, or a different one, gets `409`; the operator binds the
+  pinned account with `PUT /api/admin/connect/sellers/{sellerId}` `{ accountId }` (which also refuses
+  an account that contradicts the pin).
+- `PUT /api/admin/connect/sellers/{sellerId}` `{ accountId }` rebinds a seller (it reads the account from
+  Stripe first); `DELETE` the same path unbinds it, so the seller can onboard afresh. Admin.
+- Concurrent onboard calls for one seller cannot create two Stripe accounts: the first takes a claim in
+  the Durable Object, the others get `409` until it finishes, and the stored row is insert-only.
+- After onboarding, pin the returned `acct_…` in `listings.json` so payouts are part of the review.
+
+A checkout session is fulfilled only once its `payment_status` is `paid`
+(`checkout.session.async_payment_succeeded` covers delayed methods). Errors from Stripe are logged and
+answered with a generic message: Stripe's text can name a seller's account.
+
+### Refunds and disputes
+
+A refund or a chargeback revokes **that purchase's** entitlement, not the version:
+
+- `charge.refunded` with `refunded: true` (a full refund) revokes the entitlement the charge paid for.
+  A partial refund keeps the licence.
+- `charge.dispute.created` revokes it; `charge.dispute.closed` with `status: "won"` restores it (a
+  lost dispute stays revoked, and a refund is never undone by a later dispute win).
+
+The charge is matched to its entitlement through the payment intent (and, for subscriptions, the
+invoice) recorded at fulfilment; for a purchase fulfilled before that was recorded, the Worker asks
+Stripe for the Checkout Session by payment intent. A revoked token gets `403` from the paid download,
+drops out of `/api/purchases`, and its success page answers `403`; every other buyer is unaffected.
+`/api/admin/revocations` is for yanking a **version** (malware, a takedown), which withdraws it from
+everyone: never use it to handle a single refund.
+
+### Recovering a purchase
+
+A buyer's licence lives in the signed `azphalt_buyer_session` cookie and behind the success page's
+`session_id` link. Checkout always collects an email (and creates a Stripe Customer for one-time
+purchases), and Stripe sends the receipt there. A buyer who has lost both the cookie and the link
+writes in with that email; find the payment in the Stripe dashboard by email, take its Checkout Session
+id (`cs_…`), and either send them `https://azphalt.store/checkout/success?session_id=cs_…` (opening it
+restores the cookie) or fetch the token with `GET /api/admin/entitlements/{sessionId}` (admin) and send
+that.
 
 Known limit: ratings are one-per-browser only for honest browsers — a client that discards its
 cookie can add more, and the per-IP `WRITE_LIMITER` binding is the only brake. Bind it in production.
@@ -206,6 +268,11 @@ curl -X PUT \
 ~~~
 
 Checkout is refused until the listed package/version exists in protected storage.
+
+The free lane is checked too: `export-catalog.mjs` records `fileDigest` (sha256 of the exact file
+served, which, unlike `integrity`, covers a signed file) and the Worker refuses a full `200` download
+whose bytes do not hash to it, so a same-size swap on the moving branch is never served. Ranged `206`
+responses are checked by size only; the client's own digest check covers the assembled file.
 
 **Size.** The upload endpoint accepts up to 100 MB (the free plan's request limit), but a Worker
 isolate has 128 MB of memory and both the upload and a full paid download hold the package in memory

@@ -14,14 +14,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import components.CatalogSection
@@ -102,6 +101,10 @@ fun StorefrontApp(
       CompositionLocalProvider(LocalHostInventory provides inventory) {
         var packages by remember { mutableStateOf<List<PackageSummary>>(emptyList()) }
         var loading by remember { mutableStateOf(true) }
+        // Set when the catalogue could not be read; the page then says so and offers Retry instead of
+        // sitting on an empty body.
+        var loadError by remember { mutableStateOf<String?>(null) }
+        var reloadKey by remember { mutableStateOf(0) }
         var selected by remember { mutableStateOf<PackageSummary?>(null) }
 
         // Search / sort / filter state (kept across detail navigation).
@@ -114,13 +117,16 @@ fun StorefrontApp(
         // of keeping the record at all.
         var owned by remember { mutableStateOf(0) }
 
-        LaunchedEffect(handoff) {
+        LaunchedEffect(handoff, reloadKey) {
+            loading = true
+            loadError = null
             try {
                 // A handoff reads the catalogue narrowed to the requesting host; on its own the store
                 // browses everything.
                 packages = handoff?.load?.invoke() ?: fetchRegistryList()
             } catch (e: Exception) {
                 println("Failed to fetch packages: $e")
+                loadError = "The Azphalt Store didn't answer. Check your connection, then try again."
             } finally {
                 loading = false
             }
@@ -213,17 +219,19 @@ fun StorefrontApp(
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     floatingActionButton = {
-                        // Publishing is a thing you come to the store to do, not something to offer
-                        // somebody who is halfway through another app's task.
+                        // Selling is a thing you come to the store to do, not something to offer
+                        // somebody who is halfway through another app's task. It opens the web store's
+                        // seller page, the one place onboarding and publishing live — this was a
+                        // "Publish +" button that only printed to the console.
                         if (handoff == null) {
-                            ExtendedFloatingActionButton(
-                                onClick = { println("publish") },
-                                containerColor = MaterialTheme.colorScheme.tertiary,
-                                contentColor = MaterialTheme.colorScheme.onTertiary,
-                                shape = RectangleShape,
-                            ) {
-                                Text("Publish  +", fontWeight = FontWeight.Bold)
-                            }
+                            Capsule(
+                                label = "Sell on Azphalt",
+                                background = Ground.Ink,
+                                cap = Color(0xFFF0D42A),
+                                labelSize = 13,
+                                height = 52.dp,
+                                onClick = { openExternal(SELL_URL) },
+                            )
                         }
                     },
                 ) { padding ->
@@ -238,6 +246,7 @@ fun StorefrontApp(
                                 }
                                 CapsuleHeader(
                                     total = packages.size,
+                                    failed = loadError != null,
                                     inHandoff = handoff != null,
                                     query = query,
                                     onQuery = { query = it },
@@ -255,6 +264,10 @@ fun StorefrontApp(
 
                         when {
                             loading -> Column(Modifier.fillMaxSize().padding(horizontal = 30.dp)) { header() }
+                            loadError != null -> Column(Modifier.fillMaxSize().padding(horizontal = 30.dp)) {
+                                header()
+                                LoadFailure(message = loadError!!, onRetry = { reloadKey++ })
+                            }
                             filtering -> CascadeResults(
                                 packages = shown,
                                 onOpen = { selected = it },
@@ -288,6 +301,7 @@ fun StorefrontApp(
 @Composable
 private fun CapsuleHeader(
     total: Int,
+    failed: Boolean,
     inHandoff: Boolean,
     query: String,
     onQuery: (String) -> Unit,
@@ -330,7 +344,11 @@ private fun CapsuleHeader(
                     decorationBox = { inner ->
                         if (query.isEmpty()) {
                             Text(
-                                text = "SEARCH $total EXTENSIONS",
+                                text = when {
+                                    failed -> "SEARCH EXTENSIONS"
+                                    total == 1 -> "SEARCH 1 EXTENSION"
+                                    else -> "SEARCH $total EXTENSIONS"
+                                },
                                 style = TextStyle(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
@@ -354,7 +372,11 @@ private fun CapsuleHeader(
             )
             Spacer(Modifier.width(16.dp))
             Text(
-                text = if (filtering) "$shownCount found" else "$total portable",
+                text = when {
+                    failed -> "Couldn't load"
+                    filtering -> "$shownCount found"
+                    else -> "$total portable"
+                },
                 style = eyebrowStyle,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
@@ -389,7 +411,8 @@ private fun CapsuleFilters(
                     background = if (selected) Roles.Selected.first else Ground.inkAt(0.14f),
                     cap = if (selected) Roles.Selected.second else null,
                     labelSize = 11,
-                    height = 32.dp,
+                    // 44dp: the minimum touch target. The label stays small.
+                    height = 44.dp,
                     onClick = { onPick(i) },
                 )
             }
@@ -403,5 +426,19 @@ private fun CapsuleFilters(
             val labels = listOf("All types" to (category == null)) + categories.map { it to (category == it) }
             row(labels) { i -> onCategory(if (i == 0) null else categories[i - 1]) }
         }
+    }
+}
+
+/** The web store's seller page: Stripe onboarding, and the invite request for anyone without one. */
+private const val SELL_URL = "https://azphalt.store/connect/onboard"
+
+/** The catalogue could not be read: say so in plain words and offer the one thing that helps. */
+@Composable
+private fun LoadFailure(message: String, onRetry: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(top = 36.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Couldn't load the extensions", style = displayStyle(28))
+        Text(message, style = TextStyle(fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
+        Spacer(Modifier.height(6.dp))
+        Capsule(label = "Retry", background = Ground.Ink, cap = Color(0xFFF0D42A), labelSize = 13, height = 48.dp, onClick = onRetry)
     }
 }

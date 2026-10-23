@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,7 +20,8 @@ const previews = previewsDoc.previews ?? {};
 const packages = [];
 for (const item of generated.packages ?? []) {
   const file = resolve(registryDir, "packages", item.file);
-  const { manifest } = readAzp(new Uint8Array(await readFile(file)));
+  const fileBytes = new Uint8Array(await readFile(file));
+  const { manifest } = readAzp(fileBytes);
   packages.push({
     id: manifest.id,
     name: manifest.name,
@@ -39,6 +41,9 @@ for (const item of generated.packages ?? []) {
     manifest,
     preview: previews[manifest.id] ?? manifest.preview,
     integrity: item.integrity,
+    // The digest of the exact file the Worker streams (signed, so unlike `integrity`); the Worker
+    // refuses a full download whose bytes do not hash to it.
+    fileDigest: "sha256-" + createHash("sha256").update(fileBytes).digest("hex"),
     file: item.file,
     bytes: item.bytes,
     downloads: 0,

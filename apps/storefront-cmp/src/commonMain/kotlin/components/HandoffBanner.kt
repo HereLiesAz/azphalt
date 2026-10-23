@@ -1,7 +1,6 @@
 package components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,13 +8,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import theme.CapsuleShape
+import theme.Ground
+import theme.Hues
 
 /**
  * The one thing the storefront says differently when another app is waiting on it.
@@ -26,13 +28,13 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 internal fun HandoffBanner(callerLabel: String?, onCancel: () -> Unit) {
-    val cs = MaterialTheme.colorScheme
+    // A named thing, so a capsule: ink on the page, no border, no alpha on the capsule itself.
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(cs.secondaryContainer)
-            .border(1.dp, cs.onSecondaryContainer.copy(alpha = 0.55f), RectangleShape)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .clip(CapsuleShape.Full)
+            .background(Ground.Ink)
+            .padding(start = 28.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -41,16 +43,20 @@ internal fun HandoffBanner(callerLabel: String?, onCancel: () -> Unit) {
                 text = "Adding to ${callerLabel ?: "another app"}",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = cs.onSecondaryContainer,
+                color = Color.White,
             )
             Text(
                 text = "Whatever you install goes straight back to it.",
                 style = MaterialTheme.typography.labelSmall,
-                color = cs.onSecondaryContainer.copy(alpha = 0.8f),
+                color = Color.White,
             )
         }
-        TextButton(onClick = onCancel, shape = RectangleShape) {
-            Text("Cancel", color = cs.onSecondaryContainer, fontWeight = FontWeight.SemiBold)
-        }
+        Capsule(
+            label = "Cancel",
+            background = Hues.Bg[6],
+            cap = Hues.Cap[6],
+            height = 40.dp,
+            onClick = onCancel,
+        )
     }
 }

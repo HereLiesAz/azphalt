@@ -7,6 +7,7 @@
  */
 package components
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -89,7 +90,7 @@ fun Capsule(
             .background(background)
             .then(
                 if (onClick != null) {
-                    Modifier.clickable(interactionSource = interaction, indication = null) { onClick() }
+                    Modifier.clickable(interactionSource = interaction, indication = null, role = Role.Button) { onClick() }
                 } else {
                     Modifier
                 }

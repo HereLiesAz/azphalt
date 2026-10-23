@@ -50,3 +50,26 @@ test("a missing or malformed number is rejected", () => {
   assert.throws(() => readVersion(file("versionMajor=0\nversionMinor=1\nversionPatch=2\n")), /versionBuild/);
   assert.throws(() => readVersion(file("versionMajor=0\nversionMinor=x\nversionPatch=2\nversionBuild=3\n")), /non-negative integer/);
 });
+
+test("a major bump resets minor and patch but never the build", () => {
+  const path = file("versionMajor=0\nversionMinor=19\nversionPatch=4\nversionBuild=7\n");
+  assert.equal(formatVersion(bumpVersion("major", path)), "1.0.0.8");
+});
+
+test("a minor bump resets the patch and still advances the build", () => {
+  const path = file("versionMajor=0\nversionMinor=19\nversionPatch=4\nversionBuild=7\n");
+  assert.equal(formatVersion(bumpVersion("minor", path)), "0.20.0.8");
+});
+
+test("an unknown bump kind is refused and leaves the file alone", () => {
+  const content = "versionMajor=0\nversionMinor=1\nversionPatch=2\nversionBuild=3\n";
+  const path = file(content);
+  assert.throws(() => bumpVersion("build", path), /unknown bump kind/);
+  assert.equal(readFileSync(path, "utf8"), content);
+});
+
+test("readVersion reads what a bump wrote", () => {
+  const path = file("versionMajor=2\nversionMinor=3\nversionPatch=4\nversionBuild=5\n");
+  bumpVersion("patch", path);
+  assert.deepEqual(readVersion(path), { major: 2, minor: 3, patch: 5, build: 6 });
+});

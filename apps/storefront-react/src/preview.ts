@@ -21,12 +21,19 @@ export function styleFor(pkg: PackageSummary): Style {
   return "wave";
 }
 
-// container / on-container color pairs (the M3 Expressive palette), rotated by a stable id hash.
+// [background, ink] pairs: the Capsule system's ten hashed hues (theme.css --hue-0..9) with the
+// white their capsule labels use, so a preview card reads as the same object as the capsules around it.
 const PALETTE: Array<[string, string]> = [
-  ["#4a2db5", "#e9deff"],
-  ["#8e2a54", "#ffd9e2"],
-  ["#6e5200", "#ffdf9e"],
-  ["#25232d", "#e7e1ee"],
+  ["#6b4fbb", "#ffffff"],
+  ["#2fa9c4", "#ffffff"],
+  ["#1f9e86", "#ffffff"],
+  ["#5aae34", "#ffffff"],
+  ["#d9a21c", "#ffffff"],
+  ["#d9762a", "#ffffff"],
+  ["#c6392f", "#ffffff"],
+  ["#b03a6e", "#ffffff"],
+  ["#8e4fa8", "#ffffff"],
+  ["#2e6fb7", "#ffffff"],
 ];
 
 export function paletteFor(id: string): [string, string] {

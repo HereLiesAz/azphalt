@@ -82,7 +82,8 @@ export interface CheckoutResponse {
 }
 
 export interface CheckoutStatus {
-  status: "pending" | "ready";
+  /** `revoked`: the purchase was refunded or disputed, so no licence is issued for it. */
+  status: "pending" | "ready" | "revoked";
   packageId?: string;
   token?: string;
 }
@@ -137,6 +138,7 @@ export async function fetchCheckoutStatus(sessionId: string): Promise<CheckoutSt
     cache: "no-store",
   });
   if (res.status === 202) return { status: "pending" };
+  if (res.status === 403) return { status: "revoked" };
   if (!res.ok) throw new Error(`checkout status ${res.status}`);
   return (await res.json()) as CheckoutStatus;
 }
@@ -170,6 +172,23 @@ export async function downloadPurchase(packageId: string, token: string): Promis
   }
 }
 
+/**
+ * A sentence a seller can act on, for a failed onboarding call. The raw status ("onboarding 401") was
+ * what the page used to show; the server's own message is kept as a detail when it has one.
+ */
+export function onboardingError(status: number, serverMessage?: string): string {
+  const detail = serverMessage ? ` (${serverMessage})` : "";
+  if (status === 401 || status === 403) {
+    return `That invite code doesn't match this seller ID. Check both against the invite you were sent, or request a new invite.${detail}`;
+  }
+  if (status === 400 || status === 422) return `Something in the form isn't valid. Check the seller ID and country.${detail}`;
+  if (status === 404) return `This store isn't taking new sellers right now.${detail}`;
+  if (status === 409) return `This seller ID is already connected to a Stripe account.${detail}`;
+  if (status === 429) return "Too many attempts. Wait a minute and try again.";
+  if (status >= 500) return "The store couldn't reach Stripe just now. Try again in a few minutes.";
+  return `Couldn't start seller setup (error ${status}).${detail}`;
+}
+
 export async function startSellerOnboarding(input: {
   sellerId: string;
   /** The code the store operator issued for this seller id (`POST /api/admin/connect/invite`). */
@@ -182,8 +201,8 @@ export async function startSellerOnboarding(input: {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  const body = (await res.json()) as { url?: string; accountId?: string; error?: string };
-  if (!res.ok && !body.error) body.error = `onboarding ${res.status}`;
+  const body = (await res.json().catch(() => ({}))) as { url?: string; accountId?: string; error?: string };
+  if (!res.ok) body.error = onboardingError(res.status, body.error);
   return body;
 }
 
