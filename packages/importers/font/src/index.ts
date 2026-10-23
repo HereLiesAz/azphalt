@@ -1,4 +1,4 @@
-import { writeAzp, readSfntInfo } from "@azphalt/azp";
+import { writeAzp, readSfntInfo, verifyAzp } from "@azphalt/azp";
 import type { Manifest } from "@azphalt/azdk";
 
 export interface ImportOptions {
@@ -78,17 +78,26 @@ export interface FontPackageOptions {
 /**
  * Packages a compiled font into a `kind: "font"` .azp — the shape Morphont publishes. Only `.ttf` /
  * `.otf` / `.woff2` qualify. For SFNT fonts the variable axes, weight and italic flag are read from the
- * font itself so the manifest cannot disagree with the file.
+ * font itself so the manifest cannot disagree with the file. Facts the font states that azphalt
+ * wouldn't accept are dropped (an out-of-range weight) or refused with the reason (an unreadable
+ * `fvar`), and the finished package is verified, so this never returns one the store would reject.
  */
 export function importFontPackage(bytes: Uint8Array, opts: FontPackageOptions): Uint8Array {
   const ext = detectFontExt(bytes);
   if (ext !== "ttf" && ext !== "otf" && ext !== "woff2") throw new Error(`a font package takes ttf, otf or woff2, not ${ext}`);
   const info = ext === "woff2" ? undefined : readSfntInfo(bytes);
   if (ext !== "woff2" && !info) throw new Error("not a readable font");
-  const family = opts.family ?? info?.family;
+  const family = (opts.family ?? info?.family)?.trim();
   if (!family) throw new Error("family name required (the font has none)");
+  if (family.length > 128) throw new Error("the family name is longer than 128 characters; pass a shorter one as family");
+  if (info?.variable && info.axes.length === 0) throw new Error("the font's fvar table can't be read, so its axes are unknown");
+  const badTag = info?.axes.find((a) => !/^[\x20-\x7e]{4}$/.test(a.tag));
+  if (badTag) throw new Error("the font's fvar table has an axis tag that isn't four printable characters");
+  const weight = info?.weight !== undefined && Number.isInteger(info.weight) && info.weight >= 1 && info.weight <= 1000 ? info.weight : undefined;
+  const style = info?.style?.slice(0, 64);
 
-  const path = `fonts/${family.replace(/[^A-Za-z0-9._-]+/g, "")|| "Font"}${info?.style && info.style !== "Regular" ? "-" + info.style.replace(/[^A-Za-z0-9]+/g, "") : ""}.${ext}`;
+  const stem = family.replace(/[^A-Za-z0-9._-]+/g, "").replace(/^\.+/, "") || "Font";
+  const path = `fonts/${stem}${style && style !== "Regular" ? "-" + style.replace(/[^A-Za-z0-9]+/g, "") : ""}.${ext}`;
   const manifest: Omit<Manifest, "files"> = {
     azphalt: "0.1",
     id: opts.id,
@@ -107,8 +116,8 @@ export function importFontPackage(bytes: Uint8Array, opts: FontPackageOptions): 
       faces: [{
         path,
         format: ext,
-        ...(info?.style ? { style: info.style } : {}),
-        ...(info?.weight ? { weight: info.weight } : {}),
+        ...(style ? { style } : {}),
+        ...(weight ? { weight } : {}),
         ...(info?.italic ? { italic: true } : {}),
         ...(info?.variable ? { variable: true, axes: info.axes } : {}),
       }],
@@ -119,5 +128,7 @@ export function importFontPackage(bytes: Uint8Array, opts: FontPackageOptions): 
     payload: { [path]: bytes },
     license: opts.licenseText ?? `${opts.license ?? "OFL-1.1"}\n\nProvide the full license text.\n`,
   });
+  const { errors } = verifyAzp(azp);
+  if (errors.length > 0) throw new Error(`the font can't be packaged: ${errors.join("; ")}`);
   return azp;
 }

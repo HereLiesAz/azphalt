@@ -7,7 +7,10 @@ Data only: no code, no azphalt capabilities. See the [font spec](../../../../spe
 
 - **`manifest.json`** — the `font` block: family, optional designer/scripts/languages/sampleText, and one
   `faces[]` entry per file. A variable face sets `"variable": true` and lists its `axes`.
-- **`fonts/`** — your compiled `.ttf`, `.otf` or `.woff2`. Every file must be declared by a face.
+- **`fonts/`** — your compiled `.ttf`, `.otf` or `.woff2`. Every file must be declared by a face;
+  the manifest starts out naming `fonts/MyFont-Regular.ttf`, so put your font there (or change the
+  path). `npm run build` checks the package the way the store does and stops with the reasons if it
+  wouldn't be accepted.
 - **`build.js`** — bundles `fonts/` into a `.azp`. Verification cross-checks declared axes against the
   font's own `fvar` table.
 
