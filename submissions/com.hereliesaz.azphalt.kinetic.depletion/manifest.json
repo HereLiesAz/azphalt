@@ -1,0 +1,361 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.kinetic.depletion",
+  "name": "Depletion",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Five brushes that run out. Each carries a load that drains with distance and pressure: a rake whose bristles dry one by one, a nib that skips and scratches, chalk that wears down, a roller that starves and a sponge that goes to coral. Lift and start again to reload.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "preview": {
+    "image": "assets/preview.png"
+  },
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/dry-rake.png",
+      "tags": [
+        "dry brush",
+        "bristle",
+        "streak"
+      ],
+      "params": {
+        "name": "Dry Rake",
+        "spacing": 0.1,
+        "opacity": 1,
+        "program": {
+          "state": {
+            "load": 1,
+            "cap": 300,
+            "d0": 26,
+            "n": 12,
+            "gofs": 0,
+            "dx": 1,
+            "dy": 0
+          },
+          "init": [
+            "d0 = diameter;",
+            "cap = 150 + 5.3 * d0;",
+            "n = clamp(floor(d0 / 2.4), 6, 24);",
+            "gofs = hash(3.7);"
+          ],
+          "step": [
+            "let pr = clamp(pressure, 0, 1);",
+            "let fast = clamp(speed / 3, 0, 1);",
+            "load -= stepPx / cap * (0.5 + 0.95 * pr) * (0.85 + 0.25 * clamp(speed / 2, 0, 1));",
+            "load = max(load, 0);",
+            "// travel direction, low-passed so a noisy hand does not shake the tool",
+            "if (index <= 1) { dx = cos(heading); dy = sin(heading); } else {",
+            "  dx = lerp(dx, cos(heading), 0.4); dy = lerp(dy, sin(heading), 0.4);",
+            "}",
+            "let dl = hypot(dx, dy);",
+            "let nx = dl > 0.001 ? dx / dl : cos(heading);",
+            "let ny = dl > 0.001 ? dy / dl : sin(heading);",
+            "dx = nx; dy = ny;",
+            "hide = 1;",
+            "let wspan = d0 * (0.95 + 0.25 * pr);",
+            "let cw = wspan / n;",
+            "if (index == 0) {",
+            "  emit { size: cw * 1.4, tip: 1, alpha: baseAlpha };",
+            "} else {",
+            "  let ang = atan2(ny, nx);",
+            "  let len = max(stepPx * 3, cw * 1.6);",
+            "  let dry = 1 - load;",
+            "  let le = load + 0.14 * (pr - 0.5) - 0.08 * fast;",
+            "  for i in 0..24 {",
+            "    if (i < n) {",
+            "      let u = (i + 0.5) / n - 0.5;",
+            "      let t = fract(i * 0.618034 + gofs);",
+            "      let thr = t < 0.18 ? (t - 0.18) * 0.6 : (t - 0.18) * 0.95;",
+            "      let wet = clamp((le - thr) / 0.22, 0, 1);",
+            "      let s = noise(i * 11.7 + dist / (d0 * 1.1));",
+            "      let fire = smoothstep(0, 0.3, wet * 1.2 - 0.12 + (0.5 - s) * 0.9 * (1 - wet * wet));",
+            "      if (fire > 0.03) {",
+            "        let bw = cw * (0.45 + 1.1 * wet) * (0.6 + 0.4 * fire);",
+            "        let wob = (noise(i * 5.3 + 40 + dist / (d0 * 2.5)) - 0.5) * cw * (0.25 + 1.6 * dry * dry);",
+            "        let off = u * wspan * (1 + 0.12 * dry) + wob;",
+            "        emit { x: px - ny * off, y: py + nx * off, size: len, tip: clamp(bw / len, 0.05, 1),",
+            "               angle: ang, alpha: baseAlpha * (0.55 + 0.45 * fire) * (0.75 + 0.25 * wet) };",
+            "      }",
+            "    }",
+            "  }",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/last-drop.png",
+      "tags": [
+        "ink",
+        "pen",
+        "line"
+      ],
+      "params": {
+        "name": "Last Drop",
+        "spacing": 0.05,
+        "opacity": 1,
+        "hardness": 1,
+        "airbrushStillnessRadiusPx": 4,
+        "program": {
+          "state": {
+            "ink": 1,
+            "cap": 350,
+            "d0": 26,
+            "ws": 0.3,
+            "dx": 1,
+            "dy": 0,
+            "bx": 0,
+            "by": 0,
+            "gap": 0
+          },
+          "init": [
+            "d0 = diameter;",
+            "cap = 275 + 5.5 * d0;",
+            "bx = px; by = py;"
+          ],
+          "step": [
+            "let pr = clamp(pressure, 0, 1);",
+            "let target = (0.09 + 0.91 * pow(pr, 1.35)) * (1 - 0.16 * clamp(speed / 3, 0, 1));",
+            "if (index == 0) { ws = target; } else { ws += (target - ws) * 0.4; }",
+            "ink -= stepPx / cap * (0.6 + 0.6 * ws);",
+            "ink = max(ink, 0);",
+            "// travel direction, low-passed so a noisy hand does not shake the tool",
+            "if (index <= 1) { dx = cos(heading); dy = sin(heading); } else {",
+            "  dx = lerp(dx, cos(heading), 0.5); dy = lerp(dy, sin(heading), 0.5);",
+            "}",
+            "let dl = hypot(dx, dy);",
+            "let nx = dl > 0.001 ? dx / dl : cos(heading);",
+            "let ny = dl > 0.001 ? dy / dl : sin(heading);",
+            "dx = nx; dy = ny;",
+            "let thin = smoothstep(0, 0.7, ink);",
+            "let q = 1 - smoothstep(0, 0.6, ink);",
+            "let w = max(ws * (0.5 + 0.5 * thin), 1.3 / d0);",
+            "let fresh = pow(clamp(1 - dist / (1.4 * d0), 0, 1), 2);",
+            "let a = clamp(lerp(0.6, 0.86, thin) + 0.14 * fresh, 0, 1);",
+            "let s = 0.6 * noise(dist / (d0 * 0.5) + 5.3) + 0.4 * noise(dist / (d0 * 0.17) + 9.1);",
+            "if (index == 0) {",
+            "  emit { size: d0 * 0.62, tip: 1, alpha: 1 };",
+            "}",
+            "if (index == 1 && dwell > 40) {",
+            "  emit { x: bx, y: by, size: d0 * (0.62 + 0.55 * clamp(dwell / 600, 0, 1)), tip: 1, alpha: 1 };",
+            "}",
+            "if (q > 0.32) {",
+            "  // the tines have parted and the slit between them has run dry: two scratchy rails",
+            "  hide = 1;",
+            "  let rw = max(w * d0 * 0.34, d0 * 0.06);",
+            "  let off = max(w * d0 * 0.5 - rw * 0.5, d0 * 0.07);",
+            "  let sl = noise(dist / (d0 * 0.35) + 91);",
+            "  let sr = noise(dist / (d0 * 0.35) + 173);",
+            "  let keep = 1.2 - q * 0.8;",
+            "  if (sl < keep) { emit { x: px - ny * off, y: py + nx * off, size: rw, tip: 1, alpha: max(a, 0.6) }; }",
+            "  if (sr < keep) { emit { x: px + ny * off, y: py - nx * off, size: rw, tip: 1, alpha: max(a, 0.6) }; }",
+            "  // paper fibres snag the tines and throw off flecks",
+            "  if (rand() < q * 0.22) { let fo = rands() * w * d0 * 0.9; emit { x: px - ny * fo, y: py + nx * fo, size: d0 * (0.04 + 0.05 * rand()), tip: 1, alpha: 0.7 }; }",
+            "} else {",
+            "  sizeMul = w;",
+            "  alphaMul = a;",
+            "  let skip = s < q * q * 1.3 - 0.06 ? 1 : 0;",
+            "  if (skip == 1) { hide = 1; }",
+            "  // the nib catches again after a skip and drops a bead of ink",
+            "  if (gap == 1 && skip == 0) { emit { size: w * d0 * 1.2, tip: 1, alpha: 1 }; }",
+            "  gap = skip;",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/chalk-stub.png",
+      "tags": [
+        "chalk",
+        "stick",
+        "grain"
+      ],
+      "params": {
+        "name": "Chalk Stub",
+        "spacing": 0.1,
+        "opacity": 1,
+        "roundness": 0.62,
+        "angle": 75,
+        "program": {
+          "state": {
+            "wear": 0,
+            "cap": 420,
+            "d0": 26
+          },
+          "init": [
+            "d0 = diameter;",
+            "cap = 240 + 7 * d0;"
+          ],
+          "step": [
+            "let pr = clamp(pressure, 0, 1);",
+            "wear += stepPx / cap * (0.35 + 1.7 * pr * pr);",
+            "wear = min(wear, 1);",
+            "let w = wear;",
+            "let fw = d0 * (1 - 0.7 * w) * (0.8 + 0.3 * pr);",
+            "let ft = lerp(0.62, 0.30, w);",
+            "let spin = -50 * w + 14 * (noise(dist / (d0 * 4)) - 0.5) * (0.3 + w);",
+            "let fa = baseAngle + spin;",
+            "let ca = cos(fa);",
+            "let sa = sin(fa);",
+            "// the worn face itself: a faint dust body that narrows, flattens and turns as the stub shortens",
+            "sizeMul = fw / d0;",
+            "tipMul = ft / baseTip;",
+            "rotate = spin;",
+            "alphaMul = (0.3 + 0.3 * pr) * (1 - 0.7 * w);",
+            "// tooth: the paper only takes chalk where the grain peaks, and pressure reaches deeper",
+            "let tc = d0 * 0.09;",
+            "let thr = 0.3 + 0.7 * pr * (1 - 0.55 * w);",
+            "let gs = d0 * 0.095;",
+            "let kk = 44 * clamp(fw / d0, 0.3, 1.1);",
+            "for j in 0..48 {",
+            "  if (j < kk) {",
+            "    let a = rands() * 0.5 * fw;",
+            "    let b = rands() * 0.5 * fw * ft;",
+            "    let x = px + a * ca - b * sa;",
+            "    let y = py + a * sa + b * ca;",
+            "    let edge = 1 - 0.55 * pow(max(abs(a) / (0.5 * fw), abs(b) / (0.5 * fw * ft)), 3);",
+            "    if (noise2(x / tc, y / tc) < thr * edge) {",
+            "      emit { x: x, y: y, size: gs * (0.7 + 0.7 * rand()), tip: 1, angle: rand() * 360,",
+            "             alpha: 0.7 + 0.3 * rand() };",
+            "    }",
+            "  }",
+            "}",
+            "// flakes: crumbs thrown off the edge, more as it wears and the harder it is pressed",
+            "let flake = 0.04 + 0.6 * w * (0.4 + 0.6 * pr);",
+            "for k in 0..8 {",
+            "  if (rand() < flake) {",
+            "    let a = rands() * 0.5 * fw;",
+            "    let side = rand() < 0.5 ? -1 : 1;",
+            "    let b = side * (0.5 * fw * ft + rand() * 0.34 * fw * (0.3 + w));",
+            "    emit { x: px + a * ca - b * sa, y: py + a * sa + b * ca, size: gs * (0.4 + 0.8 * rand()), tip: 1,",
+            "           angle: rand() * 360, alpha: 0.45 + 0.45 * rand() };",
+            "  }",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/roller-starve.png",
+      "tags": [
+        "roller",
+        "fill",
+        "texture"
+      ],
+      "params": {
+        "name": "Roller Starve",
+        "spacing": 0.05,
+        "opacity": 1,
+        "program": {
+          "state": {
+            "load": 1,
+            "cap": 340,
+            "d0": 26,
+            "n": 14,
+            "dx": 1,
+            "dy": 0
+          },
+          "init": [
+            "d0 = diameter;",
+            "cap = 150 + 7.5 * d0;",
+            "n = clamp(floor(d0 / 1.6), 8, 40);"
+          ],
+          "step": [
+            "let pr = clamp(pressure, 0, 1);",
+            "load -= stepPx / cap * (0.5 + 0.95 * pr) * (0.9 + 0.2 * clamp(speed / 2, 0, 1));",
+            "load = max(load, 0);",
+            "// travel direction, low-passed so a noisy hand does not shake the tool",
+            "if (index <= 1) { dx = cos(heading); dy = sin(heading); } else {",
+            "  dx = lerp(dx, cos(heading), 0.3); dy = lerp(dy, sin(heading), 0.3);",
+            "}",
+            "let dl = hypot(dx, dy);",
+            "let nx = dl > 0.001 ? dx / dl : cos(heading);",
+            "let ny = dl > 0.001 ? dy / dl : sin(heading);",
+            "dx = nx; dy = ny;",
+            "hide = 1;",
+            "let wspan = d0 * (0.95 + 0.12 * pr);",
+            "let cw = wspan / n;",
+            "let len = max(stepPx * 2.2, cw * 2);",
+            "let ang = atan2(ny, nx);",
+            "let dry = 1 - load;",
+            "if (index == 0) { emit { size: cw * 2.2, tip: 1, alpha: baseAlpha }; } else {",
+            "for i in 0..40 {",
+            "  if (i < n) {",
+            "    let u = (i + 0.5) / n * 2 - 1;",
+            "    let thr = (hash(floor(i / 2) + 7) - 0.5) * 0.9;",
+            "    let le = load + 0.22 * (pr - 0.5) - 0.3 * pow(abs(u), 2.3) - thr * (0.3 + 0.9 * dry);",
+            "    let m = (0.75 * (noise2(i * 0.9 + 21, dist / (d0 * 0.55)) - 0.5) + 0.5 * (noise2(i * 2.1 + 77, dist / (d0 * 0.1)) - 0.5)) * (0.2 + 2.4 * dry * dry);",
+            "    let c = smoothstep(0.0, 0.7, le + m);",
+            "    if (c > 0.05) {",
+            "      let off = u * wspan * 0.5;",
+            "      emit { x: px - ny * off, y: py + nx * off, size: len, tip: clamp(cw * 1.6 * (0.55 + 0.45 * c) / len, 0.05, 1),",
+            "             angle: ang, alpha: baseAlpha * (0.4 + 0.6 * c) };",
+            "    }",
+            "  }",
+            "}",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/sponge-charge.png",
+      "tags": [
+        "sponge",
+        "dab",
+        "texture"
+      ],
+      "params": {
+        "name": "Sponge Charge",
+        "spacing": 0.62,
+        "opacity": 1,
+        "program": {
+          "state": {
+            "load": 1,
+            "cap": 290,
+            "d0": 26
+          },
+          "init": [
+            "d0 = diameter;",
+            "cap = 250 + 5.7 * d0;"
+          ],
+          "step": [
+            "let pr = clamp(pressure, 0, 1);",
+            "load -= stepPx / cap * (0.55 + 0.9 * pr);",
+            "load = max(load, -0.35);",
+            "hide = 1;",
+            "let R = diameter * 0.5 * (0.85 + 0.25 * pr);",
+            "let lf = pow(max(load, 0), 0.8);",
+            "// the sponge's pores are fixed (hash j); a wet one lays big overlapping cells, a draining one",
+            "// shrinks them and drops cells out, so the print turns from solid to lace to crumbs",
+            "let rc = R * 0.22 * (0.45 + 0.55 * lf);",
+            "let keep = 0.2 * clamp((load + 0.35) / 0.35, 0, 1) + 1.0 * pow(max(load, 0), 1.1);",
+            "let pa = hash(index + 3.1) * 360;",
+            "let cx = px + (hash(index + 17.7) - 0.5) * R * 0.3;",
+            "let cy = py + (hash(index + 29.3) - 0.5) * R * 0.3;",
+            "for j in 0..64 {",
+            "  let h = hash(j + 101);",
+            "  let h2 = hash(index * 64 + j + 7.5);",
+            "  if (h * 0.8 + h2 * 0.2 < keep) {",
+            "    let rr = R * 0.9 * sqrt((j + 0.5) / 64) + (h2 - 0.5) * R * 0.1;",
+            "    let th = j * 137.508 + pa;",
+            "    emit { x: cx + rr * cos(th), y: cy + rr * sin(th), size: rc * 2 * (0.6 + 0.9 * h2), tip: 1,",
+            "           angle: h * 360, alpha: baseAlpha * (0.75 + 0.25 * lf) };",
+            "  }",
+            "}"
+          ]
+        }
+      }
+    }
+  ]
+}
