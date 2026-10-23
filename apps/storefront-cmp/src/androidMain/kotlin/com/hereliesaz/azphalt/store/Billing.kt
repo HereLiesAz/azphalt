@@ -106,9 +106,10 @@ public class Billing(private val context: Context) {
      * Buy [packageId], then exchange the Play purchase for a registry entitlement.
      *
      * Acknowledgement matters and is easy to miss: Play automatically refunds any purchase not
-     * acknowledged within three days. It happens only after the registry has issued the entitlement,
-     * so a purchase this app could not turn into something usable stays unacknowledged and the user
-     * gets their money back rather than paying for nothing.
+     * acknowledged within three days. Both sides acknowledge only after the entitlement exists: the
+     * registry acknowledges right after it issues the licence (never before), and this app does so
+     * once the exchange has returned one. A purchase that could not be turned into something usable
+     * therefore stays unacknowledged, and the user gets their money back rather than paying for nothing.
      */
     public suspend fun purchase(activity: Activity, packageId: String, repository: String?): PurchaseOutcome {
         val c = try {
@@ -176,8 +177,8 @@ public class Billing(private val context: Context) {
                     repository = repository,
                 )
             } catch (e: Exception) {
-                // The purchase is deliberately left unacknowledged (below), so Play refunds it after three
-                // days if no licence is ever issued. Nothing in this app retries the exchange on its own,
+                // The purchase is still unacknowledged: the registry acknowledges only after issuing a licence,
+                // and this app only below, so Play refunds it after three days if no licence is ever issued. Nothing in this app retries the exchange on its own,
                 // so say what is actually true: try again, or the payment comes back.
                 return PurchaseOutcome.Failed(
                     "Paid, but the licence could not be issued: ${e.message ?: "registry unreachable"}. " +
