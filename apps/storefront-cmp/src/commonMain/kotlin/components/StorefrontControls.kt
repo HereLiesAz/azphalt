@@ -14,9 +14,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import theme.azTurnstileEntrance
+import theme.CapsuleShape
 
 /** Sort orders for the catalog. */
 enum class SortMode(val label: String) {
@@ -52,7 +52,7 @@ fun StorefrontControls(
             onValueChange = onQuery,
             placeholder = { Text("Search extensions…") },
             singleLine = true,
-            shape = RectangleShape,
+            shape = CapsuleShape.Full,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -60,7 +60,7 @@ fun StorefrontControls(
         ChipLabel("Sort")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SortMode.values().forEach { mode ->
-                FilterChip(selected = sort == mode, onClick = { onSort(mode) }, label = { Text(mode.label) })
+                FilterChip(shape = CapsuleShape.Full, selected = sort == mode, onClick = { onSort(mode) }, label = { Text(mode.label) })
             }
         }
 
@@ -68,7 +68,7 @@ fun StorefrontControls(
         ChipLabel("Filter")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("All", "Free", "Paid").forEachIndexed { i, label ->
-                FilterChip(selected = price == i, onClick = { onPrice(i) }, label = { Text(label) })
+                FilterChip(shape = CapsuleShape.Full, selected = price == i, onClick = { onPrice(i) }, label = { Text(label) })
             }
         }
 
@@ -78,16 +78,17 @@ fun StorefrontControls(
         Spacer(Modifier.height(8.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Any" to 0, "Installed" to 1, "Not installed" to 2).forEach { (label, value) ->
-                FilterChip(selected = owned == value, onClick = { onOwned(value) }, label = { Text(label) })
+                FilterChip(shape = CapsuleShape.Full, selected = owned == value, onClick = { onOwned(value) }, label = { Text(label) })
             }
         }
 
         if (categories.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = category == null, onClick = { onCategory(null) }, label = { Text("All types") })
+                FilterChip(shape = CapsuleShape.Full, selected = category == null, onClick = { onCategory(null) }, label = { Text("All types") })
                 categories.forEach { c ->
                     FilterChip(
+                        shape = CapsuleShape.Full,
                         selected = category == c,
                         onClick = { onCategory(c) },
                         label = { Text(c.replaceFirstChar { it.uppercase() }) },
@@ -99,9 +100,10 @@ fun StorefrontControls(
         if (apps.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = app == null, onClick = { onApp(null) }, label = { Text("All apps") })
+                FilterChip(shape = CapsuleShape.Full, selected = app == null, onClick = { onApp(null) }, label = { Text("All apps") })
                 apps.forEach { a ->
                     FilterChip(
+                        shape = CapsuleShape.Full,
                         selected = app == a,
                         onClick = { onApp(a) },
                         label = { Text(a.substringAfterLast('.')) },

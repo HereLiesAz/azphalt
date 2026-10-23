@@ -1,14 +1,13 @@
 package components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
+import theme.Ground
+import theme.Hues
 import theme.azTurnstileEntrance
 
 @Composable
@@ -19,20 +18,16 @@ fun HeroSection(total: Int) {
             .fillMaxWidth()
             .padding(top = 40.dp, bottom = 20.dp),
     ) {
-        // Tagline tag — an outlined sharp Metro rectangle (was a 50%-rounded pill).
-        Box(
-            modifier = Modifier
-                .azTurnstileEntrance(index = 0)
-                .background(cs.secondaryContainer)
-                .border(1.dp, cs.onSecondaryContainer.copy(alpha = 0.55f), RectangleShape)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
-            Text(
-                text = if (total > 0) "$total portable extensions · one open standard" else "Loading the registry…",
-                style = MaterialTheme.typography.labelLarge,
-                color = cs.onSecondaryContainer,
-            )
-        }
+        // Tagline tag — a named thing, so a capsule: ink, no border, the end-cap carrying the count.
+        Capsule(
+            label = if (total > 0) "portable extensions · one open standard" else "Loading the registry…",
+            background = Ground.Ink,
+            cap = if (total > 0) Hues.Bg[0] else null,
+            capText = if (total > 0) "$total" else "",
+            labelSize = 13,
+            height = 36.dp,
+            modifier = Modifier.azTurnstileEntrance(index = 0),
+        )
 
         Spacer(Modifier.height(20.dp))
 
