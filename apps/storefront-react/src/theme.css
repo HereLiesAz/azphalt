@@ -52,7 +52,12 @@
   --surface: #e8c81e;
   --surface-highest: rgba(30, 26, 23, 0.09);
   --on-surface: #1e1a17;
-  --on-surface-variant: rgba(30, 26, 23, 0.62);
+  /* Opaque, not ink at 62% alpha: that computed to about 4.0:1 on the page yellow, under the 4.5:1 AA
+     floor for the 11–13px text it is used on. #50461f is about 5.7:1 on #e8c81e. */
+  --on-surface-variant: #50461f;
+  /* Error text. The app used to fall back to the dark theme's #ffb4ab, about 1.03:1 on yellow — invisible.
+     #8a1c14 is about 5.6:1 on #e8c81e. */
+  --error: #8a1c14;
   --outline: transparent;
 
   --capsule-curve: cubic-bezier(0, 0.9, 0.1, 1);
@@ -95,6 +100,12 @@ button {
 
 .chip {
   border: none;
+  /* 44px is the minimum touch target (WCAG 2.5.5 / platform guidance); the 11px label stays. */
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   padding: 8px 16px;
   font-size: 11px;
@@ -111,6 +122,70 @@ button {
 }
 .chip:active {
   transform: scale(0.96);
+}
+
+/* One focus ring for everything focusable. The yellow page swallows the browser default. */
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* The search box and the form fields: a visible 2px ink edge, as a capsule. */
+.field {
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid var(--on-background);
+  border-radius: 999px;
+  background: var(--fold-light);
+  color: var(--on-background);
+  padding: 12px 18px;
+  font: inherit;
+  font-size: 16px;
+}
+textarea.field {
+  border-radius: 22px;
+}
+.field::placeholder {
+  color: var(--on-surface-variant);
+}
+.field:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+.hint {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  margin: 4px 0 0;
+}
+
+/* Dialogs are records, not cards: a full-radius solid surface, no border, no shadow. */
+.dialog-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(30, 26, 23, 0.45);
+}
+.dialog {
+  background: var(--fold-light);
+  color: var(--ink);
+  border-radius: 28px;
+  padding: 24px 28px;
+  max-width: 440px;
+  width: 100%;
+}
+.dialog .action {
+  display: block;
+  text-align: center;
+  margin-top: 8px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-decoration: none;
+  min-height: 44px;
 }
 
 /* ── M3 Expressive hero carousel ──
@@ -161,10 +236,8 @@ button {
   scroll-snap-align: start;
 }
 
-/* Sharp, outlined Metro tile — mirrors the AzNavRail aesthetic of the Compose storefront. */
-/* Not a card any more: the Capsule system has no bordered surfaces. Full radius, no shadow; the
-   inline border App.tsx still sets is the last thing to go when this app follows the Compose one to
-   a cascade. */
+/* Not a card: the Capsule system has no bordered surfaces. Full radius, solid fill, no border, no
+   shadow, no hover scale. */
 .pkg-card {
   position: relative;
   text-align: left;
@@ -173,7 +246,8 @@ button {
   display: flex;
   flex-direction: column;
   padding: 0;
-  transition: transform 180ms var(--capsule-curve), border-color 180ms;
+  transition: transform 180ms var(--capsule-curve);
+  border: none;
 }
 .pkg-card:active {
   transform: scale(0.97);

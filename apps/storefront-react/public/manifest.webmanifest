@@ -1,11 +1,11 @@
 {
-  "name": "Azphalt Storefront",
+  "name": "Azphalt Store",
   "short_name": "Azphalt",
   "description": "The open extension marketplace — React PWA.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0C0C13",
-  "theme_color": "#0C0C13",
+  "background_color": "#e8c81e",
+  "theme_color": "#e8c81e",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]

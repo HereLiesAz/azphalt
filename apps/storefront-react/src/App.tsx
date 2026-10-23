@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   fetchPackages,
   fetchCheckoutStatus,
@@ -144,7 +144,7 @@ function LlmDisclosure({ llm }: { llm: LlmBlock }) {
     </div>
   );
   return (
-    <section aria-label="Before you install" style={{ marginTop: 24, padding: 16, border: "1px solid var(--outline)" }}>
+    <section aria-label="Before you install" style={{ marginTop: 24, padding: "18px 22px", background: "var(--surface-highest)", borderRadius: 26 }}>
       <div style={{ fontWeight: 800, fontSize: 16 }}>Before you install</div>
       {row("Runs", llm.tier === "sandbox-weights"
         ? "Open weights in your own private GitHub Actions sandbox. Prompts stay there."
@@ -207,13 +207,83 @@ function PreviewCanvas({ pkg, tint, active }: { pkg: PackageSummary; tint: strin
   return <canvas ref={ref} style={{ width: "100%", height: "100%", display: "block" }} />;
 }
 
+/**
+ * A modal: `role="dialog"`, `aria-modal`, initial focus on its first control, Tab kept inside, Escape
+ * and a scrim click close it, and focus goes back to whatever opened it.
+ */
+function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  // Held in a ref so a parent re-render (new inline lambda) does not re-run the effect and steal focus.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const el = ref.current;
+    const focusables = () =>
+      Array.from(
+        el?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])') ?? [],
+      );
+    (focusables()[0] ?? el)?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        closeRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const f = focusables();
+      if (f.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      opener?.focus?.();
+    };
+  }, []);
+  return (
+    <div className="dialog-scrim" onClick={() => closeRef.current()}>
+      <div
+        ref={ref}
+        className="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div id={titleId} style={{ fontWeight: 800, fontSize: 18 }}>{title}</div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────── hero + controls ─────────────── */
 
-function Hero({ total }: { total: number }) {
+function heroPill(total: number, loading: boolean, failed: boolean): string {
+  if (failed) return "Couldn't load";
+  if (loading) return "Loading the Azphalt Store…";
+  return `${total} portable ${total === 1 ? "extension" : "extensions"} · one open standard`;
+}
+
+function Hero({ total, loading, failed }: { total: number; loading: boolean; failed: boolean }) {
   return (
     <div style={{ padding: "40px 0 20px" }}>
       <span className="pill" style={{ background: "var(--secondary-container)", color: "var(--on-secondary-container)", fontSize: 13, padding: "8px 16px" }}>
-        {total > 0 ? `${total} portable extensions · one open standard` : "Loading the registry…"}
+        {heroPill(total, loading, failed)}
       </span>
       <h1 style={{ fontSize: 56, lineHeight: 1.05, fontWeight: 850, letterSpacing: -1.5, margin: "20px 0 0" }}>
         The open extension
@@ -221,8 +291,7 @@ function Hero({ total }: { total: number }) {
         <span style={{ color: "var(--primary)" }}>marketplace.</span>
       </h1>
       <p style={{ fontSize: 16, color: "var(--on-surface-variant)", maxWidth: 640, marginTop: 16 }}>
-        Write an extension once — a brush, a filter, a tool — and run it in any app that speaks Azphalt. This is
-        the <strong>React</strong> PWA, a sibling to the Compose (Kotlin/Wasm) storefront on the same API.
+        Brushes, filters, tools and more — install an extension once and use it in any app that speaks Azphalt.
       </p>
     </div>
   );
@@ -259,7 +328,6 @@ function PackageCard({
   height?: number;
 }) {
   const [container, on] = paletteFor(pkg.id);
-  const [hover, setHover] = useState(false);
   const held = isHeld(useContext(InventoryContext), pkg.id);
   const paid = isPaid(pkg);
   const ratingLabel = formatRating(pkg.rating, pkg.ratingCount);
@@ -267,18 +335,9 @@ function PackageCard({
     <button
       className="pkg-card"
       onClick={() => onOpen(pkg)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        width,
-        height,
-        background: rgba(container, 0.14),
-        color: on,
-        border: `${hover ? 2 : 1}px solid ${rgba(on, hover ? 0.95 : 0.5)}`,
-        transform: hover ? "scale(1.02)" : "none",
-      }}
+      style={{ width, height, background: container, color: on }}
     >
-      <div style={{ position: "relative", flex: 1, background: rgba(on, 0.05) }}>
+      <div style={{ position: "relative", flex: 1 }}>
         <PreviewCanvas pkg={pkg} tint={on} active={active} />
         <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: 10 }}>
           <div style={{ display: "flex", gap: 6 }}>
@@ -529,7 +588,7 @@ function Detail({
   return (
     <div style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>
       <button className="chip" onClick={onBack}>←  Back</button>
-      <div style={{ position: "relative", height: 220, overflow: "hidden", background: rgba(container, 0.14), border: `1px solid ${rgba(on, 0.55)}`, marginTop: 20 }}>
+      <div style={{ position: "relative", height: 220, overflow: "hidden", background: container, color: on, borderRadius: 26, marginTop: 20 }}>
         <PreviewCanvas pkg={pkg} tint={on} active />
         <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: 20 }}>
           <div style={{ display: "flex", gap: 6 }}>
@@ -578,17 +637,17 @@ function Detail({
             aria-label={`${n} star${n === 1 ? "" : "s"}`}
             aria-pressed={myStars === n}
             onClick={() => void rate(n)}
-            style={{ padding: "4px 10px", color: n <= myStars ? "var(--primary)" : "var(--on-surface-variant)" }}
+            style={{ fontSize: 18, padding: "0 12px", color: n <= myStars ? "var(--primary)" : "var(--on-surface-variant)" }}
           >
             ★
           </button>
         ))}
       </div>
-      {rateNote && <div style={{ fontSize: 13, color: "var(--on-surface-variant)", marginTop: 6 }}>{rateNote}</div>}
+      <div role="status" aria-live="polite" style={{ fontSize: 13, color: "var(--on-surface-variant)", marginTop: 6 }}>{rateNote}</div>
       <button
         onClick={buy}
         disabled={busy}
-        style={{ marginTop: 32, border: "none", borderRadius: 0, padding: "14px 28px", fontSize: 16, fontWeight: 700, background: "var(--primary)", color: "var(--on-primary)" }}
+        style={{ marginTop: 32, border: "none", borderRadius: 999, padding: "14px 28px", fontSize: 16, fontWeight: 700, background: "var(--primary)", color: "var(--on-primary)" }}
       >
         {busy ? "Working…" : held ? "Install again" : paid ? `Get  ·  ${priceLabel(pkg)}` : "Install  ·  Free"}
       </button>
@@ -617,13 +676,10 @@ function Detail({
       </div>
 
       {dialog && (
-        <div onClick={() => setDialog(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, zIndex: 60 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", padding: 24, maxWidth: 420, border: "1px solid var(--outline)" }}>
-            <div style={{ fontWeight: 800, fontSize: 18 }}>{paid ? "Checkout" : "Install"}</div>
-            <p style={{ color: "var(--on-surface-variant)", marginTop: 8 }}>{dialog}</p>
-            <button className="chip" style={{ marginTop: 8 }} onClick={() => setDialog(null)}>OK</button>
-          </div>
-        </div>
+        <Dialog title={paid ? "Checkout" : "Install"} onClose={() => setDialog(null)}>
+          <p style={{ color: "var(--on-surface-variant)", marginTop: 8 }}>{dialog}</p>
+          <button className="chip" style={{ marginTop: 8 }} onClick={() => setDialog(null)}>OK</button>
+        </Dialog>
       )}
 
       {noHost && (
@@ -654,9 +710,7 @@ function NoHostSheet({
   onDismiss: () => void;
 }) {
   return (
-    <div onClick={onDismiss} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, zIndex: 60 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", padding: 24, maxWidth: 420, width: "100%", border: "1px solid var(--outline)" }}>
-        <div style={{ fontWeight: 800, fontSize: 18 }}>Install “{pkg.name}”</div>
+    <Dialog title={`Install “${pkg.name}”`} onClose={onDismiss}>
         <p style={{ color: "var(--on-surface-variant)", marginTop: 8 }}>
           Nothing on this device opened the link. Download the package and open it in a host, or install one below.
         </p>
@@ -664,7 +718,8 @@ function NoHostSheet({
         <a
           href={downloadUrl(pkg.id, pkg.version)}
           download
-          style={{ display: "block", textAlign: "center", marginTop: 16, padding: "12px 20px", fontWeight: 700, background: "var(--primary)", color: "var(--on-primary)", textDecoration: "none" }}
+          className="action"
+          style={{ marginTop: 16, background: "var(--primary)", color: "var(--on-primary)" }}
         >
           Download .azp
         </a>
@@ -672,7 +727,7 @@ function NoHostSheet({
         {hosts.length > 0 && (
           <>
             <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" }}>
-              {(pkg.targetApps ?? []).length === 0 ? "Hosts that run azphalt extensions" : "Made for"}
+              {(pkg.targetApps ?? []).length === 0 ? "Apps that run Azphalt extensions" : "Made for"}
             </div>
             {hosts.map((h) => (
               <a
@@ -681,7 +736,8 @@ function NoHostSheet({
                 target="_blank"
                 /* The listings are third-party URLs from the registry — deny them window.opener. */
                 rel="noopener noreferrer"
-                style={{ display: "block", textAlign: "center", marginTop: 8, padding: "10px 20px", border: "1px solid var(--outline)", color: "var(--on-surface)", textDecoration: "none" }}
+                className="action"
+                style={{ background: "var(--surface-highest)", color: "var(--on-surface)" }}
               >
                 Get {h.name}
               </a>
@@ -693,8 +749,7 @@ function NoHostSheet({
           <button className="chip" onClick={onRetry}>Try again</button>
           <button className="chip" onClick={onDismiss}>Close</button>
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -703,6 +758,7 @@ function NoHostSheet({
 function StorefrontApp() {
   const [packages, setPackages] = useState<PackageSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Selected item + its expand/collapse animation state. Opening scales the detail in; Back collapses
   // it, then unmounts after the transition (see .detail-overlay in theme.css).
@@ -728,7 +784,9 @@ function StorefrontApp() {
     window.setTimeout(() => setSelected(null), 420);
   };
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setLoadError(null);
     fetchPackages()
       .then((all) => {
         setPackages(all);
@@ -737,9 +795,18 @@ function StorefrontApp() {
         const hit = wanted ? all.find((p) => p.id === wanted) : undefined;
         if (hit) open(hit);
       })
-      .catch((e) => console.error("Failed to fetch packages:", e))
+      .catch((e) => {
+        console.error("Failed to fetch packages:", e);
+        setLoadError(
+          navigator.onLine === false
+            ? "You're offline. Connect to the internet and try again."
+            : "The Azphalt Store didn't answer. It may be down for a moment — try again.",
+        );
+      })
       .finally(() => setLoading(false));
-  }, []);
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(load, []);
 
   const categories = useMemo(() => [...new Set(packages.flatMap((p) => p.mediaDomains ?? []))].sort(), [packages]);
   const apps = useMemo(() => [...new Set(packages.flatMap((p) => p.targetApps ?? []))].sort(), [packages]);
@@ -772,18 +839,21 @@ function StorefrontApp() {
     <InventoryContext.Provider value={inventory}>
     <div style={{ minHeight: "100%", paddingBottom: 96 }}>
       <div style={{ padding: "0 24px" }}>
-        <Hero total={packages.length} />
+        <Hero total={packages.length} loading={loading} failed={loadError !== null} />
         <nav style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "-6px 0 22px" }} aria-label="Store account actions">
           <a className="chip" href="/purchases" style={{ textDecoration: "none" }}>Purchases</a>
-          <a className="chip" href="/connect/onboard" style={{ textDecoration: "none" }}>Sell</a>
+          <a className="chip" href="/connect/onboard" style={{ textDecoration: "none" }}>Sell on Azphalt</a>
           <a className="chip" href="/publish" style={{ textDecoration: "none" }}>Publish</a>
         </nav>
         <div style={{ marginBottom: 24 }}>
           <input
+            type="search"
+            className="field"
+            aria-label="Search extensions"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search extensions…"
-            style={{ width: "100%", boxSizing: "border-box", border: "1px solid var(--outline)", background: "var(--surface)", color: "var(--on-background)", borderRadius: 0, padding: "14px 18px", fontSize: 16, outline: "none" }}
+            style={{ padding: "14px 22px" }}
           />
           <ChipRow label="Sort" items={SORTS} value={sort} onSelect={setSort} />
           <ChipRow label="Filter" items={[[0, "All"], [1, "Free"], [2, "Paid"]] as Array<[number, string]>} value={price} onSelect={setPrice} />
@@ -807,6 +877,12 @@ function StorefrontApp() {
 
       {loading ? (
         <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>Loading…</div>
+      ) : loadError ? (
+        <div role="alert" style={{ textAlign: "center", padding: "48px 24px" }}>
+          <div style={{ fontSize: 20, fontWeight: 800 }}>Couldn't load the extensions</div>
+          <p style={{ color: "var(--on-surface-variant)", margin: "8px auto 16px", maxWidth: 480 }}>{loadError}</p>
+          <button className="chip" onClick={load} style={{ background: "var(--primary)", color: "var(--on-primary)" }}>Retry</button>
+        </div>
       ) : filtering ? (
         shown.length === 0 ? (
           <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>No extensions match your search.</div>
@@ -841,6 +917,25 @@ function StorefrontApp() {
   );
 }
 
+/** Two-letter codes Stripe Express accepts for a seller, the common ones first. */
+const SELLER_COUNTRIES: Array<[string, string]> = [
+  ["US", "United States"], ["GB", "United Kingdom"], ["CA", "Canada"], ["AU", "Australia"], ["IE", "Ireland"],
+  ["DE", "Germany"], ["FR", "France"], ["ES", "Spain"], ["IT", "Italy"], ["NL", "Netherlands"], ["BE", "Belgium"],
+  ["AT", "Austria"], ["CH", "Switzerland"], ["SE", "Sweden"], ["NO", "Norway"], ["DK", "Denmark"], ["FI", "Finland"],
+  ["PT", "Portugal"], ["PL", "Poland"], ["CZ", "Czechia"], ["NZ", "New Zealand"], ["JP", "Japan"], ["SG", "Singapore"],
+  ["HK", "Hong Kong"], ["MX", "Mexico"], ["BR", "Brazil"],
+];
+
+/** Where "Request an invite" goes: the store owner's inbox. */
+const INVITE_REQUEST_HREF =
+  "mailto:hereliesaz@gmail.com?" +
+  new URLSearchParams({
+    subject: "Sell on Azphalt: invite request",
+    body: "Hi, I'd like to sell extensions on the Azphalt Store.\n\nSeller ID I'd like: seller_\nWhat I make: \n",
+  })
+    .toString()
+    .replace(/\+/g, "%20");
+
 function SellerOnboardingPage() {
   const params = new URLSearchParams(window.location.search);
   const initialSeller = params.get("sellerId") ?? "";
@@ -849,33 +944,35 @@ function SellerOnboardingPage() {
   const [inviteCode, setInviteCode] = useState(params.get("invite") ?? "");
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("US");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<{ text: string; error: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const ok = (text: string) => setStatus({ text, error: false });
+  const fail = (text: string) => setStatus({ text, error: true });
 
   useEffect(() => {
     if (!initialSeller) return;
     fetchSellerStatus(initialSeller, true)
       .then((seller) => {
-        if (seller.error) setStatus(seller.error);
-        else if (!seller.onboarded) setStatus("Stripe account not started yet.");
-        else if (seller.chargesEnabled && seller.payoutsEnabled) setStatus("Ready to sell and receive payouts.");
-        else setStatus("Stripe still needs information before this seller can receive purchases.");
+        if (seller.error) fail(seller.error);
+        else if (!seller.onboarded) ok("Stripe account not started yet.");
+        else if (seller.chargesEnabled && seller.payoutsEnabled) ok("Ready to sell and receive payouts.");
+        else ok("Stripe still needs information before this seller can receive purchases.");
       })
-      .catch((error) => setStatus(error instanceof Error ? error.message : "Could not check seller status."));
+      .catch(() => fail("Couldn't check this seller's status. Check your connection and reload the page."));
   }, [initialSeller]);
 
   const begin = async () => {
     const id = sellerId.trim();
     if (!id) {
-      setStatus("Enter a seller ID.");
+      fail("Enter a seller ID.");
       return;
     }
     if (!inviteCode.trim()) {
-      setStatus("Enter the invite code the store operator gave you for this seller ID.");
+      fail("Enter the invite code you were sent for this seller ID. No code yet? Request an invite below.");
       return;
     }
     setBusy(true);
-    setStatus("");
+    ok("Opening Stripe…");
     try {
       const result = await startSellerOnboarding({
         sellerId: id,
@@ -884,46 +981,64 @@ function SellerOnboardingPage() {
         country: country.trim().toUpperCase() || undefined,
       });
       if (result.error) {
-        setStatus(result.error);
+        fail(result.error);
         return;
       }
       if (result.url) {
         window.location.assign(result.url);
         return;
       }
-      setStatus("Stripe returned no onboarding link.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not start onboarding.");
+      fail("Stripe didn't send back a setup link. Try again in a few minutes.");
+    } catch {
+      fail("Couldn't reach the Azphalt Store. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
   };
 
+  const label = { display: "block", marginTop: 18, fontWeight: 800 } as const;
   return (
     <main style={{ minHeight: "100vh", padding: 32, maxWidth: 720, margin: "0 auto" }}>
-      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Azphalt Store</a>
       <h1 style={{ fontSize: 44, marginTop: 32 }}>Sell on Azphalt</h1>
       <p style={{ color: "var(--on-surface-variant)" }}>
-        Connect a Stripe Express account. Stripe handles identity verification and payout details; Azphalt stores only the connected-account id and readiness flags. Selling needs an invite code from the store operator, tied to your seller ID, so nobody can connect their bank account to an ID that isn't theirs.
+        Connect a Stripe Express account to get paid. Stripe handles identity checks and payouts; Azphalt keeps only
+        your connected-account id and whether it is ready.
       </p>
-      <label style={{ display: "block", marginTop: 22, fontWeight: 800 }}>Seller ID</label>
-      <input value={sellerId} onChange={(e) => setSellerId(e.target.value)} placeholder="seller_yourname" style={{ width: "100%", padding: 12, marginTop: 6 }} />
-      <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Invite code</label>
-      <input value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} autoComplete="off" spellCheck={false} placeholder="from the store operator" style={{ width: "100%", padding: 12, marginTop: 6 }} />
-      <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Email (optional)</label>
-      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" style={{ width: "100%", padding: 12, marginTop: 6 }} />
-      <label style={{ display: "block", marginTop: 14, fontWeight: 800 }}>Country</label>
-      <input value={country} onChange={(e) => setCountry(e.target.value)} maxLength={2} style={{ width: 90, padding: 12, marginTop: 6 }} />
-      <div>
-        <button
-          onClick={() => void begin()}
-          disabled={busy}
-          style={{ marginTop: 22, border: 0, padding: "14px 24px", fontWeight: 800, background: "var(--primary)", color: "var(--on-primary)" }}
-        >
-          {busy ? "Opening Stripe…" : "Continue with Stripe"}
-        </button>
-      </div>
-      {status && <p style={{ marginTop: 18, color: "var(--on-surface-variant)" }}>{status}</p>}
+      <p style={{ color: "var(--on-surface-variant)" }}>
+        Selling is invite-only for now. <a href={INVITE_REQUEST_HREF} style={{ color: "var(--ink)", fontWeight: 800 }}>Request an invite</a>
+        {" "}and you'll get a seller ID and invite code by email.
+      </p>
+      <form onSubmit={(e) => { e.preventDefault(); void begin(); }}>
+        <label htmlFor="seller-id" style={label}>Seller ID</label>
+        <input id="seller-id" className="field" aria-describedby="seller-id-hint" value={sellerId} onChange={(e) => setSellerId(e.target.value)} placeholder="seller_yourname" autoComplete="off" spellCheck={false} style={{ marginTop: 6 }} />
+        <p id="seller-id-hint" className="hint">The name your extensions are sold under, like seller_yourname. It comes with your invite.</p>
+        <label htmlFor="invite-code" style={label}>Invite code</label>
+        <input id="invite-code" className="field" aria-describedby="invite-code-hint" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} autoComplete="off" spellCheck={false} style={{ marginTop: 6 }} />
+        <p id="invite-code-hint" className="hint">The one-time code in your invite email. It only works with the seller ID it was issued for.</p>
+        <label htmlFor="seller-email" style={label}>Email (optional)</label>
+        <input id="seller-email" className="field" aria-describedby="seller-email-hint" value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="email" style={{ marginTop: 6 }} />
+        <p id="seller-email-hint" className="hint">Pre-fills Stripe's form.</p>
+        <label htmlFor="seller-country" style={label}>Country</label>
+        <select id="seller-country" className="field" aria-describedby="seller-country-hint" value={country} onChange={(e) => setCountry(e.target.value)} style={{ marginTop: 6, maxWidth: 320 }}>
+          {SELLER_COUNTRIES.map(([code, name]) => (
+            <option key={code} value={code}>{name}</option>
+          ))}
+        </select>
+        <p id="seller-country-hint" className="hint">Where your bank account is. Stripe can't change this later.</p>
+        <div>
+          <button
+            type="submit"
+            disabled={busy}
+            style={{ marginTop: 22, border: 0, borderRadius: 999, minHeight: 44, padding: "14px 24px", fontWeight: 800, background: "var(--primary)", color: "var(--on-primary)" }}
+          >
+            {busy ? "Opening Stripe…" : "Continue with Stripe"}
+          </button>
+        </div>
+      </form>
+      <p role="status" aria-live="polite" style={{ marginTop: 18, color: status?.error ? "var(--error)" : "var(--on-surface-variant)", fontWeight: status?.error ? 700 : 400 }}>
+        {status?.text}
+      </p>
     </main>
   );
 }
@@ -985,7 +1100,7 @@ function CheckoutSuccessPage() {
 
   return (
     <main style={{ minHeight: "100vh", padding: 32, maxWidth: 720, margin: "0 auto" }}>
-      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Azphalt Store</a>
       <h1 style={{ fontSize: 44, marginTop: 32 }}>Purchase</h1>
       <p style={{ fontSize: 18, color: "var(--on-surface-variant)" }}>{status}</p>
       {packageId && token && (
@@ -1034,7 +1149,7 @@ function PurchasesPage() {
 
   return (
     <main style={{ minHeight: "100vh", padding: 32, maxWidth: 820, margin: "0 auto" }}>
-      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Azphalt Store</a>
       <h1 style={{ fontSize: 44, marginTop: 32 }}>Purchases</h1>
       {status && <p style={{ color: "var(--on-surface-variant)" }}>{status}</p>}
       <div style={{ display: "grid", gap: 12, marginTop: 24 }}>
@@ -1093,12 +1208,12 @@ function ReportPage() {
     setState(r.error ? { kind: "error", message: r.error } : { kind: "sent" });
   };
 
-  const field = { width: "100%", boxSizing: "border-box" as const, border: "1px solid var(--outline)", background: "var(--surface)", color: "var(--on-background)", padding: "10px 12px", fontSize: 15, marginTop: 6 };
+  const field = { width: "100%", boxSizing: "border-box" as const, border: "2px solid var(--on-background)", borderRadius: 22, background: "var(--fold-light)", color: "var(--on-background)", padding: "10px 12px", fontSize: 15, marginTop: 6 };
   const label = { display: "block", marginTop: 18, fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" };
 
   return (
     <main style={{ minHeight: "100vh", padding: 32, maxWidth: 640, margin: "0 auto" }}>
-      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Azphalt Store</a>
       <h1 style={{ fontSize: 44, marginTop: 32 }}>Report an extension</h1>
       {state.kind === "sent" ? (
         <p style={{ color: "var(--on-surface-variant)" }}>
@@ -1144,7 +1259,7 @@ function ReportPage() {
             Details (optional)
             <textarea value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={4000} rows={6} style={field} />
           </label>
-          {state.kind === "error" && <p style={{ color: "var(--error, #ffb4ab)" }}>{state.message}</p>}
+          {state.kind === "error" && <p role="alert" style={{ color: "var(--error)", fontWeight: 700 }}>{state.message}</p>}
           <button
             type="submit"
             disabled={state.kind === "sending"}
@@ -1193,7 +1308,7 @@ function ModerationPage() {
 
   return (
     <main style={{ minHeight: "100vh", padding: 32, maxWidth: 820, margin: "0 auto" }}>
-      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Azphalt Store</a>
       <h1 style={{ fontSize: 44, marginTop: 32 }}>Moderation queue</h1>
       <p style={{ color: "var(--on-surface-variant)" }}>
         Filed reports, newest first. Every web report is untrusted: it waits here for a person and never
@@ -1206,7 +1321,7 @@ function ModerationPage() {
           onChange={(e) => setToken(e.target.value)}
           placeholder="Admin token"
           autoComplete="off"
-          style={{ flex: 1, border: "1px solid var(--outline)", background: "var(--surface)", color: "var(--on-background)", padding: "10px 12px", fontSize: 15 }}
+          style={{ flex: 1, border: "2px solid var(--on-background)", borderRadius: 22, background: "var(--fold-light)", color: "var(--on-background)", padding: "10px 12px", fontSize: 15 }}
         />
         <button className="chip" type="submit">{reports ? "Refresh" : "Open"}</button>
       </form>
@@ -1290,7 +1405,7 @@ function AppCatalogPage({ appId }: { appId: string }) {
 
   return (
     <main style={{ minHeight: "100vh", padding: 32, maxWidth: 820, margin: "0 auto" }}>
-      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Azphalt Store</a>
       <h1 style={{ fontSize: 44, marginTop: 32 }}>{host?.name ?? appId}</h1>
       <p style={{ color: "var(--on-surface-variant)" }}>
         Everything <code>{appId}</code> can use: packages made for it, plus every package that works in any app.
@@ -1328,7 +1443,7 @@ function PublishPage() {
 
   return (
     <main style={{ minHeight: "100vh", padding: 32, maxWidth: 640, margin: "0 auto" }}>
-      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Store</a>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Azphalt Store</a>
       <h1 style={{ fontSize: 44, marginTop: 32 }}>Publish</h1>
       <p style={{ color: "var(--on-surface-variant)" }}>
         Send a <strong>signed</strong> <code>.azp</code> (<code>signAzp</code> with your publisher key). The store checks it
@@ -1358,7 +1473,7 @@ function PublishPage() {
             </button>
           </div>
           {state.kind === "error" && (
-            <div style={{ marginTop: 16, color: "var(--error, #ffb4ab)" }}>
+            <div role="alert" style={{ marginTop: 16, color: "var(--error)", fontWeight: 700 }}>
               <p style={{ margin: 0 }}>{state.message}</p>
               {state.details && (
                 <ul style={{ fontSize: 13 }}>
