@@ -1048,6 +1048,61 @@
       "bytes": 1462
     },
     {
+      "id": "com.hereliesaz.azphalt.kinetic.depletion",
+      "version": "1.0.0",
+      "name": "Depletion",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-E+8NNKWJcjTFt452SI5S7lTp+/HCNe8GcPZ3MCbwdkQ=",
+      "file": "com.hereliesaz.azphalt.kinetic.depletion-1.0.0.azp",
+      "bytes": 417925
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.engraver",
+      "version": "1.0.0",
+      "name": "Engraver",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-cmVGbnWf0SQPBcH7v730BiSXeQ28vfLSQ49KWNc0Xp0=",
+      "file": "com.hereliesaz.azphalt.kinetic.engraver-1.0.0.azp",
+      "bytes": 114164
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.gravity",
+      "version": "1.0.0",
+      "name": "Gravity",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-VnjbAHcVqkK8aChD1IXr5K86e5L+c2aCJzwL4EVnF10=",
+      "file": "com.hereliesaz.azphalt.kinetic.gravity-1.0.0.azp",
+      "bytes": 336875
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.voltage",
+      "version": "1.0.0",
+      "name": "Voltage",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-ogM2jqj/nC9uL1wz0eX5QX+5EIvZkbakjZctrBPbgbQ=",
+      "file": "com.hereliesaz.azphalt.kinetic.voltage-1.0.0.azp",
+      "bytes": 274155
+    },
+    {
+      "id": "com.hereliesaz.azphalt.kinetic.weave",
+      "version": "1.0.0",
+      "name": "Weave",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-NIJBjpEROC4zpjmyhjW3+HFPulLlPtQlS1U0+IRP1js=",
+      "file": "com.hereliesaz.azphalt.kinetic.weave-1.0.0.azp",
+      "bytes": 113706
+    },
+    {
       "id": "com.hereliesaz.azphalt.lama",
       "version": "1.0.0",
       "name": "LaMa",
