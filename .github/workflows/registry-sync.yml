@@ -1,6 +1,6 @@
 # centralized-by: HereLiesAz/workflows
 # central-source-path: .github/workflows/registry-sync.yml
-# central-source-sha256: 447ae3e2386ebb45e5ab01f0b968d5cb4b0e07f2fe6f304d202c12bd622e52cb
+# central-source-sha256: 6741a866bf33f30967c88f97bb0ae4fb4c2e976cd8c076e1ceea30fd7bd5c116
 # This file intentionally contains no repository secrets.
 # central-run-tracker: HereLiesAz/workflows
 name: Sync registry from extension repos
