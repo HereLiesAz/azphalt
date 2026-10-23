@@ -1,0 +1,392 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.kinetic.gravity",
+  "name": "Gravity",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Wet paint that obeys gravity. A marker that pools where you hesitate and lets go of beaded drips, a roller that sheds a curtain of runs, enamel that sags as it is poured, a flick that throws droplets and lets them fall, and a stain that keeps weeping long after the pen has left.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "preview": {
+    "image": "assets/preview.png"
+  },
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/runner.png",
+      "tags": [
+        "marker",
+        "drip",
+        "paint",
+        "gravity"
+      ],
+      "params": {
+        "name": "Runner",
+        "spacing": 0.06,
+        "opacity": 0.8,
+        "program": {
+          "state": {
+            "v": 0,
+            "pool": 0,
+            "since": 0,
+            "thr": 1,
+            "nd": 0,
+            "bulge": 0
+          },
+          "init": "thr = 0.85 + rand() * 0.5;",
+          "step": [
+            "if (index == 0) { v = speed; }",
+            "v += (speed - v) * 0.3;",
+            "let slow = pow(1 - smoothstep(0.35, 2.4, v), 0.6);",
+            "let press = 0.3 + 0.7 * pressure;",
+            "since += stepPx;",
+            "pool += slow * press * (0.45 + 1.1 * noise(dist / (diameter * 5))) * (stepPx / diameter * 0.28 + dt * 0.0008);",
+            "if (index == 1) { pool += min(dwell, 700) * 0.0018 * press; }",
+            "pool = max(0, pool - (1 - slow) * stepPx / diameter * 0.18);",
+            "let fill = smoothstep(0.05, 1, pool / thr);",
+            "bulge += (fill - bulge) * (fill > bulge ? 0.12 : 0.035);",
+            "sizeMul = 1 + 0.2 * bulge;",
+            "alphaMul = 1 + 0.22 * bulge;",
+            "if (pool >= thr && since > diameter * 1.1 && index > 2) {",
+            "  since = 0;",
+            "  nd += 1;",
+            "  let amt = clamp(pool / thr, 1, 1.8);",
+            "  let ph = hash(nd * 7.31) * 360;",
+            "  let w = diameter * (0.2 + 0.09 * rand()) * (0.85 + 0.3 * press);",
+            "  let len = min(diameter * (0.9 + 3.4 * pow(rand(), 1.3)) * (0.75 + 0.35 * amt), w * 24);",
+            "  let x0 = px + rands() * diameter * 0.18;",
+            "  let y0 = py + diameter * 0.2;",
+            "  let tb = 0.3 + 0.35 * rand();",
+            "  let a0 = min(1, baseAlpha * 1.2);",
+            "  for i in 0..48 {",
+            "    let t = (i + 0.5) / 48;",
+            "    let flare = pow(1 - t, 5) * 0.9;",
+            "    let taper = 1 - 0.42 * pow(t, 0.8);",
+            "    let bump = 0.5 * exp(-pow((t - tb) / 0.05, 2));",
+            "    let ww = w * (taper + flare + bump) * (1 + 0.08 * sin(t * 25 + ph));",
+            "    let sway = (noise(nd * 3.7 + t * 1.6) - 0.5) * w * 1.2 * t;",
+            "    emit { x: x0 + sway, y: y0 + len * t, size: max(ww, 1.1), alpha: a0 * (1 - 0.18 * t), angle: 0, tip: 1 };",
+            "  }",
+            "  let sw = (noise(nd * 3.7 + 1.6) - 0.5) * w * 1.2;",
+            "  emit { x: x0 + sw, y: y0 + len + w * 0.3, size: w * 2.0, alpha: a0, angle: 0, tip: 1 };",
+            "  emit { x: x0 + sw, y: y0 + len - w * 0.7, size: w * 1.5, alpha: a0, angle: 0, tip: 1 };",
+            "  pool -= thr * 0.8;",
+            "  thr = 0.9 + 0.6 * rand();",
+            "}"
+          ]
+        },
+        "dynamics": [
+          {
+            "sensor": "pressure",
+            "parameter": "size",
+            "outputMin": 0.55,
+            "outputMax": 1,
+            "curve": {
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.45
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/wet-wall.png",
+      "tags": [
+        "roller",
+        "wash",
+        "runs",
+        "gravity"
+      ],
+      "params": {
+        "name": "Wet Wall",
+        "spacing": 0.07,
+        "opacity": 0.78,
+        "roundness": 0.62,
+        "program": {
+          "state": {
+            "v": 0,
+            "load": 0.5,
+            "cellId": -1
+          },
+          "step": [
+            "if (index == 0) { v = speed; }",
+            "v += (speed - v) * 0.25;",
+            "let slow = 1 - smoothstep(0.3, 2.6, v);",
+            "let tgt = (0.2 + 0.8 * pressure) * (0.2 + 0.8 * slow);",
+            "load += (tgt - load) * 0.1;",
+            "let dry = 1 - 0.55 * smoothstep(0, 70, dist / diameter);",
+            "let heavy = load * dry;",
+            "sizeMul = 1 + 0.08 * heavy;",
+            "let hh = diameter * baseTip * 0.5 * sizeMul;",
+            "let yb = py + hh * 0.85;",
+            "let lipa = smoothstep(0.15, 0.55, heavy) * smoothstep(0.45, 0.85, abs(cos(heading)));",
+            "if (lipa > 0.02) {",
+            "  emit { x: px, y: yb, size: diameter * 0.6, tip: 0.14, angle: 0, alpha: min(1, baseAlpha * (1 + 0.14 * lipa)) };",
+            "}",
+            "let c = floor(dist / (diameter * 0.3));",
+            "if (c != cellId) {",
+            "  cellId = c;",
+            "  let dens = 0.85 * smoothstep(0.22, 0.65, heavy);",
+            "  if (hash2(c, 1) < dens) {",
+            "    let h3 = hash2(c, 3);",
+            "    let len = diameter * (0.5 + 3.4 * pow(heavy, 1.2) * (0.25 + 0.75 * h3 * h3)) * (hash2(c, 7) > 0.82 ? 1.35 : 1);",
+            "    let wr = max(diameter * (0.065 + 0.04 * hash2(c, 4)) * (hash2(c, 7) > 0.82 ? 1.6 : 1), 1.2);",
+            "    let rx = px + (hash2(c, 2) - 0.5) * diameter * 0.1;",
+            "    let ph = hash2(c, 6) * 100;",
+            "    let a0 = min(1, baseAlpha * (0.9 + 0.3 * hash2(c, 5)));",
+            "    let seg = len / 8;",
+            "    for k in 0..8 {",
+            "      let f = (k + 0.5) / 8;",
+            "      let ww = wr * (1.15 - 0.5 * f);",
+            "      let sx = (noise(ph + k * 0.5) - 0.5) * wr * 0.8;",
+            "      emit { x: rx + sx, y: yb + seg * (k + 0.5), size: seg * 1.25, tip: ww / (seg * 1.25), angle: 90, alpha: a0 * (1 - 0.35 * f) };",
+            "    }",
+            "    emit { x: rx + (noise(ph + 4) - 0.5) * wr * 0.8, y: yb + len + wr * 0.3, size: wr * 2.1, tip: 1, angle: 0, alpha: a0 * 0.9 };",
+            "  }",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/pour.png",
+      "tags": [
+        "enamel",
+        "gloss",
+        "pour",
+        "gravity"
+      ],
+      "params": {
+        "name": "Pour",
+        "spacing": 0.06,
+        "opacity": 0.9,
+        "program": {
+          "state": {
+            "v": 0,
+            "thick": 0.7,
+            "sag": 0,
+            "cellId": -1
+          },
+          "step": [
+            "if (index == 0) { v = speed; }",
+            "v += (speed - v) * 0.2;",
+            "let slow = 1 - smoothstep(0.25, 2.2, v);",
+            "let pr = 0.35 + 0.65 * pressure;",
+            "thick += ((0.22 + 0.78 * slow) * pr - thick) * 0.12;",
+            "sag += (slow * pr - sag) * 0.06;",
+            "let sz = 0.5 + 0.75 * thick;",
+            "sizeMul = sz;",
+            "valMul = 0.74;",
+            "shiftY = sag * diameter * 0.2;",
+            "let R = diameter * sz * 0.5;",
+            "let cy = py + shiftY;",
+            "for i in 0..8 {",
+            "  let t = (i + 1) / 8;",
+            "  emit { x: px - R * 0.06 * t, y: cy - R * 0.3 * t, size: R * (1.9 - 1.15 * t), tip: 1, angle: 0, alpha: min(1, baseAlpha * (1 + 0.1 * t)), val: 0.74 + 0.26 * t };",
+            "}",
+            "emit { x: px - R * 0.1, y: cy - R * 0.5, size: R * 0.8, tip: 0.28, angle: heading, alpha: 1, val: 1.3, sat: 0.9 };",
+            "let bot = cy + R * 0.8;",
+            "emit { x: px, y: bot, size: R * 1.1, tip: 0.3, angle: 0, alpha: baseAlpha, val: 0.74 };",
+            "let c = floor(dist / (R * 1.5));",
+            "if (c != cellId) {",
+            "  cellId = c;",
+            "  if (hash2(c, 1) < 0.35 + 0.5 * sag) {",
+            "    let lp = R * (0.3 + 2.6 * sag * (0.3 + 0.7 * hash2(c, 2)));",
+            "    let wd = R * (0.32 + 0.18 * hash2(c, 3));",
+            "    let bx = px + (hash2(c, 4) - 0.5) * R * 0.8;",
+            "    let nl = lp + wd * 1.4;",
+            "    emit { x: bx, y: bot - R * 0.15 + nl * 0.5, size: nl, tip: min(1, wd * 1.05 / nl), angle: 90, alpha: baseAlpha, val: 0.74 };",
+            "    emit { x: bx, y: bot - R * 0.1 + lp, size: wd * 1.4, tip: 1, angle: 0, alpha: baseAlpha, val: 0.8 };",
+            "  }",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/spatter-fall.png",
+      "tags": [
+        "spatter",
+        "flick",
+        "splash",
+        "gravity"
+      ],
+      "params": {
+        "name": "Spatter Fall",
+        "spacing": 0.08,
+        "opacity": 1,
+        "program": {
+          "state": {
+            "v": 0
+          },
+          "step": [
+            "if (index == 0) { v = speed; }",
+            "v += (speed - v) * 0.4;",
+            "let fl = smoothstep(0.5, 2.4, v);",
+            "sizeMul = 0.12;",
+            "alphaMul = 0.5 * (1 - fl);",
+            "let rate = pow(fl, 1.5) * (stepPx / diameter) * 8 * (0.45 + 0.55 * pressure);",
+            "let n = floor(rate) + (rand() < fract(rate) ? 1 : 0);",
+            "let ux0 = cos(heading);",
+            "let uy0 = sin(heading);",
+            "for j in 0..8 {",
+            "  if (j < n) {",
+            "    let hr = heading + rands() * (26 - 14 * fl);",
+            "    let ux = cos(hr);",
+            "    let uy = sin(hr);",
+            "    let lat = rands() * diameter * 0.4;",
+            "    let x0 = px - uy0 * lat;",
+            "    let y0 = py + ux0 * lat;",
+            "    let big = pow(rand(), 3.2);",
+            "    let sz = max(diameter * (0.06 + 0.3 * big) * (0.55 + 0.6 * fl), 1.4);",
+            "    let dd = diameter * (0.5 + 4.5 * fl * pow(rand(), 0.8));",
+            "    let g = dd * (0.6 - 0.4 * fl);",
+            "    let f = clamp(0.1 + 0.5 * fl * (0.5 + big), 0.1, 0.7);",
+            "    let al = 0.75 + 0.25 * rand();",
+            "    for k in 0..7 {",
+            "      let sm = (1 - f) + f * (k + 0.5) / 7;",
+            "      let dx = ux * dd;",
+            "      let dy = uy * dd + 2 * g * sm;",
+            "      let seg = max(hypot(dx, dy) * f / 7 * 1.35, 1.2);",
+            "      let fr = (k + 0.5) / 7;",
+            "      let ww = max(sz * (0.12 + 0.6 * fr * fr), 0.8);",
+            "      emit { x: x0 + ux * dd * sm, y: y0 + uy * dd * sm + g * sm * sm, size: seg, tip: min(1, ww / seg), angle: atan2(dy, dx), alpha: al * (0.45 + 0.55 * fr) };",
+            "    }",
+            "    let hx = x0 + ux * dd;",
+            "    let hy = y0 + uy * dd + g;",
+            "    emit { x: hx, y: hy, size: sz * 1.2, tip: 0.85, angle: atan2(uy * dd + 2 * g, ux * dd), alpha: al };",
+            "    if (big > 0.6 && sz > 3.5) {",
+            "      let rl = sz * (0.7 + 1.4 * rand());",
+            "      let rw = max(sz * 0.45, 1.0);",
+            "      emit { x: hx, y: hy + rl * 0.5, size: rl + rw, tip: min(1, rw / (rl + rw)), angle: 90, alpha: al };",
+            "      emit { x: hx, y: hy + rl, size: rw * 1.5, tip: 1, angle: 0, alpha: al };",
+            "    }",
+            "    if (big > 0.3) {",
+            "      emit { x: hx + rands() * sz * 1.4, y: hy + rands() * sz * 1.4, size: sz * 0.3, alpha: al };",
+            "      emit { x: hx + rands() * sz * 1.8, y: hy + rands() * sz * 1.8, size: sz * 0.22, alpha: al };",
+            "    }",
+            "  }",
+            "}"
+          ]
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/bleed.png",
+      "tags": [
+        "stain",
+        "watercolor",
+        "ink",
+        "gravity"
+      ],
+      "params": {
+        "name": "Bleed",
+        "spacing": 0.1,
+        "opacity": 0.14,
+        "buildUp": true,
+        "program": {
+          "state": {
+            "v": 0,
+            "lastA": 0,
+            "cnt": 0,
+            "nb": 0,
+            "x0": 0,
+            "y0": 0,
+            "w0": 0,
+            "x1": 0,
+            "y1": 0,
+            "w1": 0,
+            "x2": 0,
+            "y2": 0,
+            "w2": 0,
+            "x3": 0,
+            "y3": 0,
+            "w3": 0
+          },
+          "step": [
+            "if (index == 0) { v = speed; }",
+            "v += (speed - v) * 0.3;",
+            "let slow = 1 - smoothstep(0.2, 1.6, v);",
+            "let wet = (0.35 + 0.65 * pressure) * (0.4 + 0.6 * slow);",
+            "rotate = hash(index) * 360;",
+            "alphaMul = 0.45 + 0.55 * pressure;",
+            "if (index == 0) { emit { size: diameter * 1.7, alpha: 0.1, angle: 0 }; }",
+            "let drop = dist - lastA >= diameter;",
+            "if (drop && cnt >= 4) {",
+            "    nb += 1;",
+            "    for j in 0..2 {",
+            "      if (rand() < 0.2 + 0.75 * w3) {",
+            "        let h = 90 + rands() * 58;",
+            "        let x = x3 + rands() * diameter * 0.3;",
+            "        let y = y3 + diameter * 0.15;",
+            "        let wid = diameter * (0.11 + 0.08 * rand()) * (0.6 + 0.8 * w3);",
+            "        let reach = (0.6 + 0.9 * rand()) * (0.5 + w3);",
+            "        let al0 = 0.3 * (0.6 + 0.8 * w3);",
+            "        let ph = (nb * 3 + j) * 1.7;",
+            "        let fx = x;",
+            "        let fy = y;",
+            "        let fh = h;",
+            "        for s in 0..16 {",
+            "          let u = s / 16;",
+            "          h += (90 - h) * 0.09 + (noise(ph + s * 0.3) - 0.5) * 22;",
+            "          let sp = diameter * 0.25 * reach * (1 - 0.5 * u);",
+            "          let fade = pow(1 - u, 1.4);",
+            "          let mx = x + cos(h) * sp * 0.5;",
+            "          let my = y + sin(h) * sp * 0.5;",
+            "          emit { x: mx, y: my, size: sp * 3.4, tip: min(1, wid * 6 * (1 - 0.4 * u) / (sp * 3.4)), angle: h, alpha: al0 * 0.16 * fade };",
+            "          emit { x: mx, y: my, size: sp * 3.4, tip: min(1, wid * 2 * (1 - 0.6 * u) / (sp * 3.4)), angle: h, alpha: al0 * 0.3 * fade };",
+            "          x += cos(h) * sp;",
+            "          y += sin(h) * sp;",
+            "          if (s == 5) { fx = x; fy = y; fh = h; }",
+            "        }",
+            "        if (rand() < 0.7) { emit { x: x, y: y, size: wid * (3.5 + 3 * rand()), tip: 1, angle: rand() * 360, alpha: al0 * 0.4 }; }",
+            "        if (rand() < 0.6) {",
+            "          fh += (rand() < 0.5 ? -1 : 1) * (30 + 25 * rand());",
+            "          for s in 0..9 {",
+            "            let u = s / 9;",
+            "            fh += (90 - fh) * 0.12 + (noise(ph + 40 + s * 0.3) - 0.5) * 22;",
+            "            let sp = diameter * 0.22 * reach * (1 - 0.5 * u);",
+            "            let fade = pow(1 - u, 1.2);",
+            "            emit { x: fx + cos(fh) * sp * 0.5, y: fy + sin(fh) * sp * 0.5, size: sp * 3.4, tip: min(1, wid * 1.2 * (1 - 0.6 * u) / (sp * 3.4)), angle: fh, alpha: al0 * 0.26 * fade };",
+            "            fx += cos(fh) * sp;",
+            "            fy += sin(fh) * sp;",
+            "          }",
+            "          emit { x: fx, y: fy, size: wid * 4, tip: 1, angle: rand() * 360, alpha: al0 * 0.4 };",
+            "        }",
+            "      }",
+            "    }",
+            "  }",
+            "if (drop) {",
+            "  lastA = dist;",
+            "  x3 = x2; y3 = y2; w3 = w2;",
+            "  x2 = x1; y2 = y1; w2 = w1;",
+            "  x1 = x0; y1 = y0; w1 = w0;",
+            "  x0 = px; y0 = py; w0 = wet;",
+            "  cnt = min(cnt + 1, 4);",
+            "}"
+          ]
+        }
+      }
+    }
+  ]
+}
