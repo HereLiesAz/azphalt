@@ -146,14 +146,14 @@ kotlin {
                 // Bundles src/commonMain/composeResources — the Jost typeface the Capsule system specifies.
                 implementation(compose.components.resources)
                 implementation(compose.ui)
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
             }
         }
         val wasmJsMain by getting
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.12.0")
             }
         }
         // The one test source set for the shared module. `desktopTest` rather than `commonTest`
@@ -169,7 +169,7 @@ kotlin {
             dependencies {
                 implementation("androidx.activity:activity-compose:1.13.0")
                 implementation("androidx.core:core-ktx:1.19.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.12.0")
                 // The verifier. The store app checks a package before handing it over, and
                 // spec/store-app.md requires the host to check it again — this is the same code both
                 // sides run, so "verified" means the same thing on each.
@@ -188,7 +188,7 @@ kotlin {
                     // `project.dependencies.platform(...)`, not a bare `platform(...)`: a multiplatform
                     // source set's dependency block is a KotlinDependencyHandler, which has no
                     // platform() of its own, so the BOM has to be built through the project's handler.
-                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:35.0.2"))
+                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:35.1.0"))
                     implementation("com.google.firebase:firebase-analytics")
                 }
             }
