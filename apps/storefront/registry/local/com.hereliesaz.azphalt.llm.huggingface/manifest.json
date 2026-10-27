@@ -1,0 +1,64 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.llm.huggingface",
+  "name": "Hugging Face gpt-oss-120b",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "Apache-2.0",
+  "compat": ">=0.1",
+  "description": "openai/gpt-oss-120b:fastest via Hugging Face Inference Providers's OpenAI-compatible API. Needs your own Hugging Face Inference Providers key.",
+  "author": "HereLiesAz",
+  "llm": {
+    "tier": "endpoint",
+    "inputs": [
+      {
+        "id": "providerKey",
+        "type": "promptString",
+        "password": true,
+        "description": "Hugging Face access token"
+      }
+    ],
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "requires": {
+        "githubToken": [
+          "contents:write",
+          "actions:write",
+          "checks:write",
+          "workflows:write",
+          "secrets:write"
+        ]
+      },
+      "secrets": [
+        {
+          "name": "PROVIDER_KEY",
+          "input": "providerKey"
+        }
+      ],
+      "fetches": []
+    },
+    "endpoint": {
+      "protocols": [
+        "openai-chat",
+        "github-actions-runner"
+      ],
+      "baseUrl": "https://router.huggingface.co/v1",
+      "defaultModel": "openai/gpt-oss-120b:fastest",
+      "auth": "required-bearer",
+      "authInput": "providerKey"
+    },
+    "run": {
+      "permissions": {
+        "contents": "read",
+        "checks": "write"
+      }
+    },
+    "dataHandling": {
+      "prompts": "unknown",
+      "modelPinned": true,
+      "operator": "Hugging Face Inference Providers"
+    },
+    "role": "text-generation"
+  }
+}
