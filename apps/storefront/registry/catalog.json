@@ -1048,6 +1048,17 @@
       "bytes": 1462
     },
     {
+      "id": "com.hereliesaz.azphalt.kinetic.calligraphy",
+      "version": "1.0.0",
+      "name": "Calligraphy",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-Ed4hRG72UCD6WK5iSODeOLin71dHPT3ecUL6lxll7Eg=",
+      "file": "com.hereliesaz.azphalt.kinetic.calligraphy-1.0.0.azp",
+      "bytes": 237655
+    },
+    {
       "id": "com.hereliesaz.azphalt.kinetic.depletion",
       "version": "1.0.0",
       "name": "Depletion",
