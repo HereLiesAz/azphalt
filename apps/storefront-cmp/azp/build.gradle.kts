@@ -13,7 +13,7 @@ group = "com.hereliesaz.azphalt"
 version = rootProject.version
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
 
     // Ed25519. The JDK has had it natively since 15, but Android only from API 33 — Bouncy Castle is
     // pure Java and behaves identically on both, so the verifier does not change shape with the
