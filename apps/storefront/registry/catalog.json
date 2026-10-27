@@ -1235,6 +1235,39 @@
       "bytes": 12172
     },
     {
+      "id": "com.hereliesaz.azphalt.llm.cohere",
+      "version": "1.0.0",
+      "name": "Cohere Command A Plus",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-eZuFPldcYJOHOtAr4ky2gw32zI+EpYLD/HMS1NQ19MY=",
+      "file": "com.hereliesaz.azphalt.llm.cohere-1.0.0.azp",
+      "bytes": 12179
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.deepseek",
+      "version": "1.0.0",
+      "name": "DeepSeek Flash",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-oG8ctLISJWCHodeQKU3d2EswSXpMt1CxJmbYShKUyG8=",
+      "file": "com.hereliesaz.azphalt.llm.deepseek-1.0.0.azp",
+      "bytes": 12144
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.fireworks",
+      "version": "1.0.0",
+      "name": "Fireworks Kimi K2",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-URqyt+qiyGwOTfvP6UpFZOi/0X3/pa66u/j0IK2kigE=",
+      "file": "com.hereliesaz.azphalt.llm.fireworks-1.0.0.azp",
+      "bytes": 12196
+    },
+    {
       "id": "com.hereliesaz.azphalt.llm.groq",
       "version": "1.0.0",
       "name": "Groq gpt-oss-20b",
@@ -1244,6 +1277,17 @@
       "integrity": "sha256-ZN9H7XKVMRPj2knM0zNxdf0ypdaH4PeS+9hGBagGmz0=",
       "file": "com.hereliesaz.azphalt.llm.groq-1.0.0.azp",
       "bytes": 12175
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.huggingface",
+      "version": "1.0.0",
+      "name": "Hugging Face gpt-oss-120b",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-r2x6SZPvZer//njmdE+6T6ntwLR/VF9pBFRRes51joM=",
+      "file": "com.hereliesaz.azphalt.llm.huggingface-1.0.0.azp",
+      "bytes": 12191
     },
     {
       "id": "com.hereliesaz.azphalt.llm.kilo",
@@ -1290,6 +1334,28 @@
       "bytes": 5585
     },
     {
+      "id": "com.hereliesaz.azphalt.llm.nvidia",
+      "version": "1.0.0",
+      "name": "NVIDIA Nemotron Super 49B",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-40tmpE3KlYwmwQADSepK3PAAy07EIdIgMqsM2GNG3GI=",
+      "file": "com.hereliesaz.azphalt.llm.nvidia-1.0.0.azp",
+      "bytes": 12209
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.ollama-cloud",
+      "version": "1.0.0",
+      "name": "Ollama Cloud gpt-oss-120b",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-rZpQ1sO9+JJRL4dCsPve9ZTUdlnlc+kLi/ObRQFbSpU=",
+      "file": "com.hereliesaz.azphalt.llm.ollama-cloud-1.0.0.azp",
+      "bytes": 12158
+    },
+    {
       "id": "com.hereliesaz.azphalt.llm.openrouter-free",
       "version": "1.0.0",
       "name": "OpenRouter Free Router",
@@ -1310,6 +1376,17 @@
       "integrity": "sha256-0cX7ZbUpSQJjQJjMjeKOanKLw1duaScCfMHL1V0DwDY=",
       "file": "com.hereliesaz.azphalt.llm.ovhcloud-1.0.0.azp",
       "bytes": 12278
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.perplexity",
+      "version": "1.0.0",
+      "name": "Perplexity Sonar Pro",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-EW++A2JRbU2kPbSs1Kxowm5mo/3yai5Ndk0sP1ygYVk=",
+      "file": "com.hereliesaz.azphalt.llm.perplexity-1.0.0.azp",
+      "bytes": 12143
     },
     {
       "id": "com.hereliesaz.azphalt.llm.phi-3-5-mini",
@@ -1345,6 +1422,17 @@
       "bytes": 12870
     },
     {
+      "id": "com.hereliesaz.azphalt.llm.sambanova",
+      "version": "1.0.0",
+      "name": "SambaNova Llama 3.3 70B",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-+ajca/eSJjXYi8TfAFFeIAzgwq3ztiEJzT2KvT0anRg=",
+      "file": "com.hereliesaz.azphalt.llm.sambanova-1.0.0.azp",
+      "bytes": 12180
+    },
+    {
       "id": "com.hereliesaz.azphalt.llm.smollm2-1-7b",
       "version": "1.0.0",
       "name": "SmolLM2 1.7B Instruct (private sandbox)",
@@ -1354,6 +1442,17 @@
       "integrity": "sha256-w7Ofu528cg85Y9B/TC4QUX7SMf8OTgIgujkRrwf36fk=",
       "file": "com.hereliesaz.azphalt.llm.smollm2-1-7b-1.0.0.azp",
       "bytes": 12854
+    },
+    {
+      "id": "com.hereliesaz.azphalt.llm.together",
+      "version": "1.0.0",
+      "name": "Together gpt-oss-20b",
+      "kind": "llm",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-cuCb4k4Ofpsg+Umg4SMMUKdkEkkRPEC+kf3bQs59Dwg=",
+      "file": "com.hereliesaz.azphalt.llm.together-1.0.0.azp",
+      "bytes": 12159
     },
     {
       "id": "com.hereliesaz.azphalt.llm.zai",
