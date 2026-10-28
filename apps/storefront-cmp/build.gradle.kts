@@ -153,7 +153,7 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.12.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
             }
         }
         // The one test source set for the shared module. `desktopTest` rather than `commonTest`
@@ -169,7 +169,7 @@ kotlin {
             dependencies {
                 implementation("androidx.activity:activity-compose:1.13.0")
                 implementation("androidx.core:core-ktx:1.19.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.12.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
                 // The verifier. The store app checks a package before handing it over, and
                 // spec/store-app.md requires the host to check it again — this is the same code both
                 // sides run, so "verified" means the same thing on each.
