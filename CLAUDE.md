@@ -41,3 +41,8 @@ the npm workspace, `apps/storefront-cmp` and the Actions.
   there; a `"pnpm"` field in `package.json` is silently ignored.
 - The `create-azphalt` templates are dependencies too: keep their ranges and the release workflow they
   generate on the same versions as the repository.
+
+<!-- entire-agent:begin -->
+Read .entire/agent-guide.md for this repository's workflow, source inspection, and verification guidance.
+@.entire/agent-guide.md
+<!-- entire-agent:end -->
