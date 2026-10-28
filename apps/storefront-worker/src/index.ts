@@ -1,6 +1,21 @@
 import { MAX_PUBLISH_BYTES, publish, type RepositoryTokens } from "./publish";
 import { compareSemver } from "./semver";
-import { parseServiceAccount, PlayUnavailableError, verifyPlayPurchase, verifyPlaySubscription } from "./play";
+import {
+  getPlayOrder,
+  inspectPlayPurchase,
+  listVoidedPurchases,
+  moneyMicros,
+  parseServiceAccount,
+  PlayUnavailableError,
+  refundExternalTransaction,
+  reportExternalTransaction,
+  verifyPlaySubscription,
+  type ServiceAccount,
+} from "./play";
+import { decideRoute, enrolledPrograms, PLAY_BILLING_PROGRAMS, programmeFor, type Distribution } from "./billing-policy";
+import { payoutCents, PlayLedger, splitPlaySale, type FeeSettings, type Part } from "./ledger";
+import { productIdFor, syncPlayProducts, type ProductStore } from "./play-products";
+import { inAppRpc, migrateInApp } from "./state-rpc";
 
 type Fetcher = { fetch(input: Request): Promise<Response> };
 type DurableObjectNamespaceLike = {
@@ -59,6 +74,31 @@ interface Env {
   PLAY_PACKAGE_NAME?: string;
   /** A Google service-account key (JSON) with Play Console access to that app's orders. */
   PLAY_SERVICE_ACCOUNT_JSON?: string;
+  /**
+   * Comma-separated applicationIds whose Play purchases `POST /entitlements/play` accepts (the store
+   * app and host apps such as com.hereliesaz.graffux). Defaults to PLAY_PACKAGE_NAME alone.
+   */
+  PLAY_PACKAGE_NAMES?: string;
+  /** Comma-separated applicationIds whose Play catalogue the product sync maintains. Unset: none. */
+  PLAY_SYNC_PACKAGES?: string;
+  /** `<applicationId>:<programme>` pairs the apps are enrolled in (`src/billing-policy.ts`). */
+  PLAY_BILLING_PROGRAMS?: string;
+  /** Google's service fee on Play Billing sales, basis points. Default 1500 (the 15% tier). */
+  PLAY_SERVICE_FEE_BPS?: string;
+  /** Overrides the policy table's alternative-billing service fee, basis points. */
+  PLAY_ALT_SERVICE_FEE_BPS?: string;
+  /** Extra platform fee on in-app sales, on top of PLATFORM_FEE_BPS. Default 500. */
+  IN_APP_FEE_BPS?: string;
+  /** Hours after a Play purchase before the seller's main payout. Default 96 (Play's 48h + 48h). */
+  PLAY_PAYOUT_HOLD_HOURS?: string;
+  /** Share of each Play payout held back, basis points. Default 1000. */
+  PLAY_HOLDBACK_BPS?: string;
+  /** Days after purchase the holdback is released. Default 90. */
+  PLAY_HOLDBACK_DAYS?: string;
+  /** "true": Stripe Tax (automatic_tax) on in-app Stripe checkouts. Default "true". */
+  STRIPE_AUTOMATIC_TAX_IN_APP?: string;
+  /** "false" stops the scheduled payout run (the ledger still records). Default on. */
+  PLAY_PAYOUTS_ENABLED?: string;
 }
 
 interface CatalogEntry {
@@ -564,19 +604,64 @@ async function sha256Integrity(bytes: Uint8Array<ArrayBuffer>): Promise<string> 
   return "sha256-" + Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function quote(amountCents: number, currency: string, env: Env) {
+function bps(value: string | undefined, fallback: number): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 && n <= 10_000 ? Math.round(n) : fallback;
+}
+
+/**
+ * The Stripe-route split. A web sale (azphalt.store) pays PLATFORM_FEE_BPS; an in-app sale (inside
+ * Graffux or another host) pays IN_APP_FEE_BPS on top, shown as its own line. Without `inApp` the
+ * result is exactly the web quote it always was.
+ */
+export function quote(amountCents: number, currency: string, env: Env, options: { inApp?: boolean } = {}) {
   const processorPctBps = Number(env.PROCESSOR_PCT_BPS || "290");
   const processorFlatCents = Number(env.PROCESSOR_FLAT_CENTS || "30");
   const platformFeeBps = Number(env.PLATFORM_FEE_BPS || "1500");
   const processor = Math.round(amountCents * processorPctBps / 10000) + processorFlatCents;
   const platform = Math.round(amountCents * platformFeeBps / 10000);
-  const sellerNet = Math.max(0, amountCents - processor - platform);
+  const inAppFee = options.inApp ? Math.round(amountCents * bps(env.IN_APP_FEE_BPS, 500) / 10000) : 0;
+  const sellerNet = Math.max(0, amountCents - processor - platform - inAppFee);
   const m = (n: number) => ({ amountCents: n, currency });
   return {
     gross: m(amountCents),
     processorFee: m(processor),
     platformFee: m(platform),
+    ...(options.inApp ? { inAppFee: m(inAppFee) } : {}),
     sellerNet: m(sellerNet),
+  };
+}
+
+/** The Play-route fees: Google's, plus the platform's web fee and in-app fee. */
+export function playFees(env: Env, googleFeeBps?: number): FeeSettings {
+  return {
+    googleFeeBps: googleFeeBps ?? bps(env.PLAY_SERVICE_FEE_BPS, 1500),
+    platformFeeBps: bps(env.PLATFORM_FEE_BPS, 1500),
+    inAppFeeBps: bps(env.IN_APP_FEE_BPS, 500),
+    holdbackBps: bps(env.PLAY_HOLDBACK_BPS, 1000),
+  };
+}
+
+/** A seller's view of one listing on every route, for `GET /api/listings/{id}/breakdown`. */
+export function sellerBreakdown(listing: { amountCents: number; currency: string }, env: Env) {
+  const fees = playFees(env);
+  const micros = listing.amountCents * 10_000;
+  const play = splitPlaySale(micros, 0, fees);
+  const playPayout = payoutCents(play, listing.currency, listing) ?? 0;
+  const held = Math.round(playPayout * fees.holdbackBps / 10_000);
+  const m = (n: number) => ({ amountCents: n, currency: listing.currency });
+  return {
+    web: quote(listing.amountCents, listing.currency, env),
+    inAppStripe: quote(listing.amountCents, listing.currency, env, { inApp: true }),
+    inAppPlay: {
+      gross: m(listing.amountCents),
+      googleServiceFee: m(Math.round(play.googleFeeMicros / 10_000)),
+      platformFee: m(Math.round(listing.amountCents * fees.platformFeeBps / 10_000)),
+      inAppFee: m(Math.round(listing.amountCents * fees.inAppFeeBps / 10_000)),
+      sellerNet: m(playPayout),
+      holdback: { ...m(held), releasedAfterDays: Number(env.PLAY_HOLDBACK_DAYS || "90") },
+      note: "Before tax. Google's fee and the regional price vary by country; this is the listing-currency estimate.",
+    },
   };
 }
 
@@ -970,10 +1055,35 @@ async function reportInstalls(req: Request, env: Env): Promise<Response> {
   }));
 }
 
+/** One call into the Durable Object's in-app tables (`src/state-rpc.ts`). */
+async function rpc<T = unknown>(env: Env, method: string, args: Record<string, unknown> = {}): Promise<T> {
+  return stateJson<T>(env, "/rpc", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ method, args }),
+  });
+}
+
+function csv(value: string | undefined): string[] {
+  return (value ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+}
+
+/** The applicationIds whose Play purchases this repository verifies. */
+export function playPackageNames(env: Env): string[] {
+  const listed = csv(env.PLAY_PACKAGE_NAMES);
+  return listed.length ? listed : env.PLAY_PACKAGE_NAME ? [env.PLAY_PACKAGE_NAME] : [];
+}
+
 /**
  * `POST /entitlements/play` — trade a verified Google Play purchase for the same signed entitlement a
  * web purchase produces (repository-api.md § 7, `src/play.ts`). `501` until PLAY_PACKAGE_NAME and
  * PLAY_SERVICE_ACCOUNT_JSON are set.
+ *
+ * `packageName` (optional, default PLAY_PACKAGE_NAME) names the app the purchase was made in; it must
+ * be on PLAY_PACKAGE_NAMES. A one-time purchase is idempotent on its purchase token: posting it again
+ * (a retry, a restore on reinstall) returns the entitlement it already produced, without asking
+ * Google again, and a void found later revokes it. A pending purchase answers 202 `{status:"pending"}`.
+ * Every verified one-time sale of a paid listing is recorded in the payout ledger (`src/ledger.ts`).
  */
 async function playEntitlement(req: Request, env: Env): Promise<Response> {
   const serviceAccount = parseServiceAccount(env.PLAY_SERVICE_ACCOUNT_JSON);
@@ -992,8 +1102,13 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
   if (purchaseToken.length > 4096 || packageId.length > 256 || productId.length > 256) {
     return REPO_ERROR(400, "bad_request", "request fields exceed their maximum length");
   }
+  const packageName = typeof body.packageName === "string" ? body.packageName : env.PLAY_PACKAGE_NAME;
+  if (!playPackageNames(env).includes(packageName)) {
+    return REPO_ERROR(403, "forbidden", "purchases from " + packageName.slice(0, 128) + " are not accepted");
+  }
 
-  const listing = activeListing(await getListings(req, env), packageId);
+  // A paused listing stops new sales, not restores: an existing buyer still gets their licence back.
+  const listing = anyListing(await getListings(req, env), packageId);
   if (!listing) return REPO_ERROR(404, "not_found", "no paid listing for " + packageId);
   // The product must be the one this package is sold as; otherwise any cheap product would unlock it.
   // The store app derives the product id from the package id the same way (lowercase, anything outside
@@ -1003,31 +1118,198 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
     return REPO_ERROR(402, "payment_required", "that product does not entitle this package");
   }
 
-  let grant: Awaited<ReturnType<typeof verifyPlayPurchase>>;
+  if (listing.interval) {
+    if (!isActive(listing)) return REPO_ERROR(404, "not_found", "no paid listing for " + packageId);
+    return playSubscriptionEntitlement(env, { packageName, serviceAccount }, listing, productId, purchaseToken);
+  }
+
+  // Idempotent: this token was already exchanged.
+  const known = await rpc<{ packageId: string; sessionId: string } | null>(env, "playPurchase.get", { purchaseToken });
+  if (known) {
+    if (known.packageId !== packageId) return REPO_ERROR(402, "payment_required", "that purchase does not entitle this package");
+    if (await entitlementRevoked(env, known.sessionId)) {
+      return REPO_ERROR(403, "forbidden", "this purchase was refunded or voided");
+    }
+    const existing = await state(env).fetch(new Request("https://state.internal/entitlement/" + encodeURIComponent(known.sessionId)));
+    if (existing.ok) {
+      const record = await existing.json() as EntitlementRecord;
+      return json({ status: "ready", entitlement: encodeToken(record.token) });
+    }
+  }
+
+  let inspection: Awaited<ReturnType<typeof inspectPlayPurchase>>;
   try {
-    // A subscription listing is sold as a Play subscription product, and is checked (and expires) as one.
-    const verify = listing.interval ? verifyPlaySubscription : verifyPlayPurchase;
-    grant = await verify({ packageName: env.PLAY_PACKAGE_NAME, serviceAccount }, productId, purchaseToken);
+    inspection = await inspectPlayPurchase({ packageName, serviceAccount }, productId, purchaseToken);
   } catch (e) {
     // Not the buyer's fault and not a refusal: the store app retries instead of saying they did not pay.
     const message = e instanceof PlayUnavailableError ? e.message : "verification failed";
     return REPO_ERROR(502, "bad_gateway", "could not verify the purchase with Google: " + message);
   }
-  if (!grant) return REPO_ERROR(402, "payment_required", "that purchase does not entitle this package");
+  if (inspection.status === "pending") return json({ status: "pending" }, 202);
+  if (inspection.status !== "purchased") return REPO_ERROR(402, "payment_required", "that purchase does not entitle this package");
 
+  const orderId = inspection.orderId;
+  const sessionId = orderId ? "play:" + orderId : "play-token:" + (await idempotencyKey([packageName, purchaseToken]));
+  if (await entitlementRevoked(env, sessionId)) return REPO_ERROR(403, "forbidden", "this purchase was refunded or voided");
+  const record = await entitlementFor(env, sessionId, packageId, inspection.grant.subject);
+  await rpc(env, "playPurchase.put", { purchaseToken, packageName, productId, packageId, orderId, sessionId });
+
+  if (orderId) {
+    try {
+      await recordPlaySale(env, serviceAccount, {
+        orderId, packageName, purchaseToken, listing, productId,
+        regionCode: inspection.regionCode,
+        purchasedAt: new Date(inspection.purchaseTimeMillis ?? Date.now()).toISOString(),
+      });
+    } catch (e) {
+      // The buyer paid and has the licence; a missed ledger row is an operator problem, not theirs.
+      // The void sweep and admin view surface it (no row ⇒ no payout until recorded).
+      console.error("play ledger record failed", orderId, e);
+    }
+  }
+  // Acknowledge only now that the licence exists: if issuing had failed, the purchase would stay
+  // unacknowledged and Play would refund it after three days instead of the buyer paying for nothing.
+  await inspection.grant.acknowledge?.();
+  return json({ status: "ready", entitlement: encodeToken(record.token) });
+}
+
+async function playSubscriptionEntitlement(
+  env: Env,
+  config: { packageName: string; serviceAccount: ServiceAccount },
+  listing: Listing,
+  productId: string,
+  purchaseToken: string,
+): Promise<Response> {
+  let grant: Awaited<ReturnType<typeof verifyPlaySubscription>>;
+  try {
+    grant = await verifyPlaySubscription(config, productId, purchaseToken);
+  } catch (e) {
+    const message = e instanceof PlayUnavailableError ? e.message : "verification failed";
+    return REPO_ERROR(502, "bad_gateway", "could not verify the purchase with Google: " + message);
+  }
+  if (!grant) return REPO_ERROR(402, "payment_required", "that purchase does not entitle this package");
   const token = await issueEntitlement(env, {
-    packageId,
+    packageId: listing.packageId,
     subject: grant.subject,
-    kind: grant.expiresAt ? "subscription" : "perpetual",
+    kind: "subscription",
     issuedAt: new Date().toISOString(),
     ...(grant.expiresAt ? { expiresAt: grant.expiresAt } : {}),
   });
-  // Acknowledge only now that the licence exists: if issuing had failed, the purchase would stay
-  // unacknowledged and Play would refund it after three days instead of the buyer paying for nothing.
   await grant.acknowledge?.();
-  return json({ entitlement: encodeToken(token) });
+  return json({ status: "ready", entitlement: encodeToken(token) });
 }
 
+/**
+ * Put one verified Play sale in the payout ledger. The amounts come from Google's `orders.get` (what
+ * the buyer paid and the tax in it); when Google cannot be asked, from the regional price the product
+ * sync set, and last from the listing price. Idempotent on the order id.
+ */
+async function recordPlaySale(
+  env: Env,
+  account: ServiceAccount,
+  sale: {
+    orderId: string;
+    packageName: string;
+    purchaseToken: string;
+    listing: Listing;
+    productId: string;
+    regionCode?: string;
+    purchasedAt: string;
+  },
+): Promise<void> {
+  let currency = sale.listing.currency;
+  let grossMicros = sale.listing.amountCents * 10_000;
+  let taxMicros = 0;
+  let country = sale.regionCode;
+  let amountSource: "order" | "catalog" = "catalog";
+  try {
+    const order = await getPlayOrder(account, sale.packageName, sale.orderId);
+    const total = moneyMicros(order.total);
+    if (total !== undefined && order.total?.currencyCode) {
+      grossMicros = total;
+      taxMicros = moneyMicros(order.tax) ?? 0;
+      currency = order.total.currencyCode;
+      country = order.buyerAddress?.buyerCountry ?? country;
+      amountSource = "order";
+    }
+  } catch {
+    const synced = await rpc<{ price: { currency: string; micros: number } | null }>(env, "playProduct.regionPrice", {
+      packageName: sale.packageName, productId: sale.productId, region: country,
+    });
+    if (synced.price) {
+      currency = synced.price.currency;
+      grossMicros = synced.price.micros;
+    }
+  }
+  const fees = playFees(env);
+  const split = splitPlaySale(grossMicros, taxMicros, fees);
+  await rpc(env, "ledger.record", {
+    sale: {
+      orderId: sale.orderId,
+      packageName: sale.packageName,
+      purchaseToken: sale.purchaseToken,
+      packageId: sale.listing.packageId,
+      sellerId: sale.listing.sellerId,
+      buyerCountry: country,
+      currency,
+      grossMicros,
+      taxMicros,
+      amountSource,
+      split,
+      payoutCurrency: sale.listing.currency,
+      payoutCents: payoutCents(split, currency, sale.listing),
+      holdbackBps: fees.holdbackBps,
+      purchasedAt: sale.purchasedAt,
+      holdHours: Number(env.PLAY_PAYOUT_HOLD_HOURS || "96"),
+      holdbackDays: Number(env.PLAY_HOLDBACK_DAYS || "90"),
+    },
+  });
+}
+
+/**
+ * `GET /billing/route?app=&country=&distribution=play|direct&packageId=` — which payment route a host
+ * app offers this buyer (`src/billing-policy.ts`). Public and side-effect free.
+ */
+async function billingRoute(req: Request, env: Env): Promise<Response> {
+  const url = new URL(req.url);
+  const app = (url.searchParams.get("app") || "").slice(0, 128);
+  const distribution: Distribution = url.searchParams.get("distribution") === "play" ? "play" : "direct";
+  const country = (url.searchParams.get("country") || "").slice(0, 2);
+  const packageId = url.searchParams.get("packageId") || "";
+  const enrolled = enrolledPrograms(env.PLAY_BILLING_PROGRAMS, app);
+  const decision = decideRoute({ distribution, country, enrolled });
+  const listing = packageId ? activeListing(await getListings(req, env), packageId) : undefined;
+  let route: string = decision.route;
+  let reason: string | undefined = decision.reason;
+  // Play Billing in a host app needs the product to exist in that app's listing.
+  const playAccepted = distribution === "play" && playPackageNames(env).includes(app);
+  if (listing?.interval && route !== "stripe") {
+    route = "stripe";
+    reason = "subscriptions_not_on_play";
+  } else if (route !== "stripe" && !playAccepted) {
+    if (distribution === "play") {
+      route = "unavailable";
+      reason = "app_not_accepted";
+    }
+  }
+  return json({
+    ...decision,
+    route,
+    ...(reason ? { reason } : {}),
+    country: country.toUpperCase() || undefined,
+    ...(listing ? {
+      productId: listing.playProductId || playSkuFor(listing.packageId),
+      price: { amountCents: listing.amountCents, currency: listing.currency },
+    } : {}),
+  });
+}
+
+/** `GET /api/listings/{id}/breakdown` — what a seller receives on each route. */
+async function listingBreakdown(req: Request, env: Env, id: string): Promise<Response> {
+  const listing = anyListing(await getListings(req, env), id);
+  if (!listing) return json({ error: "package is not listed for sale" }, 404);
+  return json({ packageId: id, ...sellerBreakdown(listing, env) });
+}
 
 function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
@@ -1157,6 +1439,18 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   const email = typeof body.email === "string" && /^[^\s@]{1,64}@[^\s@]{1,190}$/.test(body.email.trim())
     ? body.email.trim()
     : undefined;
+  // An in-app checkout (Graffux or another host): the in-app fee applies, Stripe Tax is on, and when
+  // the app runs under a Google programme the token Google needs the sale reported against rides along.
+  const inApp = body.inApp === true;
+  const appId = inApp && typeof body.appId === "string" ? body.appId.slice(0, 128) : undefined;
+  const externalTransactionToken = inApp && typeof body.externalTransactionToken === "string" && body.externalTransactionToken.length <= 4096
+    ? body.externalTransactionToken
+    : undefined;
+  const region = inApp && typeof body.region === "string" && /^[A-Za-z]{2}$/.test(body.region) ? body.region.toUpperCase() : undefined;
+  const adminArea = inApp && typeof body.adminArea === "string" ? body.adminArea.slice(0, 64) : undefined;
+  if (externalTransactionToken && (!appId || !region || !playPackageNames(env).includes(appId))) {
+    return json({ error: "an external transaction token needs an accepted appId and a region" }, 400);
+  }
 
   const [catalog, listings] = await Promise.all([getCatalog(req, env), getListings(req, env)]);
   const known = anyListing(listings, packageId);
@@ -1188,8 +1482,10 @@ async function checkout(req: Request, env: Env): Promise<Response> {
 
   const subjects = await readBuyerSubjects(req, env);
   const buyerId = subjects[0] || newBuyerSubject();
-  const breakdown = quote(listing.amountCents, listing.currency, env);
-  const applicationFee = breakdown.processorFee.amountCents + breakdown.platformFee.amountCents;
+  const breakdown = quote(listing.amountCents, listing.currency, env, { inApp });
+  const applicationFee = breakdown.processorFee.amountCents + breakdown.platformFee.amountCents +
+    ("inAppFee" in breakdown && breakdown.inAppFee ? breakdown.inAppFee.amountCents : 0);
+  const automaticTax = inApp && (env.STRIPE_AUTOMATIC_TAX_IN_APP ?? "true") === "true";
   const origin = env.PUBLIC_ORIGIN.replace(/\/$/, "");
 
   const fields: Record<string, string | undefined> = {
@@ -1203,8 +1499,16 @@ async function checkout(req: Request, env: Env): Promise<Response> {
     "metadata[packageId]": packageId,
     "metadata[buyerId]": buyerId,
     "metadata[interval]": listing.interval,
+    "metadata[channel]": inApp ? "in_app" : "web",
+    "metadata[appId]": appId,
     customer_email: email,
   };
+  if (automaticTax) {
+    // Stripe Tax: the buyer pays sales tax/VAT on top of the price. The platform is the seller of
+    // record for tax here (destination charge), so it needs Stripe Tax registrations (README).
+    fields["automatic_tax[enabled]"] = "true";
+    fields["billing_address_collection"] = "required";
+  }
 
   if (listing.interval) {
     fields.mode = "subscription";
@@ -1230,7 +1534,7 @@ async function checkout(req: Request, env: Env): Promise<Response> {
         // request"). The key therefore has to cover everything that shapes the session — payout
         // destination, fee and currency too — or a seller's account change or a fee-rate change would
         // make every retry by the same buyer fail for 24 hours.
-        "idempotency-key": await idempotencyKey(["azp", packageId, buyerId, listing.amountCents, listing.currency, applicationFee, destination, listing.interval ?? "", email ?? ""]),
+        "idempotency-key": await idempotencyKey(["azp", packageId, buyerId, listing.amountCents, listing.currency, applicationFee, destination, listing.interval ?? "", email ?? "", inApp ? "app" : "", automaticTax ? "tax" : "", externalTransactionToken ?? ""]),
       },
       body: urlForm(fields),
     });
@@ -1251,6 +1555,10 @@ async function checkout(req: Request, env: Env): Promise<Response> {
         createdAt: new Date().toISOString(),
       }),
     });
+    if (inApp) {
+      const program = appId && region ? programmeFor(region)?.program : undefined;
+      await rpc(env, "sessionExtras.put", { sessionId: id, appId, program, region, adminArea, externalTransactionToken });
+    }
 
     const cookie = await makeBuyerCookie(req, buyerId, env);
     return json(
@@ -1592,6 +1900,7 @@ async function webhook(req: Request, env: Env): Promise<Response> {
 
       await entitlementFor(env, sessionId, packageId, buyerId, interval);
       await recordPaymentRefs(env, sessionId, object);
+      await queueGoogleReport(env, sessionId, object);
 
       const subscriptionId = objectId(object.subscription);
       if (subscriptionId && interval) {
@@ -1639,6 +1948,10 @@ async function webhook(req: Request, env: Env): Promise<Response> {
         charge: objectId(object.id),
       });
       const revoked = sessionId ? await revokeEntitlement(env, sessionId, "refund") : false;
+      if (sessionId) {
+        await rpc(env, "externalReport.refund", { sessionId });
+        await flushGoogleReports(env).catch((e) => console.error("google refund report failed", e));
+      }
       return json({ received: true, revoked });
     }
 
@@ -1853,6 +2166,7 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
     session.interval,
   );
   await recordPaymentRefs(env, id, remote);
+  await queueGoogleReport(env, id, remote);
 
   const subscriptionId = objectId(remote.subscription);
   if (subscriptionId && session.interval) {
@@ -2209,6 +2523,7 @@ export class AzphaltState {
         "CREATE TABLE IF NOT EXISTS install_counts (" +
         "package_id TEXT PRIMARY KEY, installs INTEGER NOT NULL DEFAULT 0, uninstalls INTEGER NOT NULL DEFAULT 0)"
       );
+      migrateInApp(sql);
     });
   }
 
@@ -2217,6 +2532,15 @@ export class AzphaltState {
     const path = url.pathname;
     const sql = this.ctx.storage.sql;
     let match: RegExpMatchArray | null;
+
+    if (req.method === "POST" && path === "/rpc") {
+      const { method, args } = await req.json() as { method: string; args?: Record<string, unknown> };
+      try {
+        return json(inAppRpc(sql, method, args ?? {}) ?? null);
+      } catch (e) {
+        return json({ error: (e as Error).message }, 400);
+      }
+    }
 
     if (req.method === "GET" && path === "/system-secrets") {
       const existing = Object.fromEntries(
@@ -3013,6 +3337,11 @@ export default {
     }
     return withSecurityHeaders(withCors(req, await handle(req, env)));
   },
+  async scheduled(_event: unknown, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
+    const job = runScheduled(env);
+    if (ctx) ctx.waitUntil(job);
+    else await job;
+  },
 };
 
 async function handle(req: Request, env: Env): Promise<Response> {
@@ -3058,6 +3387,17 @@ async function handle(req: Request, env: Env): Promise<Response> {
       if (req.method === "POST" && path === "/installs") return reportInstalls(req, env);
       if (req.method === "POST" && path === "/updates") return batchUpdates(req, env);
       if (req.method === "POST" && path === "/entitlements/play") return playEntitlement(req, env);
+      if (req.method === "GET" && path === "/billing/route") return billingRoute(req, env);
+      if (req.method === "GET" && path === "/billing/policy") return billingPolicy();
+      if (req.method === "GET" && path === "/api/admin/payouts") return adminPayouts(req, env);
+      if (req.method === "POST" && path === "/api/admin/in-app/run") return adminRunInApp(req, env);
+      {
+        const m = path.match(/^\/api\/admin\/payouts\/([^/]+)(\/release)?$/);
+        if (m && req.method === "GET" && !m[2]) return adminPayouts(req, env, decodeURIComponent(m[1]));
+        if (m && req.method === "POST" && m[2]) return adminReleasePayout(req, env, decodeURIComponent(m[1]));
+        const b = path.match(/^\/api\/listings\/([^/]+)\/breakdown$/);
+        if (b && req.method === "GET") return listingBreakdown(req, env, decodeURIComponent(b[1]));
+      }
       if (req.method === "POST" && path === "/api/admin/revocations") return adminRevoke(req, env);
 
       let adminMatch = path.match(/^\/api\/admin\/connect\/sellers\/([^/]+)$/);
@@ -3141,4 +3481,259 @@ async function handle(req: Request, env: Env): Promise<Response> {
       console.error("worker request failed", error);
       return json({ error: "internal error" }, 500);
     }
+}
+
+// ── In-app purchasing: reports to Google, product sync, void sweep, payouts ──────────────────────
+
+/**
+ * Queue the Google report an alternative-billing sale owes (externalTransactions, within 24 hours)
+ * and try it straight away; the scheduled run retries what fails. No-op for a sale without a token.
+ */
+async function queueGoogleReport(env: Env, sessionId: string, session: Record<string, unknown>): Promise<void> {
+  const extras = await rpc<{ appId: string | null; region: string | null; adminArea: string | null; externalTransactionToken: string | null } | null>(
+    env, "sessionExtras.get", { sessionId },
+  );
+  if (!extras?.externalTransactionToken || !extras.appId || !extras.region) return;
+  const total = Number(session.amount_total ?? 0);
+  const details = (session.total_details ?? {}) as { amount_tax?: number };
+  const tax = Number(details.amount_tax ?? 0);
+  const currency = typeof session.currency === "string" ? session.currency : "usd";
+  const created = typeof session.created === "number" ? new Date(session.created * 1000) : new Date();
+  await rpc(env, "externalReport.enqueue", {
+    externalId: (await idempotencyKey(["ext", sessionId])).replace(/^azp_/, "azp-"),
+    sessionId,
+    packageName: extras.appId,
+    token: extras.externalTransactionToken,
+    preTaxMicros: Math.max(0, total - tax) * 10_000,
+    taxMicros: tax * 10_000,
+    currency,
+    region: extras.region,
+    adminArea: extras.adminArea ?? undefined,
+    transactionTime: created.toISOString(),
+  });
+  await flushGoogleReports(env).catch((e) => console.error("google report failed", e));
+}
+
+export async function flushGoogleReports(env: Env): Promise<{ reported: number; refunded: number; failed: number }> {
+  const account = parseServiceAccount(env.PLAY_SERVICE_ACCOUNT_JSON);
+  const out = { reported: 0, refunded: 0, failed: 0 };
+  if (!account) return out;
+  const due = await rpc<Array<{
+    externalId: string; packageName: string; token: string; preTaxMicros: number; taxMicros: number; currency: string;
+    region: string; adminArea?: string; transactionTime: string; status: string; refundStatus: string | null;
+  }>>(env, "externalReport.due");
+  for (const r of due) {
+    if (r.status === "pending") {
+      try {
+        await reportExternalTransaction(account, r.packageName, {
+          externalTransactionId: r.externalId,
+          externalTransactionToken: r.token,
+          preTaxMicros: r.preTaxMicros,
+          taxMicros: r.taxMicros,
+          currency: r.currency,
+          transactionTime: r.transactionTime,
+          regionCode: r.region,
+          administrativeArea: r.adminArea,
+        });
+        await rpc(env, "externalReport.mark", { externalId: r.externalId, status: "reported" });
+        out.reported++;
+        r.status = "reported";
+      } catch (e) {
+        await rpc(env, "externalReport.mark", { externalId: r.externalId, status: "pending", error: (e as Error).message });
+        out.failed++;
+        continue;
+      }
+    }
+    if (r.refundStatus === "pending" && r.status === "reported") {
+      try {
+        await refundExternalTransaction(account, r.packageName, r.externalId, new Date().toISOString());
+        await rpc(env, "externalReport.mark", { externalId: r.externalId, status: "reported", refund: true });
+        out.refunded++;
+      } catch (e) {
+        await rpc(env, "externalReport.mark", { externalId: r.externalId, status: "pending", refund: true, error: (e as Error).message });
+        out.failed++;
+      }
+    }
+  }
+  return out;
+}
+
+/** Bring every PLAY_SYNC_PACKAGES app's Play catalogue in line with the listings. */
+export async function runProductSync(req: Request, env: Env) {
+  const account = parseServiceAccount(env.PLAY_SERVICE_ACCOUNT_JSON);
+  const apps = csv(env.PLAY_SYNC_PACKAGES);
+  if (!account || !apps.length) return [];
+  const listings = await getListings(req, env);
+  const results = [];
+  for (const packageName of apps) {
+    const store: ProductStore = {
+      fingerprint: async (pkg, productId) =>
+        (await rpc<{ fingerprint: string | null }>(env, "playProduct.fingerprint", { packageName: pkg, productId })).fingerprint ?? undefined,
+      save: async (record) => { await rpc(env, "playProduct.save", record as unknown as Record<string, unknown>); },
+    };
+    results.push(await syncPlayProducts({ packageName, serviceAccount: account, listings, store }));
+  }
+  return results;
+}
+
+/**
+ * Google's Voided Purchases sweep: every refunded, charged-back or cancelled Play purchase revokes its
+ * entitlement and claws the seller's share back through the ledger (holdback first, then reversal,
+ * then debit). Reads from a stored cursor with an hour's overlap; everything it does is idempotent.
+ */
+export async function sweepVoidedPurchases(env: Env, now = new Date()) {
+  const account = parseServiceAccount(env.PLAY_SERVICE_ACCOUNT_JSON);
+  const out = { voided: 0, reversed: 0, debited: 0 };
+  if (!account) return out;
+  for (const packageName of playPackageNames(env)) {
+    const cursorName = "voided-cursor:" + packageName;
+    const stored = (await rpc<{ value: string | null }>(env, "kv.get", { name: cursorName })).value;
+    // Google keeps 30 days of voids; start a fresh cursor there.
+    const since = stored ? Number(stored) - 3600_000 : now.getTime() - 30 * 24 * 3600_000;
+    const voided = await listVoidedPurchases(account, packageName, Math.max(0, since));
+    let newest = stored ? Number(stored) : since;
+    for (const v of voided) {
+      newest = Math.max(newest, Number(v.voidedTimeMillis ?? 0));
+      const purchase = await rpc<{ sessionId: string; orderId: string | null } | null>(env, "playPurchase.byToken", { purchaseToken: v.purchaseToken });
+      const sessionId = purchase?.sessionId ?? (v.orderId ? "play:" + v.orderId : undefined);
+      if (sessionId) await revokeEntitlement(env, sessionId, "refund");
+      const orderId = purchase?.orderId ?? v.orderId;
+      if (!orderId) continue;
+      const result = await rpc<{ found: boolean; newly: boolean; reversals: { orderId: string; part: Part; transferId: string; cents: number }[] }>(
+        env, "ledger.applyVoid", { orderId, now: now.toISOString() },
+      );
+      if (!result.newly) continue;
+      out.voided++;
+      for (const r of result.reversals) {
+        try {
+          const reversal = await stripe(env, "/v1/transfers/" + encodeURIComponent(r.transferId) + "/reversals", {
+            method: "POST",
+            headers: { "content-type": "application/x-www-form-urlencoded", "idempotency-key": "azp_reversal_" + r.part + "_" + r.orderId },
+            body: urlForm({ amount: String(r.cents), "metadata[orderId]": r.orderId, "metadata[reason]": "play_void" }),
+          });
+          await rpc(env, "ledger.markReversed", { orderId: r.orderId, part: r.part, reversalId: String(reversal.id ?? ""), cents: r.cents });
+          out.reversed++;
+        } catch (e) {
+          // The seller's balance could not cover it: take it from their next payouts instead.
+          const sale = (await rpc<{ sale: { sellerId: string; payoutCurrency: string } | null }>(env, "ledger.get", { orderId: r.orderId })).sale;
+          if (sale) {
+            await rpc(env, "ledger.addDebit", { sellerId: sale.sellerId, currency: sale.payoutCurrency, cents: r.cents, orderId: r.orderId, reason: "reversal_failed: " + (e as Error).message.slice(0, 120) });
+            out.debited++;
+          }
+        }
+      }
+    }
+    await rpc(env, "kv.put", { name: cursorName, value: String(newest) });
+  }
+  return out;
+}
+
+/**
+ * Pay every due ledger part to its seller's connected account with a Stripe transfer from the
+ * platform balance. An insufficient balance (Google has not paid out yet) backs off and retries; a
+ * seller with no payable account goes to review. Idempotency keys make a repeated run harmless.
+ */
+export async function runPayouts(req: Request, env: Env, now = new Date()) {
+  const out = { paid: 0, retried: 0, review: 0 };
+  if (!env.STRIPE_SECRET_KEY || env.PLAY_PAYOUTS_ENABLED === "false") return out;
+  const claims = await rpc<Array<{ orderId: string; part: Part; sellerId: string; currency: string; cents: number; idempotencyKey: string }>>(
+    env, "ledger.claimDue", { now: now.toISOString() },
+  );
+  if (!claims.length) return out;
+  const listings = await getListings(req, env);
+  for (const claim of claims) {
+    if (claim.cents <= 0) {
+      await rpc(env, "ledger.markPaid", { orderId: claim.orderId, part: claim.part, now: now.toISOString() });
+      out.paid++;
+      continue;
+    }
+    const pinned = listings.find((l) => l.sellerId === claim.sellerId && l.stripeAccountId)?.stripeAccountId;
+    const destination = pinned || (await storedSeller(env, claim.sellerId))?.accountId;
+    if (!destination) {
+      await rpc(env, "ledger.markReview", { orderId: claim.orderId, part: claim.part, reason: "seller has no connected Stripe account" });
+      out.review++;
+      continue;
+    }
+    try {
+      const seller = await refreshSeller(env, claim.sellerId, destination);
+      if (!seller.payoutsEnabled) {
+        await rpc(env, "ledger.markRetry", { orderId: claim.orderId, part: claim.part, reason: "seller payouts not enabled", now: now.toISOString() });
+        out.retried++;
+        continue;
+      }
+      const transfer = await stripe(env, "/v1/transfers", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded", "idempotency-key": claim.idempotencyKey },
+        body: urlForm({
+          amount: String(claim.cents),
+          currency: claim.currency.toLowerCase(),
+          destination,
+          transfer_group: "play:" + claim.orderId,
+          "metadata[orderId]": claim.orderId,
+          "metadata[part]": claim.part,
+          "metadata[route]": "play",
+        }),
+      });
+      await rpc(env, "ledger.markPaid", { orderId: claim.orderId, part: claim.part, transferId: String(transfer.id ?? ""), now: now.toISOString() });
+      out.paid++;
+    } catch (e) {
+      await rpc(env, "ledger.markRetry", { orderId: claim.orderId, part: claim.part, reason: (e as Error).message.slice(0, 200), now: now.toISOString() });
+      out.retried++;
+    }
+  }
+  return out;
+}
+
+/** Everything the cron does, each job isolated so one failing never starves the others. */
+export async function runScheduled(env: Env, now = new Date()) {
+  const req = new Request(env.PUBLIC_ORIGIN.replace(/\/$/, "") + "/");
+  const settle = async <T>(name: string, job: () => Promise<T>) => {
+    try {
+      return await job();
+    } catch (e) {
+      console.error("scheduled " + name + " failed", e);
+      return { error: (e as Error).message };
+    }
+  };
+  return {
+    reports: await settle("reports", () => flushGoogleReports(env)),
+    sync: await settle("sync", () => runProductSync(req, env)),
+    voids: await settle("voids", () => sweepVoidedPurchases(env, now)),
+    payouts: await settle("payouts", () => runPayouts(req, env, now)),
+  };
+}
+
+/** `GET /api/admin/payouts?status=&sellerId=` and `GET /api/admin/payouts/{orderId}`. Bearer ADMIN_TOKEN. */
+async function adminPayouts(req: Request, env: Env, orderId?: string): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  if (orderId) {
+    const result = await rpc<{ sale: unknown }>(env, "ledger.get", { orderId });
+    return result.sale ? json(result) : json({ error: "no such sale" }, 404);
+  }
+  const url = new URL(req.url);
+  return json(await rpc(env, "ledger.list", {
+    status: url.searchParams.get("status") || undefined,
+    sellerId: url.searchParams.get("sellerId") || undefined,
+    limit: url.searchParams.get("limit") || undefined,
+  }));
+}
+
+/** `POST /api/admin/payouts/{orderId}/release` `{ part }` — requeue a part an operator reviewed. */
+async function adminReleasePayout(req: Request, env: Env, orderId: string): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  const body = await readJson(req);
+  const part = body?.part === "holdback" ? "holdback" : body?.part === "main" ? "main" : undefined;
+  if (!part) return json({ error: "part must be main or holdback" }, 400);
+  return json(await rpc(env, "ledger.release", { orderId, part }));
+}
+
+/** `POST /api/admin/in-app/run` — run the scheduled jobs now. */
+async function adminRunInApp(req: Request, env: Env): Promise<Response> {
+  if (!adminAuthorized(req, env)) return json({ error: "unauthorized" }, 401);
+  return json(await runScheduled(env));
+}
+
+/** The table, for operators: `GET /billing/policy`. */
+function billingPolicy(): Response {
+  return json({ programs: PLAY_BILLING_PROGRAMS });
 }

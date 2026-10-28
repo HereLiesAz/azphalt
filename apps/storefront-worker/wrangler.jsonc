@@ -38,6 +38,8 @@
   "services": [
     { "binding": "GITHUB_TOKENS", "service": "workflows", "entrypoint": "RepositoryTokens" }
   ],
+  // Product sync, the Voided Purchases sweep, Google reports and payouts (README § In-app purchasing).
+  "triggers": { "crons": ["*/15 * * * *"] },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["AzphaltState"] }
   ],
@@ -52,6 +54,19 @@
     // The store app's Play application id (apps/storefront-cmp/build.gradle.kts § applicationId).
     // POST /entitlements/play stays 501 until the PLAY_SERVICE_ACCOUNT_JSON secret is set too.
     "PLAY_PACKAGE_NAME": "com.hereliesaz.azphalt.store",
+    // Apps whose Play purchases are accepted, and whose Play catalogue the product sync maintains
+    // (README § In-app purchasing). Product sync writes to Graffux's listing only.
+    "PLAY_PACKAGE_NAMES": "com.hereliesaz.azphalt.store,com.hereliesaz.graffux",
+    "PLAY_SYNC_PACKAGES": "com.hereliesaz.graffux",
+    // `<app>:<programme>` pairs the apps are enrolled in with Google. Empty: Play Billing everywhere in
+    // Play builds. Add a pair only once Play Console shows the enrolment approved.
+    "PLAY_BILLING_PROGRAMS": "",
+    "PLAY_SERVICE_FEE_BPS": "1500",
+    "IN_APP_FEE_BPS": "500",
+    "PLAY_PAYOUT_HOLD_HOURS": "96",
+    "PLAY_HOLDBACK_BPS": "1000",
+    "PLAY_HOLDBACK_DAYS": "90",
+    "STRIPE_AUTOMATIC_TAX_IN_APP": "true",
     // Public half of the key build-catalog signs catalog packages with (AZPHALT_PACKAGE_SIGNING_KEY),
     // listed in /.well-known/azphalt.json so hosts trust those packages. Public, so not a secret;
     // rotate it together with that key.
@@ -79,6 +94,8 @@
       "PROCESSOR_PCT_BPS": "290",
       "PROCESSOR_FLAT_CENTS": "30",
       "PLAY_PACKAGE_NAME": "com.hereliesaz.azphalt.store",
+      // A branch Preview never moves money.
+      "PLAY_PAYOUTS_ENABLED": "false",
       "PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64": "MCowBQYDK2VwAyEAWNptGhJCdyjabJ/pEnw+nh41woxC01z6mS8XnL8Cv+M="
     }
   }
