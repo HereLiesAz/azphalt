@@ -253,3 +253,196 @@ export async function verifyPlaySubscription(
   if (order) return { subject: "play-order:" + order, expiresAt, acknowledge };
   return null;
 }
+
+// ── Beyond verification: order details, voids, alternative-billing reports ───────────────────────
+
+/** An authorised Android Publisher call. Non-2xx other than [okStatuses] throws {@link PlayApiError}. */
+export class PlayApiError extends PlayUnavailableError {
+  constructor(readonly status: number, message: string) {
+    super(message);
+  }
+}
+
+export async function playApi<T = Record<string, unknown>>(
+  account: ServiceAccount,
+  method: string,
+  path: string,
+  body?: unknown,
+  fetchImpl: FetchLike = (input, init) => fetch(input, init),
+): Promise<T> {
+  const token = await accessToken(account, fetchImpl);
+  let res: Response;
+  try {
+    res = await fetchImpl(API + path, {
+      method,
+      headers: { authorization: "Bearer " + token, "content-type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (e) {
+    throw new PlayUnavailableError("could not reach Google Play: " + (e as Error).message);
+  }
+  if (res.status === 401) tokenCache.delete(account.client_email);
+  const text = await res.text();
+  if (!res.ok) throw new PlayApiError(res.status, "Google Play answered HTTP " + res.status + " for " + method + " " + path.split("?")[0]);
+  return (text ? JSON.parse(text) : {}) as T;
+}
+
+export type PlayPurchaseInspection =
+  | { status: "purchased"; orderId?: string; regionCode?: string; purchaseTimeMillis?: number; grant: PlayGrant }
+  | { status: "pending" }
+  | { status: "invalid" };
+
+/**
+ * {@link verifyPlayPurchase}, but saying WHY a purchase does not entitle: a pending purchase (slow
+ * payment method, cash) is not a refusal, and the app keeps waiting for it instead of telling the
+ * buyer they did not pay.
+ */
+export async function inspectPlayPurchase(
+  config: PlayConfig,
+  productId: string,
+  purchaseToken: string,
+  fetchImpl: FetchLike = (input, init) => fetch(input, init),
+): Promise<PlayPurchaseInspection> {
+  const token = await accessToken(config.serviceAccount, fetchImpl);
+  const url = API + "/" + encodeURIComponent(config.packageName) + "/purchases/products/" +
+    encodeURIComponent(productId) + "/tokens/" + encodeURIComponent(purchaseToken);
+  let res: Response;
+  try {
+    res = await fetchImpl(url, { headers: { authorization: "Bearer " + token } });
+  } catch (e) {
+    throw new PlayUnavailableError("could not reach Google Play: " + (e as Error).message);
+  }
+  if (res.status === 400 || res.status === 404 || res.status === 410) return { status: "invalid" };
+  if (res.status === 401) tokenCache.delete(config.serviceAccount.client_email);
+  if (!res.ok) throw new PlayUnavailableError("Google Play answered HTTP " + res.status);
+  const purchase = await res.json() as {
+    purchaseState?: number;
+    acknowledgementState?: number;
+    orderId?: string;
+    regionCode?: string;
+    purchaseTimeMillis?: string;
+    obfuscatedExternalAccountId?: string;
+  };
+  if (purchase.purchaseState === 2) return { status: "pending" };
+  if (purchase.purchaseState !== 0) return { status: "invalid" };
+  const acknowledge = purchase.acknowledgementState === 0
+    ? bestEffort(() => fetchImpl(url + ":acknowledge", {
+        method: "POST",
+        headers: { authorization: "Bearer " + token, "content-type": "application/json" },
+        body: "{}",
+      }))
+    : undefined;
+  const subject = purchase.obfuscatedExternalAccountId
+    ? "play-account:" + purchase.obfuscatedExternalAccountId
+    : purchase.orderId ? "play-order:" + purchase.orderId : undefined;
+  if (!subject) return { status: "invalid" };
+  return {
+    status: "purchased",
+    orderId: purchase.orderId,
+    regionCode: purchase.regionCode,
+    purchaseTimeMillis: purchase.purchaseTimeMillis ? Number(purchase.purchaseTimeMillis) : undefined,
+    grant: { subject, acknowledge },
+  };
+}
+
+export interface Money { currencyCode?: string; units?: string; nanos?: number }
+
+/** Money as integer micros (1e-6 of the unit), the unit every ledger amount is kept in. */
+export function moneyMicros(m: Money | undefined): number | undefined {
+  if (!m || m.units === undefined && m.nanos === undefined) return undefined;
+  return Number(m.units ?? "0") * 1_000_000 + Math.round((m.nanos ?? 0) / 1000);
+}
+
+export interface PlayOrder {
+  orderId: string;
+  state?: string;
+  total?: Money;
+  tax?: Money;
+  developerRevenueInBuyerCurrency?: Money;
+  buyerAddress?: { buyerCountry?: string; buyerState?: string };
+}
+
+/** `orders.get`: what the buyer paid, the tax in it, and Google's net to us. */
+export function getPlayOrder(account: ServiceAccount, packageName: string, orderId: string, fetchImpl?: FetchLike): Promise<PlayOrder> {
+  return playApi<PlayOrder>(account, "GET", "/" + encodeURIComponent(packageName) + "/orders/" + encodeURIComponent(orderId), undefined, fetchImpl);
+}
+
+export interface VoidedPurchase {
+  purchaseToken: string;
+  orderId?: string;
+  voidedTimeMillis?: string;
+  voidedReason?: number;
+  voidedSource?: number;
+}
+
+/** `purchases.voidedpurchases.list` from [startTimeMillis], every page. */
+export async function listVoidedPurchases(
+  account: ServiceAccount,
+  packageName: string,
+  startTimeMillis: number,
+  fetchImpl?: FetchLike,
+): Promise<VoidedPurchase[]> {
+  const out: VoidedPurchase[] = [];
+  let pageToken: string | undefined;
+  for (let page = 0; page < 50; page++) {
+    const q = new URLSearchParams({ startTime: String(startTimeMillis), type: "0", maxResults: "1000" });
+    if (pageToken) q.set("token", pageToken);
+    const res = await playApi<{ voidedPurchases?: VoidedPurchase[]; tokenPagination?: { nextPageToken?: string } }>(
+      account, "GET", "/" + encodeURIComponent(packageName) + "/purchases/voidedpurchases?" + q, undefined, fetchImpl,
+    );
+    out.push(...(res.voidedPurchases ?? []));
+    pageToken = res.tokenPagination?.nextPageToken;
+    if (!pageToken) break;
+  }
+  return out;
+}
+
+/**
+ * Report a one-time alternative-billing sale (`externaltransactions.createexternaltransaction`).
+ * Idempotent on [externalTransactionId]: a 409 (already reported) counts as success.
+ */
+export async function reportExternalTransaction(
+  account: ServiceAccount,
+  packageName: string,
+  report: {
+    externalTransactionId: string;
+    externalTransactionToken: string;
+    preTaxMicros: number;
+    taxMicros: number;
+    currency: string;
+    transactionTime: string;
+    regionCode: string;
+    administrativeArea?: string;
+  },
+  fetchImpl?: FetchLike,
+): Promise<void> {
+  const body = {
+    originalPreTaxAmount: { priceMicros: String(report.preTaxMicros), currency: report.currency.toUpperCase() },
+    originalTaxAmount: { priceMicros: String(report.taxMicros), currency: report.currency.toUpperCase() },
+    transactionTime: report.transactionTime,
+    oneTimeTransaction: { externalTransactionToken: report.externalTransactionToken },
+    userTaxAddress: {
+      regionCode: report.regionCode.toUpperCase(),
+      ...(report.administrativeArea ? { administrativeArea: report.administrativeArea } : {}),
+    },
+  };
+  try {
+    await playApi(account, "POST", "/" + encodeURIComponent(packageName) + "/externalTransactions?externalTransactionId=" +
+      encodeURIComponent(report.externalTransactionId), body, fetchImpl);
+  } catch (e) {
+    if (e instanceof PlayApiError && e.status === 409) return;
+    throw e;
+  }
+}
+
+/** Report a full refund of a reported alternative-billing sale (`externaltransactions.refundexternaltransaction`). */
+export async function refundExternalTransaction(
+  account: ServiceAccount,
+  packageName: string,
+  externalTransactionId: string,
+  refundTime: string,
+  fetchImpl?: FetchLike,
+): Promise<void> {
+  await playApi(account, "POST", "/" + encodeURIComponent(packageName) + "/externalTransactions/" +
+    encodeURIComponent(externalTransactionId) + ":refund", { refundTime, fullRefund: {} }, fetchImpl);
+}
