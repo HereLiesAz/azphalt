@@ -201,13 +201,19 @@ This exists because a store app distributed on Google Play cannot send the user 
 
 **Request:**
 ```json
-{ "packageId": "com.acme.filter", "productId": "com.acme.filter", "purchaseToken": "<opaque token from Play>" }
+{ "packageId": "com.acme.filter", "productId": "com.acme.filter", "purchaseToken": "<opaque token from Play>", "packageName": "com.example.host" }
 ```
+
+`packageName` is OPTIONAL: the applicationId of the app the purchase was made in, when that is not the repository's own store app (a host such as Graffux selling packages through its own Play listing). A repository accepts only the apps it lists and answers `403` for any other.
 
 **Response (200 OK):**
 ```json
-{ "entitlement": "<base64 of the EntitlementToken JSON>" }
+{ "status": "ready", "entitlement": "<base64 of the EntitlementToken JSON>" }
 ```
+
+**Response (202 Accepted):** `{ "status": "pending" }` — Google holds the purchase as pending (a slow payment method). The client keeps the purchase and posts it again later; it MUST NOT tell the buyer they did not pay.
+
+The exchange SHOULD be idempotent on the purchase token: posting the same token again (a retry, a restore after reinstall) returns the entitlement it already produced. A purchase Google later voids (refund, chargeback) answers `403` and its entitlement is revoked.
 
 The returned value is exactly what the download endpoint accepts as a Bearer token (§ 4), so a client can present it unchanged.
 
@@ -218,6 +224,7 @@ Failure modes are distinguished on purpose:
 - `402` — Google does not recognise the purchase, or it does not cover this package.
 - `502` — the repository could not reach Google. This is **not** `402`: telling a paying customer they did not pay is a worse failure than asking them to retry.
 - `501` — this repository has no Play integration configured.
+- `403` — the app is not accepted, or the purchase was voided.
 - `400` — a malformed body, or fields beyond their length bounds (a purchase token is capped before it is forwarded upstream).
 
 `subject` — the identity the entitlement is issued to — is chosen by the repository's Play verifier and SHOULD be stable for the buyer across devices, or a reinstall will not restore their purchase.

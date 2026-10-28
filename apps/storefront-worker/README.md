@@ -161,6 +161,92 @@ base order id (`GPA.…` without the `..N` renewal suffix), so renewals keep one
 `402` means Google does not recognise the purchase or subscription as entitling; `502` means Google
 could not be asked.
 
+## In-app purchasing (host apps)
+
+A host app such as Graffux sells paid packages inside itself, over the same server. The server
+performs and verifies every purchase and issues the entitlement; the app installs the package and
+checks the entitlement's signature on the device. Buying in-app is an option, never a gate: a package
+bought on azphalt.store, or from a developer's own site or app, installs through the host's existing
+deep-link / store-app path with its entitlement honoured exactly the same.
+
+### Routes
+
+`GET /billing/route?app=<applicationId>&distribution=play|direct&country=<CC>&packageId=<id>` returns
+`{ route, program?, clientApi?, reportToGoogle, reason?, productId?, price? }`, decided by the policy
+table in [`src/billing-policy.ts`](src/billing-policy.ts) (`GET /billing/policy` serves it):
+
+| Route | When |
+|---|---|
+| `stripe` | Not a Play build (GitHub APK, sideload); or a Play build in a country whose Google programme does not require Play Billing alongside, when the app is enrolled (US). |
+| `choice` | A Play build where the programme requires Play Billing alongside, when enrolled (EEA, UK, AU, JP: billing choice; IN, KR: user choice). Google shows the choice screen. |
+| `play` | Everywhere else, and wherever the app is not enrolled (`reason: "not_enrolled"`). |
+
+Enrolment is declared per app in `PLAY_BILLING_PROGRAMS`. The device also checks programme
+availability with the Play Billing Library, which reports "unavailable" for an app Google has not
+enrolled, so a wrong flag still falls back to Play Billing.
+
+### Fees
+
+| Sale | Seller receives |
+|---|---|
+| Web (azphalt.store), Stripe | price − Stripe fee − `PLATFORM_FEE_BPS` (15%) |
+| In-app, Stripe | price − Stripe fee − 15% − `IN_APP_FEE_BPS` (5%); buyer pays tax on top (Stripe Tax) |
+| In-app, Play | pre-tax price − Google's fee (`PLAY_SERVICE_FEE_BPS`, 15%) − 15% − 5%; 10% of that held 90 days |
+
+`GET /api/listings/{packageId}/breakdown` shows a seller all three for a listing; the checkout
+response's `breakdown` carries an `inAppFee` line for in-app checkouts.
+
+### Play-route payouts
+
+On the Play route Google collects and pays the platform; the seller is paid by Stripe Connect transfer
+from the platform balance. Every verified Play sale is a row in the payout ledger
+([`src/ledger.ts`](src/ledger.ts)) with gross, tax, Google's fee, the platform fee, the seller share,
+currency and country (from Google's `orders.get`). The share is paid in two parts: 90% after
+`PLAY_PAYOUT_HOLD_HOURS` (default 96: Play's 48-hour self-service refund window plus 48 hours), and the
+`PLAY_HOLDBACK_BPS` (10%) holdback after `PLAY_HOLDBACK_DAYS` (90). A transfer that fails for lack of
+balance (Google has not paid out yet) backs off and retries; a seller with no connected account goes
+to review.
+
+A cron (`triggers.crons`) sweeps Google's Voided Purchases API every run. A void revokes the
+entitlement and recovers the seller share: unreleased holdback first (that sale's, then the seller's
+others), then unpaid parts, then a Stripe transfer reversal; what a reversal cannot recover is a debit
+netted against the seller's next payout. Every step is in `ledger_events`.
+
+Operators: `GET /api/admin/payouts?status=pending|processing|retry|paid|cancelled|reversed|review|voided`,
+`GET /api/admin/payouts/{orderId}` (with its event history), `POST /api/admin/payouts/{orderId}/release`
+`{ part }` to requeue a reviewed part, `POST /api/admin/in-app/run` to run the jobs now. All Bearer
+`ADMIN_TOKEN`.
+
+### Play products
+
+The cron also keeps every `PLAY_SYNC_PACKAGES` app's Play catalogue in step with the listings
+([`src/play-products.ts`](src/play-products.ts)): an active one-time listing becomes a one-time
+product (`monetization.onetimeproducts`, upserted with `allowMissing`, regional prices from
+`pricing:convertRegionPrices`, purchase option activated), a paused one is deactivated, and nothing is
+written when nothing changed. Developers never touch Play Console. Subscription listings are not sold
+through Play in host apps; they go to Stripe.
+
+### Alternative-billing reports
+
+A Stripe sale made under a Google programme carries the app's external transaction token. It is
+reported to `externalTransactions` when fulfilled (Google's deadline is 24 hours) and its refund is
+reported when Stripe refunds it; failures retry on the cron.
+
+### Tax
+
+On Play-route sales Google is the merchant of record to the buyer and remits the tax in the price;
+the platform is the merchant of record towards the seller, whom it pays from its own balance. On
+in-app Stripe sales the platform is the merchant of record (destination charges) and Stripe Tax
+collects tax on top. This code computes no tax: **the owner should confirm the tax treatment** of both
+routes (including whether seller payouts need 1099-K/DAC7 reporting) with an adviser.
+
+### Owner configuration
+
+Vars (`wrangler.jsonc`): `PLAY_PACKAGE_NAMES`, `PLAY_SYNC_PACKAGES`, `PLAY_BILLING_PROGRAMS`,
+`PLAY_SERVICE_FEE_BPS`, `IN_APP_FEE_BPS`, `PLAY_PAYOUT_HOLD_HOURS`, `PLAY_HOLDBACK_BPS`,
+`PLAY_HOLDBACK_DAYS`, `STRIPE_AUTOMATIC_TAX_IN_APP`, `PLAY_PAYOUTS_ENABLED`. Secrets (existing):
+`PLAY_SERVICE_ACCOUNT_JSON`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_TOKEN`.
+
 ## Update checks
 
 `POST /updates` (`spec/repository-api.md` § 6) takes the host's installed `[{ id, version }]` (at most
