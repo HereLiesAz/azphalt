@@ -328,6 +328,16 @@ describe("refunds and disputes revoke one buyer, not the version", () => {
   const refund = (pi: string, refunded = true) => ({ type: "charge.refunded", data: { object: { id: "ch_" + pi, payment_intent: pi, refunded } } });
   const dispute = (type: string, pi: string, status?: string) => ({ type, data: { object: { id: "dp_1", charge: "ch_x", payment_intent: pi, status } } });
 
+  it("a refunded purchase is flagged for a restoring host and dropped from the plain list", async () => {
+    const { env } = await twoBuyers();
+    const cookie = (await worker.fetch(req("GET", "/api/checkout/session/cs_a"), env)).headers.get("set-cookie")!.split(";")[0];
+    await worker.fetch(signedWebhook(refund("pi_cs_a")), env);
+    const list = async (q: string) =>
+      await (await worker.fetch(req("GET", "/api/purchases" + q, undefined, { cookie }), env)).json() as { sessionId: string; revoked?: boolean }[];
+    expect(await list("")).toEqual([]);
+    expect((await list("?includeRevoked=1")).map((p) => [p.sessionId, p.revoked])).toEqual([["cs_a", true]]);
+  });
+
   it("a full refund revokes that purchase only", async () => {
     const { env, a, b } = await twoBuyers();
     expect(await (await worker.fetch(signedWebhook(refund("pi_cs_a")), env)).json()).toEqual({ received: true, revoked: true });

@@ -1104,7 +1104,7 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
   }
   const packageName = typeof body.packageName === "string" ? body.packageName : env.PLAY_PACKAGE_NAME;
   if (!playPackageNames(env).includes(packageName)) {
-    return REPO_ERROR(403, "forbidden", "purchases from " + packageName.slice(0, 128) + " are not accepted");
+    return REPO_ERROR(403, "app_not_accepted", "purchases from " + packageName.slice(0, 128) + " are not accepted");
   }
 
   // A paused listing stops new sales, not restores: an existing buyer still gets their licence back.
@@ -1128,7 +1128,7 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
   if (known) {
     if (known.packageId !== packageId) return REPO_ERROR(402, "payment_required", "that purchase does not entitle this package");
     if (await entitlementRevoked(env, known.sessionId)) {
-      return REPO_ERROR(403, "forbidden", "this purchase was refunded or voided");
+      return REPO_ERROR(403, "revoked", "this purchase was refunded or voided");
     }
     const existing = await state(env).fetch(new Request("https://state.internal/entitlement/" + encodeURIComponent(known.sessionId)));
     if (existing.ok) {
@@ -1150,7 +1150,7 @@ async function playEntitlement(req: Request, env: Env): Promise<Response> {
 
   const orderId = inspection.orderId;
   const sessionId = orderId ? "play:" + orderId : "play-token:" + (await idempotencyKey([packageName, purchaseToken]));
-  if (await entitlementRevoked(env, sessionId)) return REPO_ERROR(403, "forbidden", "this purchase was refunded or voided");
+  if (await entitlementRevoked(env, sessionId)) return REPO_ERROR(403, "revoked", "this purchase was refunded or voided");
   const record = await entitlementFor(env, sessionId, packageId, inspection.grant.subject);
   await rpc(env, "playPurchase.put", { purchaseToken, packageName, productId, packageId, orderId, sessionId });
 
@@ -2197,11 +2197,14 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
 async function purchases(req: Request, env: Env): Promise<Response> {
   const subjects = await readBuyerSubjects(req, env);
   if (!subjects.length) return json([]);
-  const all: Array<{ packageId: string; sessionId: string; issuedAt: string; token: string }> = [];
+  // `?includeRevoked=1` (a host app restoring) also lists refunded or disputed purchases, flagged
+  // `revoked: true`, so the host can remove exactly those instead of guessing from absence.
+  const includeRevoked = new URL(req.url).searchParams.get("includeRevoked") === "1";
+  const all: Array<{ packageId: string; sessionId: string; issuedAt: string; token: string; revoked?: boolean }> = [];
   for (const subject of subjects) {
-    const records = await stateJson<EntitlementRecord[]>(
+    const records = await stateJson<Array<EntitlementRecord & { revoked?: boolean }>>(
       env,
-      "/purchases?subject=" + encodeURIComponent(subject),
+      "/purchases?subject=" + encodeURIComponent(subject) + (includeRevoked ? "&includeRevoked=1" : ""),
     );
     for (const record of records) {
       all.push({
@@ -2209,6 +2212,7 @@ async function purchases(req: Request, env: Env): Promise<Response> {
         sessionId: record.sessionId,
         issuedAt: record.issuedAt,
         token: encodeToken(record.token),
+        ...(includeRevoked ? { revoked: record.revoked === true } : {}),
       });
     }
   }
@@ -2686,10 +2690,14 @@ export class AzphaltState {
 
     if (req.method === "GET" && path === "/purchases") {
       const subject = url.searchParams.get("subject") || "";
+      // `includeRevoked=1` lists refunded/disputed ones too, flagged, so a host can revoke them.
+      const includeRevoked = url.searchParams.get("includeRevoked") === "1";
       return json(rows(sql.exec(
-        "SELECT session_id,subject,package_id,token_json,issued_at FROM entitlements " +
-        "WHERE subject=? AND session_id NOT IN (SELECT session_id FROM entitlement_revocations) " +
-        "ORDER BY issued_at DESC",
+        "SELECT session_id,subject,package_id,token_json,issued_at," +
+        "session_id IN (SELECT session_id FROM entitlement_revocations) AS revoked FROM entitlements " +
+        "WHERE subject=?" +
+        (includeRevoked ? "" : " AND session_id NOT IN (SELECT session_id FROM entitlement_revocations)") +
+        " ORDER BY issued_at DESC",
         subject,
       )).map((row) => ({
         sessionId: String(row.session_id),
@@ -2697,6 +2705,7 @@ export class AzphaltState {
         packageId: String(row.package_id),
         token: JSON.parse(String(row.token_json)),
         issuedAt: String(row.issued_at),
+        ...(includeRevoked ? { revoked: Number(row.revoked) === 1 } : {}),
       })));
     }
 

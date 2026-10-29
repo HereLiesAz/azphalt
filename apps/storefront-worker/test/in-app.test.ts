@@ -106,7 +106,10 @@ describe("fees", () => {
 describe("POST /entitlements/play from a host app", () => {
   it("refuses apps outside the allowlist", async () => {
     fakeUpstream(googleSale());
-    expect((await exchange(makeEnv(), { ...purchase, packageName: "com.evil.app" })).status).toBe(403);
+    const res = await exchange(makeEnv(), { ...purchase, packageName: "com.evil.app" });
+    expect(res.status).toBe(403);
+    // Distinct from a void, so a host never removes a paid package over its own misconfiguration.
+    expect(await res.json()).toMatchObject({ error: { code: "app_not_accepted" } });
   });
 
   it("answers 202 for a pending purchase and never records it", async () => {
@@ -188,7 +191,9 @@ describe("scheduled: payouts and voids", () => {
     const result = await runScheduled(env, new Date(Date.UTC(2026, 9, 10)));
     expect(result.voids).toEqual({ voided: 1, reversed: 0, debited: 0 });
     expect(calls.some((c) => c.url.includes("api.stripe.com/v1/transfers"))).toBe(false);
-    expect((await exchange(env, purchase)).status).toBe(403);
+    const voided = await exchange(env, purchase);
+    expect(voided.status).toBe(403);
+    expect(await voided.json()).toMatchObject({ error: { code: "revoked" } });
     const { sale } = await (await worker.fetch(req("GET", "/api/admin/payouts/GPA.1", undefined, ADMIN), env)).json() as { sale: Record<string, unknown> };
     expect(sale).toMatchObject({ mainStatus: "cancelled", holdbackStatus: "cancelled" });
   });
