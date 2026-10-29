@@ -224,7 +224,7 @@ Failure modes are distinguished on purpose:
 - `402` — Google does not recognise the purchase, or it does not cover this package.
 - `502` — the repository could not reach Google. This is **not** `402`: telling a paying customer they did not pay is a worse failure than asking them to retry.
 - `501` — this repository has no Play integration configured.
-- `403` — the app is not accepted, or the purchase was voided.
+- `403` — the app is not accepted (error code `app_not_accepted`), or the purchase was voided (error code `revoked`). A client MUST remove a licence only on `revoked`: `app_not_accepted` is a configuration problem, not proof the buyer lost the purchase.
 - `400` — a malformed body, or fields beyond their length bounds (a purchase token is capped before it is forwarded upstream).
 
 `subject` — the identity the entitlement is issued to — is chosen by the repository's Play verifier and SHOULD be stable for the buyer across devices, or a reinstall will not restore their purchase.

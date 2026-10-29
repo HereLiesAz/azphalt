@@ -323,7 +323,8 @@ A refund or a chargeback revokes **that purchase's** entitlement, not the versio
 The charge is matched to its entitlement through the payment intent (and, for subscriptions, the
 invoice) recorded at fulfilment; for a purchase fulfilled before that was recorded, the Worker asks
 Stripe for the Checkout Session by payment intent. A revoked token gets `403` from the paid download,
-drops out of `/api/purchases`, and its success page answers `403`; every other buyer is unaffected.
+drops out of `/api/purchases` (a restoring host app asks `/api/purchases?includeRevoked=1`, which lists it
+with `revoked: true` so the app removes exactly that package), and its success page answers `403`; every other buyer is unaffected.
 `/api/admin/revocations` is for yanking a **version** (malware, a takedown), which withdraws it from
 everyone: never use it to handle a single refund.
 
