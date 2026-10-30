@@ -1188,6 +1188,14 @@ async function playSubscriptionEntitlement(
   productId: string,
   purchaseToken: string,
 ): Promise<Response> {
+  // A voided subscription answers `revoked`, as a voided one-time purchase does: Google itself reports
+  // it as merely expired, which a host must not read as proof the buyer lost it.
+  const known = await rpc<{ packageId: string; sessionId: string } | null>(env, "playPurchase.get", { purchaseToken });
+  const sessionId = known?.sessionId ?? "play-sub:" + (await idempotencyKey([config.packageName, purchaseToken]));
+  if (known && known.packageId !== listing.packageId) {
+    return REPO_ERROR(402, "payment_required", "that purchase does not entitle this package");
+  }
+  if (await entitlementRevoked(env, sessionId)) return REPO_ERROR(403, "revoked", "this purchase was refunded or voided");
   let grant: Awaited<ReturnType<typeof verifyPlaySubscription>>;
   try {
     grant = await verifyPlaySubscription(config, productId, purchaseToken);
@@ -1196,12 +1204,23 @@ async function playSubscriptionEntitlement(
     return REPO_ERROR(502, "bad_gateway", "could not verify the purchase with Google: " + message);
   }
   if (!grant) return REPO_ERROR(402, "payment_required", "that purchase does not entitle this package");
+  const issuedAt = new Date().toISOString();
   const token = await issueEntitlement(env, {
     packageId: listing.packageId,
     subject: grant.subject,
     kind: "subscription",
-    issuedAt: new Date().toISOString(),
+    issuedAt,
     ...(grant.expiresAt ? { expiresAt: grant.expiresAt } : {}),
+  });
+  // Recorded under the token's own session so the Voided Purchases sweep can revoke it. The first
+  // token issued for a purchase is the one recorded (a revocation also blocks every later exchange).
+  await stateJson<EntitlementRecord>(env, "/entitlement/" + encodeURIComponent(sessionId), {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ sessionId, subject: grant.subject, packageId: listing.packageId, token, issuedAt }),
+  });
+  await rpc(env, "playPurchase.put", {
+    purchaseToken, packageName: config.packageName, productId, packageId: listing.packageId, orderId: null, sessionId,
   });
   await grant.acknowledge?.();
   return json({ status: "ready", entitlement: encodeToken(token) });
@@ -1969,11 +1988,19 @@ async function webhook(req: Request, env: Env): Promise<Response> {
         charge: objectId(object.charge),
       });
       if (!sessionId) return json({ received: true, revoked: false });
+      // Stripe does not order deliveries: a delayed or retried `created` can land after the dispute
+      // was won. The win is recorded per dispute, and a `created` for a won dispute changes nothing.
+      const disputeId = objectId(object.id);
+      const wonKey = disputeId ? "dispute-won:" + disputeId : "";
       if (event.type === "charge.dispute.created") {
+        if (wonKey && (await rpc<{ value: string | null }>(env, "kv.get", { name: wonKey })).value) {
+          return json({ received: true, revoked: false });
+        }
         return json({ received: true, revoked: await revokeEntitlement(env, sessionId, "dispute") });
       }
       // Won: the money came back, so the licence does too (a refund-based revocation is left alone).
       if (object.status === "won") {
+        if (wonKey) await rpc(env, "kv.put", { name: wonKey, value: new Date().toISOString() });
         const res = await state(env).fetch(new Request(
           "https://state.internal/entitlement-revocation/" + encodeURIComponent(sessionId) + "?reason=dispute",
           { method: "DELETE" },
@@ -2119,7 +2146,8 @@ async function adminEntitlement(req: Request, env: Env, sessionId: string): Prom
 
 async function sessionResult(req: Request, env: Env, id: string): Promise<Response> {
   if (await entitlementRevoked(env, id)) {
-    return json({ status: "revoked", error: "this purchase was refunded or disputed" }, 403);
+    // `error.code` matches every other repository error; `status` stays for clients that read it.
+    return json({ status: "revoked", error: { code: "revoked", message: "this purchase was refunded or disputed" } }, 403);
   }
   const existing = await state(env).fetch(
     new Request("https://state.internal/entitlement/" + encodeURIComponent(id)),
