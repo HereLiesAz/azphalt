@@ -80,6 +80,58 @@ answer `503`. A deployment without the gateway can set a fixed `GITHUB_PUBLISH_T
 (fine-grained, Contents and Pull requests read/write on `PUBLISH_REPOSITORY`); with neither,
 `POST /packages` answers `501`.
 
+## Root endorsements
+
+Hosts that pin the owner's offline root key (Graffux does) trust the entitlement key and the catalog
+package-signing key only when the root has endorsed each for its purpose (spec/repository-api.md
+§ Root endorsements). The Worker serves the endorsements next to the keys in
+`/.well-known/azphalt.json`, from two settings:
+
+| Setting | Endorses | Purpose |
+| --- | --- | --- |
+| `ROOT_ENDORSEMENT_ENTITLEMENT` | `signingKeys[0]` (`store-v1`), the entitlement key | `entitlement` |
+| `ROOT_ENDORSEMENT_CATALOG` | `signingKeys[1]` (`packages-v1`), `PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64` | `package-catalog` |
+
+Unset, the keys are served exactly as before. A setting whose key or purpose does not match the key
+being served is dropped with a warning in the logs, so a stale one left behind by a rotation is never
+published. Endorsements are public; they are set as secrets only so a deploy never overwrites them.
+
+The root private key (`azphalt-root.enc.pem`, AES-256 encrypted) stays offline with the owner.
+`tools/root-sign.mjs` is plain Node with no dependencies: it asks for the passphrase on the console,
+decrypts the key in memory, refuses any key that is not the pinned root
+(`MCowBQYDK2VwAyEAjVS5e0Si26c3lzFyqnuW7VwMUmnwRF5AmBUBzYwrh6M=`), and prints the endorsement as one
+JSON line. Nothing is written to disk.
+
+Step by step, on Windows in PowerShell, from a checkout of this repository (Node 24 or later):
+
+~~~powershell
+# 1. Read the two public keys the store serves now.
+$wk = Invoke-RestMethod https://azphalt.store/.well-known/azphalt.json
+$entitlementKey = ($wk.signingKeys | Where-Object keyId -eq 'store-v1').publicKey
+$catalogKey     = ($wk.signingKeys | Where-Object keyId -eq 'packages-v1').publicKey
+$entitlementKey; $catalogKey
+# The catalog key must equal PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64 in apps/storefront-worker/wrangler.jsonc.
+
+# 2. Endorse each one (asks for the root passphrase each time). Add --not-after to limit validity,
+#    e.g. --not-after 2028-10-30T00:00:00Z; without it an endorsement never expires.
+$rootPem = 'D:\offline\azphalt-root.enc.pem'   # wherever you keep it
+$entitlementEndorsement = node tools\root-sign.mjs --key $rootPem --purpose entitlement --public-key $entitlementKey
+$catalogEndorsement     = node tools\root-sign.mjs --key $rootPem --purpose package-catalog --public-key $catalogKey
+
+# 3. Set them on the Worker.
+cd apps\storefront-worker
+$entitlementEndorsement | npx wrangler secret put ROOT_ENDORSEMENT_ENTITLEMENT
+$catalogEndorsement     | npx wrangler secret put ROOT_ENDORSEMENT_CATALOG
+cd ..\..
+
+# 4. Check that both are served.
+(Invoke-RestMethod https://azphalt.store/.well-known/azphalt.json).signingKeys |
+  Select-Object keyId, purpose, @{ n = 'endorsed'; e = { [bool]$_.endorsement } }
+~~~
+
+Re-run steps 2–4 whenever either key rotates: an endorsement names exactly one key. Removing the
+root key file from the machine afterwards is up to you; the script never copies it.
+
 ## Publishing
 
 `POST /packages` ([`spec/repository-api.md`](../../spec/repository-api.md) § 9, [`src/publish.ts`](src/publish.ts))
