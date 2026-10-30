@@ -259,8 +259,9 @@ currency and country (from Google's `orders.get`). The share is paid in two part
 balance (Google has not paid out yet) backs off and retries; a seller with no connected account goes
 to review.
 
-A cron (`triggers.crons`) sweeps Google's Voided Purchases API every run. A void revokes the
-entitlement and recovers the seller share: unreleased holdback first (that sale's, then the seller's
+A cron (`triggers.crons`) sweeps Google's Voided Purchases API (one-time products and subscriptions)
+every run. A void revokes the entitlement, so exchanging that purchase token again answers `403`
+`{error:{code:"revoked"}}` for a subscription as for a one-time product, and recovers the seller share: unreleased holdback first (that sale's, then the seller's
 others), then unpaid parts, then a Stripe transfer reversal; what a reversal cannot recover is a debit
 netted against the seller's next payout. Every step is in `ledger_events`.
 
@@ -370,13 +371,17 @@ A refund or a chargeback revokes **that purchase's** entitlement, not the versio
 - `charge.refunded` with `refunded: true` (a full refund) revokes the entitlement the charge paid for.
   A partial refund keeps the licence.
 - `charge.dispute.created` revokes it; `charge.dispute.closed` with `status: "won"` restores it (a
-  lost dispute stays revoked, and a refund is never undone by a later dispute win).
+  lost dispute stays revoked, and a refund is never undone by a later dispute win). The win is recorded
+  per dispute id, so a delayed or retried `created` that arrives after it does not revoke again.
 
 The charge is matched to its entitlement through the payment intent (and, for subscriptions, the
 invoice) recorded at fulfilment; for a purchase fulfilled before that was recorded, the Worker asks
 Stripe for the Checkout Session by payment intent. A revoked token gets `403` from the paid download,
 drops out of `/api/purchases` (a restoring host app asks `/api/purchases?includeRevoked=1`, which lists it
-with `revoked: true` so the app removes exactly that package), and its success page answers `403`; every other buyer is unaffected.
+with `revoked: true` so the app removes exactly that package), and its success page (`GET /api/checkout/session/{id}`) answers `403`
+`{status:"revoked", error:{code:"revoked", message}}`; every other buyer is unaffected. A host restoring
+Play purchases does not use `/api/purchases`: it re-posts each purchase token to `/entitlements/play`,
+which answers `revoked` for a voided one.
 `/api/admin/revocations` is for yanking a **version** (malware, a takedown), which withdraws it from
 everyone: never use it to handle a single refund.
 

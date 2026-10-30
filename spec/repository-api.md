@@ -232,7 +232,7 @@ This exists because a store app distributed on Google Play cannot send the user 
 
 **Response (202 Accepted):** `{ "status": "pending" }` — Google holds the purchase as pending (a slow payment method). The client keeps the purchase and posts it again later; it MUST NOT tell the buyer they did not pay.
 
-The exchange SHOULD be idempotent on the purchase token: posting the same token again (a retry, a restore after reinstall) returns the entitlement it already produced. A purchase Google later voids (refund, chargeback) answers `403` and its entitlement is revoked.
+The exchange SHOULD be idempotent on the purchase token: posting the same token again (a retry, a restore after reinstall) returns the entitlement it already produced. A purchase Google later voids (refund, chargeback) — a one-time product or a subscription — answers `403` with error code `revoked` and its entitlement is revoked. A host restoring purchases learns of a void by posting each purchase token again; this is the removal signal, and it needs no buyer session.
 
 The returned value is exactly what the download endpoint accepts as a Bearer token (§ 4), so a client can present it unchanged.
 

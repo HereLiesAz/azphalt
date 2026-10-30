@@ -198,6 +198,36 @@ describe("scheduled: payouts and voids", () => {
     expect(sale).toMatchObject({ mainStatus: "cancelled", holdbackStatus: "cancelled" });
   });
 
+  it("a voided Play subscription answers 403 revoked on the next exchange", async () => {
+    const env = makeEnv();
+    const expiry = new Date(Date.now() + 20 * 86400_000).toISOString();
+    let voidedQuery = "";
+    let voided = false;
+    fakeUpstream((url) => {
+      if (url.endsWith("/subscriptionsv2/tokens/sub-tok")) {
+        return new Response(JSON.stringify({
+          subscriptionState: voided ? "SUBSCRIPTION_STATE_EXPIRED" : "SUBSCRIPTION_STATE_ACTIVE",
+          acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+          latestOrderId: "GPA.7",
+          lineItems: [{ productId: "com.example.sub", expiryTime: expiry, latestSuccessfulOrderId: "GPA.7" }],
+        }));
+      }
+      if (url.includes("/purchases/voidedpurchases")) {
+        voidedQuery = url;
+        return new Response(JSON.stringify({ voidedPurchases: [{ purchaseToken: "sub-tok", orderId: "GPA.7", voidedTimeMillis: String(Date.now()) }] }));
+      }
+      return undefined;
+    });
+    const sub = { packageName: GRAFFUX, packageId: "com.example.sub", productId: "com.example.sub", purchaseToken: "sub-tok" };
+    expect((await exchange(env, sub)).status).toBe(200);
+    voided = true;
+    await runScheduled(env);
+    expect(new URL(voidedQuery).searchParams.get("type")).toBe("1");
+    const res = await exchange(env, sub);
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ error: { code: "revoked" } });
+  });
+
   it("a void after payout reverses the transfer, or debits when the reversal fails", async () => {
     for (const reversalWorks of [true, false]) {
       const env = makeEnv();

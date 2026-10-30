@@ -375,7 +375,7 @@ export interface VoidedPurchase {
   voidedSource?: number;
 }
 
-/** `purchases.voidedpurchases.list` from [startTimeMillis], every page. */
+/** `purchases.voidedpurchases.list` from [startTimeMillis], every page; `type=1` includes subscriptions. */
 export async function listVoidedPurchases(
   account: ServiceAccount,
   packageName: string,
@@ -385,7 +385,7 @@ export async function listVoidedPurchases(
   const out: VoidedPurchase[] = [];
   let pageToken: string | undefined;
   for (let page = 0; page < 50; page++) {
-    const q = new URLSearchParams({ startTime: String(startTimeMillis), type: "0", maxResults: "1000" });
+    const q = new URLSearchParams({ startTime: String(startTimeMillis), type: "1", maxResults: "1000" });
     if (pageToken) q.set("token", pageToken);
     const res = await playApi<{ voidedPurchases?: VoidedPurchase[]; tokenPagination?: { nextPageToken?: string } }>(
       account, "GET", "/" + encodeURIComponent(packageName) + "/purchases/voidedpurchases?" + q, undefined, fetchImpl,

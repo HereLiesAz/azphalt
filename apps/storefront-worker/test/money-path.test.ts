@@ -374,6 +374,23 @@ describe("refunds and disputes revoke one buyer, not the version", () => {
     expect((await download(env, b)).status).toBe(403);
   });
 
+  it("a delayed dispute.created after the win does not revoke again", async () => {
+    const { env, a } = await twoBuyers();
+    await worker.fetch(signedWebhook(dispute("charge.dispute.created", "pi_cs_a")), env);
+    await worker.fetch(signedWebhook(dispute("charge.dispute.closed", "pi_cs_a", "won")), env);
+    expect(await (await worker.fetch(signedWebhook(dispute("charge.dispute.created", "pi_cs_a")), env)).json())
+      .toEqual({ received: true, revoked: false });
+    expect((await download(env, a)).status).toBe(200);
+  });
+
+  it("a revoked success page carries error.code and keeps status", async () => {
+    const { env } = await twoBuyers();
+    await worker.fetch(signedWebhook(refund("pi_cs_a")), env);
+    const res = await worker.fetch(req("GET", "/api/checkout/session/cs_a"), env);
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ status: "revoked", error: { code: "revoked" } });
+  });
+
   it("a refunded purchase is not restored by a later dispute win", async () => {
     const { env, a } = await twoBuyers();
     await worker.fetch(signedWebhook(dispute("charge.dispute.created", "pi_cs_a")), env);
