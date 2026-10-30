@@ -49,6 +49,14 @@ interface Env {
    * directly (spec/package-format.md § Trust model) instead of flagging an unknown signer.
    */
   PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64?: string;
+  /**
+   * The owner's offline root endorsement of the entitlement key and of the catalog package-signing
+   * key (spec/repository-api.md § Root endorsements): the one-line JSON `tools/root-sign.mjs`
+   * prints. Public, served next to each key in `signingKeys`; a host that pins the root trusts a key
+   * only with a valid endorsement for its purpose.
+   */
+  ROOT_ENDORSEMENT_ENTITLEMENT?: string;
+  ROOT_ENDORSEMENT_CATALOG?: string;
   BUYER_SESSION_SECRET?: string;
   ADMIN_TOKEN?: string;
   /**
@@ -3477,9 +3485,21 @@ async function handle(req: Request, env: Env): Promise<Response> {
           baseUrl: env.PUBLIC_ORIGIN,
           // The entitlement key stays first: buy-once tokens are verified against it.
           signingKeys: [
-            { keyId: "store-v1", algorithm: "ed25519", publicKey },
+            {
+              keyId: "store-v1",
+              algorithm: "ed25519",
+              publicKey,
+              purpose: "entitlement",
+              ...endorsementFor(env.ROOT_ENDORSEMENT_ENTITLEMENT, publicKey, "entitlement"),
+            },
             ...(env.PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64
-              ? [{ keyId: "packages-v1", algorithm: "ed25519", publicKey: env.PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64 }]
+              ? [{
+                  keyId: "packages-v1",
+                  algorithm: "ed25519",
+                  publicKey: env.PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64,
+                  purpose: "package-catalog",
+                  ...endorsementFor(env.ROOT_ENDORSEMENT_CATALOG, env.PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64, "package-catalog"),
+                }]
               : []),
           ],
         });
@@ -3490,6 +3510,26 @@ async function handle(req: Request, env: Env): Promise<Response> {
       console.error("worker request failed", error);
       return json({ error: "internal error" }, 500);
     }
+}
+
+/**
+ * `{ endorsement }` when [raw] is a root endorsement of exactly [publicKey] for [purpose], else `{}`.
+ * The Worker cannot hold the root, so it does not judge the signature (hosts do); it only refuses to
+ * serve an endorsement that names another key or purpose, which would be a misconfiguration, so a
+ * stale setting left behind by a key rotation is dropped (and logged) rather than published.
+ */
+function endorsementFor(raw: string | undefined, publicKey: string, purpose: string): { endorsement?: Record<string, unknown> } {
+  if (!raw?.trim()) return {};
+  try {
+    const e = JSON.parse(raw.trim()) as Record<string, unknown>;
+    if (e.type === "azphalt-root-endorsement" && e.v === 1 && e.publicKey === publicKey && e.purpose === purpose && typeof e.signature === "string") {
+      return { endorsement: e };
+    }
+  } catch {
+    // fall through
+  }
+  console.warn(`root endorsement for ${purpose} does not match its key; not served`);
+  return {};
 }
 
 // ── In-app purchasing: reports to Google, product sync, void sweep, payouts ──────────────────────

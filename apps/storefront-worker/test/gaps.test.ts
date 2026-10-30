@@ -291,6 +291,42 @@ describe("Play purchase exchange", () => {
     expect(both[1].publicKey).toBe(packages);
   });
 
+  it("serves each root endorsement beside its key, and only for that key and purpose", async () => {
+    const packages = "MCowBQYDK2VwAyEAWNptGhJCdyjabJ/pEnw+nh41woxC01z6mS8XnL8Cv+M=";
+    const endorse = (publicKey: string, purpose: string) =>
+      JSON.stringify({ type: "azphalt-root-endorsement", v: 1, purpose, publicKey, notBefore: "2026-01-01T00:00:00Z", signature: "c2ln" });
+    const keys = async (env: ReturnType<typeof makeEnv>) =>
+      ((await (await worker.fetch(req("GET", "/.well-known/azphalt.json"), env)).json()) as {
+        signingKeys: { keyId: string; publicKey: string; purpose: string; endorsement?: { publicKey: string; purpose: string } }[];
+      }).signingKeys;
+
+    // Additive: without the settings the entries are what an older host already reads.
+    const env = makeEnv({ PACKAGE_SIGNING_PUBLIC_KEY_SPKI_B64: packages });
+    const plain = await keys(env);
+    expect(plain.map((k) => [k.keyId, k.purpose, k.endorsement])).toEqual([
+      ["store-v1", "entitlement", undefined],
+      ["packages-v1", "package-catalog", undefined],
+    ]);
+
+    const storeKey = plain[0].publicKey;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const served = await keys(Object.assign(env, {
+      ROOT_ENDORSEMENT_ENTITLEMENT: endorse(storeKey, "entitlement") + "\n",
+      ROOT_ENDORSEMENT_CATALOG: endorse(packages, "package-catalog"),
+    }));
+    expect(served[0].endorsement).toMatchObject({ publicKey: storeKey, purpose: "entitlement" });
+    expect(served[1].endorsement).toMatchObject({ publicKey: packages, purpose: "package-catalog" });
+
+    // A stale or crossed setting is dropped, never published against the wrong key.
+    const crossed = await keys(Object.assign(env, {
+      ROOT_ENDORSEMENT_ENTITLEMENT: endorse(packages, "package-catalog"),
+      ROOT_ENDORSEMENT_CATALOG: "not json",
+    }));
+    expect(crossed.map((k) => k.endorsement)).toEqual([undefined, undefined]);
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
   it("maps refusals to 402, Google failures to 502, and bad requests to 400/404/501", async () => {
     const account = await serviceAccount("refusals@example.iam.gserviceaccount.com");
     const env = makeEnv({ PLAY_PACKAGE_NAME: "com.hereliesaz.azphalt.store", PLAY_SERVICE_ACCOUNT_JSON: account.json });

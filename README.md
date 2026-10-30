@@ -63,6 +63,7 @@ LICENSE         Apache-2.0 (with NOTICE)
 - **Publishing a package:** [`submissions/README.md`](submissions) — submit a plugin, extension, or asset by pull request
 - **Releasing:** [`RELEASING.md`](RELEASING.md)
 - **Production storefront operations:** [`docs/OPERATIONS.md`](docs/OPERATIONS.md)
+- **Root endorsements (offline root signing of the store's keys):** [`apps/storefront-worker/README.md` § Root endorsements](apps/storefront-worker/README.md#root-endorsements) · `tools/root-sign.mjs`
 
 The `docs/` tree also builds as a VitePress site (`pnpm --filter docs build`).
 
