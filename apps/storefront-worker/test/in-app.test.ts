@@ -228,6 +228,35 @@ describe("scheduled: payouts and voids", () => {
     expect(await res.json()).toMatchObject({ error: { code: "revoked" } });
   });
 
+  it("a void revokes every token a subscription was exchanged for, not only the first", async () => {
+    const env = makeEnv();
+    const expiry = new Date(Date.now() + 20 * 86400_000).toISOString();
+    fakeUpstream((url) => {
+      if (url.endsWith("/subscriptionsv2/tokens/sub-tok")) {
+        return new Response(JSON.stringify({
+          subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+          acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+          latestOrderId: "GPA.8",
+          lineItems: [{ productId: "com.example.sub", expiryTime: expiry, latestSuccessfulOrderId: "GPA.8" }],
+        }));
+      }
+      if (url.includes("/purchases/voidedpurchases")) {
+        return new Response(JSON.stringify({ voidedPurchases: [{ purchaseToken: "sub-tok", orderId: "GPA.8", voidedTimeMillis: String(Date.now()) }] }));
+      }
+      return undefined;
+    });
+    const sub = { packageName: GRAFFUX, packageId: "com.example.sub", productId: "com.example.sub", purchaseToken: "sub-tok" };
+    const first = await (await exchange(env, sub)).json() as { entitlement: string };
+    await new Promise((r) => setTimeout(r, 5));
+    const second = await (await exchange(env, sub)).json() as { entitlement: string };
+    expect(second.entitlement).not.toBe(first.entitlement);
+    await runScheduled(env);
+    for (const entitlement of [first.entitlement, second.entitlement]) {
+      const res = await worker.fetch(req("GET", "/packages/com.example.sub/versions/1.0.0/download", undefined, { authorization: "Bearer " + entitlement }), env);
+      expect(res.status).toBe(403);
+    }
+  });
+
   it("a void after payout reverses the transfer, or debits when the reversal fails", async () => {
     for (const reversalWorks of [true, false]) {
       const env = makeEnv();
