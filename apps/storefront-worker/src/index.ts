@@ -2497,6 +2497,13 @@ export class AzphaltState {
       sql.exec(
         "CREATE INDEX IF NOT EXISTS entitlement_revocations_sig_idx ON entitlement_revocations(signature)"
       );
+      // Every token signature issued for a purchase. A subscription is exchanged again on restore and
+      // renewal, each time signing a new token; `entitlements` keeps only the first, so a revocation
+      // must reach the later ones through this table.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS entitlement_signatures (" +
+        "signature TEXT PRIMARY KEY, session_id TEXT NOT NULL)"
+      );
       // Stripe payment objects (`pi:<payment_intent>`, `in:<invoice>`) → the entitlement they paid for.
       sql.exec(
         "CREATE TABLE IF NOT EXISTS payment_refs (ref TEXT PRIMARY KEY, session_id TEXT NOT NULL)"
@@ -2702,6 +2709,11 @@ export class AzphaltState {
       if (req.method === "PUT") {
         const record = await req.json() as EntitlementRecord;
         sql.exec(
+          "INSERT OR IGNORE INTO entitlement_signatures(signature,session_id) VALUES(?,?)",
+          String(record.token.signature),
+          record.sessionId,
+        );
+        sql.exec(
           "INSERT OR IGNORE INTO entitlements(session_id,subject,package_id,token_json,issued_at) VALUES(?,?,?,?,?)",
           record.sessionId,
           record.subject,
@@ -2781,7 +2793,12 @@ export class AzphaltState {
 
     if (req.method === "GET" && path === "/token-revoked") {
       const signature = url.searchParams.get("signature") || "";
-      const row = first(sql.exec("SELECT 1 AS hit FROM entitlement_revocations WHERE signature=? LIMIT 1", signature));
+      const row = first(sql.exec(
+        "SELECT 1 AS hit FROM entitlement_revocations WHERE signature=? OR session_id IN " +
+        "(SELECT session_id FROM entitlement_signatures WHERE signature=?) LIMIT 1",
+        signature,
+        signature,
+      ));
       return json({ revoked: !!row });
     }
 
