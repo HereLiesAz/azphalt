@@ -4,7 +4,7 @@ plugins {
     // Kotlin 2.0+ split the Compose compiler into its own plugin, versioned with Kotlin.
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.21"
     id("org.jetbrains.compose") version "1.12.2"
-    id("com.android.application") version "9.4.1"
+    id("com.android.application") version "9.5.0"
     // Applied conditionally below — it hard-fails when google-services.json is absent, and that file
     // is a secret this repository does not carry. See `firebaseConfigured`.
     id("com.google.gms.google-services") version "4.5.0" apply false
