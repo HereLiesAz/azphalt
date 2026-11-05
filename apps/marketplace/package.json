@@ -1,7 +1,7 @@
 {
   "name": "@azphalt/marketplace",
   "private": true,
-  "version": "0.1.6",
+  "version": "0.1.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,17 +14,17 @@
     "@azphalt/azdk": "workspace:*",
     "@azphalt/repository-client": "workspace:*",
     "@azphalt/web-handoff": "workspace:*",
-    "framer-motion": "^14.6.0",
-    "lucide-react": "^1.61.0",
+    "framer-motion": "^14.9.0",
+    "lucide-react": "^1.66.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
-    "oxlint": "^1.89.0",
+    "oxlint": "^1.90.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.5"
   }

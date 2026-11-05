@@ -217,7 +217,17 @@ async function api(path: string, accept?: string): Promise<Response> {
     githubToken = undefined;
     res = await fetchRetry(url, { headers: headers() });
   }
-  if (!res.ok) throw new Error(`GET ${path} → HTTP ${res.status}`);
+  if (!res.ok) {
+    // A bare status hides the cause: a 403 is a rate limit, a token that lacks scope, or a blocked
+    // repository, and only the body and the rate-limit headers tell them apart.
+    const h = res.headers;
+    const limits = ["x-ratelimit-remaining", "x-ratelimit-reset", "x-ratelimit-resource", "retry-after"]
+      .map((k) => (h.get(k) ? `${k}=${h.get(k)}` : ""))
+      .filter(Boolean)
+      .join(" ");
+    const body = (await res.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 300);
+    throw new Error(`GET ${path} → HTTP ${res.status}${limits ? ` [${limits}]` : ""}${body ? ` ${body}` : ""}`);
+  }
   return res;
 }
 
