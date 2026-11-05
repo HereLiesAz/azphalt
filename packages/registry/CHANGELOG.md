@@ -1,5 +1,48 @@
 # @azphalt/registry
 
+## 0.4.0
+
+### Minor Changes
+
+- 19c0df7: Relicensed from MIT to the Apache License 2.0, which adds an explicit patent grant and patent retaliation — for a standard other hosts implement, implementers are licensed for contributors' patents, not only their copyright. Every freedom MIT gave is kept; extensions published through azphalt keep their own licences, and `create-azphalt` still writes whichever licence a creator picks.
+- c0c8ee4: Add the `font` package kind: a compiled font family (`ttf`/`otf`/`woff2`) with a `font` manifest block
+  (family, designer, scripts, languages, sampleText, faces with variable axes). `verifyAzp` validates it
+  (`validateFontManifest`), cross-checking declared axes against the font's own `fvar` table; the registry
+  browse summary carries a `font` card; `importFontPackage` builds one; `create-azphalt` gains `template-font`.
+  See `spec/font.md`.
+- de006ee: Close the registry's package-takeover and payout holes (spec/repository-api.md § 9):
+  
+  - **Publish requires a signature and pins the publisher key.** `Registry.publish` rejects an unsigned package (new `requireSignature`, default `true`), rejects a version signed by a key other than the one that first published the id (`enforcePublisherPinning`, default `true`), rejects a revoked key up front, and rejects a version that collides in precedence with an existing one (`1.0.0+evil` next to `1.0.0`). Package ids are lowercase-only so case variants can't squat.
+  - **Quarantine actually removes a package.** `latest()` no longer falls back to a yanked version, so a fully-yanked (auto-quarantined) package stops resolving, serving, browsing, and searching.
+  - **A listing can't be re-pointed at another seller.** `listForSale` rejects a different `sellerId` on an already-listed package, which closes the payout hijack.
+  - **Subscription entitlements must expire.** A `subscription` without `expiresAt` can no longer be issued, and verifies as not live if one is presented.
+  - **Sweep.** The secret scan strips every `${input:…}` placeholder and judges what's left (so `sk-live-abc${input:x}` is blocked while `Bearer ${input:x}` passes), no longer skips every nested object named `files`, and `storage` (deferred in 0.1) is no longer an accepted capability.
+  - **submit-check matches the registry gate**: official SemVer grammar, lowercase ids, and it now runs the same security sweep so a bad submission fails at the PR, not at publish.
+  - The reference server signs its demo seed. The unsafe-path error text stays byte-stable (`unsafe path: <path>`) because the conformance fixtures other hosts vendor pin it.
+
+### Patch Changes
+
+- d18ff48: Harden the `font` kind. Name-table reading is bounded (a crafted font can no longer stall
+  verification). A font package may carry only its faces, `LICENSE` and preview images, may not declare
+  `workflow`/`role`/`llm`/`contributes`, and each SFNT face must have `head`, `cmap` and outline tables;
+  `workflow`, `role` and `llm` packages may not declare a `font` block. Font packages report the `font`
+  media domain. `importFontPackage` drops out-of-range weights, refuses facts it can't state truthfully and
+  verifies what it builds. The `create-azphalt` font template no longer packs its own placeholder file and
+  stops with the store's reasons when a package wouldn't be accepted.
+- 2776538: `Registry.report` now refuses a report for a package or version it does not hold (unknown ids used to pile up in storage), the revocation feed uses the registry's injected clock, and prerelease/major/minor/patch comparison uses `BigInt` so identifiers beyond 2^53 no longer compare equal.
+- Updated dependencies [19c0df7]
+- Updated dependencies [a04a765]
+- Updated dependencies [d18ff48]
+- Updated dependencies [c0c8ee4]
+- Updated dependencies [fffb800]
+- Updated dependencies [5b51e82]
+- Updated dependencies [b32adc4]
+- Updated dependencies [2f85213]
+- Updated dependencies [de006ee]
+- Updated dependencies [d6f56c9]
+  - @azphalt/azdk@0.6.0
+  - @azphalt/azp@0.6.0
+
 ## 0.3.2
 
 ### Patch Changes

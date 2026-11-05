@@ -1,5 +1,42 @@
 # @azphalt/azdk
 
+## 0.6.0
+
+### Minor Changes
+
+- 19c0df7: Relicensed from MIT to the Apache License 2.0, which adds an explicit patent grant and patent retaliation — for a standard other hosts implement, implementers are licensed for contributors' patents, not only their copyright. Every freedom MIT gave is kept; extensions published through azphalt keep their own licences, and `create-azphalt` still writes whichever licence a creator picks.
+- a04a765: Harden the `.azp` core against hostile packages, and share the guards so every consumer (importers, registry, worker, runtime, MCP tools) inherits them:
+  
+  - **Path safety.** A new `unsafePathReason` / `isUnsafePath` rejects zip-slip in all its shapes — absolute paths, backslash separators, drive letters, NUL bytes, and `.`/`..`/empty segments — not just the `/`-separated `..` form. `verifyAzp` now applies it to every payload entry **and** every `manifest.files` key, and validates `entry` / `assets[].path` / asset `files[]` member paths (an `asset` package previously got no path checks at all).
+  - **Decompression bombs.** A new `safeUnzip` caps entry count and uncompressed size (per-entry and total), matching the Kotlin verifier. `readAzp`, `verifyAzp`, `signAzp`, and `verifyTrust` all route through it, so a small archive can no longer inflate to gigabytes before any check runs.
+  - **Manifest integrity.** `parseJsonNoDuplicateKeys` rejects a `manifest.json` with duplicate keys (the signature is over the raw bytes, so duplicates were a cross-implementation forgery vector). Required fields (`azphalt`/`id`/`name`/`version`/`license`/`compat`) and known `kind` are now enforced, and an unknown kind is rejected rather than waved through unvalidated.
+  - **No-throw verification.** The payload map is null-prototype (a `__proto__` entry name can no longer mutate a prototype), `manifest.files` lookups use `Object.hasOwn`, and each kind validator runs inside a `try` so malformed input becomes an error string, never an uncaught exception.
+  - **URL schemes.** `mcp` (`remote.url`, `wasi.remoteUrl` + checksum) and `app` (`android.install`, `pwa.startUrl`/`manifestUrl`/`shareTargetUrl`) now require `https://` (or a same-origin path / `market://` where appropriate), closing `javascript:` / `file:` / cleartext URLs in listings a storefront renders.
+  
+  `Kind` gains the `llm` / `role` / `workflow` header kinds that already had validators and live registry packages but were missing from the union.
+- c0c8ee4: Add the `font` package kind: a compiled font family (`ttf`/`otf`/`woff2`) with a `font` manifest block
+  (family, designer, scripts, languages, sampleText, faces with variable axes). `verifyAzp` validates it
+  (`validateFontManifest`), cross-checking declared axes against the font's own `fvar` table; the registry
+  browse summary carries a `font` card; `importFontPackage` builds one; `create-azphalt` gains `template-font`.
+  See `spec/font.md`.
+- fffb800: Harden the host side — the clients, runtimes and conformance suite that consume `.azp` packages:
+  
+  - **repository-client.** `download()` accepts `expectedDigest` and verifies it, bounds the total with `maxBytes` (the size comes from the server's `Content-Range`), and rejects a short or oversized chunk instead of leaving a zero-filled hole. Package ids and versions are URL-encoded, so a hostile pack member can't redirect a request carrying the bearer token.
+  - **mcp.** `extractAsset` verifies the package first, and no longer resolves `__proto__`/`constructor` as asset names. The `azp_verify` description no longer implies `signed: true` identifies a signer.
+  - **llm-host.** `scrub` runs to a fixpoint (nested `<|im_<|x|>start|>` could previously be spliced into a live chat-template marker). `chatLlm` rejects non-string content (an array bypassed the session-tag check), no longer sends the bearer to an `auth: none` endpoint, and resolves `${input:…}` base URLs through a new `inputs` option (`llmConsent` no longer throws on them). `installLlm` now requires `consented: true`, refuses an unsigned package (unless `allowUnsigned`), honours `trustedKeys`, validates the package id and owner/repo, and audits the runner workflow with the new `auditWorkflow` — only declared secrets, no `pull_request_target`, no write beyond the manifest's ceiling.
+  - **runtime-wasm.** A caller can narrow but never widen the capabilities a package declared. A contribution whose promise never settles is an error, not a silent success. `params`/`assets`/module lookups use own-property checks. Guest `layers.create` is capped. The raw-wasm path bounds module size and memory (`MAX_WASM_MODULE_BYTES`, `MAX_WASM_MEMORY_BYTES`); a non-terminating wasm entry still blocks its thread, so hosts must run untrusted raw-wasm packages in a terminable Worker/process.
+  - **web-handoff.** Host-directory install URLs must be `https:` or `market:` (`isSafeInstallUrl`).
+  - **azdk.** `Capability` drops the deferred `storage`; `RepositoryErrorResponse` gains `details`.
+  - **conformance.** The reject-tampered and reject-unsafe-path checks now drive the host (with a control package it must run), and the capability-gating checks require a baseline run so a host that refuses everything can't pass by erroring. The "has teeth" tests simulate a broken host honestly.
+  - **repository-server.** A `private` package's detail is access-gated like its download, and `HEAD` is routed like `GET` (a download `HEAD` doesn't count).
+- 5b51e82: `kind: "llm"` (`spec/llm.md`): off-device language models. `@azphalt/azdk` adds `"llm"` to `Kind`, an `llm` block to `Manifest`, and the `LlmManifest` types. `@azphalt/azp` adds `validateLlmManifest`, which `verifyAzp` runs for `kind:"llm"` packages (§ Verification), and `role`/`workflow` packages now refuse an `llm` block.
+- b32adc4: Add the `moyai-session` direct LLM protocol and configurable `${input:...}` endpoint URLs so keyless self-hosted Moyai deployments can be distributed as normal Azphalt `kind:"llm"` packages.
+- 2f85213: `RepositoryErrorCode` gains `forbidden`, `conflict`, `payload_too_large`, `not_implemented`, `bad_gateway` and `unavailable`, for the Repository API's new `POST /packages` publish endpoint (`spec/repository-api.md` § 9).
+
+### Patch Changes
+
+- d6f56c9: `PackageSearchResponse` from the public entry point now carries the widened `PackageSummary`, so search pages can hold `workflow` and `role` packages. Fixes the `@azphalt/repository-server` type error.
+
 ## 0.5.0
 
 ### Minor Changes

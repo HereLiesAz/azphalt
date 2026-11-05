@@ -1,5 +1,19 @@
 # @azphalt/example-invert
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [19c0df7]
+- Updated dependencies [a04a765]
+- Updated dependencies [c0c8ee4]
+- Updated dependencies [fffb800]
+- Updated dependencies [5b51e82]
+- Updated dependencies [b32adc4]
+- Updated dependencies [2f85213]
+- Updated dependencies [d6f56c9]
+  - @azphalt/azdk@0.6.0
+
 ## 0.1.5
 
 ### Patch Changes
