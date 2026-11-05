@@ -1,6 +1,6 @@
 {
   "name": "@azphalt/storefront",
-  "version": "0.1.5",
+  "version": "1.0.0",
   "private": true,
   "description": "The azphalt.store catalog: the git-pinned registry (registry/) and the scripts that build and verify it. The storefront itself is apps/storefront-react + apps/storefront-worker.",
   "license": "Apache-2.0",
