@@ -1,5 +1,33 @@
 # @azphalt/submit-check
 
+## 0.4.0
+
+### Minor Changes
+
+- c0c8ee4: Add the `font` package kind: a compiled font family (`ttf`/`otf`/`woff2`) with a `font` manifest block
+  (family, designer, scripts, languages, sampleText, faces with variable axes). `verifyAzp` validates it
+  (`validateFontManifest`), cross-checking declared axes against the font's own `fvar` table; the registry
+  browse summary carries a `font` card; `importFontPackage` builds one; `create-azphalt` gains `template-font`.
+  See `spec/font.md`.
+- 5b51e82: Twelve first-party `kind: "llm"` packages on the store: eight free hosted endpoints (Kilo, LLM7, OVHcloud, OpenRouter, Groq, Cerebras, Z.ai, Mistral) and four open-weight models run by pinned llama.cpp in a private GitHub Actions sandbox (Qwen2.5 1.5B, Qwen2.5 Coder 1.5B, SmolLM2 1.7B, Phi-3.5 Mini). They are generated from one table by `gen-llm-packages` and share one setup script, runner and workflow shape. Store cards show the tier; the detail page shows what `spec/llm.md` requires before install: where prompts go, the operator's data handling, the weights' licence, and the setup token's permissions. `submit-check` accepts `kind: "llm"`, and `build-catalog --only` now takes a folder package's id.
+
+### Patch Changes
+
+- Updated dependencies [19c0df7]
+- Updated dependencies [a04a765]
+- Updated dependencies [d18ff48]
+- Updated dependencies [c0c8ee4]
+- Updated dependencies [fffb800]
+- Updated dependencies [5b51e82]
+- Updated dependencies [b32adc4]
+- Updated dependencies [2f85213]
+- Updated dependencies [de006ee]
+- Updated dependencies [2776538]
+- Updated dependencies [d6f56c9]
+  - @azphalt/azdk@0.6.0
+  - @azphalt/azp@0.6.0
+  - @azphalt/registry@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
