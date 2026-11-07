@@ -1,0 +1,44 @@
+MoGe-2 ViT-S (normal) -- metric depth model, remote-header listing
+====================================================================
+
+This package redistributes NO model weights. It is a manifest that points a host at the
+original author-published ONNX export, pinned to an exact Hugging Face commit and a SHA-256
+digest. The LICENSE file next to this one is the upstream microsoft/MoGe LICENSE, verbatim
+(commit 74fbce054ebed49800de42d0ad0e83495065719a): MIT for the MoGe work, Apache-2.0 for the
+DINOv2 code and backbone.
+
+Weights
+  Name:        MoGe-2 ViT-S (normal)   -- 35.1 M parameters
+  Authors:     Ruicheng Wang, Sicheng Xu, Yue Dong, Yu Deng, Jianfeng Xiang, Zelong Lv,
+               Guangzhong Sun, Xin Tong, Jiaolong Yang (Microsoft Research / USTC)
+  Copyright:   (c) Microsoft Corporation
+  Licence:     MIT. Declared by the authors as `license: mit` on the weights repository
+               https://huggingface.co/Ruicheng/moge-2-vits-normal (revision
+               26b477f41595707c5db6770294c0d1721e8ed4ed), and by the MIT LICENSE of
+               https://github.com/microsoft/MoGe.
+  Backbone:    initialised from DINOv2 ViT-S/14, (c) Meta Platforms, Inc. and affiliates,
+               Apache-2.0 (the HF model card lists base_model: facebook/dinov2-small).
+  Paper:       "MoGe-2: Accurate Monocular Geometry with Metric Scale and Sharp Details",
+               arXiv:2507.02546
+  Delivered file (this package's remoteUrl):
+               https://huggingface.co/Ruicheng/moge-2-vits-normal-onnx/resolve/e50ffda41565591092adea54c6ac83d6212e1e23/model.onnx
+               sha256 24eacb5dc7a2c54c7bc98f7de085ffbed79ad006ea5b664c2c2cdc02ff3a52f0
+               The author-published ONNX export of the weights above, produced with the
+               procedure in https://github.com/microsoft/MoGe/blob/main/docs/onnx.md. The
+               export repository carries no licence tag of its own; it is the same weights
+               exported by the same author, and the MIT grant above is the one that applies.
+               It was NOT modified or re-exported by this package.
+
+What this notice does not establish
+  * The authors state the licence of the weights; they do not publish an audit of the
+    licences of the 24 datasets MoGe-2 was trained on (paper section 4 and appendix A.2; they
+    include driving and indoor-scan datasets such as Waymo Open, Argoverse 2 and ScanNet++
+    whose own terms are, to our knowledge, non-commercial or research-only -- not verified
+    here). azphalt has not audited them either. If that matters for your use, take it up
+    with the authors.
+  * Hosting is by Hugging Face under the author's account. If the file is moved, edited or
+    removed upstream, the checksum in the manifest makes a host reject it rather than run it.
+
+To satisfy the MIT and Apache-2.0 conditions, keep the copyright notices in the LICENSE file
+with any copy of the weights you redistribute, and show the attribution string from the
+manifest's `modelLicense.attribution` where your product lists its third-party components.
