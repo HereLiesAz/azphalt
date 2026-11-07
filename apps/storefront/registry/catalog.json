@@ -1515,7 +1515,7 @@
       "name": "MiDaS",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-midas",
-      "ref": "126afc0b115c3ea45c0ef832e67c8bd35726c6a6",
+      "ref": "a4fab9d7663f382e8382917ab32b1e4d533b57a8",
       "integrity": "sha256-15pJJwRNATWMAwOmdV/hd5mBYvDMvsLeYO3daS0xW3k=",
       "file": "com.hereliesaz.azphalt.midas-1.0.1.azp",
       "bytes": 1999
