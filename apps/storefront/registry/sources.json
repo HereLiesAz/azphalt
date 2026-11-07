@@ -672,9 +672,9 @@
     {
       "id": "com.hereliesaz.azphalt.midas",
       "repo": "HereLiesAz/azphalt-midas",
-      "ref": "4e4c839958db1b043652e9d7a6426912dbfe8b61",
-      "version": "1.0.0",
-      "integrity": "sha256-9PKLneDu67QOn60I+nybMRGRSRp3U4NE3+mXoyCCKPs="
+      "ref": "126afc0b115c3ea45c0ef832e67c8bd35726c6a6",
+      "version": "1.0.1",
+      "integrity": "sha256-15pJJwRNATWMAwOmdV/hd5mBYvDMvsLeYO3daS0xW3k="
     },
     {
       "id": "com.hereliesaz.azphalt.mirnet",
