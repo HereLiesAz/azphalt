@@ -1,0 +1,29 @@
+Depth Anything V2 Small - third-party attribution
+
+Model weights referenced by this package are NOT the work of HereLiesAz and are
+not licensed by HereLiesAz. This package does not redistribute them: the manifest
+points at the converter's Hugging Face repository, pinned to one commit, and the
+host verifies the downloaded bytes against the manifest's sha256 checksum.
+
+Declared upstream terms:
+  - Depth Anything V2 Small: Apache-2.0
+    (the Small model only; the Base, Large and Giant models are CC-BY-NC-4.0 and
+    are not covered by this listing)
+
+Depth Anything V2
+  Authors: Lihe Yang, Bingyi Kang, Zilong Huang, Zhen Zhao, Xiaogang Xu,
+           Jiashi Feng, Hengshuang Zhao
+  Paper:   https://arxiv.org/abs/2406.09414
+  Code:    https://github.com/DepthAnything/Depth-Anything-V2
+  Weights: https://huggingface.co/depth-anything/Depth-Anything-V2-Small
+
+ONNX conversion (float32, onnx/model.onnx):
+  onnx-community, https://huggingface.co/onnx-community/depth-anything-v2-small
+  repository commit 4472b7362082ad9968fee890ca0f1e5aca36b93d, declared Apache-2.0
+  (card metadata; that repository carries no separate LICENSE file). The file is
+  referenced unmodified.
+
+We rely on these upstream declarations; we have not independently audited the
+licences of the model's training datasets. The Apache License 2.0 text is in
+LICENSE. Redistribution is subject to that licence, including its attribution and
+notice requirements.
