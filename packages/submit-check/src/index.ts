@@ -104,8 +104,23 @@ export function validateSubmission(dir: string): SubmissionResult {
       }
       if (a.path) {
         if (!(a.path in payload)) errors.push(`asset path not found in folder: ${a.path}`);
+      } else if (Array.isArray(a.files) && a.files.length > 0) {
+        // Multi-file model bundle (spec/extension-manifest.md § Multi-file model bundles): no scalar
+        // path/remoteUrl; each member is either bundled or remote, and a remote member needs a checksum.
+        for (const m of a.files) {
+          const label = `'${a.type}' bundle member ${JSON.stringify(m?.name)}`;
+          if (!m || typeof m !== "object" || typeof m.name !== "string" || !m.name) {
+            errors.push(`asset of type '${a.type}' has a files[] member without a name`);
+          } else if (m.path) {
+            if (!(m.path in payload)) errors.push(`${label}: path not found in folder: ${m.path}`);
+          } else if (!m.remoteUrl) {
+            errors.push(`${label} has neither path nor remoteUrl`);
+          } else if (typeof m.checksum !== "string" || !/^sha256-[0-9a-f]{64}$/.test(m.checksum)) {
+            errors.push(`${label}: a remote member needs a checksum of the form sha256-<64 lowercase hex>`);
+          }
+        }
       } else if (!a.remoteUrl) {
-        errors.push(`asset of type '${a.type}' has an empty path but no remoteUrl`);
+        errors.push(`asset of type '${a.type}' has an empty path but no remoteUrl (or files[] members)`);
       }
     }
   }
