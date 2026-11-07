@@ -17,7 +17,7 @@ Depth Anything V2
   Code:    https://github.com/DepthAnything/Depth-Anything-V2
   Weights: https://huggingface.co/depth-anything/Depth-Anything-V2-Small
 
-ONNX conversion (float16 variant, onnx/model_fp16.onnx):
+ONNX conversion (float32, onnx/model.onnx):
   onnx-community, https://huggingface.co/onnx-community/depth-anything-v2-small
   repository commit 4472b7362082ad9968fee890ca0f1e5aca36b93d, declared Apache-2.0
   (card metadata; that repository carries no separate LICENSE file). The file is

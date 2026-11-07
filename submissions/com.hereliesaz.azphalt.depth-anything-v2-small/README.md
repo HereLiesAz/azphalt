@@ -8,10 +8,10 @@ file pinned to a commit, and the host verifies the download against `checksum` b
 
 | | |
 |---|---|
-| File | `onnx/model_fp16.onnx` of [onnx-community/depth-anything-v2-small](https://huggingface.co/onnx-community/depth-anything-v2-small), commit `4472b7362082ad9968fee890ca0f1e5aca36b93d` |
-| Size | 49,642,442 bytes |
-| sha256 | `2df6223f206b5164e21f664ace61dabeb9bb6a49b8b5a3e00510b4807d0f5b04` |
-| Format | ONNX, IR 9, opset 14 (`ai.onnx` only), produced by PyTorch 2.3.0; weights float16, inputs and outputs float32 |
+| File | `onnx/model.onnx` of [onnx-community/depth-anything-v2-small](https://huggingface.co/onnx-community/depth-anything-v2-small), commit `4472b7362082ad9968fee890ca0f1e5aca36b93d` |
+| Size | 99,060,839 bytes |
+| sha256 | `afb6a5c28f3b6bf1618c6e43f02073ef9dfdc70e937502d51603e57b0a1df10c` |
+| Format | ONNX, IR 9, opset 14 (`ai.onnx` only), produced by PyTorch 2.3.0; float32 weights, inputs and outputs |
 | Licence | Apache-2.0 (Depth Anything V2 Small, and the converter). The Base/Large/Giant V2 models are CC-BY-NC and are NOT this model. |
 | Upstream | Lihe Yang et al., [Depth Anything V2](https://arxiv.org/abs/2406.09414); converted by onnx-community |
 
@@ -63,32 +63,28 @@ bottom of the frame 6.8. So: nearer is larger, and it is inverse depth, not dept
 **Normalisation matters but the model is tolerant.** Feeding raw `x/255` with no mean/std changes the result by about
 1.4 to 2.0 percent of the output range (Pearson 0.996 to 0.999) on four real photos. Use the normalisation anyway.
 
-**Variant choice (fp16 over fp32 and int8).** Agreement with the fp32 model (`model.onnx`, 99,060,839 bytes) over six
-images (five photos and the synthetic scene) at 518x518 and 518x392:
+**Variant choice (fp32 listed; fp16 and int8 exist but are not listed).** The owner chose fp32: it is the exact
+reference and the fastest on a CPU. The converter also publishes `model_fp16.onnx` (49.6 MB) and `model_int8.onnx`
+(27.3 MB). Agreement with fp32 over six images (five photos and the synthetic scene) at 518x518 and 518x392:
 
-| Variant | Size | MAE / output range | Pearson | Spearman |
-|---|---|---|---|---|
-| fp16 (listed) | 49.6 MB | 0.01 to 0.14 percent | 0.99999 to 1.00000 | 0.9996 to 1.0000 |
-| int8 (`model_int8.onnx`) | 27.3 MB | 0.7 to 2.4 percent | 0.9977 to 0.9997 | 0.981 to 0.9993 |
+| Variant | Size | MAE / output range | Pearson | Spearman | Why not listed |
+|---|---|---|---|---|---|
+| fp32 (listed) | 99.1 MB | reference | reference | reference | |
+| fp16 | 49.6 MB | 0.01 to 0.14 percent | 0.99999 to 1.00000 | 0.9996 to 1.0000 | 5x slower and heavier on the CPU provider (no fast fp16 kernels) |
+| int8 | 27.3 MB | 0.7 to 2.4 percent | 0.9977 to 0.9997 | 0.981 to 0.9993 | visibly less faithful |
 
-fp16 is the smallest variant that matches fp32 closely, so it is the one listed. int8 is visibly less faithful
-(worst case Spearman 0.981, on a football-match photo).
+**Cost on CPU (x86, ONNX Runtime CPU provider, 4 threads), fp32 (listed):**
 
-**Cost on CPU (x86, ONNX Runtime CPU provider, 4 threads, this is the thing to know).** ONNX Runtime's CPU provider
-has no fast float16 kernels, so the fp16 file is download-light but slower and heavier to run than fp32:
+| Input | Time | Peak memory |
+|---|---|---|
+| 252x252 | 121 ms | 222 MB |
+| 518x392 | 281 ms | 356 MB |
+| 518x518 | 515 ms | 402 MB |
+| 1036x770 | 2702 ms | 1698 MB |
 
-| Input | fp32 | fp16 (listed) | int8 |
-|---|---|---|---|
-| 252x252 | 121 ms, peak 222 MB | 300 ms, peak 266 MB | 223 ms, peak 183 MB |
-| 518x518 | 515 ms, peak 402 MB | 2543 ms, peak 619 MB | 555 ms, peak 425 MB |
-| 518x392 | 281 ms, peak 356 MB | 1359 ms, peak 454 MB | 410 ms, peak 323 MB |
-| 1036x770 | 2702 ms, peak 1698 MB | 23354 ms, peak 2830 MB | 2330 ms, peak 1488 MB |
-
-(Peak is process peak resident memory including about 47 MB of interpreter baseline.) `requirements.minRamMB` is 640,
-the measured fp16 peak at 518x518. Memory grows roughly with pixel count, so large inputs need much more. A host
-on a phone, or one with a GPU/NNAPI/CoreML provider that has fp16 kernels, will see different timings. If CPU latency
-matters more than a 50 MB download, switching the listing to `model.onnx` (fp32, 99 MB, exact) is a one-field change:
-a new `remoteUrl`, `checksum`, `byteSize` and `quantization`.
+(Peak is process peak resident memory including about 47 MB of interpreter baseline; the weights alone load at about
+186 MB.) `requirements.minRamMB` is 448, the measured peak at 518x518 rounded up. Memory grows roughly with pixel count,
+so large inputs need much more. A phone, or a GPU/NNAPI/CoreML provider, will see different timings.
 
 ## Limitations
 
