@@ -28,7 +28,7 @@
  */
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -187,6 +187,9 @@ export function ingest(renderDir, { submissionsDir = DEFAULTS.submissionsDir, pr
     const renderIndexPath = join(renderDir, packDirent.name, "index.json");
     if (!existsSync(renderIndexPath)) continue;
     const render = JSON.parse(readFileSync(renderIndexPath, "utf8"));
+    if (typeof render.pack !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/.test(render.pack)) {
+      throw new Error(`${packDirent.name}: unsafe pack id ${JSON.stringify(render.pack)}`);
+    }
     const packBrushes = brushes.filter((b) => b.packId === render.pack);
     if (packBrushes.length === 0) throw new Error(`${packDirent.name}: renders pack "${render.pack}", which is not in submissions`);
     const outPack = {};
@@ -198,7 +201,10 @@ export function ingest(renderDir, { submissionsDir = DEFAULTS.submissionsDir, pr
       const strokes = [];
       const imageDigests = {};
       r.strokes.forEach((s, i) => {
-        const from = join(renderDir, packDirent.name, s.file);
+        const packRoot = resolve(renderDir, packDirent.name);
+        const from = resolve(packRoot, String(s.file));
+        const up = relative(packRoot, from);
+        if (up === "" || up.startsWith("..") || isAbsolute(up)) throw new Error(`${packDirent.name}: stroke file ${JSON.stringify(s.file)} escapes the render directory`);
         const bytes = readFileSync(from);
         if (!pngSize(bytes)) throw new Error(`${from} is not a PNG`);
         const rel = `${render.pack}/${slug(b.asset.path.replace(/^.*\//, "").replace(/\.[^.]+$/, ""))}/${String(i + 1).padStart(2, "0")}-${slug(s.label)}.png`;

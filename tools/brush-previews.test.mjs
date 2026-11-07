@@ -116,6 +116,20 @@ test("ingest refuses a render for a brush that is not in the manifest", () => {
   assert.throws(() => ingest(f.render, f.opts), /not in the manifest/);
 });
 
+test("ingest refuses a stroke file that escapes the render directory, and an unsafe pack id", () => {
+  const f = fixture();
+  writeFileSync(join(f.dir, "secret.png"), png(128, 64, 5));
+  const p = join(f.render, "p.kinetic", "index.json");
+  const r = JSON.parse(readFileSync(p, "utf8"));
+  r.brushes[0].strokes[0].file = "../../secret.png";
+  writeFileSync(p, JSON.stringify(r));
+  assert.throws(() => ingest(f.render, f.opts), /escapes the render directory/);
+  r.brushes[0].strokes[0].file = "1/0.png";
+  r.pack = "../evil";
+  writeFileSync(p, JSON.stringify(r));
+  assert.throws(() => ingest(f.render, f.opts), /unsafe pack id/);
+});
+
 test("pngSize reads IHDR and rejects other bytes", () => {
   assert.deepEqual(pngSize(png(300, 150)), { width: 300, height: 150 });
   assert.equal(pngSize(Buffer.from("hello")), null);
