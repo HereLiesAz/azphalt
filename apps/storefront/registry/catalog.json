@@ -1489,14 +1489,14 @@
     },
     {
       "id": "com.hereliesaz.azphalt.midas",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "MiDaS",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-midas",
-      "ref": "4e4c839958db1b043652e9d7a6426912dbfe8b61",
-      "integrity": "sha256-9PKLneDu67QOn60I+nybMRGRSRp3U4NE3+mXoyCCKPs=",
-      "file": "com.hereliesaz.azphalt.midas-1.0.0.azp",
-      "bytes": 1385
+      "ref": "126afc0b115c3ea45c0ef832e67c8bd35726c6a6",
+      "integrity": "sha256-15pJJwRNATWMAwOmdV/hd5mBYvDMvsLeYO3daS0xW3k=",
+      "file": "com.hereliesaz.azphalt.midas-1.0.1.azp",
+      "bytes": 1999
     },
     {
       "id": "com.hereliesaz.azphalt.mirnet",
