@@ -663,6 +663,28 @@
       "bytes": 1460
     },
     {
+      "id": "com.hereliesaz.azphalt.depth-anything-v2-small",
+      "version": "1.0.0",
+      "name": "Depth Anything V2 Small",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-ZPDYWfMw69M0UQtmSw1NbL9AQoiwi67q6oIl9F489lQ=",
+      "file": "com.hereliesaz.azphalt.depth-anything-v2-small-1.0.0.azp",
+      "bytes": 9998
+    },
+    {
+      "id": "com.hereliesaz.azphalt.depth-anything-v3-small",
+      "version": "1.0.0",
+      "name": "Depth Anything V3 Small",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-RURfv1sJ25yyQ+YIzwcdgk1yvP+i4tQwxOddULuPHmg=",
+      "file": "com.hereliesaz.azphalt.depth-anything-v3-small-1.0.0.azp",
+      "bytes": 10882
+    },
+    {
       "id": "com.hereliesaz.azphalt.depth-hide",
       "version": "2.0.0",
       "name": "Depth Hide",
@@ -1493,7 +1515,7 @@
       "name": "MiDaS",
       "kind": "asset",
       "repo": "HereLiesAz/azphalt-midas",
-      "ref": "126afc0b115c3ea45c0ef832e67c8bd35726c6a6",
+      "ref": "a4fab9d7663f382e8382917ab32b1e4d533b57a8",
       "integrity": "sha256-15pJJwRNATWMAwOmdV/hd5mBYvDMvsLeYO3daS0xW3k=",
       "file": "com.hereliesaz.azphalt.midas-1.0.1.azp",
       "bytes": 1999
@@ -1530,6 +1552,17 @@
       "integrity": "sha256-Zq/RqKV5p31y729GD+GKQZvamq6Od9WYOMMrszkm9is=",
       "file": "com.hereliesaz.azphalt.mobilenet-1.0.0.azp",
       "bytes": 1548
+    },
+    {
+      "id": "com.hereliesaz.azphalt.models.moge-2-vits-metric-depth",
+      "version": "1.0.0",
+      "name": "MoGe-2 Small (Metric Depth)",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-WS0+mzaPdY93crwu3OeGV7CW2Eu1fUFRs0YYdN6T2jU=",
+      "file": "com.hereliesaz.azphalt.models.moge-2-vits-metric-depth-1.0.0.azp",
+      "bytes": 10644
     },
     {
       "id": "com.hereliesaz.azphalt.moondream",
