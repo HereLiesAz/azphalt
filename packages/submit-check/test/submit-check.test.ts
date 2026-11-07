@@ -77,6 +77,32 @@ describe("submit-check", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  it("accepts a multi-file model bundle declared only by files[] (remote members with checksums)", () => {
+    const sum = "sha256-" + "a".repeat(64);
+    const mk = (id: string, files: unknown) =>
+      makeSubmission(id, {
+        "manifest.json": JSON.stringify({
+          azphalt: "0.1", id, name: "Bundle", version: "1.0.0", kind: "asset", license: "MIT", compat: ">=0.1",
+          assets: [{ type: "onnx", role: "depth", path: "", files }],
+        }),
+        LICENSE: "MIT\n",
+      });
+    const ok = mk("com.you.bundle", [
+      { name: "model.onnx", remoteUrl: "https://example.com/model.onnx", checksum: sum, byteSize: 1 },
+      { name: "model.onnx_data", remoteUrl: "https://example.com/model.onnx_data", checksum: sum, supportsRange: true },
+    ]);
+    const r = validateSubmission(ok);
+    expect(r.ok, r.errors.join("; ")).toBe(true);
+    rmSync(ok, { recursive: true, force: true });
+
+    const bad = mk("com.you.bundlebad", [{ name: "model.onnx", remoteUrl: "https://example.com/model.onnx" }, { name: "x" }]);
+    const rb = validateSubmission(bad);
+    expect(rb.ok).toBe(false);
+    expect(rb.errors.join("\n")).toMatch(/needs a checksum/);
+    expect(rb.errors.join("\n")).toMatch(/neither path nor remoteUrl/);
+    rmSync(bad, { recursive: true, force: true });
+  });
+
   it("accepts a heavy asset declared with a remote header (empty path + remoteUrl)", () => {
     const dir = makeSubmission("com.you.remote", {
       "manifest.json": JSON.stringify({

@@ -1,0 +1,29 @@
+Depth Anything V3 Small - third-party attribution
+
+Model weights referenced by this package are NOT the work of HereLiesAz and are
+not licensed by HereLiesAz. This package does not redistribute them: the manifest
+points at the converter's Hugging Face repository, pinned to one commit, and the
+host verifies each downloaded file against the manifest's sha256 checksum.
+
+Declared upstream terms:
+  - Depth Anything 3 Small (DA3-SMALL): Apache-2.0
+    (DA3-Small and DA3-Base only; the Large, Giant and Nested models are
+    CC-BY-NC-4.0 and are not covered by this listing)
+
+Depth Anything 3
+  Authors: Haotong Lin, Sili Chen, Jun Hao Liew, Donny Y. Chen, Zhenyu Li,
+           Guang Shi, Jiashi Feng, Bingyi Kang  (ByteDance Seed)
+  Paper:   https://arxiv.org/abs/2511.10647
+  Code:    https://github.com/ByteDance-Seed/Depth-Anything-3  (Apache-2.0)
+  Weights: https://huggingface.co/depth-anything/DA3-SMALL
+
+ONNX conversion (float32 graph + external data):
+  onnx-community, https://huggingface.co/onnx-community/depth-anything-v3-small
+  repository commit 0b6a7f3bf5595f9950b91389e0da3a0de130324c, declared Apache-2.0
+  (card metadata; that repository carries no separate LICENSE file). Both files
+  (onnx/model.onnx, onnx/model.onnx_data) are referenced unmodified.
+
+We rely on these upstream declarations; we have not independently audited the
+licences of the model's training datasets. The Apache License 2.0 text is in
+LICENSE. Redistribution is subject to that licence, including its attribution and
+notice requirements.
