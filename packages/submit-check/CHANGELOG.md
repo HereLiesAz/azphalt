@@ -1,5 +1,11 @@
 # @azphalt/submit-check
 
+## 0.4.1
+
+### Patch Changes
+
+- 2bd48f1: Accept a multi-file model bundle declared only by `files[]` (no scalar `remoteUrl`), as spec/extension-manifest.md § Multi-file model bundles allows. Each member must be bundled (path present) or remote with a `sha256-<hex>` checksum.
+
 ## 0.4.0
 
 ### Minor Changes
