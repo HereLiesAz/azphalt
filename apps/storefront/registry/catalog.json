@@ -1532,6 +1532,17 @@
       "bytes": 1548
     },
     {
+      "id": "com.hereliesaz.azphalt.models.moge-2-vits-metric-depth",
+      "version": "1.0.0",
+      "name": "MoGe-2 Small (Metric Depth)",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-WS0+mzaPdY93crwu3OeGV7CW2Eu1fUFRs0YYdN6T2jU=",
+      "file": "com.hereliesaz.azphalt.models.moge-2-vits-metric-depth-1.0.0.azp",
+      "bytes": 10644
+    },
+    {
       "id": "com.hereliesaz.azphalt.moondream",
       "version": "1.0.0",
       "name": "Moondream 2",
