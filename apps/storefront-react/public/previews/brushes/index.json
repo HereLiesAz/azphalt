@@ -1,0 +1,348 @@
+{
+  "schema": 1,
+  "packs": {
+    "com.hereliesaz.azphalt.brushes.dry-goods": {
+      "assets/graphite.png": {
+        "name": "Graphite",
+        "kinetic": false,
+        "definitionDigest": "5b28b17dd5b3dadf7f887fb1d4925cf0f1b3b038b5c9696998545f98044dc231",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Graphite",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.brushes.dry-goods/graphite/01-swoop.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.brushes.dry-goods/graphite/01-swoop.png": "72ab60d61148d268e82e73bc6703e5034405053b6f73fd9958d239ac0877ae6e"
+        }
+      },
+      "assets/vine-charcoal.png": {
+        "name": "Vine Charcoal",
+        "kinetic": false,
+        "definitionDigest": "1590479bd8ad8ba98221a412d0dbe9a2d591f7528ee18abb388173655dc2455f",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Vine Charcoal",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.brushes.dry-goods/vine-charcoal/01-swoop.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.brushes.dry-goods/vine-charcoal/01-swoop.png": "47a50ce8fb9d96e2f9abdba5145feb53efd9d3e0463b62cc079a7fd15c8b22e9"
+        }
+      },
+      "assets/sidewalk-chalk.png": {
+        "name": "Sidewalk Chalk",
+        "kinetic": false,
+        "definitionDigest": "4b0463c2ee07034903967705fc00fb3fbfdcc5225423f11162033df2e032c827",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Sidewalk Chalk",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.brushes.dry-goods/sidewalk-chalk/01-swoop.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.brushes.dry-goods/sidewalk-chalk/01-swoop.png": "1ce5089fe2e008b18ca1ca0398469757445c924c39b475c88cdd9636abc61b97"
+        }
+      },
+      "assets/oil-pastel.png": {
+        "name": "Oil Pastel",
+        "kinetic": false,
+        "definitionDigest": "cd8845059d48f257b1055d62ceb8f474b3b30db547afb59a6417fed2acb43678",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Oil Pastel",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.brushes.dry-goods/oil-pastel/01-swoop.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.brushes.dry-goods/oil-pastel/01-swoop.png": "5e9e3b46e3a9fa41de993d2acd531060c15c05ebacd0cacd9cb70e3c9dab0f9a"
+        }
+      }
+    },
+    "com.hereliesaz.azphalt.kinetic.weave": {
+      "assets/braid-strand.png": {
+        "name": "Braid",
+        "kinetic": true,
+        "definitionDigest": "d5335217703ea6c668b841ceff870b71f11df191c106c14bd4fe94d55244ec58",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Braid",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/01-swoop.png"
+          },
+          {
+            "brush": "Braid",
+            "label": "slow",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/02-slow.png"
+          },
+          {
+            "brush": "Braid",
+            "label": "loop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/03-loop.png"
+          },
+          {
+            "brush": "Braid",
+            "label": "zigzag",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/04-zigzag.png"
+          },
+          {
+            "brush": "Braid",
+            "label": "fast",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/05-fast.png"
+          },
+          {
+            "brush": "Braid",
+            "label": "scrawl",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/06-scrawl.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/01-swoop.png": "df422684f098987b10e2ddc9557a9db1d478c811264f99a93b33b1fe3494dad4",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/02-slow.png": "b1b131c43ba817470e75e6e1781c2bcab7b28c19f7c5a0a3fcd8a709f7cc1f90",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/03-loop.png": "1ec8294f16d0f682cb7bc5507ffde5c7f5ac77bc4adb7fe854ebb1cf9a020ddb",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/04-zigzag.png": "a08921f741b739ad82f24974dcee4bb37673a253d1df38c19f322ca0b052eb27",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/05-fast.png": "bf231700eb4ebe49327bc456439468793b45fd5d2642f6f8299dd8b88d9413da",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/braid-strand/06-scrawl.png": "96e31c228692d1965fe7c87b767575418318c9cd04a6369df1ee3abfbaa6473d"
+        }
+      },
+      "assets/rope-ply.png": {
+        "name": "Rope",
+        "kinetic": true,
+        "definitionDigest": "cb868ba303a4da598b5af1a304ee6023fc6236eed5ed7bddc2436a413428a98f",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Rope",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/01-swoop.png"
+          },
+          {
+            "brush": "Rope",
+            "label": "slow",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/02-slow.png"
+          },
+          {
+            "brush": "Rope",
+            "label": "loop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/03-loop.png"
+          },
+          {
+            "brush": "Rope",
+            "label": "zigzag",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/04-zigzag.png"
+          },
+          {
+            "brush": "Rope",
+            "label": "fast",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/05-fast.png"
+          },
+          {
+            "brush": "Rope",
+            "label": "scrawl",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/06-scrawl.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/01-swoop.png": "88e837979123094a34532d980758c52bf4e4468e2e11d660ed64dd06c90531ec",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/02-slow.png": "8bce88d42c49f3d23f055c7216f2ccdaa1d5cc15ced36f3fd91505c6ad109d1f",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/03-loop.png": "e8a71b4d74e6481e1fdb4e6b1e283656dc0e096579b68cd814b1149604cc4456",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/04-zigzag.png": "aaa2e3782ec89b95e590837f331e0e17a04a1dbdd5a80ecf70c726cc0d9e0602",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/05-fast.png": "94bccb5110cc879f3a8b76166946516fbecdca64421d9826dcb21afc8cc18db1",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/rope-ply/06-scrawl.png": "7ac3475f73419501ac5f6bf2b85bdd2b21d995c3d7127e8bf970a5aced1c04c7"
+        }
+      },
+      "assets/chain-link.png": {
+        "name": "Chain",
+        "kinetic": true,
+        "definitionDigest": "233d98941a2d3e81c289b2b314aceaf4d8f978990235aca46605a77980f5f60e",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Chain",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/01-swoop.png"
+          },
+          {
+            "brush": "Chain",
+            "label": "slow",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/02-slow.png"
+          },
+          {
+            "brush": "Chain",
+            "label": "loop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/03-loop.png"
+          },
+          {
+            "brush": "Chain",
+            "label": "zigzag",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/04-zigzag.png"
+          },
+          {
+            "brush": "Chain",
+            "label": "fast",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/05-fast.png"
+          },
+          {
+            "brush": "Chain",
+            "label": "scrawl",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/06-scrawl.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/01-swoop.png": "6a7033c3c47a5bd6ed06df5d0f68434e35e4f0843846cf445d3188b7a4d88638",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/02-slow.png": "9465634b837e4232712a460feb9681a2a84c94eda8c86a8901198b80f1619be7",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/03-loop.png": "c9eca3cf0929174e8bff849c2ae93e971152321cb71a87a4a9cfdd9751a5ad23",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/04-zigzag.png": "4ecb5954abbdd2f51e7ddba1ed8f6f65d9e350f928c7e2b95b85d2da4274f2cb",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/05-fast.png": "e3d07620b04a1172004993eb612d6f794daa5c47151883a0fca05c4fe7bf37f4",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/chain-link/06-scrawl.png": "dc3c075a0ab0e82440cc3c1e5a7aaced8831378c4fd22f4f3ef40af05f8d4c1b"
+        }
+      },
+      "assets/barbed-bar.png": {
+        "name": "Barbed Wire",
+        "kinetic": true,
+        "definitionDigest": "769e501623d32ce97d097503b469d225af5dda2313d59a149177d6d5510028e0",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Barbed Wire",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/01-swoop.png"
+          },
+          {
+            "brush": "Barbed Wire",
+            "label": "slow",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/02-slow.png"
+          },
+          {
+            "brush": "Barbed Wire",
+            "label": "loop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/03-loop.png"
+          },
+          {
+            "brush": "Barbed Wire",
+            "label": "zigzag",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/04-zigzag.png"
+          },
+          {
+            "brush": "Barbed Wire",
+            "label": "fast",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/05-fast.png"
+          },
+          {
+            "brush": "Barbed Wire",
+            "label": "scrawl",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/06-scrawl.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/01-swoop.png": "ef861234e723e7bed0b4721125926966a5a282c635adb59f4424a3e870bb5aba",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/02-slow.png": "dfd02e72b07c5afb9d10a8f4f3fa173df2dee555c4bdcc9e81f8d838f97e64df",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/03-loop.png": "6eba54cc00536a2ef663c2b374decd20b9483791de8e16fb4a5764c2aaf6d842",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/04-zigzag.png": "039c7ddfb7dfff3812cf98baeb3c63b0671f21aa4529874012a8cede4a83536a",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/05-fast.png": "18f745fda5f573e744df9849021150d62f64051588b04917fd4e6c2d00768d8a",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/barbed-bar/06-scrawl.png": "243dff686b6aa7fdd7aeaa161832be04fc7ea68d7cf833929106cd7aa4fa84df"
+        }
+      },
+      "assets/ribbon-band.png": {
+        "name": "Ribbon",
+        "kinetic": true,
+        "definitionDigest": "30e5eb7ebcaaf8615a4612d7859d558b9fcd88a8af1dd8ca615678f9a0a4f4aa",
+        "renderer": {
+          "engine": "graffux PackRenderHarness",
+          "seed": 20260101,
+          "diameterPx": 26,
+          "note": "CPU approximation of the GPU stamping; dab geometry and stroke programs are the real generators"
+        },
+        "strokes": [
+          {
+            "brush": "Ribbon",
+            "label": "swoop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/01-swoop.png"
+          },
+          {
+            "brush": "Ribbon",
+            "label": "slow",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/02-slow.png"
+          },
+          {
+            "brush": "Ribbon",
+            "label": "loop",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/03-loop.png"
+          },
+          {
+            "brush": "Ribbon",
+            "label": "zigzag",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/04-zigzag.png"
+          },
+          {
+            "brush": "Ribbon",
+            "label": "fast",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/05-fast.png"
+          },
+          {
+            "brush": "Ribbon",
+            "label": "scrawl",
+            "image": "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/06-scrawl.png"
+          }
+        ],
+        "imageDigests": {
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/01-swoop.png": "8ece146cdeabcb21a9533157447d952e2f5aa42ca006dbc7d63eb3a841e17c6d",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/02-slow.png": "49185aa5195147ccbd06767a033dbff95d5a567a658f73c336f4929fdcb4b0db",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/03-loop.png": "06fd863d622ab38b9aa01087998826e9b40a64ff5b4e62260aa56b56e7a18c26",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/04-zigzag.png": "90abe74f838f1f3a0998b6ec9b87006dcd7782ed2f89571aa3c1e62c08b814dc",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/05-fast.png": "94a10f22ce22a8146e67c81267b32941b7851aaede456f7894ee4af4be2c93bc",
+          "/previews/brushes/com.hereliesaz.azphalt.kinetic.weave/ribbon-band/06-scrawl.png": "fc5a6cedd773cb7eb9e6b34138407c4d604313c1b036bfaacb10a7898a85c952"
+        }
+      }
+    }
+  }
+}

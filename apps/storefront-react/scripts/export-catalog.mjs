@@ -17,6 +17,15 @@ const generated = JSON.parse(await readFile(resolve(registryDir, "catalog.json")
 const previewsDoc = JSON.parse(await readFile(resolve(registryDir, "previews.json"), "utf8").catch(() => '{"previews":{}}'));
 const previews = previewsDoc.previews ?? {};
 
+// Rendered brush strokes (tools/brush-previews.mjs): merged into `preview.strokes` for brush packs.
+const { readIndex, strokesForPack } = await import("../../../tools/brush-previews.mjs");
+const brushIndex = readIndex();
+
+/** The preview with `strokes` added when the package has rendered brush strokes; otherwise unchanged. */
+function withStrokes(preview, strokes) {
+  return strokes ? { ...(preview ?? {}), strokes } : preview;
+}
+
 const packages = [];
 for (const item of generated.packages ?? []) {
   const file = resolve(registryDir, "packages", item.file);
@@ -39,7 +48,7 @@ for (const item of generated.packages ?? []) {
     llm: manifest.llm,
     ...(manifest.kind === "font" && manifest.font ? { font: toFontSummary(manifest.font) } : {}),
     manifest,
-    preview: previews[manifest.id] ?? manifest.preview,
+    preview: withStrokes(previews[manifest.id] ?? manifest.preview, strokesForPack(brushIndex, manifest.id)),
     integrity: item.integrity,
     // The digest of the exact file the Worker streams (signed, so unlike `integrity`); the Worker
     // refuses a full download whose bytes do not hash to it.

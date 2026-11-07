@@ -181,6 +181,21 @@ describe("Registry discovery metadata (byteSize / preview / mediaDomains / ratin
     expect(s!.rating).toBeUndefined();
   });
 
+  it("surfaces preview.strokes (rendered brush samples) unchanged", async () => {
+    const r = new Registry();
+    const strokes = [
+      { brush: "Spray", label: "hold 3 s", image: "/previews/brushes/x/01/01-hold-3-s.png" },
+      { brush: "Spray", label: "speed 30/14/6/2 w/s", image: "/previews/brushes/x/01/02-speed.png" },
+    ];
+    await r.publish(
+      makeAzp("com.hereliesaz.brush", "1.0.0", {
+        assets: [{ type: "brush", path: "assets/x.bin" }],
+        preview: { image: "preview/card.png", strokes },
+      } as never),
+    );
+    expect((await r.getSummary("com.hereliesaz.brush"))!.preview).toEqual({ image: "preview/card.png", strokes });
+  });
+
   it("filters by media domain (intersection): a video host keeps a LUT, drops a paint-only brush", async () => {
     const r = new Registry();
     await r.publish(makeAzp("com.hereliesaz.brush", "1.0.0", { assets: [{ type: "brush", path: "assets/x.bin" }] } as never));
