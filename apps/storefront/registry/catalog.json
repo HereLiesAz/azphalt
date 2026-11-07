@@ -663,6 +663,17 @@
       "bytes": 1460
     },
     {
+      "id": "com.hereliesaz.azphalt.depth-anything-v3-small",
+      "version": "1.0.0",
+      "name": "Depth Anything V3 Small",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-RURfv1sJ25yyQ+YIzwcdgk1yvP+i4tQwxOddULuPHmg=",
+      "file": "com.hereliesaz.azphalt.depth-anything-v3-small-1.0.0.azp",
+      "bytes": 10882
+    },
+    {
       "id": "com.hereliesaz.azphalt.depth-hide",
       "version": "2.0.0",
       "name": "Depth Hide",
