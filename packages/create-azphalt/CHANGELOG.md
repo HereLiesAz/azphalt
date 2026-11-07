@@ -1,5 +1,11 @@
 # create-azphalt
 
+## 0.5.1
+
+### Patch Changes
+
+- 616710d: Bring the scaffolded templates' `@azphalt/*` ranges (azp, azdk, runtime-reference, repository-client) and the host-app `vite` range up to the versions the repository uses.
+
 ## 0.5.0
 
 ### Minor Changes
