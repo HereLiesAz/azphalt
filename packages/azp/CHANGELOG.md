@@ -1,5 +1,12 @@
 # @azphalt/azp
 
+## 0.6.1
+
+### Patch Changes
+
+- Updated dependencies [c2e8908]
+  - @azphalt/azdk@0.7.0
+
 ## 0.6.0
 
 ### Minor Changes
