@@ -1,0 +1,94 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
+  "name": "Charcoal & Chalk",
+  "version": "2.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0 AND CC-BY-4.0",
+  "compat": ">=0.1",
+  "description": "Four drawing-media tips — soft charcoal, hard chalk, a smudge stick for dragging and blending, and a faceted conté crayon.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/soft-charcoal.png",
+      "tags": [
+        "charcoal",
+        "soft",
+        "grain"
+      ],
+      "params": {
+        "name": "Soft Charcoal",
+        "spacing": 0.08,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/hard-chalk.png",
+      "tags": [
+        "chalk",
+        "hard",
+        "grain"
+      ],
+      "params": {
+        "name": "Hard Chalk",
+        "spacing": 0.06,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/smudge-stick.png",
+      "tags": [
+        "charcoal",
+        "smudge",
+        "drag"
+      ],
+      "params": {
+        "name": "Smudge Stick",
+        "spacing": 0.04,
+        "angle": 0,
+        "roundness": 0.26,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/conte-crayon.png",
+      "tags": [
+        "crayon",
+        "hatch",
+        "facet"
+      ],
+      "params": {
+        "name": "Conté Crayon",
+        "spacing": 0.05,
+        "angle": 0,
+        "roundness": 0.58,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita 4 Extras brush preset pack (CC BY 4.0) — CC BY 4.0",
+        "attributionRequired": true
+      }
+    }
+  ]
+}
