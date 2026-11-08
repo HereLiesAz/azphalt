@@ -212,292 +212,6 @@
       "bytes": 1390
     },
     {
-      "id": "com.hereliesaz.azphalt.brush-acrylic-angular-shader",
-      "version": "1.0.0",
-      "name": "Angular Shader",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "f199bc3f5ffb2ab7c21b95c81dad8a6fb3d54412",
-      "integrity": "sha256-a7qWA0S8cLG7c2U10UN4L1q/kwRTzqeu4S+nOEpaDyw=",
-      "file": "com.hereliesaz.azphalt.brush-acrylic-angular-shader-1.0.0.azp",
-      "bytes": 16869
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-acrylic-flat",
-      "version": "1.0.0",
-      "name": "Flat",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "f199bc3f5ffb2ab7c21b95c81dad8a6fb3d54412",
-      "integrity": "sha256-JQCcy8Dr4ROuw+KPU39cv77Kcq6C2pM2oy3SmNvWgrk=",
-      "file": "com.hereliesaz.azphalt.brush-acrylic-flat-1.0.0.azp",
-      "bytes": 11257
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-acrylic-round",
-      "version": "1.0.0",
-      "name": "Round",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "f199bc3f5ffb2ab7c21b95c81dad8a6fb3d54412",
-      "integrity": "sha256-FXpEkKMRiZ6wkrLx34nYZHSxX3O8ShBXSEMcMk7jisw=",
-      "file": "com.hereliesaz.azphalt.brush-acrylic-round-1.0.0.azp",
-      "bytes": 2069
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab",
-      "version": "1.0.0",
-      "name": "Sponge Dab",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-acrylic",
-      "ref": "f199bc3f5ffb2ab7c21b95c81dad8a6fb3d54412",
-      "integrity": "sha256-0hA6qJUTtPYZzWEaUnIr9tdXM+N4Px6QEhKergoAwHk=",
-      "file": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab-1.0.0.azp",
-      "bytes": 162039
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-china-marker",
-      "version": "1.0.0",
-      "name": "China Marker",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
-      "integrity": "sha256-fVloee4PcTg4j6iA1T4szQkPXmF9u1CcGz7dSYlfH70=",
-      "file": "com.hereliesaz.azphalt.brush-china-marker-1.0.0.azp",
-      "bytes": 4986
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-chisel-marker",
-      "version": "1.0.0",
-      "name": "Chisel Marker",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
-      "integrity": "sha256-J01zE3apL3uNGeNR4Pa4uVASU2EDJLYcw1E13vQhnHs=",
-      "file": "com.hereliesaz.azphalt.brush-chisel-marker-1.0.0.azp",
-      "bytes": 6401
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-conte-crayon",
-      "version": "1.0.0",
-      "name": "Conté Crayon",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "6775976398cef552b864b47bfeb6546e89230b4f",
-      "integrity": "sha256-XeUzsyccRwgQoOBGI//d8q8lik82Pm5S0ECVlG5meQo=",
-      "file": "com.hereliesaz.azphalt.brush-conte-crayon-1.0.0.azp",
-      "bytes": 5643
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-hard-chalk",
-      "version": "1.0.0",
-      "name": "Hard Chalk",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "6775976398cef552b864b47bfeb6546e89230b4f",
-      "integrity": "sha256-uE3EmUUCwk7uwRxCxpyBau9LAtlVK7coSz/+gQAwNeA=",
-      "file": "com.hereliesaz.azphalt.brush-hard-chalk-1.0.0.azp",
-      "bytes": 51100
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-ink-sumi",
-      "version": "1.0.0",
-      "name": "Sumi Brush",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
-      "integrity": "sha256-+D+MZvzTAL/v6UwA2FK9PgjdVLIV49lHFMIP5xsULXU=",
-      "file": "com.hereliesaz.azphalt.brush-ink-sumi-1.0.0.azp",
-      "bytes": 129452
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush",
-      "version": "1.0.0",
-      "name": "Bristle Drybrush",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
-      "integrity": "sha256-pAAN/4cWQ2GB8CZREkU8prtYIPGl9NqMoRK7hAshlaI=",
-      "file": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush-1.0.0.azp",
-      "bytes": 6690
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-oil-fan-blade",
-      "version": "1.0.0",
-      "name": "Fan Blade",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
-      "integrity": "sha256-pqjKQnludymv5T4lIz4EAT3cTF1NzuCERwQBlMDk7O4=",
-      "file": "com.hereliesaz.azphalt.brush-oil-fan-blade-1.0.0.azp",
-      "bytes": 5784
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-oil-filbert",
-      "version": "1.0.0",
-      "name": "Filbert",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
-      "integrity": "sha256-dw08H2J8Z1q1M9tE1Uv1pQrUhdPlKW4Y9hugqfQsKDc=",
-      "file": "com.hereliesaz.azphalt.brush-oil-filbert-1.0.0.azp",
-      "bytes": 49548
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-oil-palette-knife",
-      "version": "1.0.0",
-      "name": "Palette Knife",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-oil",
-      "ref": "841a234f595b58913e1158409b32d08f07e7e32b",
-      "integrity": "sha256-la1g5BOi2zFCUMCSDvyIjcqkukr77Z5/VPgVcknSGjI=",
-      "file": "com.hereliesaz.azphalt.brush-oil-palette-knife-1.0.0.azp",
-      "bytes": 8407
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-paint-pen",
-      "version": "1.0.0",
-      "name": "Paint Pen",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
-      "integrity": "sha256-ZpIEcQhK3Yn/9GmGOe8aqaxINpu/o754R0isuFiNK8Y=",
-      "file": "com.hereliesaz.azphalt.brush-paint-pen-1.0.0.azp",
-      "bytes": 6467
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-paw-print",
-      "version": "1.0.0",
-      "name": "Paw Print",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
-      "integrity": "sha256-Vl/i3IizxmTpY/yU2/g8jbCMlAKMebftMCnt5qz8br4=",
-      "file": "com.hereliesaz.azphalt.brush-paw-print-1.0.0.azp",
-      "bytes": 4259
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-pointed-triangle",
-      "version": "1.0.0",
-      "name": "Pointed Triangle",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-ink",
-      "ref": "cd3cfd325d5c9cfbe9427c80dddbc8d07c0d898d",
-      "integrity": "sha256-pt8AIzcwvoa4SCL5Wy3otKxi/8to2rSs14AM4bj62Mg=",
-      "file": "com.hereliesaz.azphalt.brush-pointed-triangle-1.0.0.azp",
-      "bytes": 3317
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-smudge-stick",
-      "version": "1.0.0",
-      "name": "Smudge Stick",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "6775976398cef552b864b47bfeb6546e89230b4f",
-      "integrity": "sha256-Sa8Tmvm28IVg3E1IqUFf5akTomo4kxNFWDJ2j8r1YCE=",
-      "file": "com.hereliesaz.azphalt.brush-smudge-stick-1.0.0.azp",
-      "bytes": 60653
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-soft-charcoal",
-      "version": "1.0.0",
-      "name": "Soft Charcoal",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-charcoal",
-      "ref": "6775976398cef552b864b47bfeb6546e89230b4f",
-      "integrity": "sha256-jWycM9OXRpWd73s+0q9QQ9SNuwpX+nl+YnpI61ZHQEk=",
-      "file": "com.hereliesaz.azphalt.brush-soft-charcoal-1.0.0.azp",
-      "bytes": 37157
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-spray-fade",
-      "version": "1.0.0",
-      "name": "Fade",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
-      "integrity": "sha256-NsmSzgmu2EZiZTQWKTdcxLcyxEpRu4qjU7v27lZP4ko=",
-      "file": "com.hereliesaz.azphalt.brush-spray-fade-1.0.0.azp",
-      "bytes": 5715
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-spray-fat-cap",
-      "version": "1.0.0",
-      "name": "Fat Cap",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
-      "integrity": "sha256-D92JIWVNHRYwyd0c1X4cGhP2HmqzR4/8GZ0Fej9pL90=",
-      "file": "com.hereliesaz.azphalt.brush-spray-fat-cap-1.0.0.azp",
-      "bytes": 3186
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-spray-halo",
-      "version": "1.0.0",
-      "name": "Halo",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
-      "integrity": "sha256-JmOjkcbd7xXme8yt1/YUbkDpP5vsFuqkE3x9EUci4zM=",
-      "file": "com.hereliesaz.azphalt.brush-spray-halo-1.0.0.azp",
-      "bytes": 27662
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-spray-skinny-cap",
-      "version": "1.0.0",
-      "name": "Skinny Cap",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-spray",
-      "ref": "2646df568d1e501628ca597f52fab04f33d5fe88",
-      "integrity": "sha256-VTNwNhWlxVth2s+2g6h1Z2TNYQ4f4cWWptTfWo/zm4E=",
-      "file": "com.hereliesaz.azphalt.brush-spray-skinny-cap-1.0.0.azp",
-      "bytes": 5800
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed",
-      "version": "1.0.0",
-      "name": "Dry-Edge Bleed",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
-      "integrity": "sha256-KeBm8lm9LcxiExH8FG4GcDFfbIHnd83yDM95z0pH8GU=",
-      "file": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed-1.0.0.azp",
-      "bytes": 2429
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-watercolor-salt-texture",
-      "version": "1.0.0",
-      "name": "Salt Texture",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
-      "integrity": "sha256-xgCHXRuPzYol78E3/uxTxf+GDvR48eS8n/wEj35Qm/w=",
-      "file": "com.hereliesaz.azphalt.brush-watercolor-salt-texture-1.0.0.azp",
-      "bytes": 3660
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-watercolor-wash-flat",
-      "version": "1.0.0",
-      "name": "Wash Flat",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
-      "integrity": "sha256-UbloGjccRY4t0KbJOJQQeGhoWqt2cHeFD8MOO9w1Gv8=",
-      "file": "com.hereliesaz.azphalt.brush-watercolor-wash-flat-1.0.0.azp",
-      "bytes": 20129
-    },
-    {
-      "id": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet",
-      "version": "1.0.0",
-      "name": "Wet-on-Wet",
-      "kind": "asset",
-      "repo": "HereLiesAz/azphalt-brushset-watercolor",
-      "ref": "24270a927e4981a48b525e2d77bed1e2346de238",
-      "integrity": "sha256-9RwUkJEE8MXrntx2t071sak4OD+0neIFIqutydTPxDI=",
-      "file": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet-1.0.0.azp",
-      "bytes": 4999
-    },
-    {
       "id": "com.hereliesaz.azphalt.brushes.dry-goods",
       "version": "1.0.0",
       "name": "Dry Goods",
@@ -1676,14 +1390,14 @@
     },
     {
       "id": "com.hereliesaz.azphalt.pack.acrylic",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "name": "Acrylic",
-      "kind": "pack",
+      "kind": "asset",
       "repo": "(local)",
       "ref": "(local)",
-      "integrity": "sha256-RXcdB86Vf77Y+iLxr4ho1hxkbkEcFdSbKmWUojGyHZQ=",
-      "file": "com.hereliesaz.azphalt.pack.acrylic-1.0.0.azp",
-      "bytes": 1113
+      "integrity": "sha256-75THzS2SqpmCUrhqM/K/3ODU6QK4UbreI3nSKAvhE5Y=",
+      "file": "com.hereliesaz.azphalt.pack.acrylic-2.0.0.azp",
+      "bytes": 189554
     },
     {
       "id": "com.hereliesaz.azphalt.pack.audio-reactive",
@@ -1731,14 +1445,14 @@
     },
     {
       "id": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "name": "Charcoal & Chalk",
-      "kind": "pack",
+      "kind": "asset",
       "repo": "(local)",
       "ref": "(local)",
-      "integrity": "sha256-tLrwXEhK137dX0pmSXUYFDBIjbGP+R2IeW8YCpobk18=",
-      "file": "com.hereliesaz.azphalt.pack.charcoal-and-chalk-1.0.0.azp",
-      "bytes": 1154
+      "integrity": "sha256-vfHkJI9RzLivQCkV70Dz1gq0iyQve99Q20aKNApJmNU=",
+      "file": "com.hereliesaz.azphalt.pack.charcoal-and-chalk-2.0.0.azp",
+      "bytes": 151563
     },
     {
       "id": "com.hereliesaz.azphalt.pack.glitch-and-damage",
@@ -1753,14 +1467,14 @@
     },
     {
       "id": "com.hereliesaz.azphalt.pack.ink-and-marker",
-      "version": "1.1.0",
+      "version": "2.0.0",
       "name": "Ink & Marker",
-      "kind": "pack",
+      "kind": "asset",
       "repo": "(local)",
       "ref": "(local)",
-      "integrity": "sha256-gInM1s/6THRqTLKLH5z4fzfhaccdreLJFNbrf7ezZKM=",
-      "file": "com.hereliesaz.azphalt.pack.ink-and-marker-1.1.0.azp",
-      "bytes": 1188
+      "integrity": "sha256-jc1kdETDOFzbXsZG6Ky1CRZisKpjK3lZNMBjQyxKhPA=",
+      "file": "com.hereliesaz.azphalt.pack.ink-and-marker-2.0.0.azp",
+      "bytes": 149727
     },
     {
       "id": "com.hereliesaz.azphalt.pack.kinetic-type",
@@ -1797,14 +1511,14 @@
     },
     {
       "id": "com.hereliesaz.azphalt.pack.oil",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "name": "Oil",
-      "kind": "pack",
+      "kind": "asset",
       "repo": "(local)",
       "ref": "(local)",
-      "integrity": "sha256-i/Ef7Y/1/NglcNl6h8oV/+ugjcC+s+/+TqdWkH0UhiU=",
-      "file": "com.hereliesaz.azphalt.pack.oil-1.0.0.azp",
-      "bytes": 1126
+      "integrity": "sha256-e2iw5eB2ALbD9tu58OfhXVUlKtspvhpGPooGeh71Cks=",
+      "file": "com.hereliesaz.azphalt.pack.oil-2.0.0.azp",
+      "bytes": 67694
     },
     {
       "id": "com.hereliesaz.azphalt.pack.one-click-cleanup",
@@ -1885,14 +1599,14 @@
     },
     {
       "id": "com.hereliesaz.azphalt.pack.spray-kit",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "name": "Spray Kit",
-      "kind": "pack",
+      "kind": "asset",
       "repo": "(local)",
       "ref": "(local)",
-      "integrity": "sha256-4Zbn9OzYqTzji1xH4CP8psTv3LYy/vyoP3yODM+q0uQ=",
-      "file": "com.hereliesaz.azphalt.pack.spray-kit-1.0.0.azp",
-      "bytes": 1118
+      "integrity": "sha256-a+ip8eIJNMJ38AQQWfm3BeWb1qEIg5ZtyfKx/FkOUcs=",
+      "file": "com.hereliesaz.azphalt.pack.spray-kit-2.0.0.azp",
+      "bytes": 39646
     },
     {
       "id": "com.hereliesaz.azphalt.pack.stencil-studio",
@@ -1962,14 +1676,14 @@
     },
     {
       "id": "com.hereliesaz.azphalt.pack.watercolor",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "name": "Watercolor",
-      "kind": "pack",
+      "kind": "asset",
       "repo": "(local)",
       "ref": "(local)",
-      "integrity": "sha256-rE4KvWS2l9+abxtOAIOa3SQPeqJd0K7Jx4aiTeiLB7A=",
-      "file": "com.hereliesaz.azphalt.pack.watercolor-1.0.0.azp",
-      "bytes": 1139
+      "integrity": "sha256-ZcCL1JOR42nr4dyOy3OKwirxAQ30NbbDHQn8NgG01zE=",
+      "file": "com.hereliesaz.azphalt.pack.watercolor-2.0.0.azp",
+      "bytes": 28436
     },
     {
       "id": "com.hereliesaz.azphalt.page-curl",
