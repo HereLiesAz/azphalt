@@ -1,0 +1,75 @@
+Charcoal & Chalk — per-brush licensing
+
+This package bundles 4 brush tips that were previously published as separate
+packages. Each tip keeps the licence it was published under; the manifest's `license` field lists
+every licence present. The text of each tip's licence follows, verbatim except that the tip's path
+is its path in this package. A tip's own terms apply to that tip alone.
+
+==============================================================================
+Soft Charcoal  (assets/soft-charcoal.png)  —  CC0-1.0
+==============================================================================
+
+CC0 1.0 Universal (Public Domain Dedication)
+
+The brush tip bitmap in this package (assets/soft-charcoal.png) is dedicated to the public
+domain under the CC0 1.0 Universal license:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle.
+Converted from the source bitmap: inverted to a grayscale-alpha PNG and packaged
+as an azphalt brush asset. No other changes were made to the artwork.
+
+The manifest, packaging code, and this LICENSE file are
+Copyright (c) 2026 HereLiesAz. All rights reserved.
+
+==============================================================================
+Hard Chalk  (assets/hard-chalk.png)  —  CC0-1.0
+==============================================================================
+
+CC0 1.0 Universal (Public Domain Dedication)
+
+The brush tip bitmap in this package (assets/hard-chalk.png) is dedicated to the public
+domain under the CC0 1.0 Universal license:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle.
+Converted from the source bitmap: inverted to a grayscale-alpha PNG and packaged
+as an azphalt brush asset. No other changes were made to the artwork.
+
+The manifest, packaging code, and this LICENSE file are
+Copyright (c) 2026 HereLiesAz. All rights reserved.
+
+==============================================================================
+Smudge Stick  (assets/smudge-stick.png)  —  CC0-1.0
+==============================================================================
+
+CC0 1.0 Universal (Public Domain Dedication)
+
+The brush tip bitmap in this package (assets/smudge-stick.png) is dedicated to the public
+domain under the CC0 1.0 Universal license:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle.
+Converted from the source bitmap: inverted to a grayscale-alpha PNG and packaged
+as an azphalt brush asset. No other changes were made to the artwork.
+
+The manifest, packaging code, and this LICENSE file are
+Copyright (c) 2026 HereLiesAz. All rights reserved.
+
+==============================================================================
+Conté Crayon  (assets/conte-crayon.png)  —  CC-BY-4.0
+==============================================================================
+
+CC BY 4.0 (Attribution)
+
+The brush tip bitmap in this package (assets/conte-crayon.png) is used under the
+Creative Commons Attribution 4.0 International license:
+https://creativecommons.org/licenses/by/4.0/
+
+Tip artwork by David Revoy (davidrevoy.com), from the Krita 4 Extras brush preset pack (CC BY 4.0).
+Source: https://www.davidrevoy.com/article742/krita-4-extras-brush-presets-pack
+Changes made: inverted to a grayscale-alpha PNG and packaged as an azphalt
+brush asset. No other changes were made to the artwork.
+
+The manifest, packaging code, and this LICENSE file are
+Copyright (c) 2026 HereLiesAz. All rights reserved.

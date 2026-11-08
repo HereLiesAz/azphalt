@@ -1,0 +1,505 @@
+[
+ {
+  "pack": "com.hereliesaz.azphalt.pack.acrylic",
+  "single": "com.hereliesaz.azphalt.brush-acrylic-flat",
+  "name": "Flat",
+  "path": "assets/acrylic-flat.png",
+  "license": "LicenseRef-Proprietary",
+  "tipSha256": "a13d5239e6ac33a9153f3b29422563cf6845fd9a5b3357faa6837916c1d70d2c",
+  "tags": [
+   "acrylic",
+   "flat",
+   "hard-edge"
+  ],
+  "params": {
+   "spacing": 0.04,
+   "angle": 0,
+   "roundness": 0.2,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.acrylic",
+  "single": "com.hereliesaz.azphalt.brush-acrylic-round",
+  "name": "Round",
+  "path": "assets/acrylic-round.png",
+  "license": "CC0-1.0",
+  "tipSha256": "7bebe2129a69613030dd5ef2cbc466a9a782e230a98713545d6e7303269472b6",
+  "tags": [
+   "acrylic",
+   "round",
+   "soft"
+  ],
+  "params": {
+   "spacing": 0.04,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.acrylic",
+  "single": "com.hereliesaz.azphalt.brush-acrylic-angular-shader",
+  "name": "Angular Shader",
+  "path": "assets/acrylic-angular-shader.png",
+  "license": "LicenseRef-Proprietary",
+  "tipSha256": "b8b807bfaad9954cccf9a462ec7f3e29875dae7459d41c4215e29c65e3115ae9",
+  "tags": [
+   "acrylic",
+   "shader",
+   "angular"
+  ],
+  "params": {
+   "spacing": 0.05,
+   "angle": 0,
+   "roundness": 0.32,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.acrylic",
+  "single": "com.hereliesaz.azphalt.brush-acrylic-sponge-dab",
+  "name": "Sponge Dab",
+  "path": "assets/acrylic-sponge-dab.png",
+  "license": "CC0-1.0",
+  "tipSha256": "3e43f55eb9209e33198950da9cbf48b74c0140c1d5113253494945a98f3fec83",
+  "tags": [
+   "acrylic",
+   "sponge",
+   "dab"
+  ],
+  "params": {
+   "spacing": 0.18,
+   "roundness": 1,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.oil",
+  "single": "com.hereliesaz.azphalt.brush-oil-filbert",
+  "name": "Filbert",
+  "path": "assets/oil-filbert.png",
+  "license": "CC-BY-4.0",
+  "tipSha256": "d8378002b735b3862c81416eff55a10bec33f295cf5011219aa9c58ba7cefab7",
+  "tags": [
+   "oil",
+   "filbert",
+   "soft-edge"
+  ],
+  "params": {
+   "spacing": 0.06,
+   "angle": 0,
+   "roundness": 0.68,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.oil",
+  "single": "com.hereliesaz.azphalt.brush-oil-palette-knife",
+  "name": "Palette Knife",
+  "path": "assets/oil-palette-knife.png",
+  "license": "LicenseRef-Proprietary",
+  "tipSha256": "8e9b13b5680d6e01ea683194d1a32c145ab6d13d9972eb1edcde77871020aca5",
+  "tags": [
+   "oil",
+   "knife",
+   "hard-edge"
+  ],
+  "params": {
+   "spacing": 0.12,
+   "angle": 0,
+   "roundness": 0.14,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.oil",
+  "single": "com.hereliesaz.azphalt.brush-oil-fan-blade",
+  "name": "Fan Blade",
+  "path": "assets/oil-fan-blade.png",
+  "license": "CC-BY-4.0",
+  "tipSha256": "9377732112b2837e76dcc6f5fc9bf3003315a243badd5c2e9ad16115d487d807",
+  "tags": [
+   "oil",
+   "fan",
+   "streak"
+  ],
+  "params": {
+   "spacing": 0.1,
+   "roundness": 1,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.oil",
+  "single": "com.hereliesaz.azphalt.brush-oil-bristle-drybrush",
+  "name": "Bristle Drybrush",
+  "path": "assets/oil-bristle-drybrush.png",
+  "license": "CC0-1.0",
+  "tipSha256": "ac5a7e10166537d53e52fb93311498ad9b1d09f2e54c066f848f5470f9235688",
+  "tags": [
+   "oil",
+   "dry-brush",
+   "bristle"
+  ],
+  "params": {
+   "spacing": 0.05,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.ink-and-marker",
+  "single": "com.hereliesaz.azphalt.brush-chisel-marker",
+  "name": "Chisel Marker",
+  "path": "assets/chisel-marker.png",
+  "license": "CC0-1.0",
+  "tipSha256": "510356f33e146ddc0c299441ec9d2d05cd12e1b6934419b484ef7ee71414030e",
+  "tags": [
+   "marker",
+   "chisel",
+   "hard-edge"
+  ],
+  "params": {
+   "spacing": 0.03,
+   "angle": 0,
+   "roundness": 0.24,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.ink-and-marker",
+  "single": "com.hereliesaz.azphalt.brush-paint-pen",
+  "name": "Paint Pen",
+  "path": "assets/paint-pen.png",
+  "license": "LicenseRef-Proprietary",
+  "tipSha256": "21a36e4437f4f9bf43674f344acd438b2601392b51d316b7718736f608954cf9",
+  "tags": [
+   "marker",
+   "pen",
+   "opaque"
+  ],
+  "params": {
+   "spacing": 0.02,
+   "roundness": 1,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.ink-and-marker",
+  "single": "com.hereliesaz.azphalt.brush-ink-sumi",
+  "name": "Sumi Brush",
+  "path": "assets/ink-sumi.png",
+  "license": "CC0-1.0",
+  "tipSha256": "0f6e7c5bd0d46cdef175a33a8d59a50a52b337d73dad280111a37da90c876028",
+  "tags": [
+   "ink",
+   "sumi",
+   "bristle"
+  ],
+  "params": {
+   "spacing": 0.1,
+   "angle": 0,
+   "roundness": 0.36,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.ink-and-marker",
+  "single": "com.hereliesaz.azphalt.brush-china-marker",
+  "name": "China Marker",
+  "path": "assets/china-marker.png",
+  "license": "CC0-1.0",
+  "tipSha256": "6eb422b4839bd2b636de01bed7cfaa61886412024de2c3e4e549446fd625e44c",
+  "tags": [
+   "marker",
+   "wax",
+   "grease-pencil"
+  ],
+  "params": {
+   "spacing": 0.05,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.ink-and-marker",
+  "single": "com.hereliesaz.azphalt.brush-paw-print",
+  "name": "Paw Print",
+  "path": "assets/paw-print.png",
+  "license": "CC0-1.0",
+  "tipSha256": "7b5c1e354aeacc4a907fe64d5f2d2220dd7964041b3f0efc205029a7d642e316",
+  "tags": [
+   "paw",
+   "stamp",
+   "organic"
+  ],
+  "params": {
+   "spacing": 0.15,
+   "roundness": 1,
+   "flowByPressure": false
+  },
+  "required": false
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.ink-and-marker",
+  "single": "com.hereliesaz.azphalt.brush-pointed-triangle",
+  "name": "Pointed Triangle",
+  "path": "assets/pointed-triangle.png",
+  "license": "CC0-1.0",
+  "tipSha256": "ac3ccb550427ec7a9ff80298d783852f9bd54673e69f87091b96588537759201",
+  "tags": [
+   "triangle",
+   "stamp",
+   "geometric"
+  ],
+  "params": {
+   "spacing": 0.15,
+   "roundness": 1,
+   "flowByPressure": false
+  },
+  "required": false
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
+  "single": "com.hereliesaz.azphalt.brush-soft-charcoal",
+  "name": "Soft Charcoal",
+  "path": "assets/soft-charcoal.png",
+  "license": "CC0-1.0",
+  "tipSha256": "a5ff3aef92a072509ed045cef2cb3027a4d49991e18e64e169b2bb313a98e0b6",
+  "tags": [
+   "charcoal",
+   "soft",
+   "grain"
+  ],
+  "params": {
+   "spacing": 0.08,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
+  "single": "com.hereliesaz.azphalt.brush-hard-chalk",
+  "name": "Hard Chalk",
+  "path": "assets/hard-chalk.png",
+  "license": "CC0-1.0",
+  "tipSha256": "858f19e4f1f013eeff2aa3800350e5b241e57486e4fb14f44981e53fd929ccf6",
+  "tags": [
+   "chalk",
+   "hard",
+   "grain"
+  ],
+  "params": {
+   "spacing": 0.06,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
+  "single": "com.hereliesaz.azphalt.brush-smudge-stick",
+  "name": "Smudge Stick",
+  "path": "assets/smudge-stick.png",
+  "license": "CC0-1.0",
+  "tipSha256": "69921f1756c1b51deda5415bd5283df6a60a3b12617511297c2941e70be7a145",
+  "tags": [
+   "charcoal",
+   "smudge",
+   "drag"
+  ],
+  "params": {
+   "spacing": 0.04,
+   "angle": 0,
+   "roundness": 0.26,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.charcoal-and-chalk",
+  "single": "com.hereliesaz.azphalt.brush-conte-crayon",
+  "name": "Conté Crayon",
+  "path": "assets/conte-crayon.png",
+  "license": "CC-BY-4.0",
+  "tipSha256": "fae09c86064a1bbe1cae2d8ccbf9ed432d98149ed683f7b3b815d3bbc577aade",
+  "tags": [
+   "crayon",
+   "hatch",
+   "facet"
+  ],
+  "params": {
+   "spacing": 0.05,
+   "angle": 0,
+   "roundness": 0.58,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.spray-kit",
+  "single": "com.hereliesaz.azphalt.brush-spray-fat-cap",
+  "name": "Fat Cap",
+  "path": "assets/spray-fat-cap.png",
+  "license": "CC0-1.0",
+  "tipSha256": "b35405a3f23cf381465ffaa6c1c8360aa177d092f70ceb0eeaf662fb8c2b3d23",
+  "tags": [
+   "spray",
+   "wide",
+   "cloud"
+  ],
+  "params": {
+   "spacing": 0.02,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.spray-kit",
+  "single": "com.hereliesaz.azphalt.brush-spray-skinny-cap",
+  "name": "Skinny Cap",
+  "path": "assets/spray-skinny-cap.png",
+  "license": "CC0-1.0",
+  "tipSha256": "e74a12a2d5bef30e175ff0b4b476cc7bf122f5acef76aaf87af5dea1871797de",
+  "tags": [
+   "spray",
+   "fine",
+   "line"
+  ],
+  "params": {
+   "spacing": 0.015,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.spray-kit",
+  "single": "com.hereliesaz.azphalt.brush-spray-fade",
+  "name": "Fade",
+  "path": "assets/spray-fade.png",
+  "license": "CC-BY-4.0",
+  "tipSha256": "1982676857d217c6c65ed667aa82010d5ad87065f7838c780aec1825f306044e",
+  "tags": [
+   "spray",
+   "gradient",
+   "mist"
+  ],
+  "params": {
+   "spacing": 0.1,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.spray-kit",
+  "single": "com.hereliesaz.azphalt.brush-spray-halo",
+  "name": "Halo",
+  "path": "assets/spray-halo.png",
+  "license": "LicenseRef-Proprietary",
+  "tipSha256": "f92256730e2ef268c96b42bb2349e4768a1380221fd632e57f607d6938c650bf",
+  "tags": [
+   "spray",
+   "ring",
+   "outline"
+  ],
+  "params": {
+   "spacing": 0.08,
+   "roundness": 1,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.watercolor",
+  "single": "com.hereliesaz.azphalt.brush-watercolor-wet-on-wet",
+  "name": "Wet-on-Wet",
+  "path": "assets/watercolor-wet-on-wet.png",
+  "license": "CC0-1.0",
+  "tipSha256": "6eb422b4839bd2b636de01bed7cfaa61886412024de2c3e4e549446fd625e44c",
+  "tags": [
+   "watercolor",
+   "bloom",
+   "bleed"
+  ],
+  "params": {
+   "spacing": 0.1,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.watercolor",
+  "single": "com.hereliesaz.azphalt.brush-watercolor-wash-flat",
+  "name": "Wash Flat",
+  "path": "assets/watercolor-wash-flat.png",
+  "license": "LicenseRef-Proprietary",
+  "tipSha256": "eb9d1147247daade30780400520831360c3c2d9e0991bca5698f7eb9772b9397",
+  "tags": [
+   "watercolor",
+   "wash",
+   "flat"
+  ],
+  "params": {
+   "spacing": 0.12,
+   "angle": 0,
+   "roundness": 0.42,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.watercolor",
+  "single": "com.hereliesaz.azphalt.brush-watercolor-salt-texture",
+  "name": "Salt Texture",
+  "path": "assets/watercolor-salt-texture.png",
+  "license": "CC0-1.0",
+  "tipSha256": "3d5f64106b74ed6f8c7962c7b477072d45b8a4e1afcda54f53649dc01e61e534",
+  "tags": [
+   "watercolor",
+   "salt",
+   "texture"
+  ],
+  "params": {
+   "spacing": 0.1,
+   "roundness": 1,
+   "flowByPressure": false
+  },
+  "required": true
+ },
+ {
+  "pack": "com.hereliesaz.azphalt.pack.watercolor",
+  "single": "com.hereliesaz.azphalt.brush-watercolor-dry-edge-bleed",
+  "name": "Dry-Edge Bleed",
+  "path": "assets/watercolor-dry-edge-bleed.png",
+  "license": "CC0-1.0",
+  "tipSha256": "af97666d40b8a43b576e50cf6aaa6fa0863f954275350f0c60f8c596e563392f",
+  "tags": [
+   "watercolor",
+   "dry-edge",
+   "bleed"
+  ],
+  "params": {
+   "spacing": 0.09,
+   "roundness": 1,
+   "flowByPressure": true
+  },
+  "required": true
+ }
+]

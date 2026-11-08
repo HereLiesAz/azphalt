@@ -1,0 +1,128 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.ink-and-marker",
+  "name": "Ink & Marker",
+  "version": "2.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0 AND LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Six ink and marker tips — a flat chisel marker, a bold paint pen, a flattened sumi ink brush, a waxy china marker, plus a paw-print stamp and a pointed-triangle mark.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/chisel-marker.png",
+      "tags": [
+        "marker",
+        "chisel",
+        "hard-edge"
+      ],
+      "params": {
+        "name": "Chisel Marker",
+        "spacing": 0.03,
+        "angle": 0,
+        "roundness": 0.24,
+        "flowByPressure": false
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/paint-pen.png",
+      "tags": [
+        "marker",
+        "pen",
+        "opaque"
+      ],
+      "params": {
+        "name": "Paint Pen",
+        "spacing": 0.02,
+        "roundness": 1,
+        "flowByPressure": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/ink-sumi.png",
+      "tags": [
+        "ink",
+        "sumi",
+        "bristle"
+      ],
+      "params": {
+        "name": "Sumi Brush",
+        "spacing": 0.1,
+        "angle": 0,
+        "roundness": 0.36,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/china-marker.png",
+      "tags": [
+        "marker",
+        "wax",
+        "grease-pencil"
+      ],
+      "params": {
+        "name": "China Marker",
+        "spacing": 0.05,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/paw-print.png",
+      "tags": [
+        "paw",
+        "stamp",
+        "organic"
+      ],
+      "params": {
+        "name": "Paw Print",
+        "spacing": 0.15,
+        "roundness": 1,
+        "flowByPressure": false
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by Camille Bissuel (nylnook.art), from the Nylnook Krita Brushes Presets pack — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/pointed-triangle.png",
+      "tags": [
+        "triangle",
+        "stamp",
+        "geometric"
+      ],
+      "params": {
+        "name": "Pointed Triangle",
+        "spacing": 0.15,
+        "roundness": 1,
+        "flowByPressure": false
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by Camille Bissuel (nylnook.art), from the Nylnook Krita Brushes Presets pack — CC0 1.0",
+        "attributionRequired": false
+      }
+    }
+  ]
+}

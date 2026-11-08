@@ -1,0 +1,86 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.acrylic",
+  "name": "Acrylic",
+  "version": "2.0.0",
+  "kind": "asset",
+  "license": "LicenseRef-Proprietary AND CC0-1.0",
+  "compat": ">=0.1",
+  "description": "Four acrylic tips — a crisp flat, a classic soft round, a wide angular shader, and a porous sponge dab.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/acrylic-flat.png",
+      "tags": [
+        "acrylic",
+        "flat",
+        "hard-edge"
+      ],
+      "params": {
+        "name": "Flat",
+        "spacing": 0.04,
+        "angle": 0,
+        "roundness": 0.2,
+        "flowByPressure": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/acrylic-round.png",
+      "tags": [
+        "acrylic",
+        "round",
+        "soft"
+      ],
+      "params": {
+        "name": "Round",
+        "spacing": 0.04,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/acrylic-angular-shader.png",
+      "tags": [
+        "acrylic",
+        "shader",
+        "angular"
+      ],
+      "params": {
+        "name": "Angular Shader",
+        "spacing": 0.05,
+        "angle": 0,
+        "roundness": 0.32,
+        "flowByPressure": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/acrylic-sponge-dab.png",
+      "tags": [
+        "acrylic",
+        "sponge",
+        "dab"
+      ],
+      "params": {
+        "name": "Sponge Dab",
+        "spacing": 0.18,
+        "roundness": 1,
+        "flowByPressure": false
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.spray-kit",
+  "name": "Spray Kit",
+  "version": "2.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0 AND CC-BY-4.0 AND LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Four spray-can brush tips — wide fat cap, fine skinny cap, a soft atomizing fade, and a ring-shaped halo for outlines.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/spray-fat-cap.png",
+      "tags": [
+        "spray",
+        "wide",
+        "cloud"
+      ],
+      "params": {
+        "name": "Fat Cap",
+        "spacing": 0.02,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/spray-skinny-cap.png",
+      "tags": [
+        "spray",
+        "fine",
+        "line"
+      ],
+      "params": {
+        "name": "Skinny Cap",
+        "spacing": 0.015,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Chaos&Evolutions brush kit — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/spray-fade.png",
+      "tags": [
+        "spray",
+        "gradient",
+        "mist"
+      ],
+      "params": {
+        "name": "Fade",
+        "spacing": 0.1,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita 4 Extras brush preset pack (CC BY 4.0) — CC BY 4.0",
+        "attributionRequired": true
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/spray-halo.png",
+      "tags": [
+        "spray",
+        "ring",
+        "outline"
+      ],
+      "params": {
+        "name": "Halo",
+        "spacing": 0.08,
+        "roundness": 1,
+        "flowByPressure": false
+      }
+    }
+  ]
+}
