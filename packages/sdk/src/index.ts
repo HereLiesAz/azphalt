@@ -432,6 +432,24 @@ export interface PreviewRef {
   image?: string;
   /** An optional short clip for time-based packages (`transition` / `motion` / `video`) — path or `https:` URL. */
   clip?: string;
+  /**
+   * Rendered sample strokes — one entry per image, grouped by brush. Every brush in a brush pack gets at
+   * least one; a **kinetic** brush (one with a stroke program) gets several, each a different scenario
+   * (a speed, a held pen, a burst), so the card shows how it behaves over time, not just one line.
+   * Each image is a real render of the brush's own definition, never an icon.
+   * See `spec/repository-api.md` § Brush stroke previews.
+   */
+  strokes?: PreviewStroke[];
+}
+
+/** One rendered sample stroke of a brush. See {@link PreviewRef.strokes}. */
+export interface PreviewStroke {
+  /** The brush this stroke shows — its `params.name` in the manifest's `assets` list. */
+  brush: string;
+  /** A short human label for the scenario, e.g. `"swoop"`, `"hold 3 s"`, `"speed 30/14/6/2 w/s"`. */
+  label: string;
+  /** The rendered image — an in-package path or an `https:` / root-relative URL. */
+  image: string;
 }
 
 /**
