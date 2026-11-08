@@ -207,6 +207,37 @@ function PreviewCanvas({ pkg, tint, active }: { pkg: PackageSummary; tint: strin
   return <canvas ref={ref} style={{ width: "100%", height: "100%", display: "block" }} />;
 }
 
+/** A pack of surfaces (`spec/package-format.md` § Surface format): it lists at least one `surface` asset. */
+export const isSurfacePack = (p: PackageSummary) => (p.types ?? []).includes("surface");
+
+/** Filter category for packs of surfaces; not a media domain, so it is added beside them. */
+const SURFACES_CATEGORY = "surfaces";
+
+/**
+ * The front outline of each surface in a pack of surfaces, drawn from the surface's own profile data
+ * (tools/surface-previews.mjs), on a light tile so the stroke reads on any card colour.
+ */
+function SurfaceThumbs({ surfaces, size = 72, max }: { surfaces: { surface: string; image: string }[]; size?: number; max?: number }) {
+  const shown = max ? surfaces.slice(0, max) : surfaces;
+  return (
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      {shown.map((s) => (
+        <figure key={s.image} style={{ margin: 0, textAlign: "center" }}>
+          <img
+            src={s.image}
+            alt={`${s.surface} front outline`}
+            loading="lazy"
+            width={size}
+            height={size}
+            style={{ display: "block", borderRadius: 12, background: "rgba(255,255,255,0.9)" }}
+          />
+          {size >= 72 && <figcaption style={{ fontSize: 12.5, marginTop: 4 }}>{s.surface}</figcaption>}
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Rendered sample strokes of a brush pack: one row per brush, one image per scenario. A kinetic brush has
  * several (speeds, a held pen, bursts), so the row scrolls and snaps; a plain brush has a single stroke.
@@ -379,7 +410,13 @@ function PackageCard({
       style={{ width, height, background: container, color: on }}
     >
       <div style={{ position: "relative", flex: 1 }}>
-        <PreviewCanvas pkg={pkg} tint={on} active={active} />
+        {pkg.preview?.surfaces?.length ? (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 10 }}>
+            <SurfaceThumbs surfaces={pkg.preview.surfaces} size={56} max={3} />
+          </div>
+        ) : (
+          <PreviewCanvas pkg={pkg} tint={on} active={active} />
+        )}
         <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: 10 }}>
           <div style={{ display: "flex", gap: 6 }}>
             <Pill text={pkg.kind.toUpperCase()} bg={rgba(on, 0.16)} fg={on} />
@@ -436,6 +473,7 @@ function buildSections(packages: PackageSummary[]): CatalogSection[] {
     "Recently published and updated",
     packages.filter((p) => p.updatedAt).sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "")),
   );
+  add("Surfaces", "Ready-made 3D shapes to paint on", packages.filter(isSurfacePack).sort(byDownloads));
   for (const c of [...new Set(packages.flatMap((p) => p.mediaDomains ?? []))].sort()) {
     add(c[0].toUpperCase() + c.slice(1), undefined, packages.filter((p) => (p.mediaDomains ?? []).includes(c)).sort(byDownloads));
   }
@@ -658,6 +696,12 @@ function Detail({
         </div>
       )}
       {pkg.preview?.strokes && pkg.preview.strokes.length > 0 && <StrokePreviews strokes={pkg.preview.strokes} />}
+      {pkg.preview?.surfaces && pkg.preview.surfaces.length > 0 && (
+        <section aria-label="Surfaces in this pack" style={{ marginTop: 28 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px" }}>Surfaces</h3>
+          <SurfaceThumbs surfaces={pkg.preview.surfaces} size={96} />
+        </section>
+      )}
       {pkg.llm && <LlmDisclosure llm={pkg.llm} />}
       {(pkg.targetApps ?? []).length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 16 }}>
@@ -850,7 +894,10 @@ function StorefrontApp() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(load, []);
 
-  const categories = useMemo(() => [...new Set(packages.flatMap((p) => p.mediaDomains ?? []))].sort(), [packages]);
+  const categories = useMemo(
+    () => [...new Set([...packages.flatMap((p) => p.mediaDomains ?? []), ...(packages.some(isSurfacePack) ? [SURFACES_CATEGORY] : [])])].sort(),
+    [packages],
+  );
   const apps = useMemo(() => [...new Set(packages.flatMap((p) => p.targetApps ?? []))].sort(), [packages]);
   const sections = useMemo(() => buildSections(packages), [packages]);
 
@@ -860,7 +907,7 @@ function StorefrontApp() {
     const filtered = packages.filter((p) => {
       const matchesQuery = !q || [p.name, p.description ?? "", p.author ?? "", p.id].some((s) => s.toLowerCase().includes(q));
       const matchesPrice = price === 1 ? !isPaid(p) : price === 2 ? isPaid(p) : true;
-      const matchesCat = !category || (p.mediaDomains ?? []).includes(category);
+      const matchesCat = !category || (category === SURFACES_CATEGORY ? isSurfacePack(p) : (p.mediaDomains ?? []).includes(category));
       const matchesApp = !app || (p.targetApps ?? []).length === 0 || (p.targetApps ?? []).includes(app);
       // `removed` is kept rather than deleted so a reinstall can be offered, so "have it" is a
       // question about the state and not about the key being present — hence `isHeld`, not `in`.

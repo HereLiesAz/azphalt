@@ -20,10 +20,13 @@ const previews = previewsDoc.previews ?? {};
 // Rendered brush strokes (tools/brush-previews.mjs): merged into `preview.strokes` for brush packs.
 const { readIndex, strokesForPack } = await import("../../../tools/brush-previews.mjs");
 const brushIndex = readIndex();
+// Surface outlines (tools/surface-previews.mjs): merged into `preview.surfaces` for packs of surfaces.
+const { readIndex: readSurfaceIndex, surfacesForPack } = await import("../../../tools/surface-previews.mjs");
+const surfaceIndex = readSurfaceIndex();
 
 /** The preview with `strokes` added when the package has rendered brush strokes; otherwise unchanged. */
-function withStrokes(preview, strokes) {
-  return strokes ? { ...(preview ?? {}), strokes } : preview;
+function withStrokes(preview, strokes, surfaces) {
+  return strokes || surfaces ? { ...(preview ?? {}), ...(strokes ? { strokes } : {}), ...(surfaces ? { surfaces } : {}) } : preview;
 }
 
 const packages = [];
@@ -41,14 +44,14 @@ for (const item of generated.packages ?? []) {
     capabilities: manifest.capabilities ?? [],
     targetApps: manifest.targetApps ?? [],
     mediaDomains: mediaDomainsForManifest(manifest),
-    types: manifest.types ?? [],
+    types: [...new Set((manifest.assets ?? []).map((a) => a.type))],
     maturity: manifest.maturity ?? "general",
     app: manifest.app,
     pack: manifest.pack,
     llm: manifest.llm,
     ...(manifest.kind === "font" && manifest.font ? { font: toFontSummary(manifest.font) } : {}),
     manifest,
-    preview: withStrokes(previews[manifest.id] ?? manifest.preview, strokesForPack(brushIndex, manifest.id)),
+    preview: withStrokes(previews[manifest.id] ?? manifest.preview, strokesForPack(brushIndex, manifest.id), surfacesForPack(surfaceIndex, manifest.id)),
     integrity: item.integrity,
     // The digest of the exact file the Worker streams (signed, so unlike `integrity`); the Worker
     // refuses a full download whose bytes do not hash to it.

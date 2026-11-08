@@ -1,0 +1,42 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.surfaces.blocks",
+  "name": "Surfaces: Blocks",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0",
+  "compat": ">=0.1",
+  "description": "Two solid surfaces carved from straight and circular outlines: a thick slab and a round column.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "surface",
+      "path": "assets/slab.json",
+      "tags": [
+        "surfaces",
+        "slab",
+        "box",
+        "wall"
+      ],
+      "params": {
+        "name": "Slab"
+      }
+    },
+    {
+      "type": "surface",
+      "path": "assets/column.json",
+      "tags": [
+        "surfaces",
+        "column",
+        "cylinder",
+        "pillar"
+      ],
+      "params": {
+        "name": "Column"
+      }
+    }
+  ]
+}

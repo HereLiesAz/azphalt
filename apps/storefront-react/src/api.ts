@@ -22,7 +22,7 @@ export interface PackageSummary {
   updatedAt?: string;
   targetApps?: string[];
   /** Static store-card preview (`spec/repository-api.md` § Static previews). `strokes` are rendered brush samples. */
-  preview?: { image?: string; clip?: string; strokes?: { brush: string; label: string; image: string }[] };
+  preview?: { image?: string; clip?: string; strokes?: { brush: string; label: string; image: string }[]; surfaces?: { surface: string; image: string }[] };
   mediaDomains?: string[];
   types?: string[];
   /** Developer content-maturity self-attestation: "general" (default) or "mature" (18+). */

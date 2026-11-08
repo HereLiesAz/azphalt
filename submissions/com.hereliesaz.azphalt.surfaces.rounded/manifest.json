@@ -1,0 +1,42 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.surfaces.rounded",
+  "name": "Surfaces: Rounded",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0",
+  "compat": ">=0.1",
+  "description": "A rippling curtain (one front curve, no depth drawn) and an orb carved from three circular outlines, so it is round-ish with soft edges rather than a true sphere.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "surface",
+      "path": "assets/wave.json",
+      "tags": [
+        "surfaces",
+        "wave",
+        "sheet",
+        "curtain"
+      ],
+      "params": {
+        "name": "Wave"
+      }
+    },
+    {
+      "type": "surface",
+      "path": "assets/orb.json",
+      "tags": [
+        "surfaces",
+        "orb",
+        "round",
+        "carved"
+      ],
+      "params": {
+        "name": "Orb"
+      }
+    }
+  ]
+}

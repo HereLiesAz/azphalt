@@ -43,6 +43,9 @@ export type AssetType =
   // Reusable video/graphic-catalog assets: a title/lower-third `template` and a compositing `overlay`
   // (PNG or animated). They join `transition`, `motion`, `video`, `audio`, `font` as the temporal catalog.
   | "template" | "overlay"
+  // A ready-made 3D surface: front/side/top profile curves only (no pixels, no paint). Wire format:
+  // `spec/package-format.md` § Surface format. Listed as a pack of surfaces (`kind:"asset"`).
+  | "surface"
   | "tflite" | "litert" | "onnx" | "sherpa-bundle" | "model" | "task" | "vosk-bundle";
 
 export interface AssetContribution {
@@ -440,6 +443,19 @@ export interface PreviewRef {
    * See `spec/repository-api.md` § Brush stroke previews.
    */
   strokes?: PreviewStroke[];
+  /**
+   * Front-profile outlines of the surfaces in a pack of surfaces — one entry per surface, drawn from the
+   * surface's own profile data (never a hand-made icon). See `spec/repository-api.md` § Surface previews.
+   */
+  surfaces?: PreviewSurface[];
+}
+
+/** One surface's rendered front outline. See {@link PreviewRef.surfaces}. */
+export interface PreviewSurface {
+  /** The surface this outline shows — its `params.name` in the manifest's `assets` list. */
+  surface: string;
+  /** The outline image (SVG) — a root-relative or `https:` URL. */
+  image: string;
 }
 
 /** One rendered sample stroke of a brush. See {@link PreviewRef.strokes}. */

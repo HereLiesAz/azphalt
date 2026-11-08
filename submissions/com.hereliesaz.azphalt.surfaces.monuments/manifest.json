@@ -1,0 +1,41 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.surfaces.monuments",
+  "name": "Surfaces: Monuments",
+  "version": "1.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0",
+  "compat": ">=0.1",
+  "description": "A four-sided pyramid and a wall with an arched doorway, each carved from its front, side and top outlines.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "surface",
+      "path": "assets/pyramid.json",
+      "tags": [
+        "surfaces",
+        "pyramid",
+        "roof"
+      ],
+      "params": {
+        "name": "Pyramid"
+      }
+    },
+    {
+      "type": "surface",
+      "path": "assets/arch.json",
+      "tags": [
+        "surfaces",
+        "arch",
+        "doorway",
+        "wall"
+      ],
+      "params": {
+        "name": "Arch"
+      }
+    }
+  ]
+}

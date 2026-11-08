@@ -58,6 +58,7 @@ const ASSET_DOMAINS: Record<AssetType, MediaDomain[]> = {
   hdri: ["3d"], motion: ["video"], palette: ["image"], image: ["image"], video: ["video"],
   font: ["font"], audio: ["audio"], vector: ["image"],
   template: ["image", "video"], overlay: ["image", "video"],
+  surface: ["3d"],
   tflite: ["model"],
   litert: ["model"],
   onnx: ["model"],
