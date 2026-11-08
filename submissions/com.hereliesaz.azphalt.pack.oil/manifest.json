@@ -1,0 +1,90 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.oil",
+  "name": "Oil",
+  "version": "2.0.0",
+  "kind": "asset",
+  "license": "CC-BY-4.0 AND LicenseRef-Proprietary AND CC0-1.0",
+  "compat": ">=0.1",
+  "description": "Four oil-painting tips — a soft filbert, a thin palette knife, a radiating fan blade, and a broken-texture bristle drybrush.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/oil-filbert.png",
+      "tags": [
+        "oil",
+        "filbert",
+        "soft-edge"
+      ],
+      "params": {
+        "name": "Filbert",
+        "spacing": 0.06,
+        "angle": 0,
+        "roundness": 0.68,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita 4 Extras brush preset pack (CC BY 4.0) — CC BY 4.0",
+        "attributionRequired": true
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/oil-palette-knife.png",
+      "tags": [
+        "oil",
+        "knife",
+        "hard-edge"
+      ],
+      "params": {
+        "name": "Palette Knife",
+        "spacing": 0.12,
+        "angle": 0,
+        "roundness": 0.14,
+        "flowByPressure": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/oil-fan-blade.png",
+      "tags": [
+        "oil",
+        "fan",
+        "streak"
+      ],
+      "params": {
+        "name": "Fan Blade",
+        "spacing": 0.1,
+        "roundness": 1,
+        "flowByPressure": false
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita 4 Extras brush preset pack (CC BY 4.0) — CC BY 4.0",
+        "attributionRequired": true
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/oil-bristle-drybrush.png",
+      "tags": [
+        "oil",
+        "dry-brush",
+        "bristle"
+      ],
+      "params": {
+        "name": "Bristle Drybrush",
+        "spacing": 0.05,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    }
+  ]
+}

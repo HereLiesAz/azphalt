@@ -1,0 +1,68 @@
+Watercolor — per-brush licensing
+
+This package bundles 4 brush tips that were previously published as separate
+packages. Each tip keeps the licence it was published under; the manifest's `license` field lists
+every licence present. The text of each tip's licence follows, verbatim except that the tip's path
+is its path in this package. A tip's own terms apply to that tip alone.
+
+==============================================================================
+Wet-on-Wet  (assets/watercolor-wet-on-wet.png)  —  CC0-1.0
+==============================================================================
+
+CC0 1.0 Universal (Public Domain Dedication)
+
+The brush tip bitmap in this package (assets/watercolor-wet-on-wet.png) is dedicated to the public
+domain under the CC0 1.0 Universal license:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle.
+Converted from the source bitmap: inverted to a grayscale-alpha PNG and packaged
+as an azphalt brush asset. No other changes were made to the artwork.
+
+The manifest, packaging code, and this LICENSE file are
+Copyright (c) 2026 HereLiesAz. All rights reserved.
+
+==============================================================================
+Wash Flat  (assets/watercolor-wash-flat.png)  —  LicenseRef-Proprietary
+==============================================================================
+
+Copyright (c) 2026 HereLiesAz
+
+All rights reserved.
+
+No permission is granted to use, copy, modify, or distribute this work or any
+part of it, except under a separate written agreement with the copyright holder.
+
+==============================================================================
+Salt Texture  (assets/watercolor-salt-texture.png)  —  CC0-1.0
+==============================================================================
+
+CC0 1.0 Universal (Public Domain Dedication)
+
+The brush tip bitmap in this package (assets/watercolor-salt-texture.png) is dedicated to the public
+domain under the CC0 1.0 Universal license:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Tip artwork by David Revoy (davidrevoy.com), from the Chaos&Evolutions brush kit.
+Converted from the source bitmap: inverted to a grayscale-alpha PNG and packaged
+as an azphalt brush asset. No other changes were made to the artwork.
+
+The manifest, packaging code, and this LICENSE file are
+Copyright (c) 2026 HereLiesAz. All rights reserved.
+
+==============================================================================
+Dry-Edge Bleed  (assets/watercolor-dry-edge-bleed.png)  —  CC0-1.0
+==============================================================================
+
+CC0 1.0 Universal (Public Domain Dedication)
+
+The brush tip bitmap in this package (assets/watercolor-dry-edge-bleed.png) is dedicated to the public
+domain under the CC0 1.0 Universal license:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle.
+Converted from the source bitmap: inverted to a grayscale-alpha PNG and packaged
+as an azphalt brush asset. No other changes were made to the artwork.
+
+The manifest, packaging code, and this LICENSE file are
+Copyright (c) 2026 HereLiesAz. All rights reserved.

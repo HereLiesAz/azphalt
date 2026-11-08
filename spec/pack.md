@@ -19,6 +19,16 @@ free to publish even when it recommends a paid extension, and money still lives 
 listing. Nothing about packs widens the moat: a pack has no `/code`, no `capabilities`, no assets — it
 is inert metadata until a host resolves its members.
 
+## Pack, or one asset package?
+
+Use a **pack** to curate packages that already exist, especially other authors' (a pack never carries
+their bytes or their licence). If you are shipping a set of **your own** assets — several brushes, say —
+and want it to install as one self-contained unit, don't write a pack of single-asset packages: publish
+one `kind: "asset"` package whose `assets[]` lists every brush with its tip image
+(`submissions/com.hereliesaz.azphalt.brushes.street-kit` is the shape). It installs offline, has no
+members to go missing, and a host needs no pack resolution. Name each brush with `params.name`; give
+each tip its own `contentRights` when the licences differ.
+
 ## The package (`kind: "pack"`)
 
 A normal signed `.azp` whose `kind` is `"pack"`. It carries **no `/code` payload**, **no

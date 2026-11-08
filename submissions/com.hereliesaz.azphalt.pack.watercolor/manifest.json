@@ -1,0 +1,89 @@
+{
+  "azphalt": "0.1",
+  "id": "com.hereliesaz.azphalt.pack.watercolor",
+  "name": "Watercolor",
+  "version": "2.0.0",
+  "kind": "asset",
+  "license": "CC0-1.0 AND LicenseRef-Proprietary",
+  "compat": ">=0.1",
+  "description": "Four watercolor tips — a wet-on-wet bloom, a blotchy wash flat, a granular salt texture, and a wispy dry-edge bleed.",
+  "author": "HereLiesAz",
+  "targetApps": [
+    "com.hereliesaz.graffux"
+  ],
+  "assets": [
+    {
+      "type": "brush",
+      "path": "assets/watercolor-wet-on-wet.png",
+      "tags": [
+        "watercolor",
+        "bloom",
+        "bleed"
+      ],
+      "params": {
+        "name": "Wet-on-Wet",
+        "spacing": 0.1,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/watercolor-wash-flat.png",
+      "tags": [
+        "watercolor",
+        "wash",
+        "flat"
+      ],
+      "params": {
+        "name": "Wash Flat",
+        "spacing": 0.12,
+        "angle": 0,
+        "roundness": 0.42,
+        "flowByPressure": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/watercolor-salt-texture.png",
+      "tags": [
+        "watercolor",
+        "salt",
+        "texture"
+      ],
+      "params": {
+        "name": "Salt Texture",
+        "spacing": 0.1,
+        "roundness": 1,
+        "flowByPressure": false
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Chaos&Evolutions brush kit — CC0 1.0",
+        "attributionRequired": false
+      }
+    },
+    {
+      "type": "brush",
+      "path": "assets/watercolor-dry-edge-bleed.png",
+      "tags": [
+        "watercolor",
+        "dry-edge",
+        "bleed"
+      ],
+      "params": {
+        "name": "Dry-Edge Bleed",
+        "spacing": 0.09,
+        "roundness": 1,
+        "flowByPressure": true
+      },
+      "contentRights": {
+        "attribution": "Tip artwork by David Revoy (davidrevoy.com), from the Krita brushes 2025-01 bundle — CC0 1.0",
+        "attributionRequired": false
+      }
+    }
+  ]
+}
