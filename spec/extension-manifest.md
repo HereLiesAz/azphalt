@@ -42,7 +42,7 @@
 
 ## `assets`
 Each entry requires a `type`, which determines the format of the asset. The supported primitives are:
-- **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector` | `template` | `overlay`
+- **Traditional**: `brush` | `lut` | `pattern` | `stamp` | `shader` | `transition` | `mesh` | `material` | `hdri` | `motion` | `palette` | `image` | `video` | `font` | `audio` | `vector` | `template` | `overlay` | `surface`
 - **AI Models**: `tflite` | `litert` | `onnx` | `sherpa-bundle` | `model` | `task` | `vosk-bundle` (`model` = a generic/other on-device model; `task` = a TFLite Task-Library bundle; `vosk-bundle` = a Vosk speech model directory — all multi-file bundles like `sherpa-bundle`)
 
 The SDK `AssetType` union (`packages/sdk/src/index.ts`) is the single source of truth for this list; the registry's media-domain map is kept total over it. The **wire format** each `type` delivers (SVG for `vector`, glTF for `mesh`, the `palette` JSON schema, …) is pinned in `package-format.md § Assets`.
@@ -123,6 +123,7 @@ An asset-only host MUST select assets where `standalone !== false` and skip the 
 | `brush` | `spacing` / `angle` / `roundness` | numbers (engine-defined ranges) | user |
 | `overlay` | `opacity` / `anchor` / `scale` | `0..1` (`1`) / `top-left`…`center`…`bottom-right` / number | user |
 | `template` | `fields` / `safeArea` | named text slots / inset rect | user / author |
+| `surface` | `name` | string, 1..64 characters; MUST equal the payload's own `name` | author |
 
 The LUT application semantics behind `strength` / `inputTransfer` (interpolation floor, input-transfer conversion, clamp, alpha) are pinned in [package-format.md § LUT application](package-format.md#lut-application).
 

@@ -4,6 +4,7 @@
  * package; {@link signAzp} adds an Ed25519 `signature.json`, and {@link verifyAzp} validates it
  * when present. A signature is tamper-evidence, not identity, until the trust model is settled.
  */
+import { validateSurfaceAssets } from "./surface.js";
 import { zipSync, strToU8, strFromU8 } from "fflate";
 import { createHash, createPublicKey, verify as cryptoVerify } from "node:crypto";
 import type { Manifest } from "@azphalt/azdk";
@@ -245,6 +246,8 @@ export function verifyAzp(bytes: Uint8Array): VerifyResult {
     workflow: validateWorkflowManifest,
     role: validateRoleManifest,
     llm: validateLlmManifest,
+    asset: validateSurfaceAssets,
+    mixed: validateSurfaceAssets,
   };
   const validate = kindValidators[manifest.kind];
   if (validate) {
@@ -306,3 +309,4 @@ export { validateComposableManifest } from "./composable.js";
 export { validateWorkflowManifest } from "./workflow.js";
 export { validateRoleManifest } from "./role.js";
 export { validateLlmManifest } from "./llm.js";
+export * from "./surface.js";

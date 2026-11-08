@@ -82,6 +82,7 @@ Each asset `type` (defined in `extension-manifest.md § assets`) pins the byte f
 | `motion` | **JSON** keyframe/animation preset — host-neutral, keys per `extension-manifest.md` `params` conventions |
 | `palette` | **JSON** — see [§ Palette format](#palette-format) |
 | `overlay` | **PNG** (or APNG / animated WebP) |
+| `surface` | **JSON** — see [§ Surface format](#surface-format) |
 | `template` | **JSON** layout referencing bundled `image`/`vector` assets, with fillable slots under `params` |
 | `tflite`, `litert`, `onnx`, `sherpa-bundle` | the model's **native** file(s) (`.tflite` / `.onnx` / …); large or multi-part models use the remote-asset / multi-file patterns in `extension-manifest.md § assets` |
 
@@ -107,6 +108,29 @@ A `palette` asset (`type: "palette"`) is a UTF-8 **JSON** file under `/assets`. 
   - `brand`, `sku`, `finish` — OPTIONAL **colorant metadata** mapping the swatch to a physical product (e.g. a spray-paint can). `finish` is an open vocabulary; blessed values: `matte` · `satin` · `gloss` · `metallic` · `fluorescent`. A host ignores keys it doesn't understand.
 
 This lets the ecosystem distribute brand-accurate color sets (Montana, MTN, …) as portable `.azp` packages a host can match against real colorants.
+
+### Surface format
+A `surface` asset (`type: "surface"`) is a ready-made 3D shape: up to three profile curves and nothing else. It carries **no** depth image, texture or paint, so it is pure parametric data. A host inserts it as a new editable 3D surface (Graffux: a new group). It is listed as a **pack of surfaces**: an ordinary `kind: "asset"` package whose `assets[]` are `surface` entries (no new listing kind).
+
+A UTF-8 JSON file under `/assets`, bundled in the archive (never `remoteUrl`), named `*.json`:
+
+~~~json
+{
+  "format": "azphalt.surface",
+  "version": 1,
+  "name": "Column",
+  "front": [[0.3, 0.05], [0.7, 0.05], [0.7, 0.95], [0.3, 0.95]],
+  "side":  [[0, 0.05], [0.4, 0.05], [0.4, 0.95], [0, 0.95]],
+  "top":   [[0.7, 0.2], [0.66, 0.08], [0.5, 0], [0.34, 0.08], [0.3, 0.2]]
+}
+~~~
+
+- Coordinates are in the **unit box** `[0, 1]³`: `x` right, `y` **down**, `z` away from the viewer, the front of the shape at `z = 0`. A host scales the box uniformly to fit its canvas, so proportions are kept.
+- `front` (REQUIRED) is a list of `[x, y]` points; `side` (OPTIONAL) `[z, y]`; `top` (OPTIONAL) `[x, z]`. An undrawn view does not constrain the shape.
+- Each view is an ordered polyline of 2 to 256 points. A view that **encloses area** (three or more points whose polygon, closed last-to-first, has an area of at least `1e-5` of its squared perimeter) is an outline; the surface is the solid that every drawn outline allows when swept straight through the box, like carving by silhouettes. An open curve (a wave) is a thin sheet. A shape the silhouettes cannot express (a true sphere or cone) is not representable; use the closest carving and say so in the description.
+- `name` is 1 to 64 characters with no control characters. The manifest entry's `params.name` MUST equal it, names are unique within a package, and a package lists at most 32 surfaces.
+
+**Strict validation (normative; untrusted input).** A host and a registry MUST reject the file when: it is over 65 536 bytes or not valid UTF-8 or JSON; it nests deeper than 4 levels (checked before parsing); it repeats an object key; it is not an object or has a key other than `format`, `version`, `name`, `front`, `side`, `top`; `format` is not `"azphalt.surface"` or `version` is not the integer `1`; `front` is missing; a view has fewer than 2 or more than 256 points, a point that is not a pair of JSON numbers, a non-finite number or one outside `[0, 1]`, or a total length under `0.01`. A future version is a new, separately specified format, never a lenient read of this one. Reference implementation: `@azphalt/azp` `parseSurface` (also run by `verifyAzp`, so a publish with a bad surface fails); Graffux implements the same rules.
 
 ### LUT application
 A `.cube` file carries only a table plus `DOMAIN_MIN`/`DOMAIN_MAX`; it says nothing about *how* to sample it, so two hosts can produce a visibly different grade from identical bytes. To make a LUT a portable **look**, a host applying a `lut` asset MUST:

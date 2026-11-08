@@ -295,4 +295,20 @@ describe("submit-check", () => {
     expect(r.errors.join("\n")).toMatch(/must not declare capabilities/);
     rmSync(dir, { recursive: true, force: true });
   });
+
+  it("rejects a surface pack whose payload is malformed, and accepts a good one", () => {
+    const manifest = JSON.stringify({
+      azphalt: "0.1", id: "com.you.surf", name: "Surf", version: "1.0.0", kind: "asset", license: "CC0-1.0",
+      compat: ">=0.1", assets: [{ type: "surface", path: "assets/s.json", params: { name: "S" } }],
+    });
+    const good = JSON.stringify({ format: "azphalt.surface", version: 1, name: "S", front: [[0, 0], [1, 1]] });
+    const ok = validateSubmission(makeSubmission("com.you.surf", { "manifest.json": manifest, LICENSE: "CC0\n", "assets/s.json": good }));
+    expect(ok.errors).toEqual([]);
+    const bad = validateSubmission(makeSubmission("com.you.surf", {
+      "manifest.json": manifest, LICENSE: "CC0\n",
+      "assets/s.json": good.replace('[1,1]', '[9,1]').replace("[1, 1]", "[9,1]").replace('"front":[[0,0],[1,1]]', '"front":[[0,0],[9,1]]'),
+    }));
+    expect(bad.ok).toBe(false);
+    expect(bad.errors.join()).toMatch(/unit box/);
+  });
 });
