@@ -2038,6 +2038,39 @@
       "bytes": 1325
     },
     {
+      "id": "com.hereliesaz.azphalt.surfaces.blocks",
+      "version": "1.0.0",
+      "name": "Surfaces: Blocks",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-GNIxb5Ml4uhQg2JJT85Qmed5tcMtBSzlK0fWQ5sSNcA=",
+      "file": "com.hereliesaz.azphalt.surfaces.blocks-1.0.0.azp",
+      "bytes": 1868
+    },
+    {
+      "id": "com.hereliesaz.azphalt.surfaces.monuments",
+      "version": "1.0.0",
+      "name": "Surfaces: Monuments",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-LtA8yftiGxmmmOYHXH7UjZwmWL2oZZ5ubtcr6gL+Dts=",
+      "file": "com.hereliesaz.azphalt.surfaces.monuments-1.0.0.azp",
+      "bytes": 1926
+    },
+    {
+      "id": "com.hereliesaz.azphalt.surfaces.rounded",
+      "version": "1.0.0",
+      "name": "Surfaces: Rounded",
+      "kind": "asset",
+      "repo": "(local)",
+      "ref": "(local)",
+      "integrity": "sha256-eK55e1UQM7t27yl6d6m9EPhAiolMC/XYJgFN9wuYIOM=",
+      "file": "com.hereliesaz.azphalt.surfaces.rounded-1.0.0.azp",
+      "bytes": 2048
+    },
+    {
       "id": "com.hereliesaz.azphalt.terrain-puddle",
       "version": "1.0.0",
       "name": "Terrain Puddle Reflection",
