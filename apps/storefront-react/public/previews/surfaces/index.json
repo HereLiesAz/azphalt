@@ -4,13 +4,13 @@
     "com.hereliesaz.azphalt.surfaces.blocks": [
       {
         "surface": "Slab",
-        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.blocks/slab.svg",
+        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.blocks/slab-1b58130d.svg",
         "payloadDigest": "993be6323046ffbceb36c9b44c9952d73630136d3333bae0f9cb09125cc15fef",
         "imageDigest": "04916dbd8534d07017eac539eb1f029180f6a6a9eafa78286b6dbd9b8140f276"
       },
       {
         "surface": "Column",
-        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.blocks/column.svg",
+        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.blocks/column-7e6b447f.svg",
         "payloadDigest": "53f16c04c0014c38dbaeb253c915995631d58668928c4c07b82cbd6c1bcdf648",
         "imageDigest": "dca30a966eb2e54855c02738f92ab1991a30a06ea73ce130d52b2c5124a6bbf1"
       }
@@ -18,13 +18,13 @@
     "com.hereliesaz.azphalt.surfaces.monuments": [
       {
         "surface": "Pyramid",
-        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.monuments/pyramid.svg",
+        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.monuments/pyramid-01e08aee.svg",
         "payloadDigest": "f9ed51bad89b0c91a119c5702b03a5ed8ac59e7349750d4da927a2c5ca3ee8ab",
         "imageDigest": "b9f3edf0c3c047b638ea3a09c5a829c655db2586f308a1b396819e5f11d6f01f"
       },
       {
         "surface": "Arch",
-        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.monuments/arch.svg",
+        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.monuments/arch-30afb290.svg",
         "payloadDigest": "1b115121e020e3a07ec880be42d672e07ea9d39b2e21ad8f289e527649cbb2a8",
         "imageDigest": "726fb5ca0feadaf90f7563e2064ae4662ba35c632c555e4f9321c4fb4b094ae5"
       }
@@ -32,13 +32,13 @@
     "com.hereliesaz.azphalt.surfaces.rounded": [
       {
         "surface": "Wave",
-        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.rounded/wave.svg",
+        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.rounded/wave-8e4e9fef.svg",
         "payloadDigest": "1eed3df80e4514a12d45d68f82f1ed67d74d7c4f2bf0ae26c97b7b87fa7cf7ff",
         "imageDigest": "88a7b6373998826fd18eeca469a802b48b54c58c92736374cdab2890f5094c70"
       },
       {
         "surface": "Orb",
-        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.rounded/orb.svg",
+        "image": "/previews/surfaces/com.hereliesaz.azphalt.surfaces.rounded/orb-39812076.svg",
         "payloadDigest": "6baaa174cdd8da3dd57a2e10a4d5e9cbf097ebdbac6aab0244c02021836327be",
         "imageDigest": "bbcd2eb5d983dc5272242b9192f4c5888a2cbd386db979505b3671d2dcdde5b5"
       }

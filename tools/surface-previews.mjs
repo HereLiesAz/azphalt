@@ -68,7 +68,9 @@ export function listSurfaces(submissionsDir = DEFAULTS.submissionsDir) {
   return out;
 }
 
-const imageFor = (s, urlBase) => `${urlBase}/${s.packId}/${slug(s.assetPath.replace(/^.*\//, "").replace(/\.[^.]+$/, ""))}.svg`;
+/** Unique per asset path: the slug is for people, the digest of the full path keeps `a/x.json` and `b/x.json` apart. */
+const imageFor = (s, urlBase) =>
+  `${urlBase}/${s.packId}/${slug(s.assetPath.replace(/^.*\//, "").replace(/\.[^.]+$/, ""))}-${sha256(s.assetPath).slice(0, 8)}.svg`;
 
 export function buildPreviews(submissionsDir = DEFAULTS.submissionsDir, urlBase = DEFAULTS.urlBase) {
   const files = new Map();
@@ -99,6 +101,12 @@ export function readIndex(previewsDir = DEFAULTS.previewsDir) {
   return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : { schema: INDEX_SCHEMA, packs: {} };
 }
 
+function listSvgs(dir, prefix = "") {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? listSvgs(join(dir, e.name), prefix + e.name + "/") : e.name.endsWith(".svg") ? [prefix + e.name] : []);
+}
+
 /** Problems, as strings; empty means every surface has a current preview and nothing else is indexed. */
 export function checkPreviews({ submissionsDir = DEFAULTS.submissionsDir, previewsDir = DEFAULTS.previewsDir } = {}) {
   const errors = [];
@@ -116,6 +124,14 @@ export function checkPreviews({ submissionsDir = DEFAULTS.submissionsDir, previe
       else if (sha256(readFileSync(file, "utf8")) !== e.imageDigest) errors.push(`${pack} / ${e.surface}: ${e.image} does not match its surface`);
     }
   }
+  // Both directions: an indexed entry the package no longer has would keep being advertised by the catalog.
+  for (const [pack, have] of Object.entries(index.packs ?? {})) {
+    const names = new Set((want.packs[pack] ?? []).map((e) => e.image));
+    for (const h of have) if (!names.has(h.image)) errors.push(`${pack} / ${h.surface}: indexed but no longer in the package`);
+  }
+  // ...and no SVG on disk that no surface uses.
+  const used = new Set(Object.values(want.packs).flat().map((e) => e.image.slice(DEFAULTS.urlBase.length + 1)));
+  for (const rel of listSvgs(previewsDir)) if (!used.has(rel)) errors.push(`${rel} is not used by any surface`);
   for (const pack of Object.keys(index.packs ?? {})) if (!want.packs[pack]) errors.push(`${pack}: indexed but no such surface pack`);
   return errors;
 }

@@ -1,7 +1,7 @@
 // Tests for tools/surface-previews.mjs and tools/gen-surfaces.mjs. Run with `node --test "tools/*.test.mjs"`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { build } from "./gen-surfaces.mjs";
@@ -46,7 +46,8 @@ test("write then check is clean and deterministic; a changed surface makes its p
 test("a missing preview file or a tampered SVG is reported", () => {
   const f = fixture();
   writePreviews(f.opts);
-  const svg = join(f.opts.previewsDir, "com.hereliesaz.azphalt.surfaces.blocks/column.svg");
+  const col = readIndex(f.opts.previewsDir).packs["com.hereliesaz.azphalt.surfaces.blocks"].find((e) => e.surface === "Column");
+  const svg = join(f.opts.previewsDir, col.image.slice("/previews/surfaces/".length));
   writeFileSync(svg, "<svg/>");
   assert.match(checkPreviews(f.opts).join("\n"), /Column.*does not match/);
   rmSync(svg);
@@ -66,4 +67,50 @@ test("surfacesForPack returns surface and image only", () => {
   assert.deepEqual(s.map((x) => x.surface), ["Slab", "Column"]);
   assert.deepEqual(Object.keys(s[0]).sort(), ["image", "surface"]);
   assert.equal(surfacesForPack(readIndex(), "nope"), undefined);
+});
+
+test("an obsolete indexed entry or a leftover SVG fails until previews are regenerated", () => {
+  const f = fixture();
+  writePreviews(f.opts);
+  const pack = "com.hereliesaz.azphalt.surfaces.blocks";
+  // Column leaves the package; its preview and index entry are still there.
+  const mp = join(f.opts.submissionsDir, pack, "manifest.json");
+  const m = JSON.parse(readFileSync(mp, "utf8"));
+  m.assets = m.assets.filter((a) => a.params.name !== "Column");
+  writeFileSync(mp, JSON.stringify(m));
+  const errs = checkPreviews(f.opts).join("\n");
+  assert.match(errs, /Column: indexed but no longer in the package/);
+  assert.match(errs, /column.*\.svg is not used by any surface/);
+  writePreviews(f.opts);
+  assert.deepEqual(checkPreviews(f.opts), []);
+  assert.deepEqual(surfacesForPack(readIndex(f.opts.previewsDir), pack).map((s) => s.surface), ["Slab"]);
+  rmSync(f.dir, { recursive: true });
+});
+
+test("same basename in different directories gets distinct previews", () => {
+  const f = fixture();
+  const pack = "com.hereliesaz.azphalt.surfaces.blocks";
+  const dir = join(f.opts.submissionsDir, pack);
+  const mp = join(dir, "manifest.json");
+  const m = JSON.parse(readFileSync(mp, "utf8"));
+  mkdirSync(join(dir, "assets/a"), { recursive: true });
+  mkdirSync(join(dir, "assets/b"), { recursive: true });
+  const base = JSON.parse(readFileSync(join(dir, "assets/slab.json"), "utf8"));
+  writeFileSync(join(dir, "assets/a/shape.json"), JSON.stringify({ ...base, name: "A" }));
+  writeFileSync(join(dir, "assets/b/shape.json"), JSON.stringify({ ...base, name: "B", front: [[0, 0], [1, 1]] }));
+  // "Shape 1" and "shape-1" would collide under slug normalisation alone.
+  writeFileSync(join(dir, "assets/Shape 1.json"), JSON.stringify({ ...base, name: "C" }));
+  writeFileSync(join(dir, "assets/shape-1.json"), JSON.stringify({ ...base, name: "D", front: [[0, 0], [1, 1]] }));
+  m.assets = ["assets/a/shape.json", "assets/b/shape.json", "assets/Shape 1.json", "assets/shape-1.json"].map((path, i) => ({
+    type: "surface", path, params: { name: "ABCD"[i] },
+  }));
+  writeFileSync(mp, JSON.stringify(m));
+  writePreviews(f.opts);
+  assert.deepEqual(checkPreviews(f.opts), []);
+  const entries = readIndex(f.opts.previewsDir).packs[pack];
+  assert.equal(new Set(entries.map((e) => e.image)).size, 4);
+  const svgs = entries.map((e) => readFileSync(join(f.opts.previewsDir, e.image.slice("/previews/surfaces/".length)), "utf8"));
+  assert.notEqual(svgs[0], svgs[1]);
+  assert.notEqual(svgs[2], svgs[3]);
+  rmSync(f.dir, { recursive: true });
 });
