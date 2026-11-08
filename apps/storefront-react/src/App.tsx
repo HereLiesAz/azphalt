@@ -208,6 +208,47 @@ function PreviewCanvas({ pkg, tint, active }: { pkg: PackageSummary; tint: strin
 }
 
 /**
+ * Rendered sample strokes of a brush pack: one row per brush, one image per scenario. A kinetic brush has
+ * several (speeds, a held pen, bursts), so the row scrolls and snaps; a plain brush has a single stroke.
+ * The images are real renders of the brush, not icons.
+ */
+function StrokePreviews({ strokes }: { strokes: { brush: string; label: string; image: string }[] }) {
+  const groups = new Map<string, typeof strokes>();
+  for (const s of strokes) groups.set(s.brush, [...(groups.get(s.brush) ?? []), s]);
+  return (
+    <section aria-label="Sample strokes" style={{ marginTop: 28 }}>
+      <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px" }}>Sample strokes</h3>
+      {[...groups].map(([brush, list]) => (
+        <div key={brush} style={{ marginBottom: 18 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>
+            {brush}
+            {list.length > 1 && <span style={{ color: "var(--on-surface-variant)", fontWeight: 400 }}> · {list.length} scenarios</span>}
+          </div>
+          <div
+            role="group"
+            aria-label={`${brush} sample strokes`}
+            tabIndex={list.length > 1 ? 0 : undefined}
+            style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 6 }}
+          >
+            {list.map((s) => (
+              <figure key={s.image} style={{ margin: 0, flex: "0 0 min(84%, 420px)", scrollSnapAlign: "start" }}>
+                <img
+                  src={s.image}
+                  alt={`${brush}: ${s.label} sample stroke`}
+                  loading="lazy"
+                  style={{ width: "100%", display: "block", borderRadius: 14, background: "#0a0a0a" }}
+                />
+                <figcaption style={{ fontSize: 12.5, color: "var(--on-surface-variant)", marginTop: 4 }}>{s.label}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/**
  * A modal: `role="dialog"`, `aria-modal`, initial focus on its first control, Tab kept inside, Escape
  * and a scrim click close it, and focus goes back to whatever opened it.
  */
@@ -616,6 +657,7 @@ function Detail({
           ))}
         </div>
       )}
+      {pkg.preview?.strokes && pkg.preview.strokes.length > 0 && <StrokePreviews strokes={pkg.preview.strokes} />}
       {pkg.llm && <LlmDisclosure llm={pkg.llm} />}
       {(pkg.targetApps ?? []).length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 16 }}>
