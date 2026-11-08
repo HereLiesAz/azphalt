@@ -1,5 +1,11 @@
 # @azphalt/azdk
 
+## 0.7.0
+
+### Minor Changes
+
+- c2e8908: `PreviewRef.strokes`: rendered sample strokes of a brush (`PreviewStroke { brush, label, image }`), so a store card can show a real stroke for every brush and several scenarios for a kinetic one.
+
 ## 0.6.0
 
 ### Minor Changes
