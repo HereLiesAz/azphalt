@@ -135,8 +135,10 @@ test("pngSize reads IHDR and rejects other bytes", () => {
   assert.equal(pngSize(Buffer.from("hello")), null);
 });
 
-test("the committed previews are valid and current for every brush they cover", () => {
-  assert.deepEqual(checkBrushPreviews({ onlyIndexed: true }), []);
+test("every brush in the store has a valid, current preview (kinetic brushes several)", () => {
+  // Full coverage, not onlyIndexed: a new brush listed without a rendered preview fails `pnpm test`.
+  // Render it with Graffux's PackRenderHarness and `node tools/brush-previews.mjs ingest <dir>`.
+  assert.deepEqual(checkBrushPreviews(), []);
   assert.ok(listBrushes(DEFAULTS.submissionsDir).length > 0);
 });
 
