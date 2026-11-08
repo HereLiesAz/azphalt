@@ -29,6 +29,9 @@ export const SURFACE_MAX_DEPTH = 4;
 /** Most surfaces one package may list (a pack, not a library). */
 export const SURFACE_MAX_PER_PACK = 32;
 
+/** Largest reserved alternate mesh payload, in bytes. */
+export const SURFACE_ALTERNATE_MAX_BYTES = 4 * 1024 * 1024;
+
 const KEYS = new Set(["format", "version", "name", "front", "side", "top"]);
 
 /** A point in a view, `[a, b]`, each in `[0, 1]`. Front is `(x, y)`, side `(z, y)`, top `(x, z)`. */
@@ -191,6 +194,7 @@ export function validateSurfaceAssets(manifest: Manifest, payload: Record<string
       errors.push(`${at}: path must name a .json file`);
       return;
     }
+    errors.push(...alternateErrors(at, rec.alternate, payload));
     const bytes = Object.hasOwn(payload, a.path) ? payload[a.path] : undefined;
     if (!bytes) return; // the core checks already report a missing payload
     const parsed = parseSurface(bytes);
@@ -206,4 +210,26 @@ export function validateSurfaceAssets(manifest: Manifest, payload: Record<string
     seen.add(parsed.surface.name);
   });
   return errors;
+}
+
+/**
+ * RESERVED: a surface entry MAY carry `alternate: { "type": "mesh", "path": "assets/x.glb" }`, a standard
+ * glTF 2.0 binary (GLB) of the same shape, for a future host that imports meshes. It is validated here
+ * (bundled, a `.glb`, a real GLB header, size-capped) but no host consumes it yet, and the profile
+ * payload stays REQUIRED so every surface-capable host can use the entry. Anything else is rejected.
+ */
+function alternateErrors(at: string, alt: unknown, payload: Record<string, Uint8Array>): string[] {
+  if (alt === undefined) return [];
+  if (!alt || typeof alt !== "object" || Array.isArray(alt)) return [`${at}: alternate must be an object`];
+  const o = alt as Record<string, unknown>;
+  for (const k of Object.keys(o)) if (k !== "type" && k !== "path") return [`${at}: alternate has an unknown key ${JSON.stringify(k)}`];
+  if (o.type !== "mesh") return [`${at}: alternate.type must be "mesh" (reserved for a glTF binary)`];
+  if (typeof o.path !== "string" || !o.path.endsWith(".glb")) return [`${at}: alternate.path must name a .glb file`];
+  const bytes = Object.hasOwn(payload, o.path) ? payload[o.path] : undefined;
+  if (!bytes) return [`${at}: alternate ${o.path} is not in the package`];
+  if (bytes.length > SURFACE_ALTERNATE_MAX_BYTES) return [`${at}: alternate ${o.path} is larger than ${SURFACE_ALTERNATE_MAX_BYTES} bytes`];
+  const magic = bytes.length >= 12 && bytes[0] === 0x67 && bytes[1] === 0x6c && bytes[2] === 0x54 && bytes[3] === 0x46;
+  const version = magic ? bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24) : 0;
+  if (!magic || version !== 2) return [`${at}: alternate ${o.path} is not a glTF 2.0 binary (GLB)`];
+  return [];
 }

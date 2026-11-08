@@ -77,4 +77,14 @@ describe("validateSurfaceAssets", () => {
     ] } as unknown as Manifest;
     expect(validateSurfaceAssets(two, { "a.json": enc(ok()), "b.json": enc(ok()) }).join()).toMatch(/duplicate/);
   });
+  it("validates a reserved GLB alternate without requiring it", () => {
+    const glb = new Uint8Array([0x67, 0x6c, 0x54, 0x46, 2, 0, 0, 0, 12, 0, 0, 0]);
+    const m = (alternate: unknown) => ({ assets: [{ type: "surface", path: "a.json", params: { name: "Slab" }, alternate }] }) as unknown as Manifest;
+    const files = { "a.json": new TextEncoder().encode(ok()), "a.glb": glb };
+    expect(validateSurfaceAssets(m({ type: "mesh", path: "a.glb" }), files)).toEqual([]);
+    expect(validateSurfaceAssets(m({ type: "mesh", path: "a.glb" }), { ...files, "a.glb": new Uint8Array(12) }).join()).toMatch(/GLB/);
+    expect(validateSurfaceAssets(m({ type: "mesh", path: "b.glb" }), files).join()).toMatch(/not in the package/);
+    expect(validateSurfaceAssets(m({ type: "obj", path: "a.glb" }), files).join()).toMatch(/alternate.type/);
+    expect(validateSurfaceAssets(m({ type: "mesh", path: "a.glb", extra: 1 }), files).join()).toMatch(/unknown key/);
+  });
 });
