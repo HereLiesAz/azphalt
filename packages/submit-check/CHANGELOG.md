@@ -1,5 +1,14 @@
 # @azphalt/submit-check
 
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [c2e8908]
+  - @azphalt/azdk@0.7.0
+  - @azphalt/azp@0.6.1
+  - @azphalt/registry@0.4.1
+
 ## 0.4.1
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @azphalt/sdk
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [c2e8908]
+  - @azphalt/azdk@0.7.0
+
 ## 0.2.0
 
 ### Minor Changes
