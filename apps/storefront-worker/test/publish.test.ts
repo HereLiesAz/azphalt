@@ -22,7 +22,7 @@ function build(id: string, version: string, key?: { privateKey: string }, payloa
 }
 
 /** A GitHub REST stand-in holding one repository: a main branch, its trees, refs and pull requests. */
-function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pinnedAt: string }>; pinnedFiles?: string[] } = {}) {
+function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pinnedAt: string }>; pinnedFiles?: string[]; merged?: Record<string, string>; openPulls?: Array<{ head: { ref: string }; body: string | null }> } = {}) {
   const calls: Array<{ method: string; path: string; body?: any; auth?: string }> = [];
   const refs = new Set<string>();
   const handler = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -40,6 +40,12 @@ function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pin
       const text = JSON.stringify({ publishers: opts.publishers });
       return reply(200, { content: btoa(text) });
     }
+    const mergedManifest = path.match(/^\/contents\/submissions\/([^/]+)\/manifest\.json\?ref=c0$/);
+    if (method === "GET" && mergedManifest) {
+      const version = opts.merged?.[mergedManifest[1]];
+      return version ? reply(200, { content: btoa(JSON.stringify({ id: mergedManifest[1], version })) }) : reply(404, { message: "Not Found" });
+    }
+    if (method === "GET" && path === "/pulls?state=open&per_page=100") return reply(200, opts.openPulls ?? []);
     if (method === "GET" && path === "/git/trees/t0") return reply(200, { tree: [{ path: "submissions", type: "tree", sha: "ts" }] });
     if (method === "GET" && path === "/git/trees/ts") return reply(200, { tree: [{ path: "com.example.pinned", type: "tree", sha: "tp" }] });
     if (method === "GET" && path === "/git/trees/tp?recursive=1") {
@@ -71,6 +77,7 @@ function makeEnv(extra: Record<string, unknown> = {}) {
     // The gateway's RepositoryTokens entrypoint, as the service binding exposes it.
     GITHUB_TOKENS: { azphaltPublishToken: async () => ({ token: "ghs_minted", expiresAt: "2026-09-27T07:00:00Z" }) },
     PUBLISH_REPOSITORY: "HereLiesAz/azphalt",
+    PUBLISH_LIMITER: { limit: async () => ({ success: true }) },
     ...extra,
   } as never;
 }
@@ -238,5 +245,99 @@ describe("POST /packages", () => {
       makeEnv({ PUBLISH_LIMITER: { limit: async () => ({ success: false }) } }),
     );
     expect(res.status).toBe(429);
+  });
+});
+
+describe("POST /packages: abuse limits", () => {
+  const pinnedFor = (key: { publicKey: string }, id = "com.example.pinned") => ({ [id]: { publicKey: key.publicKey, pinnedAt: "2026-01-01T00:00:00Z" } });
+  const status = async (bytes: Uint8Array, env = makeEnv()) => (await worker.fetch(post(bytes), env)).status;
+
+  it("versions only go up: a lower or equal version than the deployed one is refused", async () => {
+    const key = generateSigningKey();
+    github = fakeGitHub({ publishers: pinnedFor(key) });
+    expect(await status(build("com.example.pinned", "0.9.0", key))).toBe(409);
+    expect(await status(build("com.example.pinned", "1.0.0", key))).toBe(409);
+    expect(await status(build("com.example.pinned", "1.0.1", key))).toBe(202);
+  });
+
+  it("a prerelease of the published version is a downgrade", async () => {
+    const key = generateSigningKey();
+    github = fakeGitHub({ publishers: pinnedFor(key) });
+    expect(await status(build("com.example.pinned", "1.0.0-rc.1", key))).toBe(409);
+  });
+
+  it("the floor includes a version merged to submissions/ but not deployed yet", async () => {
+    const key = generateSigningKey();
+    github = fakeGitHub({ publishers: pinnedFor(key), merged: { "com.example.pinned": "2.0.0" } });
+    expect(await status(build("com.example.pinned", "1.5.0", key))).toBe(409);
+    expect(await status(build("com.example.pinned", "2.1.0", key))).toBe(202);
+  });
+
+  it("an id with three open publish pull requests takes no more; another id is unaffected", async () => {
+    const key = generateSigningKey();
+    const open = ["1.0.1", "1.0.2", "1.0.3"].map((v) => ({ head: { ref: `publish/com.example.pinned/${v}` }, body: "x" }));
+    github = fakeGitHub({ publishers: { ...pinnedFor(key), ...pinnedFor(key, "com.example.other") }, openPulls: open });
+    expect(await status(build("com.example.pinned", "1.0.4", key))).toBe(429);
+    expect(await status(build("com.example.other", "1.0.0-a", key))).not.toBe(429);
+  });
+
+  it("a signing key with five open pull requests across ids takes no more", async () => {
+    const key = generateSigningKey();
+    const open = [1, 2, 3, 4, 5].map((n) => ({ head: { ref: `publish/com.example.id${n}/1.0.0` }, body: "Signer:\n\n    " + key.publicKey }));
+    github = fakeGitHub({ publishers: pinnedFor(key), openPulls: open });
+    expect(await status(build("com.example.pinned", "1.0.1", key))).toBe(429);
+  });
+
+  it("the signer key is rate-limited by its own limiter key, not only the IP", async () => {
+    const key = generateSigningKey();
+    github = fakeGitHub({ publishers: pinnedFor(key) });
+    const seen: string[] = [];
+    const env = makeEnv({ PUBLISH_LIMITER: { limit: async ({ key: k }: { key: string }) => { seen.push(k); return { success: !k.startsWith("key:") }; } } });
+    expect(await status(build("com.example.pinned", "1.0.1", key), env)).toBe(429);
+    expect(seen.some((k) => k === "key:" + key.publicKey)).toBe(true);
+  });
+
+  it("fails closed when no limiter is bound, unless explicitly allowed", async () => {
+    const key = generateSigningKey();
+    github = fakeGitHub({ publishers: pinnedFor(key) });
+    expect(await status(build("com.example.pinned", "1.0.1", key), makeEnv({ PUBLISH_LIMITER: undefined }))).toBe(503);
+    expect(await status(build("com.example.pinned", "1.0.1", key), makeEnv({ PUBLISH_LIMITER: undefined, PUBLISH_ALLOW_UNLIMITED: "true" }))).toBe(202);
+  });
+});
+
+describe("POST /packages: namespace proof for a first publish", () => {
+  it("maps ids to the domains that may vouch for them", async () => {
+    const { namespaceDomains } = await import("../src/publish");
+    expect(namespaceDomains("com.example.tool")).toEqual(["example.com"]);
+    expect(namespaceDomains("io.github.user.pack")).toEqual(["github.io", "user.github.io"]);
+    expect(namespaceDomains("single")).toEqual([]);
+  });
+
+  it("proves with the signer's key at the well-known path, over https, without following redirects", async () => {
+    const { namespaceProven } = await import("../src/publish");
+    const calls: Array<{ url: string; redirect?: string }> = [];
+    const serve = (body: unknown, status = 200) => async (url: string, init: RequestInit) => {
+      calls.push({ url, redirect: init.redirect as string });
+      return new Response(JSON.stringify(body), { status });
+    };
+    expect(await namespaceProven("com.example.tool", "KEY", serve({ publicKeys: ["KEY"] }))).toBe(true);
+    expect(calls[0]).toEqual({ url: "https://example.com/.well-known/azphalt-publisher.json", redirect: "manual" });
+    expect(await namespaceProven("com.example.tool", "KEY", serve({ publicKeys: ["OTHER"] }))).toBe(false);
+    expect(await namespaceProven("com.example.tool", "KEY", serve({ publicKeys: ["KEY"] }, 302))).toBe(false);
+    expect(await namespaceProven("com.example.tool", "KEY", async () => { throw new Error("down"); })).toBe(false);
+  });
+
+  it("when required, a first publish without proof is refused with instructions; a pinned id is not asked", async () => {
+    const key = generateSigningKey();
+    const env = makeEnv({ PUBLISH_NAMESPACE_PROOF: "required" });
+    const real = github.handler;
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) =>
+      String(input).includes("/.well-known/") ? Promise.resolve(new Response("nope", { status: 404 })) : real(input, init));
+    const res = await worker.fetch(post(build("com.example.fresh", "1.0.0", key)), env);
+    expect(res.status).toBe(403);
+    expect(JSON.stringify(await res.json())).toContain("https://example.com/.well-known/azphalt-publisher.json");
+    github = fakeGitHub({ publishers: { "com.example.pinned": { publicKey: key.publicKey, pinnedAt: "2026-01-01T00:00:00Z" } } });
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => github.handler(input, init));
+    expect((await worker.fetch(post(build("com.example.pinned", "1.0.1", key)), env)).status).toBe(202);
   });
 });

@@ -75,6 +75,8 @@ interface Env {
    */
   WRITE_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
   /** The same, much tighter, for `POST /packages` — each accepted publish opens a pull request. */
+  /** Set to "true" to let POST /packages run with no PUBLISH_LIMITER binding (dev only). */
+  PUBLISH_ALLOW_UNLIMITED?: string;
   PUBLISH_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
   /** The gateway's token minter, over a service binding (`src/publish.ts` § RepositoryTokens). */
   GITHUB_TOKENS?: RepositoryTokens;
@@ -917,9 +919,16 @@ async function fileReport(req: Request, env: Env): Promise<Response> {
 async function publishPackage(req: Request, env: Env): Promise<Response> {
   const fail = (status: number, code: string, message: string, details?: string[]) =>
     json({ error: { code, message, ...(details ? { details } : {}) } }, status);
-  if (env.PUBLISH_LIMITER) {
+  // Each accepted publish opens a pull request, so the limiter is not optional: with no binding the
+  // endpoint fails closed (503) instead of accepting unlimited publishes. Local dev and tests that really
+  // want none set PUBLISH_ALLOW_UNLIMITED=true.
+  const limiter = env.PUBLISH_LIMITER;
+  if (!limiter && env.PUBLISH_ALLOW_UNLIMITED !== "true") {
+    return fail(503, "unavailable", "publishing is disabled: the PUBLISH_LIMITER rate-limit binding is not configured (see apps/storefront-worker/wrangler.jsonc)");
+  }
+  if (limiter) {
     const key = req.headers.get("cf-connecting-ip") || "unknown";
-    if (!(await env.PUBLISH_LIMITER.limit({ key })).success) return fail(429, "rate_limited", "too many publishes");
+    if (!(await limiter.limit({ key })).success) return fail(429, "rate_limited", "too many publishes");
   }
   const bytes = await readCapped(req, MAX_PUBLISH_BYTES);
   if (!bytes) return fail(413, "payload_too_large", `package exceeds ${MAX_PUBLISH_BYTES} bytes`);
@@ -927,6 +936,7 @@ async function publishPackage(req: Request, env: Env): Promise<Response> {
   const result = await publish(bytes, env, {
     catalogVersion: async (id) => catalog.find((pkg) => pkg.id === id)?.version,
     isListed: async (id) => listings.some((listing) => listing.packageId === id),
+    allowKey: limiter ? async (publicKey) => (await limiter.limit({ key: "key:" + publicKey })).success : undefined,
   });
   if (typeof result.status === "number") return fail(result.status, result.code, result.message, result.errors);
   return json(result, 202, { location: result.review });
