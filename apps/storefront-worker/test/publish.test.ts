@@ -22,7 +22,7 @@ function build(id: string, version: string, key?: { privateKey: string }, payloa
 }
 
 /** A GitHub REST stand-in holding one repository: a main branch, its trees, refs and pull requests. */
-function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pinnedAt: string }>; pinnedFiles?: string[]; merged?: Record<string, string>; mergedStatus?: number; openPulls?: Array<{ head: { ref: string }; body: string | null }> } = {}) {
+function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pinnedAt: string }>; pinnedFiles?: string[]; merged?: Record<string, string>; mergedStatus?: number; openPulls?: Array<{ head: { ref: string; repo?: { full_name: string } }; body: string | null }> } = {}) {
   const calls: Array<{ method: string; path: string; body?: any; auth?: string }> = [];
   const refs = new Set<string>();
   const handler = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -49,7 +49,8 @@ function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pin
     const pulls = path.match(/^\/pulls\?state=open&per_page=100&page=(\d+)$/);
     if (method === "GET" && pulls) {
       const page = Number(pulls[1]);
-      return reply(200, (opts.openPulls ?? []).slice((page - 1) * 100, page * 100));
+      return reply(200, (opts.openPulls ?? []).slice((page - 1) * 100, page * 100)
+        .map((p) => ({ ...p, head: { ...p.head, repo: p.head.repo ?? { full_name: "HereLiesAz/azphalt" } } })));
     }
     if (method === "GET" && path === "/git/trees/t0") return reply(200, { tree: [{ path: "submissions", type: "tree", sha: "ts" }] });
     if (method === "GET" && path === "/git/trees/ts") return reply(200, { tree: [{ path: "com.example.pinned", type: "tree", sha: "tp" }] });
@@ -323,6 +324,35 @@ describe("POST /packages: abuse limits", () => {
     const flood = Array.from({ length: 1001 }, (_, n) => ({ head: { ref: `feature/y${n}` }, body: null }));
     github = fakeGitHub({ publishers: pinnedFor(key), openPulls: flood });
     expect(await status(build("com.example.pinned", "1.0.1", key))).toBe(429);
+  });
+
+  it("fork pull requests with a publish-looking branch or a copied key count toward nothing", async () => {
+    const key = generateSigningKey();
+    const fork = { full_name: "stranger/azphalt" };
+    const byName = ["1.0.1", "1.0.2", "1.0.3"].map((v) => ({ head: { ref: `publish/com.example.pinned/${v}`, repo: fork }, body: "x" }));
+    const byKey = [1, 2, 3, 4, 5].map((n) => ({ head: { ref: `publish/com.example.f${n}/1.0.0`, repo: fork }, body: "Signer:\n\n    " + key.publicKey }));
+    github = fakeGitHub({ publishers: pinnedFor(key), openPulls: [...byName, ...byKey] });
+    expect(await status(build("com.example.pinned", "1.0.4", key))).toBe(202);
+  });
+
+  it("whitespace variants of one key share a limiter key and a count", async () => {
+    const key = generateSigningKey();
+    const { zipSync, unzipSync, strToU8, strFromU8 } = await import("fflate");
+    const files = unzipSync(build("com.example.pinned", "1.0.4", key));
+    const sig = JSON.parse(strFromU8(files["signature.json"]));
+    const spaced = { ...sig, publicKey: sig.publicKey.slice(0, 20) + "\n " + sig.publicKey.slice(20) };
+    const variant = zipSync({ ...files, "signature.json": strToU8(JSON.stringify(spaced)) });
+    const seen: string[] = [];
+    const env = makeEnv({ PUBLISH_LIMITER: { limit: async ({ key: k }: { key: string }) => { seen.push(k); return { success: true }; } } });
+    github = fakeGitHub({ publishers: pinnedFor(key) });
+    await status(variant, env);
+    await status(build("com.example.pinned", "1.0.5", key), env);
+    const keyed = seen.filter((k) => k.startsWith("key:"));
+    expect(new Set(keyed)).toEqual(new Set(["key:" + key.publicKey]));
+    // And the count: five open PRs carrying the canonical key block the whitespace variant too.
+    const open = [1, 2, 3, 4, 5].map((n) => ({ head: { ref: `publish/com.example.id${n}/1.0.0` }, body: "    " + key.publicKey }));
+    github = fakeGitHub({ publishers: pinnedFor(key), openPulls: open });
+    expect(await status(variant)).toBe(429);
   });
 
   it("the signer key is rate-limited by its own limiter key, not only the IP", async () => {

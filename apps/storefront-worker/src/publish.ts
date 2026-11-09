@@ -382,7 +382,9 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
   for (const [path, data] of Object.entries(files)) {
     if (path !== "manifest.json" && path !== "signature.json" && path !== "LICENSE") payload[path] = data;
   }
-  return { manifest, license: files.LICENSE, payload, publicKey: sig.publicKey };
+  // The verified key in canonical base64: atob tolerates whitespace, so the string as sent is not an
+  // identity. Throttling, counting, pinning and the namespace proof all use this one form.
+  return { manifest, license: files.LICENSE, payload, publicKey: base64(fromBase64(sig.publicKey)) };
 }
 
 /** Text that survives a round trip through a UTF-8 JSON string, so it can go inline in a git tree. */
@@ -565,11 +567,17 @@ export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishCo
     // Every open pull request, page by page: the 101st must count as much as the first, or older publish
     // requests would drop out of the per-id and per-key totals. A repository with more open pulls than
     // MAX_PULL_PAGES pages can hold is treated as full rather than guessed at.
-    const mine: Array<{ head: { ref: string }; body: string | null }> = [];
+    type OpenPull = { head: { ref: string; repo?: { full_name?: string } | null }; body: string | null };
+    const mine: OpenPull[] = [];
+    // Only pull requests whose branch lives in the publish repository itself: publish() creates its branches
+    // there, never in a fork, so a fork PR that merely borrows the name (or a key) is not a publish request.
+    const home = (env.PUBLISH_REPOSITORY ?? "").toLowerCase();
     let exhausted = true;
     for (let page = 1; page <= MAX_PULL_PAGES; page++) {
-      const batch = await gh.ok<Array<{ head: { ref: string }; body: string | null }>>("GET", `/pulls?state=open&per_page=100&page=${page}`);
-      for (const p of batch) if (p.head.ref.startsWith("publish/")) mine.push(p);
+      const batch = await gh.ok<OpenPull[]>("GET", `/pulls?state=open&per_page=100&page=${page}`);
+      for (const p of batch) {
+        if (p.head.ref.startsWith("publish/") && p.head.repo?.full_name?.toLowerCase() === home) mine.push(p);
+      }
       if (batch.length < 100) {
         exhausted = false;
         break;
