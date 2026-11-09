@@ -201,21 +201,29 @@ describe("checkout", () => {
     expect((await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }, { cookie }), env)).status).toBe(200);
   });
 
-  it("a repeat of a completed checkout is a clear 409, not 'no checkout URL' (Stripe returns the old session without a url)", async () => {
+  // Stripe answers a repeated idempotency key with the SAVED creation response (header Idempotent-Replayed:
+  // true): same id, same url, status "open", whatever has happened to the session since. The live session
+  // is only visible by fetching it.
+  const cachedCreation = { id: "cs_cached", url: "https://checkout.stripe.com/c/cs_cached", status: "open" };
+
+  it("a repeat of a completed checkout is a clear 409: the cached creation response still says open, the live session is complete", async () => {
     const env = makeEnv();
     await upload(env);
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    stub((url, init) => {
+    const calls = stub((url, init) => {
       if (url.endsWith("/v1/accounts/acct_seller")) return readyAccount();
-      if (url.endsWith("/v1/checkout/sessions") && init?.method === "POST") return new Response(JSON.stringify({ id: "cs_done", url: null, status: "complete" }));
+      if (url.endsWith("/v1/checkout/sessions") && init?.method === "POST") {
+        return new Response(JSON.stringify(cachedCreation), { headers: { "idempotent-replayed": "true" } });
+      }
+      if (url.endsWith("/v1/checkout/sessions/cs_cached")) return new Response(JSON.stringify({ ...cachedCreation, url: null, status: "complete" }));
       return undefined;
     });
     const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }), env);
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({ code: "already_owned" });
+    expect(calls.some((c) => c.url.endsWith("/v1/checkout/sessions/cs_cached"))).toBe(true);
   });
 
-  it("an expired session from the idempotency key is replaced under a fresh key", async () => {
+  it("an expired session behind the cached creation response is replaced under a fresh key", async () => {
     const env = makeEnv();
     await upload(env);
     const keys: string[] = [];
@@ -224,16 +232,34 @@ describe("checkout", () => {
       if (url.endsWith("/v1/checkout/sessions") && init?.method === "POST") {
         const key = new Headers(init.headers).get("idempotency-key")!;
         keys.push(key);
-        return new Response(JSON.stringify(keys.length === 1
-          ? { id: "cs_old", url: null, status: "expired" }
-          : { id: "cs_new", url: "https://checkout.stripe.com/c/cs_new" }));
+        return keys.length === 1
+          ? new Response(JSON.stringify(cachedCreation), { headers: { "idempotent-replayed": "true" } })
+          : new Response(JSON.stringify({ id: "cs_new", url: "https://checkout.stripe.com/c/cs_new", status: "open" }));
       }
+      if (url.endsWith("/v1/checkout/sessions/cs_cached")) return new Response(JSON.stringify({ ...cachedCreation, url: null, status: "expired" }));
       return undefined;
     });
     const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }), env);
     expect(res.status).toBe(200);
+    expect(((await res.json()) as { session: { id: string } }).session.id).toBe("cs_new");
     expect(keys).toHaveLength(2);
     expect(keys[1]).not.toBe(keys[0]);
+  });
+
+  it("a replayed creation whose session is still open resumes it at the live url", async () => {
+    const env = makeEnv();
+    await upload(env);
+    stub((url, init) => {
+      if (url.endsWith("/v1/accounts/acct_seller")) return readyAccount();
+      if (url.endsWith("/v1/checkout/sessions") && init?.method === "POST") {
+        return new Response(JSON.stringify(cachedCreation), { headers: { "idempotent-replayed": "true" } });
+      }
+      if (url.endsWith("/v1/checkout/sessions/cs_cached")) return new Response(JSON.stringify({ ...cachedCreation, url: "https://checkout.stripe.com/c/cs_cached#live" }));
+      return undefined;
+    });
+    const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }), env);
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { session: { url: string } }).session.url).toBe("https://checkout.stripe.com/c/cs_cached#live");
   });
 
   it("validates the request and the listing before touching Stripe", async () => {
@@ -555,6 +581,52 @@ describe("a refunded or lost subscription stops renewing", () => {
     await worker.fetch(signedWebhook({ ...dispute("lost"), data: { object: { id: "dp_s2", charge: "ch_s", payment_intent: "pi_cs_s", status: "lost" } } }), env);
     expect((await download(env, first, "com.example.sub")).status).toBe(403);
     expect(await (await worker.fetch(signedWebhook(renewal("in_3")), env)).json()).toEqual({ received: true, renewed: false });
+  });
+});
+
+describe("subscription termination is scoped to one subscription and survives replays", () => {
+  const completeSub = (sessionId: string, subscription: string) =>
+    completed(sessionId, { subscription }, { packageId: "com.example.sub", interval: "month" });
+  const subRefund = (pi: string) => ({ type: "charge.refunded", data: { object: { id: "ch_" + pi, payment_intent: pi, refunded: true } } });
+  const subRenewal = (id: string, subscription: string) =>
+    ({ type: "invoice.paid", data: { object: { id, billing_reason: "subscription_cycle", subscription } } });
+
+  it("a duplicate refund webhook for the old purchase does not revoke a replacement subscription", async () => {
+    const env = makeEnv();
+    await upload(env, "com.example.sub");
+    await worker.fetch(signedWebhook(completeSub("cs_old", "sub_old")), env);
+    await worker.fetch(signedWebhook(subRefund("pi_cs_old")), env);
+    // The same buyer buys again; it is a different Stripe subscription.
+    await worker.fetch(signedWebhook(completeSub("cs_new", "sub_new")), env);
+    const replacement = await tokenFor(env, "cs_new");
+    expect((await download(env, replacement, "com.example.sub")).status).toBe(200);
+    // Stripe redelivers the old refund.
+    await worker.fetch(signedWebhook(subRefund("pi_cs_old")), env);
+    expect((await download(env, replacement, "com.example.sub")).status).toBe(200);
+    expect(await (await worker.fetch(signedWebhook(subRenewal("in_n1", "sub_new")), env)).json()).toEqual({ received: true, renewed: true });
+    expect((await download(env, await tokenFor(env, "invoice:in_n1"), "com.example.sub")).status).toBe(200);
+    expect((await download(env, await tokenFor(env, "cs_old"), "com.example.sub")).status).toBe(403);
+  });
+
+  it("a replay of the checkout completion after a refund does not bring renewals back", async () => {
+    const env = makeEnv();
+    await upload(env, "com.example.sub");
+    await worker.fetch(signedWebhook(completeSub("cs_r", "sub_r")), env);
+    await worker.fetch(signedWebhook(subRefund("pi_cs_r")), env);
+    await worker.fetch(signedWebhook(completeSub("cs_r", "sub_r")), env);
+    expect(await (await worker.fetch(signedWebhook(subRenewal("in_r1", "sub_r")), env)).json()).toEqual({ received: true, renewed: false });
+    expect((await worker.fetch(req("GET", "/api/admin/entitlements/invoice:in_r1", undefined, ADMIN), env)).status).toBe(404);
+    expect((await download(env, await tokenFor(env, "cs_r"), "com.example.sub")).status).toBe(403);
+  });
+
+  it("a replay of the checkout completion after a lost dispute does not bring renewals back", async () => {
+    const env = makeEnv();
+    await upload(env, "com.example.sub");
+    await worker.fetch(signedWebhook(completeSub("cs_l", "sub_l")), env);
+    await worker.fetch(signedWebhook({ type: "charge.dispute.closed", data: { object: { id: "dp_l", charge: "ch_l", payment_intent: "pi_cs_l", status: "lost" } } }), env);
+    await worker.fetch(signedWebhook(completeSub("cs_l", "sub_l")), env);
+    expect(await (await worker.fetch(signedWebhook(subRenewal("in_l1", "sub_l")), env)).json()).toEqual({ received: true, renewed: false });
+    expect((await download(env, await tokenFor(env, "cs_l"), "com.example.sub")).status).toBe(403);
   });
 });
 
