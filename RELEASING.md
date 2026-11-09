@@ -173,6 +173,8 @@ pnpm run version   # apply pending changesets → bump versions + changelogs + r
 pnpm run release   # build + test + changeset publish
 ~~~
 
+`pnpm run version` also runs `pnpm run sync:template-ranges` (`tools/sync-template-ranges.mjs`) between `changeset version` and the lockfile refresh. It moves the `@azphalt/*` ranges in `packages/create-azphalt/templates/*/package.json` onto each workspace package's new release line (0.x: `^0.<minor>.0`; ≥1: `^<major>.0.0`), so the bot-built "Version Packages" PR already passes `tools/template-versions.test.mjs` with no hand edits. The templates are not pnpm workspace members, so this never touches `pnpm-lock.yaml`. `node tools/sync-template-ranges.mjs --check` lists stale ranges without writing. The central `node-package-publish` workflow already calls `pnpm run version` (profile `version_command`), so no workflow change is involved.
+
 Use `pnpm run version` (not bare `pnpm version`, which is pnpm's own version command). The `version` script also runs `pnpm install --lockfile-only` after bumping, so `pnpm-lock.yaml` stays in sync and CI's `--frozen-lockfile` install doesn't fail.
 
 Private packages (the `apps/*`, e.g. `@azphalt/storefront`) are never published — Changesets skips any package marked `private` automatically.
