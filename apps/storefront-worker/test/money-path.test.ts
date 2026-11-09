@@ -263,6 +263,31 @@ describe("checkout", () => {
     expect(((await res.json()) as { session: { url: string } }).session.url).toBe("https://checkout.stripe.com/c/cs_cached#live");
   });
 
+  it("a buyer refunded in full can buy again: the replayed complete session is replaced under a fresh key", async () => {
+    const env = makeEnv();
+    await upload(env);
+    await worker.fetch(signedWebhook(completed("cs_cached")), env);
+    await worker.fetch(signedWebhook({ type: "charge.refunded", data: { object: { id: "ch_c", payment_intent: "pi_cs_cached", refunded: true } } }), env);
+    const keys: string[] = [];
+    stub((url, init) => {
+      if (url.endsWith("/v1/accounts/acct_seller")) return readyAccount();
+      if (url.endsWith("/v1/checkout/sessions") && init?.method === "POST") {
+        keys.push(new Headers(init.headers).get("idempotency-key")!);
+        // The first key is the original purchase's: Stripe replays its saved creation response.
+        return keys.length === 1
+          ? new Response(JSON.stringify({ id: "cs_cached", url: "https://checkout.stripe.com/c/cs_cached", status: "open" }), { headers: { "idempotent-replayed": "true" } })
+          : new Response(JSON.stringify({ id: "cs_again", url: "https://checkout.stripe.com/c/cs_again", status: "open" }));
+      }
+      if (url.endsWith("/v1/checkout/sessions/cs_cached")) return new Response(JSON.stringify({ id: "cs_cached", url: null, status: "complete" }));
+      return undefined;
+    });
+    const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }, asBuyer()), env);
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { session: { id: string } }).session.id).toBe("cs_again");
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).not.toBe(keys[0]);
+  });
+
   it("validates the request and the listing before touching Stripe", async () => {
     const calls = stub();
     const listings = [paidListing(), paidListing({ packageId: "com.example.paused", status: "paused" }), paidListing({ packageId: "com.example.nostatus", status: undefined })];
@@ -631,6 +656,35 @@ describe("subscription termination is scoped to one subscription and survives re
   });
 });
 
+describe("a lost dispute that arrives before fulfilment ends the subscription", () => {
+  it("created and lost before the payment is fulfilled: fulfilment revokes and installs no renewal mapping", async () => {
+    const env = makeEnv();
+    await upload(env, "com.example.sub");
+    stub((url) => (url.includes("/v1/checkout/sessions?") ? new Response(JSON.stringify({ data: [] })) : undefined));
+    const dispute = (type: string, status?: string) => ({ type, data: { object: { id: "dp_e", charge: "ch_e", payment_intent: "pi_cs_early_sub", status } } });
+    await worker.fetch(signedWebhook(dispute("charge.dispute.created")), env);
+    const lost = await worker.fetch(signedWebhook(dispute("charge.dispute.closed", "lost")), env);
+    expect(await lost.json()).toMatchObject({ pending: true });
+    await worker.fetch(signedWebhook(completed("cs_early_sub", { subscription: "sub_e" }, { packageId: "com.example.sub", interval: "month" })), env);
+    expect((await download(env, await tokenFor(env, "cs_early_sub"), "com.example.sub")).status).toBe(403);
+    const renewal = await worker.fetch(signedWebhook({ type: "invoice.paid", data: { object: { id: "in_e1", billing_reason: "subscription_cycle", subscription: "sub_e" } } }), env);
+    expect(await renewal.json()).toEqual({ received: true, renewed: false });
+    expect((await worker.fetch(req("GET", "/api/admin/entitlements/invoice:in_e1", undefined, ADMIN), env)).status).toBe(404);
+  });
+
+  it("a late dispute.created after the loss does not downgrade the terminal state", async () => {
+    const env = makeEnv();
+    await upload(env, "com.example.sub");
+    stub((url) => (url.includes("/v1/checkout/sessions?") ? new Response(JSON.stringify({ data: [] })) : undefined));
+    const dispute = (type: string, status?: string) => ({ type, data: { object: { id: "dp_f", charge: "ch_f", payment_intent: "pi_cs_f", status } } });
+    await worker.fetch(signedWebhook(dispute("charge.dispute.closed", "lost")), env);
+    await worker.fetch(signedWebhook(dispute("charge.dispute.created")), env);
+    await worker.fetch(signedWebhook(completed("cs_f", { subscription: "sub_f" }, { packageId: "com.example.sub", interval: "month" })), env);
+    const renewal = await worker.fetch(signedWebhook({ type: "invoice.paid", data: { object: { id: "in_f1", billing_reason: "subscription_cycle", subscription: "sub_f" } } }), env);
+    expect(await renewal.json()).toEqual({ received: true, renewed: false });
+  });
+});
+
 describe("paid download gating", () => {
   const issuedAt = new Date().toISOString();
   const claims = { packageId: "com.example.paid", subject: BUYER, kind: "perpetual", issuedAt };
@@ -901,5 +955,64 @@ describe("the success page is bound to the buyer who started the checkout", () =
     expect(((await first.json()) as { token: string }).token).toBeTruthy();
     expect(first.headers.get("set-cookie")).toContain("azphalt_buyer_session=");
     expect((await get(env, { "x-checkout-claim": claim })).status).toBe(404);
+  });
+
+  it("two concurrent requests with the same claim: exactly one gets the token", async () => {
+    const { env, claim } = await started();
+    // Force the race: both requests pass claim.check before either reaches claim.consume.
+    const bindings = env as unknown as { STATE: { get(): { fetch(r: Request): Promise<Response> } } };
+    const real = bindings.STATE;
+    let arrived = 0;
+    let open!: () => void;
+    const gate = new Promise<void>((resolve) => { open = resolve; });
+    bindings.STATE = {
+      ...real,
+      get: () => {
+        const inner = real.get();
+        return {
+          fetch: async (r: Request) => {
+            const isCheck = r.method === "POST" && new URL(r.url).pathname === "/rpc" && (await r.clone().text()).includes('"claim.check"');
+            const res = await inner.fetch(r);
+            if (isCheck) {
+              if (++arrived === 2) open();
+              await gate;
+            }
+            return res;
+          },
+        };
+      },
+    };
+    const results = await Promise.all([get(env, { "x-checkout-claim": claim }), get(env, { "x-checkout-claim": claim })]);
+    expect(results.map((r) => r.status).sort()).toEqual([200, 404]);
+    const winner = results.find((r) => r.status === 200)!;
+    expect(winner.headers.get("set-cookie")).toContain("azphalt_buyer_session=");
+    expect(results.find((r) => r.status === 404)!.headers.get("set-cookie")).toBeNull();
+  });
+});
+
+describe("one storefront origin", () => {
+  const html = { accept: "text/html" };
+  it("a browser page load on www is redirected to the canonical origin before the storefront loads", async () => {
+    const env = makeEnv();
+    const res = await worker.fetch(new Request("https://www.azphalt.store/checkout/success?session_id=cs_1", { headers: html, redirect: "manual" }), env);
+    expect(res.status).toBe(301);
+    expect(res.headers.get("location")).toBe("https://azphalt.store/checkout/success?session_id=cs_1");
+    const apex = await worker.fetch(new Request("https://azphalt.store/", { headers: html, redirect: "manual" }), env);
+    expect(apex.status).not.toBe(301);
+  });
+  it("a checkout started from the www origin is refused with the canonical origin; API clients on www are untouched", async () => {
+    const env = makeEnv();
+    await upload(env);
+    const calls = stub();
+    const res = await worker.fetch(new Request("https://www.azphalt.store/api/checkout", {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "https://www.azphalt.store" },
+      body: JSON.stringify({ packageId: "com.example.paid" }),
+    }), env);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "wrong_origin", origin: "https://azphalt.store" });
+    expect(calls).toHaveLength(0);
+    const health = await worker.fetch(new Request("https://www.azphalt.store/api/health"), env);
+    expect(health.status).toBe(200);
   });
 });

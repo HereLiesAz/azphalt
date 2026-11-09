@@ -1632,19 +1632,33 @@ async function checkout(req: Request, env: Env): Promise<Response> {
       body: urlForm(fields),
     });
 
-    let { body: session, replayed } = await createSession();
     // Within 24 hours the same key returns Stripe's SAVED creation response: the same session, still
     // showing the url and `open` status it was created with, whatever has happened to it since. So when the
-    // answer is a replay (or carries no url) the live session is fetched before its state is trusted: a
-    // completed one means the purchase went through (never "no checkout URL"), an expired one is replaced
-    // under a new key, an open one is resumed at its current url.
-    if (typeof session.id === "string" && (replayed || typeof session.url !== "string" || !session.url)) {
+    // answer is a replay (or carries no url) the live session is fetched before its state is trusted:
+    //  - open: resume it at its live url;
+    //  - expired: replace it under a new key;
+    //  - complete and the purchase was REFUNDED or DISPUTED (its licence is revoked; ownsPackage already
+    //    said the buyer holds nothing): a refund does not reopen a Checkout Session, so replace it under a
+    //    new key too, or the buyer could never buy again;
+    //  - complete otherwise: the purchase went through (or is still being fulfilled): 409.
+    // Each replacement key chains from the finished session's id, so a second refund of the replacement is
+    // handled by the same loop.
+    let session: Record<string, unknown> = {};
+    let retryOf: string | undefined;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const created = await createSession(retryOf);
+      session = created.body;
+      if (typeof session.id !== "string" || !(created.replayed || typeof session.url !== "string" || !session.url)) break;
       const live = (await stripe(env, "/v1/checkout/sessions/" + encodeURIComponent(session.id), { method: "GET" })) as Record<string, unknown>;
-      if (live.status === "complete") {
+      if (live.status === "complete" && !(await entitlementRevoked(env, session.id))) {
         return json({ error: "this purchase is already complete", code: "already_owned" }, 409);
       }
-      if (live.status === "expired") session = (await createSession(session.id)).body;
-      else session = live;
+      if (live.status === "complete" || live.status === "expired") {
+        retryOf = session.id;
+        continue;
+      }
+      session = live;
+      break;
     }
 
     const id = typeof session.id === "string" ? session.id : "";
@@ -2095,10 +2109,15 @@ async function webhook(req: Request, env: Env): Promise<Response> {
         return json({ received: true, restored: res.ok });
       }
       // Lost: the money is gone for good, so a subscription stops renewing, not just this payment's licence.
-      if (object.status === "lost" && sessionId) {
-        await revokeEntitlement(env, sessionId, "dispute");
-        await revokeSubscription(env, sessionId, "dispute");
-        return json({ received: true, restored: false, revoked: true });
+      if (object.status === "lost") {
+        const done = sessionId && await revokeEntitlement(env, sessionId, "dispute");
+        if (done && sessionId) {
+          await revokeSubscription(env, sessionId, "dispute");
+          return json({ received: true, restored: false, revoked: true });
+        }
+        // Not fulfilled yet (or not found): keep the terminal state so fulfilment ends the subscription too.
+        await recordPendingRefund(env, refs, sessionId, "dispute-lost");
+        return json({ received: true, restored: false, revoked: false, pending: true });
       }
       return json({ received: true, restored: false });
     }
@@ -2245,11 +2264,12 @@ async function recordPendingRefund(
   env: Env,
   refs: { paymentIntent?: string; invoice?: string; charge?: string },
   sessionId: string | undefined,
-  reason: "refund" | "dispute",
+  reason: "refund" | "dispute" | "dispute-lost",
 ): Promise<void> {
   for (const name of pendingRefundKeys(refs, sessionId)) {
     const existing = (await rpc<{ value: string | null }>(env, "kv.get", { name })).value;
     if (existing === "refund") continue; // a refund outranks a dispute
+    if (existing === "dispute-lost" && reason === "dispute") continue; // and a lost dispute outranks an open one
     await rpc(env, "kv.put", { name, value: reason });
   }
 }
@@ -2273,20 +2293,24 @@ async function applyPendingRefund(
   object: { payment_intent?: unknown; invoice?: unknown },
 ): Promise<boolean> {
   const names = pendingRefundKeys({ paymentIntent: objectId(object.payment_intent), invoice: objectId(object.invoice) }, sessionId);
-  let reason: "refund" | "dispute" | undefined;
+  let reason: "refund" | "dispute" | "dispute-lost" | undefined;
   for (const name of names) {
     const value = (await rpc<{ value: string | null }>(env, "kv.get", { name })).value;
     if (value === "refund") reason = "refund";
-    else if (value === "dispute" && reason !== "refund") reason = "dispute";
+    else if (value === "dispute-lost" && reason !== "refund") reason = "dispute-lost";
+    else if (value === "dispute" && reason === undefined) reason = "dispute";
   }
   if (!reason) return false;
-  await revokeEntitlement(env, sessionId, reason);
+  await revokeEntitlement(env, sessionId, reason === "refund" ? "refund" : "dispute");
+  if (reason === "refund" || reason === "dispute-lost") {
+    // The money is gone for good: the subscription ends, not just this payment's licence.
+    await revokeSubscription(env, sessionId, reason === "refund" ? "refund" : "dispute");
+  }
   if (reason === "refund") {
-    await revokeSubscription(env, sessionId, reason);
     await rpc(env, "externalReport.refund", { sessionId });
     await flushGoogleReports(env).catch((e) => console.error("google refund report failed", e));
   }
-  return reason === "refund";
+  return reason === "refund" || reason === "dispute-lost";
 }
 
 /**
@@ -2378,9 +2402,10 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
   const byClaim = !byCookie && !!claimHash &&
     (await rpc<{ valid: boolean }>(env, "claim.check", { sessionId: id, hash: claimHash })).valid;
   if (!byCookie && !byClaim) return notFound();
-  const consume = async () => {
-    if (byClaim) await rpc(env, "claim.consume", { sessionId: id, hash: claimHash });
-  };
+  // Checked at the moment of delivery: two concurrent requests with the same claim can both pass
+  // claim.check, but claim.consume is atomic and answers valid:true to exactly one of them.
+  const consume = async (): Promise<boolean> =>
+    !byClaim || (await rpc<{ valid: boolean }>(env, "claim.consume", { sessionId: id, hash: claimHash })).valid;
 
   if (await entitlementRevoked(env, id)) {
     // `error.code` matches every other repository error; `status` stays for clients that read it.
@@ -2391,7 +2416,7 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
   );
   if (existing.ok) {
     const record = await existing.json() as EntitlementRecord;
-    await consume();
+    if (!(await consume())) return notFound();
     const cookie = await makeBuyerCookie(req, record.subject, env);
     return json(
       {
@@ -2439,7 +2464,7 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
     return json({ status: "revoked", error: { code: "revoked", message: "this purchase was refunded or disputed" } }, 403);
   }
 
-  await consume();
+  if (!(await consume())) return notFound();
   const cookie = await makeBuyerCookie(req, record.subject, env);
   return json(
     {
@@ -3694,6 +3719,20 @@ async function handle(req: Request, env: Env): Promise<Response> {
     const path = url.pathname;
 
     if (DOCS_HOST.test(url.hostname)) return serveDocs(req, env);
+
+    // One storefront origin. The buyer cookie is host-only and the checkout claim lives in the page's
+    // sessionStorage, but Stripe returns the buyer to PUBLIC_ORIGIN: a checkout started on www.<host>
+    // would come back to a different origin holding neither recovery credential. So browsers are sent to
+    // the canonical origin before the storefront loads, and a checkout POST from another origin is refused.
+    const canonical = new URL(env.PUBLIC_ORIGIN);
+    if (url.hostname === "www." + canonical.hostname) {
+      const wantsPage = (req.method === "GET" || req.method === "HEAD") && !path.startsWith("/api/") &&
+        (req.headers.get("accept") ?? "").includes("text/html");
+      if (wantsPage) return Response.redirect(canonical.origin + path + url.search, 301);
+      if (req.method === "POST" && path === "/api/checkout" && req.headers.get("origin") === url.origin) {
+        return json({ error: "start checkout on " + canonical.origin, code: "wrong_origin", origin: canonical.origin }, 409);
+      }
+    }
 
     try {
       if (req.method === "GET" && path === "/api/health") {
