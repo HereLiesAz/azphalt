@@ -473,3 +473,14 @@ cd apps/storefront-worker && npx wrangler dev
 
 The tests run the real `AzphaltState` over `node:sqlite` and a stand-in for the asset layer
 ([`test/harness.ts`](test/harness.ts)).
+
+
+## Publish abuse limits
+
+`POST /packages` fails closed (503) without a `PUBLISH_LIMITER` binding (`PUBLISH_ALLOW_UNLIMITED=true` for
+local dev). It limits per IP and per signing key, refuses more than 3 open publish pull requests per id
+(`PUBLISH_MAX_OPEN_PER_ID`), 5 per signer key (`PUBLISH_MAX_OPEN_PER_KEY`) and 100 overall, and requires
+each version to be strictly higher (semver) than the highest deployed or merged one. With
+`PUBLISH_NAMESPACE_PROOF=required` a first publish must serve its signer key at
+`https://<domain>/.well-known/azphalt-publisher.json` (`{"publicKeys":["<SPKI>"]}`) for a domain the id is
+written in reverse; it is off by default because it changes who can publish (owner decision).

@@ -18,6 +18,7 @@
  * may make 50. Text files ride inline in the tree and cost nothing.
  */
 import { strFromU8, unzipSync } from "fflate";
+import { compareSemver } from "./semver";
 
 /**
  * `manifest.kind` as it may appear in the pull request body: a short lowercase word, or `unknown`. The
@@ -59,6 +60,90 @@ export interface PublishEnv {
   GITHUB_PUBLISH_TOKEN?: string;
   /** `owner/repo` the pull requests are opened against. */
   PUBLISH_REPOSITORY?: string;
+  /**
+   * `"required"`: the first publish of an id must prove control of its reverse-DNS namespace by serving the
+   * signer's key at `https://<domain>/.well-known/azphalt-publisher.json` (see {@link namespaceProven}).
+   * Anything else leaves first-publish open (the pin still protects every later publish).
+   */
+  PUBLISH_NAMESPACE_PROOF?: string;
+  /** Open publish pull requests allowed per package id (default 3) and per signer key (default 5). */
+  PUBLISH_MAX_OPEN_PER_ID?: string;
+  PUBLISH_MAX_OPEN_PER_KEY?: string;
+}
+
+/** Open `publish/*` pull requests across the whole repository before new ones are refused (a spam backstop). */
+const MAX_OPEN_PUBLISH_TOTAL = 100;
+/** Pages of 100 open pull requests read before the repository is treated as full. */
+const MAX_PULL_PAGES = 10;
+
+/**
+ * The response body as text, read incrementally: the server is the publisher's, so it may stream far more
+ * than the cap. Returns undefined, and cancels the stream, the moment the cap is passed.
+ */
+async function readCapped(res: Response, max: number): Promise<string | undefined> {
+  if (!res.body) return "";
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await reader.cancel().catch(() => undefined);
+      return undefined;
+    }
+    chunks.push(value);
+  }
+  const all = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) { all.set(c, at); at += c.byteLength; }
+  return new TextDecoder().decode(all);
+}
+
+/**
+ * The domains whose owner may vouch for a reverse-DNS id: `com.example.tool` -> `example.com`, and one
+ * label deeper (`tool.example.com`) so `io.github.user.pack` can be proven at `user.github.io`.
+ */
+export function namespaceDomains(id: string): string[] {
+  const labels = id.split(".");
+  const out: string[] = [];
+  for (const n of [2, 3]) {
+    if (labels.length <= n) continue; // the last label is the package's own name, not part of the domain
+    const parts = labels.slice(0, n).reverse();
+    if (parts.every((l) => /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(l))) out.push(parts.join(".").toLowerCase());
+  }
+  return out;
+}
+
+/**
+ * Proof of control of an id's namespace: one of its domains serves `/.well-known/azphalt-publisher.json`,
+ * `{ "publicKeys": ["<SPKI base64>", ...] }`, naming the signer. HTTPS only, no redirects, 16 KB, 3 s.
+ * This is the same idea as Maven Central's or Play's domain verification: only whoever controls the
+ * domain can make a first publish under it, so a stranger cannot pre-claim `com.yourcompany.*`.
+ */
+export async function namespaceProven(
+  id: string,
+  publicKey: string,
+  fetcher: (url: string, init: RequestInit) => Promise<Response> = (u, i) => fetch(u, i),
+): Promise<boolean> {
+  for (const domain of namespaceDomains(id)) {
+    try {
+      const res = await fetcher(`https://${domain}/.well-known/azphalt-publisher.json`, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(3000),
+        headers: { accept: "application/json" },
+      });
+      if (res.status !== 200) continue;
+      const text = await readCapped(res, 16 * 1024);
+      if (text === undefined) continue;
+      const doc = JSON.parse(text) as { publicKeys?: unknown };
+      if (Array.isArray(doc.publicKeys) && doc.publicKeys.includes(publicKey)) return true;
+    } catch {
+      // unreachable, slow or malformed: not proven at this domain
+    }
+  }
+  return false;
 }
 
 export interface PublishContext {
@@ -66,6 +151,8 @@ export interface PublishContext {
   catalogVersion(id: string): Promise<string | undefined>;
   /** Whether `id` is a paid listing (never publishable here — paid bytes are not committed). */
   isListed(id: string): Promise<boolean>;
+  /** Per-signer-key throttle (the caller's rate limiter keyed by the key, not the IP). Absent: no extra limit. */
+  allowKey?(publicKey: string): Promise<boolean>;
 }
 
 export interface PublishError {
@@ -295,7 +382,9 @@ export async function inspectAzp(bytes: Uint8Array): Promise<Inspected | Publish
   for (const [path, data] of Object.entries(files)) {
     if (path !== "manifest.json" && path !== "signature.json" && path !== "LICENSE") payload[path] = data;
   }
-  return { manifest, license: files.LICENSE, payload, publicKey: sig.publicKey };
+  // The verified key in canonical base64: atob tolerates whitespace, so the string as sent is not an
+  // identity. Throttling, counting, pinning and the namespace proof all use this one form.
+  return { manifest, license: files.LICENSE, payload, publicKey: base64(fromBase64(sig.publicKey)) };
 }
 
 /** Text that survives a round trip through a UTF-8 JSON string, so it can go inline in a git tree. */
@@ -375,6 +464,10 @@ export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishCo
     return { status: 409, code: "conflict", message: `${id} is a paid listing; paid bytes are uploaded to protected storage, not published` };
   }
 
+  if (ctx.allowKey && !(await ctx.allowKey(publicKey))) {
+    return { status: 429, code: "rate_limited", message: "too many publishes from this signing key" };
+  }
+
   // Only now, once the package has earned it, is a token fetched.
   let token: string;
   try {
@@ -410,8 +503,37 @@ export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishCo
         message: `${id} is maintained through git in this repository; update it with a pull request`,
       };
     }
-    if (published === version) {
-      return { status: 409, code: "conflict", message: `${id} ${version} is already published` };
+    // Versions only go up: the highest version already published (the deployed catalog, or merged to
+    // submissions/ and not deployed yet) is the floor. Semver precedence, so a prerelease of 1.0.0 sorts
+    // below 1.0.0 and 1.0.0 -> 0.9.0 is a refused downgrade, not a "new version".
+    const onMain = await gh.call<{ content?: string }>("GET", "/contents/submissions/" + id + "/manifest.json?ref=" + head.object.sha);
+    // Only a 404 means "no submission folder on main". Any other failure (a 500, a rate limit) must not
+    // read as absence, or an upstream error would bypass the merged-version floor: it fails the publish.
+    if (onMain.status !== 200 && onMain.status !== 404) {
+      throw new Error(`GitHub GET submissions/${id}/manifest.json answered ${onMain.status}`);
+    }
+    let mergedVersion: string | undefined;
+    if (onMain.status === 200 && onMain.data.content) {
+      try {
+        const v = (JSON.parse(new TextDecoder().decode(fromBase64(onMain.data.content.replace(/\s/g, "")))) as { version?: unknown }).version;
+        if (typeof v === "string") mergedVersion = v;
+      } catch {
+        // an unreadable manifest on main is the submission check's problem, not a floor
+      }
+    }
+    const highest = [published, mergedVersion]
+      .filter((v): v is string => v !== undefined)
+      .reduce<string | undefined>((a, b) => (a === undefined || compareSemver(b, a) > 0 ? b : a), undefined);
+    if (highest !== undefined) {
+      const order = compareSemver(version, highest);
+      if (order === 0) return { status: 409, code: "conflict", message: `${id} ${version} is already published` };
+      if (order < 0) {
+        return {
+          status: 409,
+          code: "conflict",
+          message: `${id} ${version} is not newer than the published ${highest}; a version must be strictly greater than the highest published one`,
+        };
+      }
     }
 
     // Read the folder on main even for a new id: a hand-made submission merged since the last deploy
@@ -424,6 +546,56 @@ export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishCo
         code: "conflict",
         message: `${id} is maintained through git in this repository; update it with a pull request`,
       };
+    }
+
+    // A first publish of an unpinned id: prove the namespace (when the deployment requires it), so a
+    // stranger cannot pre-claim, and pin, an id under a domain they do not control.
+    if (!pin && env.PUBLISH_NAMESPACE_PROOF === "required" && !(await namespaceProven(id, publicKey))) {
+      const domains = namespaceDomains(id);
+      return {
+        status: 403,
+        code: "forbidden",
+        message:
+          `the first publish of ${id} must prove control of its namespace: serve {"publicKeys":["${publicKey}"]} at ` +
+          (domains.length ? domains.map((d) => `https://${d}/.well-known/azphalt-publisher.json`).join(" or ") : "the domain the id is written in reverse") +
+          ", then publish again",
+      };
+    }
+
+    // Open publish pull requests: per id, per signer key and overall, so one party cannot bury the
+    // reviewers (or squat an id's version slots) with pull requests nobody has looked at yet.
+    // Every open pull request, page by page: the 101st must count as much as the first, or older publish
+    // requests would drop out of the per-id and per-key totals. A repository with more open pulls than
+    // MAX_PULL_PAGES pages can hold is treated as full rather than guessed at.
+    type OpenPull = { head: { ref: string; repo?: { full_name?: string } | null }; body: string | null };
+    const mine: OpenPull[] = [];
+    // Only pull requests whose branch lives in the publish repository itself: publish() creates its branches
+    // there, never in a fork, so a fork PR that merely borrows the name (or a key) is not a publish request.
+    const home = (env.PUBLISH_REPOSITORY ?? "").toLowerCase();
+    let exhausted = true;
+    for (let page = 1; page <= MAX_PULL_PAGES; page++) {
+      const batch = await gh.ok<OpenPull[]>("GET", `/pulls?state=open&per_page=100&page=${page}`);
+      for (const p of batch) {
+        if (p.head.ref.startsWith("publish/") && p.head.repo?.full_name?.toLowerCase() === home) mine.push(p);
+      }
+      if (batch.length < 100) {
+        exhausted = false;
+        break;
+      }
+    }
+    if (exhausted) {
+      return { status: 429, code: "rate_limited", message: "too many pull requests are open; try again later" };
+    }
+    const limitId = Math.max(1, Number(env.PUBLISH_MAX_OPEN_PER_ID) || 3);
+    const limitKey = Math.max(1, Number(env.PUBLISH_MAX_OPEN_PER_KEY) || 5);
+    if (mine.filter((p) => p.head.ref.startsWith("publish/" + id + "/")).length >= limitId) {
+      return { status: 429, code: "rate_limited", message: `${id} already has ${limitId} publish pull requests waiting for review` };
+    }
+    if (mine.filter((p) => p.body?.includes(publicKey)).length >= limitKey) {
+      return { status: 429, code: "rate_limited", message: `this signing key already has ${limitKey} publish pull requests waiting for review` };
+    }
+    if (mine.length >= MAX_OPEN_PUBLISH_TOTAL) {
+      return { status: 429, code: "rate_limited", message: "too many publish pull requests are waiting for review; try again later" };
     }
 
     const { files: _files, ...header } = manifest;
