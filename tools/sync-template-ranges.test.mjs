@@ -129,3 +129,32 @@ test("--check exits 1 listing offenders without writing, 0 when in sync", () => 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("--changeset schedules a create-azphalt patch release only when templates changed", () => {
+  const root = fixture({ a: tpl({ "@azphalt/azp": "^0.7.0" }) });
+  mkdirSync(join(root, ".changeset"));
+  mkdirSync(join(root, "packages/create-azphalt"), { recursive: true });
+  writeFileSync(join(root, "packages/create-azphalt/package.json"), JSON.stringify({ name: "create-azphalt", version: "0.3.0" }));
+  const cs = join(root, ".changeset/sync-template-ranges.md");
+  try {
+    const r = spawnSync(process.execPath, [script, "--changeset", `--root=${root}`], { encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    const text = readFileSync(cs, "utf8");
+    assert.match(text, /^---\n"create-azphalt": patch\n---\n/);
+    assert.match(text, /a: @azphalt\/azp \^0\.7\.0 \(workspace is 0\.8\.2\) -> \^0\.8\.0/);
+    // Already in sync now: a second run changes nothing and must not delete or rewrite the changeset.
+    const again = spawnSync(process.execPath, [script, "--changeset", `--root=${root}`], { encoding: "utf8" });
+    assert.equal(again.status, 0);
+    assert.equal(readFileSync(cs, "utf8"), text);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  const clean = fixture({ a: tpl({ "@azphalt/azp": "^0.8.0" }) });
+  mkdirSync(join(clean, ".changeset"));
+  try {
+    spawnSync(process.execPath, [script, "--changeset", `--root=${clean}`], { encoding: "utf8" });
+    assert.throws(() => statSync(join(clean, ".changeset/sync-template-ranges.md")));
+  } finally {
+    rmSync(clean, { recursive: true, force: true });
+  }
+});
