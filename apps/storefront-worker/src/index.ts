@@ -2819,6 +2819,9 @@ export class AzphaltState {
         "CREATE TABLE IF NOT EXISTS install_receipts (" +
         "receipt TEXT PRIMARY KEY, package_id TEXT NOT NULL, version TEXT NOT NULL, issued_at TEXT NOT NULL)"
       );
+      // Whether the install this receipt came from was counted (1) or deduplicated away (0): its uninstall
+      // is counted only when the install was, so uninstalls can never exceed installs (state-reporting.md 4.2).
+      try { sql.exec("ALTER TABLE install_receipts ADD COLUMN counted INTEGER NOT NULL DEFAULT 1"); } catch { /* already added */ }
       sql.exec(
         "CREATE TABLE IF NOT EXISTS install_counts (" +
         "package_id TEXT PRIMARY KEY, installs INTEGER NOT NULL DEFAULT 0, uninstalls INTEGER NOT NULL DEFAULT 0)"
@@ -3573,23 +3576,27 @@ export class AzphaltState {
           crypto.getRandomValues(bytes);
           const receipt = b64url(bytes);
           sql.exec(
-            "INSERT INTO install_receipts(receipt,package_id,version,issued_at) VALUES(?,?,?,?)",
+            "INSERT INTO install_receipts(receipt,package_id,version,issued_at,counted) VALUES(?,?,?,?,?)",
             receipt,
             event.id,
             String(minted.version),
             now,
+            fresh ? 1 : 0,
           );
           receipts.push({ id: event.id, receipt });
           accepted++;
         } else if (event.event === "uninstalled") {
           const minted = event.receipt
-            ? first(sql.exec("DELETE FROM install_receipts WHERE receipt=? RETURNING package_id", event.receipt))
+            ? first(sql.exec("DELETE FROM install_receipts WHERE receipt=? RETURNING package_id, counted", event.receipt))
             : undefined;
           if (!minted || String(minted.package_id) !== event.id) {
             rejected++;
             continue;
           }
-          sql.exec("UPDATE install_counts SET uninstalls=uninstalls+1 WHERE package_id=?", event.id);
+          // Only an uninstall of a counted install counts, and never past the installs counted.
+          if (Number(minted.counted) === 1) {
+            sql.exec("UPDATE install_counts SET uninstalls=uninstalls+1 WHERE package_id=? AND uninstalls<installs", event.id);
+          }
           accepted++;
         } else if (event.event === "activated" || event.event === "deactivated") {
           // Accepted and not counted: unbounded by nature, so a count would mean nothing.
