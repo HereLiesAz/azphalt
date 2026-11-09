@@ -124,7 +124,12 @@ export async function startCheckout(packageId: string): Promise<CheckoutResponse
     // Buyer identity is server-owned and kept in a signed HttpOnly recovery session.
     body: JSON.stringify({ packageId }),
   });
-  const checkout = (await res.json()) as CheckoutResponse;
+  const checkout = (await res.json()) as CheckoutResponse & { code?: string; origin?: string };
+  // Started on a non-canonical host (www): the return page would not hold this browser's credentials.
+  if (res.status === 409 && checkout.code === "wrong_origin" && checkout.origin) {
+    window.location.assign(checkout.origin);
+    return checkout;
+  }
 
   // Creating a real Stripe session is only step one. Continue the purchase on the hosted checkout
   // page instead of treating session creation itself as a completed UI action.
