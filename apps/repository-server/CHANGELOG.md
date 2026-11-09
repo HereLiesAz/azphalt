@@ -1,5 +1,14 @@
 # @azphalt/repository-server
 
+## 0.1.8
+
+### Patch Changes
+
+- Updated dependencies [97aaf3a]
+  - @azphalt/azdk@0.8.0
+  - @azphalt/azp@0.7.0
+  - @azphalt/registry@0.5.0
+
 ## 0.1.7
 
 ### Patch Changes

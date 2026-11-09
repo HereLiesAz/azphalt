@@ -1,5 +1,14 @@
 # @azphalt/storefront
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [97aaf3a]
+  - @azphalt/azdk@0.8.0
+  - @azphalt/azp@0.7.0
+  - @azphalt/runtime-reference@0.2.2
+
 ## 1.0.1
 
 ### Patch Changes

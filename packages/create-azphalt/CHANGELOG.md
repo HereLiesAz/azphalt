@@ -1,5 +1,11 @@
 # create-azphalt
 
+## 0.5.2
+
+### Patch Changes
+
+- eb4bf7a: Templates now depend on `@azphalt/azdk` `^0.7.0`, matching the workspace.
+
 ## 0.5.1
 
 ### Patch Changes
