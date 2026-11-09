@@ -423,3 +423,41 @@ describe("batch update check", () => {
     expect((await worker.fetch(new Request("https://azphalt.store/updates", { method: "POST", body: "not json" }), env)).status).toBe(400);
   });
 });
+
+describe("install reporting abuse limits", () => {
+  it("is throttled by the write limiter", async () => {
+    const env = makeEnv({ WRITE_LIMITER: { limit: async () => ({ success: false }) } });
+    const res = await worker.fetch(req("POST", "/installs", { events: [] }), env);
+    expect(res.status).toBe(429);
+  });
+
+  it("counts one install per package per address per day, though every token is spent", async () => {
+    const env = makeEnv();
+    stubUpstream();
+    const ip = { "cf-connecting-ip": "198.51.100.4" };
+    const tokens: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      tokens.push((await worker.fetch(req("GET", "/packages/com.example.free/versions/1.0.0/download"), env)).headers.get("azphalt-report-token")!);
+    }
+    const res = await worker.fetch(req("POST", "/installs", {
+      events: tokens.map((token) => ({ id: "com.example.free", version: "1.0.0", event: "installed", token })),
+    }, ip), env);
+    const reported = await res.json() as { accepted: number; rejected: number; receipts: { id: string; receipt: string }[] };
+    expect(reported).toMatchObject({ accepted: 3, rejected: 0 });
+    const listed = await (await worker.fetch(req("GET", "/packages"), env)).json() as { packages: { id: string; installs: number }[] };
+    expect(listed.packages.find((p) => p.id === "com.example.free")!.installs).toBe(1);
+    // Redeeming all three receipts: only the counted install's uninstall counts, so uninstalls stay <= installs.
+    const receipts = reported.receipts;
+    const out = await worker.fetch(req("POST", "/installs", {
+      events: receipts.map((r) => ({ id: r.id, version: "1.0.0", event: "uninstalled", receipt: r.receipt })),
+    }, ip), env);
+    expect(await out.json()).toMatchObject({ accepted: 3, rejected: 0 });
+    const after = await (await worker.fetch(req("GET", "/packages"), env)).json() as { packages: { id: string; installs: number; uninstalls: number }[] };
+    expect(after.packages.find((p) => p.id === "com.example.free")).toMatchObject({ installs: 1, uninstalls: 1 });
+    // Another address counts separately.
+    const t4 = (await worker.fetch(req("GET", "/packages/com.example.free/versions/1.0.0/download"), env)).headers.get("azphalt-report-token")!;
+    await worker.fetch(req("POST", "/installs", { events: [{ id: "com.example.free", version: "1.0.0", event: "installed", token: t4 }] }, { "cf-connecting-ip": "198.51.100.5" }), env);
+    const again = await (await worker.fetch(req("GET", "/packages"), env)).json() as { packages: { id: string; installs: number }[] };
+    expect(again.packages.find((p) => p.id === "com.example.free")!.installs).toBe(2);
+  });
+});

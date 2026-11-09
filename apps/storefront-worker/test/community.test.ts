@@ -139,3 +139,21 @@ describe("reports and moderation", () => {
     expect((await worker.fetch(post("/reports", { packageId: "com.example.none", reason: "other" }), env)).status).toBe(404);
   });
 });
+
+describe("rating stuffing", () => {
+  const rating = async (env: never, stars: number, ip: string, headers: HeadersInit = {}) =>
+    (await (await worker.fetch(post("/api/ratings", { packageId: "com.example.free", stars }, { "cf-connecting-ip": ip, ...headers }), env)).json()) as { rating: number; ratingCount: number };
+
+  it("a browser that drops its cookie to rate again from the same address replaces its rating", async () => {
+    const env = makeEnv();
+    await rating(env, 5, "203.0.113.7");
+    for (let i = 0; i < 4; i++) await rating(env, 1, "203.0.113.7"); // a fresh cookie every time
+    expect(await rating(env, 1, "203.0.113.7")).toEqual({ rating: 1, ratingCount: 1 });
+  });
+
+  it("different addresses still each count", async () => {
+    const env = makeEnv();
+    await rating(env, 5, "203.0.113.7");
+    expect(await rating(env, 3, "203.0.113.8")).toEqual({ rating: 4, ratingCount: 2 });
+  });
+});
