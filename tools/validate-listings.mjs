@@ -15,6 +15,21 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const MIN_AMOUNT_CENTS = 50;
+// ISO 4217 minor-unit exponents, kept in step with apps/storefront-worker/src/currency.ts (a Worker test
+// asserts they agree). `amountCents` is in the currency's minor unit, so 1000 is ¥1000 but $10.00 / 1.000 KWD.
+const ZERO_DECIMAL = new Set(["BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "UYI", "VND", "VUV", "XAF", "XOF", "XPF"]);
+const THREE_DECIMAL = new Set(["BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"]);
+const FOUR_DECIMAL = new Set(["CLF", "UYW"]);
+export function minorUnitExponent(currency) {
+  if (ZERO_DECIMAL.has(currency)) return 0;
+  if (THREE_DECIMAL.has(currency)) return 3;
+  if (FOUR_DECIMAL.has(currency)) return 4;
+  return 2;
+}
+/** Stripe accepts at most 8 digits of minor units. */
+export const MAX_AMOUNT_MINOR = 99_999_999;
+/** Smallest sensible price per exponent: about 50 US cents, and the application fee must stay below it. */
+const MIN_BY_EXPONENT = { 0: 50, 2: MIN_AMOUNT_CENTS, 3: 500, 4: 5000 };
 const CURRENCY = /^[A-Z]{3}$/;
 const PACKAGE_ID = /^[A-Za-z0-9._-]{1,200}$/;
 const INTEGRITY = /^sha256-[0-9a-f]{64}$/;
@@ -38,6 +53,15 @@ export function validateListings(listings) {
       fail(`amountCents must be an integer of at least ${MIN_AMOUNT_CENTS}`);
     }
     if (typeof l.currency !== "string" || !CURRENCY.test(l.currency)) fail("currency must be an ISO 4217 code in capitals (e.g. USD)");
+    else if (Number.isInteger(l.amountCents)) {
+      const exp = minorUnitExponent(l.currency);
+      const min = MIN_BY_EXPONENT[exp] ?? MIN_AMOUNT_CENTS;
+      // (Below the universal floor the check above already reported it.)
+      if (l.amountCents >= MIN_AMOUNT_CENTS && l.amountCents < min) fail(`amountCents ${l.amountCents} is below the ${min} minimum for ${l.currency} (minor units, ${exp} decimals)`);
+      if (l.amountCents > MAX_AMOUNT_MINOR) fail(`amountCents must be at most ${MAX_AMOUNT_MINOR} (Stripe's 8-digit limit)`);
+      // Stripe requires three-decimal amounts to be a multiple of 10 (its API only takes two significant decimals).
+      if (exp === 3 && l.amountCents % 10 !== 0) fail(`${l.currency} amounts must be a multiple of 10 minor units (Stripe)`);
+    }
     // Required, not defaulted: the Worker treats a missing status as paused, but going live (or not)
     // should be written down in the reviewed file.
     if (!STATUSES.includes(l.status)) fail(`status must be one of ${STATUSES.join(", ")}`);

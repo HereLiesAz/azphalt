@@ -16,6 +16,8 @@
  * amounts are integers: buyer-currency micros for what Google reported, payout-currency cents for
  * what the seller is paid.
  */
+import { microsToMinorFloor } from "./currency";
+
 
 export type SqlLike = { exec(query: string, ...bindings: unknown[]): Iterable<Record<string, unknown>> };
 
@@ -53,7 +55,8 @@ export function splitPlaySale(grossMicros: number, taxMicros: number, fees: FeeS
 }
 
 /**
- * The seller share in the payout currency (the listing's), in cents.
+ * The seller share in the payout currency (the listing's), in that currency's minor units (cents for
+ * USD, whole yen for JPY, fils for KWD).
  *
  * Same currency: exact. Different currency: the seller is paid the same FRACTION of the listing price
  * as the share is of the net (`listingCents × share / net`). That is deterministic and auditable; the
@@ -66,7 +69,7 @@ export function payoutCents(
   listing: { amountCents: number; currency: string },
 ): number | undefined {
   if (buyerCurrency.toUpperCase() === listing.currency.toUpperCase()) {
-    return Math.floor(split.sellerShareMicros / 10_000);
+    return microsToMinorFloor(split.sellerShareMicros, listing.currency);
   }
   if (split.netMicros <= 0) return undefined;
   return Math.floor(listing.amountCents * split.sellerShareMicros / split.netMicros);

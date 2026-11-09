@@ -20,6 +20,16 @@ describe("storefront-worker fee/period math stays in sync with packages/registry
     }
   });
 
+  it("quote agrees for zero- and three-decimal currencies, where the flat fee must scale", () => {
+    for (const currency of ["jpy", "kwd", "eur"]) {
+      for (const amountCents of [50, 1000, 10_000, 123_456]) {
+        expect(workerQuote(amountCents, currency, env)).toEqual(registryQuote({ amountCents, currency }));
+      }
+    }
+    expect(registryQuote({ amountCents: 1000, currency: "JPY" }).processorFee.amountCents).toBe(29);
+    expect(registryQuote({ amountCents: 10_000, currency: "KWD" }).processorFee.amountCents).toBe(590);
+  });
+
   it("periodEnd agrees with the registry's consignment.periodEnd, including month-end overshoot", () => {
     const cases: Array<[string, "month" | "year"]> = [
       ["2026-01-31T00:00:00.000Z", "month"],

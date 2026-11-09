@@ -47,3 +47,14 @@ test("duplicate ids and a non-array are refused", () => {
   assert.match(validateListings([good(), good()]).join(), /twice/);
   assert.deepEqual(validateListings({}), ["listings.json must be a JSON array"]);
 });
+
+test("the amount must make sense for the currency's minor unit", () => {
+  // 1000 is ¥1000 for JPY (whole units) but only 10.00 for USD: both fine, and 49 yen is not.
+  assert.deepEqual(validateListings([{ ...good(), currency: "JPY", amountCents: 1000 }]), []);
+  assert.match(validateListings([{ ...good(), currency: "JPY", amountCents: 49 }]).join(), /amountCents/);
+  // KWD has three decimals: 5.000 KWD is 5000 fils, and the Stripe multiple-of-10 rule applies.
+  assert.deepEqual(validateListings([{ ...good(), currency: "KWD", amountCents: 5000 }]), []);
+  assert.match(validateListings([{ ...good(), currency: "KWD", amountCents: 5005 }]).join(), /multiple of 10/);
+  assert.match(validateListings([{ ...good(), currency: "KWD", amountCents: 100 }]).join(), /minimum for KWD/);
+  assert.match(validateListings([{ ...good(), currency: "USD", amountCents: 100_000_000 }]).join(), /8-digit/);
+});
