@@ -1,5 +1,13 @@
 # @azphalt/conformance
 
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [97aaf3a]
+  - @azphalt/azdk@0.8.0
+  - @azphalt/azp@0.7.0
+
 ## 0.4.1
 
 ### Patch Changes

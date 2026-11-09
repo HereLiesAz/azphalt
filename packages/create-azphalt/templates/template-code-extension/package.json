@@ -8,8 +8,8 @@
     "build": "node build.js"
   },
   "dependencies": {
-    "@azphalt/azp": "^0.6.0",
-    "@azphalt/azdk": "^0.7.0"
+    "@azphalt/azp": "^0.7.0",
+    "@azphalt/azdk": "^0.8.0"
   },
   "devDependencies": {
     "@azphalt/runtime-reference": "^0.2.0"

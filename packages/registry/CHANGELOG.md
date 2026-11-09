@@ -1,5 +1,17 @@
 # @azphalt/registry
 
+## 0.5.0
+
+### Minor Changes
+
+- 97aaf3a: Surfaces: a new `surface` asset type (front/side/top profile curves only, `spec/package-format.md` § Surface format) listed as a pack of surfaces. `@azphalt/azp` adds the strict `parseSurface` validator and runs it in `verifyAzp`; `PreviewRef.surfaces` carries front-outline thumbnails.
+
+### Patch Changes
+
+- Updated dependencies [97aaf3a]
+  - @azphalt/azdk@0.8.0
+  - @azphalt/azp@0.7.0
+
 ## 0.4.1
 
 ### Patch Changes
