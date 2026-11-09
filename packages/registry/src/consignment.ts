@@ -26,9 +26,24 @@ export const DEFAULT_TERMS: ConsignmentTerms = {
 
 const round = (n: number) => Math.round(n);
 
+// ISO 4217 minor-unit exponents (kept in step with apps/storefront-worker/src/currency.ts; the worker
+// parity test fails if the two disagree). `amountCents` is the currency's minor unit.
+const ZERO_DECIMAL = new Set(["BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "UYI", "VND", "VUV", "XAF", "XOF", "XPF"]);
+const THREE_DECIMAL = new Set(["BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"]);
+const FOUR_DECIMAL = new Set(["CLF", "UYW"]);
+function minorUnitExponent(currency: string): number {
+  const c = currency.trim().toUpperCase();
+  if (ZERO_DECIMAL.has(c)) return 0;
+  if (THREE_DECIMAL.has(c)) return 3;
+  if (FOUR_DECIMAL.has(c)) return 4;
+  return 2;
+}
+
 /** Split a sale price into processor fee, platform fee, and seller net. All amounts share currency. */
 export function quote(price: Money, terms: ConsignmentTerms = DEFAULT_TERMS): PriceBreakdown {
-  const processor = round((price.amountCents * terms.processorPctBps) / 10_000) + terms.processorFlatCents;
+  // `processorFlatCents` is hundredths of a major unit (30 = 0.30), not 30 of whatever the currency's minor unit is.
+  const flat = round(terms.processorFlatCents * 10 ** (minorUnitExponent(price.currency) - 2));
+  const processor = round((price.amountCents * terms.processorPctBps) / 10_000) + flat;
   const platform = round((price.amountCents * terms.platformFeeBps) / 10_000);
   const sellerNet = Math.max(0, price.amountCents - processor - platform);
   const m = (amountCents: number): Money => ({ amountCents, currency: price.currency });

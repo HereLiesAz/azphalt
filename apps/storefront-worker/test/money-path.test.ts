@@ -184,6 +184,58 @@ describe("checkout", () => {
     expect(bodies[0].get("line_items[0][price_data][recurring][interval]")).toBe("month");
   });
 
+  it("refuses a second purchase by a buyer who already owns the package", async () => {
+    const env = makeEnv();
+    await upload(env);
+    const bodies: URLSearchParams[] = [];
+    stripeStub(bodies);
+    await worker.fetch(signedWebhook(completed("cs_own")), env);
+    const cookie = (await worker.fetch(req("GET", "/api/checkout/session/cs_own"), env)).headers.get("set-cookie")!.split(";")[0];
+    const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }, { cookie }), env);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "already_owned" });
+    expect(bodies).toHaveLength(0);
+    // Another buyer, or the same buyer after a refund, is not blocked.
+    expect((await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }), env)).status).toBe(200);
+    await worker.fetch(signedWebhook({ type: "charge.refunded", data: { object: { id: "ch_o", payment_intent: "pi_cs_own", refunded: true } } }), env);
+    expect((await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }, { cookie }), env)).status).toBe(200);
+  });
+
+  it("a repeat of a completed checkout is a clear 409, not 'no checkout URL' (Stripe returns the old session without a url)", async () => {
+    const env = makeEnv();
+    await upload(env);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    stub((url, init) => {
+      if (url.endsWith("/v1/accounts/acct_seller")) return readyAccount();
+      if (url.endsWith("/v1/checkout/sessions") && init?.method === "POST") return new Response(JSON.stringify({ id: "cs_done", url: null, status: "complete" }));
+      return undefined;
+    });
+    const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }), env);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "already_owned" });
+  });
+
+  it("an expired session from the idempotency key is replaced under a fresh key", async () => {
+    const env = makeEnv();
+    await upload(env);
+    const keys: string[] = [];
+    stub((url, init) => {
+      if (url.endsWith("/v1/accounts/acct_seller")) return readyAccount();
+      if (url.endsWith("/v1/checkout/sessions") && init?.method === "POST") {
+        const key = new Headers(init.headers).get("idempotency-key")!;
+        keys.push(key);
+        return new Response(JSON.stringify(keys.length === 1
+          ? { id: "cs_old", url: null, status: "expired" }
+          : { id: "cs_new", url: "https://checkout.stripe.com/c/cs_new" }));
+      }
+      return undefined;
+    });
+    const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }), env);
+    expect(res.status).toBe(200);
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).not.toBe(keys[0]);
+  });
+
   it("validates the request and the listing before touching Stripe", async () => {
     const calls = stub();
     const listings = [paidListing(), paidListing({ packageId: "com.example.paused", status: "paused" }), paidListing({ packageId: "com.example.nostatus", status: undefined })];
@@ -340,7 +392,7 @@ describe("refunds and disputes revoke one buyer, not the version", () => {
 
   it("a full refund revokes that purchase only", async () => {
     const { env, a, b } = await twoBuyers();
-    expect(await (await worker.fetch(signedWebhook(refund("pi_cs_a")), env)).json()).toEqual({ received: true, revoked: true });
+    expect(await (await worker.fetch(signedWebhook(refund("pi_cs_a")), env)).json()).toEqual({ received: true, revoked: true, pending: false });
     expect((await download(env, a)).status).toBe(403);
     expect((await download(env, b)).status).toBe(200);
     expect((await worker.fetch(req("GET", "/api/checkout/session/cs_a"), env)).status).toBe(403);
@@ -357,7 +409,7 @@ describe("refunds and disputes revoke one buyer, not the version", () => {
   it("an unknown charge revokes nothing (and asks Stripe for the session as a fallback)", async () => {
     const { env, a } = await twoBuyers();
     const calls = stub((url) => (url.includes("/v1/checkout/sessions?") ? new Response(JSON.stringify({ data: [] })) : undefined));
-    expect(await (await worker.fetch(signedWebhook(refund("pi_unknown")), env)).json()).toEqual({ received: true, revoked: false });
+    expect(await (await worker.fetch(signedWebhook(refund("pi_unknown")), env)).json()).toEqual({ received: true, revoked: false, pending: true });
     expect(calls.some((c) => c.url.includes("payment_intent=pi_unknown"))).toBe(true);
     expect((await download(env, a)).status).toBe(200);
   });
@@ -408,6 +460,101 @@ describe("refunds and disputes revoke one buyer, not the version", () => {
     expect((await download(env, renewal, "com.example.sub")).status).toBe(200);
     await worker.fetch(signedWebhook({ type: "charge.refunded", data: { object: { id: "ch_9", invoice: "in_9", refunded: true } } }), env);
     expect((await download(env, renewal, "com.example.sub")).status).toBe(403);
+  });
+});
+
+describe("webhook ordering: a refund or dispute before fulfilment", () => {
+  const refund = (pi: string) => ({ type: "charge.refunded", data: { object: { id: "ch_" + pi, payment_intent: pi, refunded: true } } });
+  const dispute = (type: string, pi: string, status?: string) => ({ type, data: { object: { id: "dp_7", charge: "ch_x", payment_intent: pi, status } } });
+  const noStripeSession = () => stub((url) => (url.includes("/v1/checkout/sessions?") ? new Response(JSON.stringify({ data: [] })) : undefined));
+
+  it("a refund that arrives first is applied when the purchase is fulfilled", async () => {
+    const env = makeEnv();
+    await upload(env);
+    noStripeSession();
+    const early = await worker.fetch(signedWebhook(refund("pi_cs_early")), env);
+    expect(early.status).toBe(200);
+    expect(await early.json()).toEqual({ received: true, revoked: false, pending: true });
+    await worker.fetch(signedWebhook(completed("cs_early")), env);
+    const token = await tokenFor(env, "cs_early");
+    expect((await download(env, token)).status).toBe(403);
+    expect((await worker.fetch(req("GET", "/api/checkout/session/cs_early"), env)).status).toBe(403);
+  });
+
+  it("the usual order (fulfil, then refund) still revokes", async () => {
+    const env = makeEnv();
+    await upload(env);
+    await worker.fetch(signedWebhook(completed("cs_late")), env);
+    const token = await tokenFor(env, "cs_late");
+    expect((await download(env, token)).status).toBe(200);
+    await worker.fetch(signedWebhook(refund("pi_cs_late")), env);
+    expect((await download(env, token)).status).toBe(403);
+  });
+
+  it("a dispute that arrives first revokes on fulfilment, and winning it restores", async () => {
+    const env = makeEnv();
+    await upload(env);
+    noStripeSession();
+    await worker.fetch(signedWebhook(dispute("charge.dispute.created", "pi_cs_d")), env);
+    await worker.fetch(signedWebhook(completed("cs_d")), env);
+    const token = await tokenFor(env, "cs_d");
+    expect((await download(env, token)).status).toBe(403);
+    await worker.fetch(signedWebhook(dispute("charge.dispute.closed", "pi_cs_d", "won")), env);
+    expect((await download(env, token)).status).toBe(200);
+  });
+
+  it("a dispute won before fulfilment leaves nothing pending", async () => {
+    const env = makeEnv();
+    await upload(env);
+    noStripeSession();
+    await worker.fetch(signedWebhook(dispute("charge.dispute.created", "pi_cs_w")), env);
+    await worker.fetch(signedWebhook(dispute("charge.dispute.closed", "pi_cs_w", "won")), env);
+    await worker.fetch(signedWebhook(completed("cs_w")), env);
+    expect((await download(env, await tokenFor(env, "cs_w"))).status).toBe(200);
+  });
+
+  it("a refund before a subscription is fulfilled leaves no renewal mapping", async () => {
+    const env = makeEnv();
+    await upload(env, "com.example.sub");
+    noStripeSession();
+    await worker.fetch(signedWebhook(refund("pi_cs_sx")), env);
+    await worker.fetch(signedWebhook(completed("cs_sx", { subscription: "sub_x" }, { packageId: "com.example.sub", interval: "month" })), env);
+    const renew = await worker.fetch(signedWebhook({ type: "invoice.paid", data: { object: { id: "in_x", billing_reason: "subscription_cycle", subscription: "sub_x" } } }), env);
+    expect(await renew.json()).toEqual({ received: true, renewed: false });
+  });
+});
+
+describe("a refunded or lost subscription stops renewing", () => {
+  async function subscribed() {
+    const env = makeEnv();
+    await upload(env, "com.example.sub");
+    await worker.fetch(signedWebhook(completed("cs_s", { subscription: "sub_9" }, { packageId: "com.example.sub", interval: "month" })), env);
+    await worker.fetch(signedWebhook({ type: "invoice.paid", data: { object: { id: "in_1", billing_reason: "subscription_cycle", subscription: "sub_9" } } }), env);
+    return env;
+  }
+  const renewal = (id: string) => ({ type: "invoice.paid", data: { object: { id, billing_reason: "subscription_cycle", subscription: "sub_9" } } });
+
+  it("a refund of the first payment revokes every period and refuses later renewals", async () => {
+    const env = await subscribed();
+    const first = await tokenFor(env, "cs_s");
+    const second = await tokenFor(env, "invoice:in_1");
+    await worker.fetch(signedWebhook({ type: "charge.refunded", data: { object: { id: "ch_s", payment_intent: "pi_cs_s", refunded: true } } }), env);
+    expect((await download(env, first, "com.example.sub")).status).toBe(403);
+    expect((await download(env, second, "com.example.sub")).status).toBe(403);
+    const later = await worker.fetch(signedWebhook(renewal("in_2")), env);
+    expect(await later.json()).toEqual({ received: true, renewed: false });
+    expect((await worker.fetch(req("GET", "/api/admin/entitlements/invoice:in_2", undefined, ADMIN), env)).status).toBe(404);
+  });
+
+  it("a lost dispute does the same; a won one leaves the subscription alone", async () => {
+    const env = await subscribed();
+    const first = await tokenFor(env, "cs_s");
+    const dispute = (status: string) => ({ type: "charge.dispute.closed", data: { object: { id: "dp_s", charge: "ch_s", payment_intent: "pi_cs_s", status } } });
+    await worker.fetch(signedWebhook(dispute("won")), env);
+    expect((await download(env, first, "com.example.sub")).status).toBe(200);
+    await worker.fetch(signedWebhook({ ...dispute("lost"), data: { object: { id: "dp_s2", charge: "ch_s", payment_intent: "pi_cs_s", status: "lost" } } }), env);
+    expect((await download(env, first, "com.example.sub")).status).toBe(403);
+    expect(await (await worker.fetch(signedWebhook(renewal("in_3")), env)).json()).toEqual({ received: true, renewed: false });
   });
 });
 

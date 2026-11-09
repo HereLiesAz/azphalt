@@ -41,6 +41,21 @@ describe("Play split", () => {
     expect(payoutCents(splitPlaySale(0, 0, fees), "JPY", { amountCents: 700, currency: "USD" })).toBeUndefined();
   });
 
+  it("pays whole yen for a JPY listing bought in JPY (not 100x)", () => {
+    const s = splitPlaySale(1_000_000_000, 0, fees); // ¥1000 = 1_000_000_000 micros
+    expect(s.sellerShareMicros).toBe(650_000_000);
+    expect(payoutCents(s, "JPY", { amountCents: 1000, currency: "JPY" })).toBe(650);
+  });
+
+  it("pays fils for a KWD listing bought in KWD (three decimals)", () => {
+    const s = splitPlaySale(10_000_000, 0, fees); // 10.000 KWD
+    expect(payoutCents(s, "KWD", { amountCents: 10_000, currency: "KWD" })).toBe(6500); // 6.500 KWD
+  });
+
+  it("still pays cents for USD", () => {
+    expect(payoutCents(splitPlaySale(10_000_000, 0, fees), "USD", { amountCents: 1000, currency: "USD" })).toBe(650);
+  });
+
   it("holds back 10%", () => {
     expect(holdbackOf(650, 1000)).toEqual({ main: 585, holdback: 65 });
   });

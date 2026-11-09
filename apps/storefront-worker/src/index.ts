@@ -13,6 +13,7 @@ import {
   type ServiceAccount,
 } from "./play";
 import { decideRoute, enrolledPrograms, PLAY_BILLING_PROGRAMS, programmeFor, type Distribution } from "./billing-policy";
+import { flatFeeMinor, microsToMinorRound, minorToMicros } from "./currency";
 import { payoutCents, PlayLedger, splitPlaySale, type FeeSettings, type Part } from "./ledger";
 import { productIdFor, syncPlayProducts, type ProductStore } from "./play-products";
 import { inAppRpc, migrateInApp } from "./state-rpc";
@@ -38,7 +39,10 @@ interface Env {
   GITHUB_RAW_BASE: string;
   PLATFORM_FEE_BPS?: string;
   PROCESSOR_PCT_BPS?: string;
+  /** Flat processor fee in hundredths of a major unit (30 = $0.30), scaled to each currency's minor unit. */
   PROCESSOR_FLAT_CENTS?: string;
+  /** Optional per-currency flat fee in that currency's own minor unit, JSON: `{"JPY":50,"KWD":100}`. */
+  PROCESSOR_FLAT_OVERRIDES?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   ENTITLEMENT_PRIVATE_KEY_PKCS8_B64?: string;
@@ -612,7 +616,37 @@ async function sha256Integrity(bytes: Uint8Array<ArrayBuffer>): Promise<string> 
   return "sha256-" + Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function nonNegative(value: string | undefined, fallback: number): number {
+  if (value === undefined || value.trim() === "") return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+function flatOverrides(env: Env): Record<string, number> {
+  if (!env.PROCESSOR_FLAT_OVERRIDES) return {};
+  try {
+    const parsed = JSON.parse(env.PROCESSOR_FLAT_OVERRIDES) as Record<string, unknown>;
+    const out: Record<string, number> = {};
+    for (const [k, v] of Object.entries(parsed)) if (typeof v === "number" && Number.isFinite(v) && v >= 0) out[k.toUpperCase()] = v;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Stripe's `application_fee_percent` takes at most two decimals, so the fee is expressed in hundredths
+ * of a percent, rounded UP: the platform can over-collect by under 0.01% of the price but never
+ * under-collects, and the old `toFixed(2)` of a float no longer drifts either way. Clamped to 0..100.
+ */
+export function applicationFeePercent(feeMinor: number, amountMinor: number): string {
+  if (!(amountMinor > 0) || !(feeMinor > 0)) return "0.00";
+  const hundredths = Math.min(10_000, Math.ceil((feeMinor * 10_000) / amountMinor - 1e-9));
+  return (hundredths / 100).toFixed(2);
+}
+
 function bps(value: string | undefined, fallback: number): number {
+  if (value === undefined || value.trim() === "") return fallback;
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 && n <= 10_000 ? Math.round(n) : fallback;
 }
@@ -623,9 +657,11 @@ function bps(value: string | undefined, fallback: number): number {
  * result is exactly the web quote it always was.
  */
 export function quote(amountCents: number, currency: string, env: Env, options: { inApp?: boolean } = {}) {
-  const processorPctBps = Number(env.PROCESSOR_PCT_BPS || "290");
-  const processorFlatCents = Number(env.PROCESSOR_FLAT_CENTS || "30");
-  const platformFeeBps = Number(env.PLATFORM_FEE_BPS || "1500");
+  // Every rate goes through bps(): a mistyped variable falls back to its default instead of making the
+  // quote NaN (which 502'd every checkout with no hint why).
+  const processorPctBps = bps(env.PROCESSOR_PCT_BPS, 290);
+  const processorFlatCents = flatFeeMinor(nonNegative(env.PROCESSOR_FLAT_CENTS, 30), currency, flatOverrides(env));
+  const platformFeeBps = bps(env.PLATFORM_FEE_BPS, 1500);
   const processor = Math.round(amountCents * processorPctBps / 10000) + processorFlatCents;
   const platform = Math.round(amountCents * platformFeeBps / 10000);
   const inAppFee = options.inApp ? Math.round(amountCents * bps(env.IN_APP_FEE_BPS, 500) / 10000) : 0;
@@ -653,7 +689,7 @@ export function playFees(env: Env, googleFeeBps?: number): FeeSettings {
 /** A seller's view of one listing on every route, for `GET /api/listings/{id}/breakdown`. */
 export function sellerBreakdown(listing: { amountCents: number; currency: string }, env: Env) {
   const fees = playFees(env);
-  const micros = listing.amountCents * 10_000;
+  const micros = minorToMicros(listing.amountCents, listing.currency);
   const play = splitPlaySale(micros, 0, fees);
   const playPayout = payoutCents(play, listing.currency, listing) ?? 0;
   const held = Math.round(playPayout * fees.holdbackBps / 10_000);
@@ -663,7 +699,7 @@ export function sellerBreakdown(listing: { amountCents: number; currency: string
     inAppStripe: quote(listing.amountCents, listing.currency, env, { inApp: true }),
     inAppPlay: {
       gross: m(listing.amountCents),
-      googleServiceFee: m(Math.round(play.googleFeeMicros / 10_000)),
+      googleServiceFee: m(microsToMinorRound(play.googleFeeMicros, listing.currency)),
       platformFee: m(Math.round(listing.amountCents * fees.platformFeeBps / 10_000)),
       inAppFee: m(Math.round(listing.amountCents * fees.inAppFeeBps / 10_000)),
       sellerNet: m(playPayout),
@@ -1245,7 +1281,7 @@ async function recordPlaySale(
   },
 ): Promise<void> {
   let currency = sale.listing.currency;
-  let grossMicros = sale.listing.amountCents * 10_000;
+  let grossMicros = minorToMicros(sale.listing.amountCents, sale.listing.currency);
   let taxMicros = 0;
   let country = sale.regionCode;
   let amountSource: "order" | "catalog" = "catalog";
@@ -1449,6 +1485,19 @@ async function packageProtected(env: Env, id: string, version: string): Promise<
   return response.ok;
 }
 
+/** Whether any of these buyer identities already holds a live, unrevoked licence for the package. */
+async function ownsPackage(env: Env, subjects: string[], packageId: string): Promise<boolean> {
+  for (const subject of subjects) {
+    const records = await stateJson<EntitlementRecord[]>(env, "/purchases?subject=" + encodeURIComponent(subject));
+    for (const record of records) {
+      if (record.packageId !== packageId) continue;
+      const expires = record.token.claims.expiresAt;
+      if (!expires || new Date(expires).getTime() > Date.now()) return true;
+    }
+  }
+  return false;
+}
+
 async function checkout(req: Request, env: Env): Promise<Response> {
   if (!env.STRIPE_SECRET_KEY) {
     return json({ error: "Checkout is temporarily unavailable." }, 503);
@@ -1508,6 +1557,10 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   }
 
   const subjects = await readBuyerSubjects(req, env);
+  if (await ownsPackage(env, subjects, packageId)) {
+    // A second purchase of the same licence is money for nothing. Restore it from /api/purchases instead.
+    return json({ error: "you already own this package", code: "already_owned" }, 409);
+  }
   const buyerId = subjects[0] || newBuyerSubject();
   const breakdown = quote(listing.amountCents, listing.currency, env, { inApp });
   const applicationFee = breakdown.processorFee.amountCents + breakdown.platformFee.amountCents +
@@ -1540,7 +1593,7 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   if (listing.interval) {
     fields.mode = "subscription";
     fields["line_items[0][price_data][recurring][interval]"] = listing.interval;
-    fields["subscription_data[application_fee_percent]"] = ((applicationFee / listing.amountCents) * 100).toFixed(2);
+    fields["subscription_data[application_fee_percent]"] = applicationFeePercent(applicationFee, listing.amountCents);
     fields["subscription_data[transfer_data][destination]"] = destination;
   } else {
     fields.mode = "payment";
@@ -1553,18 +1606,30 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   }
 
   try {
-    const session = await stripe(env, "/v1/checkout/sessions", {
+    const createSession = async (retryOf?: string) => stripe(env, "/v1/checkout/sessions", {
       method: "POST",
       headers: {
         "content-type": "application/x-www-form-urlencoded",
         // Stripe rejects a repeat of a key whose parameters changed (HTTP 400 "keys must be unique to the
         // request"). The key therefore has to cover everything that shapes the session — payout
         // destination, fee and currency too — or a seller's account change or a fee-rate change would
-        // make every retry by the same buyer fail for 24 hours.
-        "idempotency-key": await idempotencyKey(["azp", packageId, buyerId, listing.amountCents, listing.currency, applicationFee, destination, listing.interval ?? "", email ?? "", inApp ? "app" : "", automaticTax ? "tax" : "", externalTransactionToken ?? ""]),
+        // make every retry by the same buyer fail for 24 hours. `retryOf` (the id of a finished session
+        // the first key returned) gives the next attempt its own key.
+        "idempotency-key": await idempotencyKey(["azp", packageId, buyerId, listing.amountCents, listing.currency, applicationFee, destination, listing.interval ?? "", email ?? "", inApp ? "app" : "", automaticTax ? "tax" : "", externalTransactionToken ?? "", retryOf ?? ""]),
       },
       body: urlForm(fields),
     });
+
+    let session = await createSession();
+    // Within 24 hours the same key returns the SAME session. If that one is finished it has no URL to
+    // send the buyer to: a completed one means the purchase went through (never "no checkout URL"), an
+    // expired one is replaced by a fresh session under a new key.
+    if (typeof session.url !== "string" || !session.url) {
+      if (session.status === "complete") {
+        return json({ error: "this purchase is already complete", code: "already_owned" }, 409);
+      }
+      if (session.status === "expired" && typeof session.id === "string") session = await createSession(session.id);
+    }
 
     const id = typeof session.id === "string" ? session.id : "";
     const url = typeof session.url === "string" ? session.url : "";
@@ -1925,18 +1990,7 @@ async function webhook(req: Request, env: Env): Promise<Response> {
       const sessionId = typeof object.id === "string" ? object.id : "";
       if (!packageId || !buyerId || !sessionId) return json({ received: true, fulfilled: false });
 
-      await entitlementFor(env, sessionId, packageId, buyerId, interval);
-      await recordPaymentRefs(env, sessionId, object);
-      await queueGoogleReport(env, sessionId, object);
-
-      const subscriptionId = objectId(object.subscription);
-      if (subscriptionId && interval) {
-        await stateJson(env, "/subscription/" + encodeURIComponent(subscriptionId), {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ subscriptionId, packageId, subject: buyerId, interval }),
-        });
-      }
+      await fulfilSession(env, { sessionId, packageId, subject: buyerId, interval, object });
       return json({ received: true, fulfilled: true });
     }
 
@@ -1962,6 +2016,8 @@ async function webhook(req: Request, env: Env): Promise<Response> {
       };
       await entitlementFor(env, "invoice:" + invoiceId, sub.packageId, sub.subject, sub.interval);
       await recordPaymentRefs(env, "invoice:" + invoiceId, { invoice: invoiceId, payment_intent: object.payment_intent });
+      // A refund that arrived before this renewal was recorded applies to it too.
+      await applyPendingRefund(env, "invoice:" + invoiceId, { invoice: invoiceId, payment_intent: object.payment_intent });
       return json({ received: true, renewed: true });
     }
 
@@ -1969,25 +2025,30 @@ async function webhook(req: Request, env: Env): Promise<Response> {
     // every other buyer paid for. A partial refund is a goodwill gesture and keeps the licence.
     if (event.type === "charge.refunded") {
       if (object.refunded !== true) return json({ received: true, revoked: false });
-      const sessionId = await sessionForPayment(env, {
+      const refs = {
         paymentIntent: objectId(object.payment_intent),
         invoice: objectId(object.invoice),
         charge: objectId(object.id),
-      });
-      const revoked = sessionId ? await revokeEntitlement(env, sessionId, "refund") : false;
+      };
+      const sessionId = await sessionForPayment(env, refs);
+      let revoked = sessionId ? await revokeEntitlement(env, sessionId, "refund") : false;
+      if (revoked && sessionId) await revokeSubscription(env, sessionId, "refund");
+      if (!revoked) {
+        // Stripe does not order deliveries: the refund can land before the purchase is fulfilled
+        // (and the 404 from revocation is then not an error Stripe would ever retry). Remember it so
+        // fulfilment revokes the licence the moment it is issued.
+        await recordPendingRefund(env, refs, sessionId, "refund");
+      }
       if (sessionId) {
         await rpc(env, "externalReport.refund", { sessionId });
         await flushGoogleReports(env).catch((e) => console.error("google refund report failed", e));
       }
-      return json({ received: true, revoked });
+      return json({ received: true, revoked, pending: !revoked });
     }
 
     if (event.type === "charge.dispute.created" || event.type === "charge.dispute.closed") {
-      const sessionId = await sessionForPayment(env, {
-        paymentIntent: objectId(object.payment_intent),
-        charge: objectId(object.charge),
-      });
-      if (!sessionId) return json({ received: true, revoked: false });
+      const refs = { paymentIntent: objectId(object.payment_intent), charge: objectId(object.charge) };
+      const sessionId = await sessionForPayment(env, refs);
       // Stripe does not order deliveries: a delayed or retried `created` can land after the dispute
       // was won. The win is recorded per dispute, and a `created` for a won dispute changes nothing.
       const disputeId = objectId(object.id);
@@ -1996,16 +2057,26 @@ async function webhook(req: Request, env: Env): Promise<Response> {
         if (wonKey && (await rpc<{ value: string | null }>(env, "kv.get", { name: wonKey })).value) {
           return json({ received: true, revoked: false });
         }
-        return json({ received: true, revoked: await revokeEntitlement(env, sessionId, "dispute") });
+        const revoked = sessionId ? await revokeEntitlement(env, sessionId, "dispute") : false;
+        if (!revoked) await recordPendingRefund(env, refs, sessionId, "dispute");
+        return json({ received: true, revoked, pending: !revoked });
       }
       // Won: the money came back, so the licence does too (a refund-based revocation is left alone).
       if (object.status === "won") {
         if (wonKey) await rpc(env, "kv.put", { name: wonKey, value: new Date().toISOString() });
+        await clearPendingRefund(env, refs, sessionId, "dispute");
+        if (!sessionId) return json({ received: true, restored: false });
         const res = await state(env).fetch(new Request(
           "https://state.internal/entitlement-revocation/" + encodeURIComponent(sessionId) + "?reason=dispute",
           { method: "DELETE" },
         ));
         return json({ received: true, restored: res.ok });
+      }
+      // Lost: the money is gone for good, so a subscription stops renewing, not just this payment's licence.
+      if (object.status === "lost" && sessionId) {
+        await revokeEntitlement(env, sessionId, "dispute");
+        await revokeSubscription(env, sessionId, "dispute");
+        return json({ received: true, restored: false, revoked: true });
       }
       return json({ received: true, restored: false });
     }
@@ -2095,6 +2166,106 @@ async function sessionForPayment(
     }
   }
   return undefined;
+}
+
+/**
+ * Everything a paid Checkout Session owes: its licence, the payment refs a later refund will look up, the
+ * Google report, the subscription mapping that lets renewals mint tokens, and, last, any refund or
+ * dispute that was already waiting. Shared by the webhook and the success-page fallback so the two can
+ * not disagree about what fulfilment means.
+ */
+async function fulfilSession(
+  env: Env,
+  f: { sessionId: string; packageId: string; subject: string; interval?: "month" | "year"; object: Record<string, unknown> },
+): Promise<EntitlementRecord> {
+  const record = await entitlementFor(env, f.sessionId, f.packageId, f.subject, f.interval);
+  await recordPaymentRefs(env, f.sessionId, f.object);
+  await queueGoogleReport(env, f.sessionId, f.object);
+  const refunded = await applyPendingRefund(env, f.sessionId, {
+    payment_intent: f.object.payment_intent, invoice: f.object.invoice,
+  });
+  const subscriptionId = objectId(f.object.subscription);
+  if (subscriptionId && f.interval && !refunded) {
+    await stateJson(env, "/subscription/" + encodeURIComponent(subscriptionId), {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ subscriptionId, packageId: f.packageId, subject: f.subject, interval: f.interval }),
+    });
+  }
+  return record;
+}
+
+function pendingRefundKeys(refs: { paymentIntent?: string; invoice?: string; charge?: string }, sessionId?: string): string[] {
+  return [
+    sessionId && "refund-pending:session:" + sessionId,
+    refs.paymentIntent && "refund-pending:pi:" + refs.paymentIntent,
+    refs.invoice && "refund-pending:in:" + refs.invoice,
+  ].filter((x): x is string => !!x);
+}
+
+/** A refund or dispute for a purchase that is not fulfilled yet: kept until fulfilment finds it. */
+async function recordPendingRefund(
+  env: Env,
+  refs: { paymentIntent?: string; invoice?: string; charge?: string },
+  sessionId: string | undefined,
+  reason: "refund" | "dispute",
+): Promise<void> {
+  for (const name of pendingRefundKeys(refs, sessionId)) {
+    const existing = (await rpc<{ value: string | null }>(env, "kv.get", { name })).value;
+    if (existing === "refund") continue; // a refund outranks a dispute
+    await rpc(env, "kv.put", { name, value: reason });
+  }
+}
+
+async function clearPendingRefund(
+  env: Env,
+  refs: { paymentIntent?: string; invoice?: string; charge?: string },
+  sessionId: string | undefined,
+  reason: "refund" | "dispute",
+): Promise<void> {
+  for (const name of pendingRefundKeys(refs, sessionId)) {
+    const existing = (await rpc<{ value: string | null }>(env, "kv.get", { name })).value;
+    if (existing === reason) await rpc(env, "kv.put", { name, value: "" });
+  }
+}
+
+/** Apply a refund or dispute recorded before this purchase existed. True when one was applied. */
+async function applyPendingRefund(
+  env: Env,
+  sessionId: string,
+  object: { payment_intent?: unknown; invoice?: unknown },
+): Promise<boolean> {
+  const names = pendingRefundKeys({ paymentIntent: objectId(object.payment_intent), invoice: objectId(object.invoice) }, sessionId);
+  let reason: "refund" | "dispute" | undefined;
+  for (const name of names) {
+    const value = (await rpc<{ value: string | null }>(env, "kv.get", { name })).value;
+    if (value === "refund") reason = "refund";
+    else if (value === "dispute" && reason !== "refund") reason = "dispute";
+  }
+  if (!reason) return false;
+  await revokeEntitlement(env, sessionId, reason);
+  if (reason === "refund") {
+    await revokeSubscription(env, sessionId, reason);
+    await rpc(env, "externalReport.refund", { sessionId });
+    await flushGoogleReports(env).catch((e) => console.error("google refund report failed", e));
+  }
+  return reason === "refund";
+}
+
+/**
+ * A refunded or lost-dispute subscription payment ends the subscription's licences: every entitlement the
+ * buyer holds for that package from it is revoked and the renewal mapping is dropped, so `invoice.paid`
+ * stops minting tokens. (A one-off purchase has nothing else to revoke.)
+ */
+async function revokeSubscription(env: Env, sessionId: string, reason: "refund" | "dispute"): Promise<void> {
+  await state(env).fetch(new Request(
+    "https://state.internal/subscription-revocation/" + encodeURIComponent(sessionId),
+    {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason, revokedAt: new Date().toISOString() }),
+    },
+  ));
 }
 
 /** Revoke one entitlement. False when there is no such entitlement. */
@@ -2194,28 +2365,11 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
     return json({ status: "pending" }, 202);
   }
 
-  const record = await entitlementFor(
-    env,
-    id,
-    session.packageId,
-    session.buyerId,
-    session.interval,
-  );
-  await recordPaymentRefs(env, id, remote);
-  await queueGoogleReport(env, id, remote);
-
-  const subscriptionId = objectId(remote.subscription);
-  if (subscriptionId && session.interval) {
-    await stateJson(env, "/subscription/" + encodeURIComponent(subscriptionId), {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        subscriptionId,
-        packageId: session.packageId,
-        subject: session.buyerId,
-        interval: session.interval,
-      }),
-    });
+  const record = await fulfilSession(env, {
+    sessionId: id, packageId: session.packageId, subject: session.buyerId, interval: session.interval, object: remote,
+  });
+  if (await entitlementRevoked(env, id)) {
+    return json({ status: "revoked", error: { code: "revoked", message: "this purchase was refunded or disputed" } }, 403);
   }
 
   const cookie = await makeBuyerCookie(req, record.subject, env);
@@ -2800,6 +2954,28 @@ export class AzphaltState {
         signature,
       ));
       return json({ revoked: !!row });
+    }
+
+    match = path.match(/^\/subscription-revocation\/([^/]+)$/);
+    if (match && req.method === "PUT") {
+      const sessionId = decodeURIComponent(match[1]);
+      const { reason, revokedAt } = await req.json() as { reason: string; revokedAt: string };
+      const ent = first(sql.exec("SELECT subject,package_id,token_json FROM entitlements WHERE session_id=?", sessionId));
+      if (!ent) return json({ revoked: 0 });
+      if ((JSON.parse(String(ent.token_json)) as EntitlementToken).claims?.kind !== "subscription") return json({ revoked: 0 });
+      let revoked = 0;
+      for (const row of rows(sql.exec("SELECT session_id,token_json FROM entitlements WHERE subject=? AND package_id=?", String(ent.subject), String(ent.package_id)))) {
+        const token = JSON.parse(String(row.token_json)) as EntitlementToken;
+        if (token.claims?.kind !== "subscription") continue;
+        sql.exec(
+          "INSERT INTO entitlement_revocations(session_id,signature,reason,revoked_at) VALUES(?,?,?,?) " +
+          "ON CONFLICT(session_id) DO UPDATE SET reason=CASE WHEN excluded.reason='refund' THEN 'refund' ELSE reason END",
+          String(row.session_id), String(token.signature), reason, revokedAt,
+        );
+        revoked++;
+      }
+      sql.exec("DELETE FROM subscriptions WHERE subject=? AND package_id=?", String(ent.subject), String(ent.package_id));
+      return json({ revoked });
     }
 
     match = path.match(/^\/payment-ref\/([^/]+)$/);
@@ -3598,8 +3774,8 @@ async function queueGoogleReport(env: Env, sessionId: string, session: Record<st
     sessionId,
     packageName: extras.appId,
     token: extras.externalTransactionToken,
-    preTaxMicros: Math.max(0, total - tax) * 10_000,
-    taxMicros: tax * 10_000,
+    preTaxMicros: minorToMicros(Math.max(0, total - tax), currency),
+    taxMicros: minorToMicros(tax, currency),
     currency,
     region: extras.region,
     adminArea: extras.adminArea ?? undefined,

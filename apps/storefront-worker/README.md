@@ -248,6 +248,14 @@ enrolled, so a wrong flag still falls back to Play Billing.
 `GET /api/listings/{packageId}/breakdown` shows a seller all three for a listing; the checkout
 response's `breakdown` carries an `inAppFee` line for in-app checkouts.
 
+**Currencies.** Every amount called `amountCents` is in the currency's ISO 4217 minor unit: cents for
+USD, whole yen for JPY (`amountCents: 1000` is ¥1000), fils for KWD (`10000` is 10.000 KWD). The code
+converts between minor units and Google's micros through `src/currency.ts`, and
+`tools/validate-listings.mjs` rejects an amount that makes no sense for its currency. The Stripe flat
+fee `PROCESSOR_FLAT_CENTS` is in hundredths of a major unit (30 = 0.30) and is scaled per currency; set
+`PROCESSOR_FLAT_OVERRIDES='{"JPY":45}'` to give a currency its own fixed fee in its own minor unit
+(30 hundredths of a yen rounds to nothing). A malformed `*_BPS` or flat value falls back to its default.
+
 ### Play-route payouts
 
 On the Play route Google collects and pays the platform; the seller is paid by Stripe Connect transfer
