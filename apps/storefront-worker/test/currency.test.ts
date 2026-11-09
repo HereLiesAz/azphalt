@@ -35,9 +35,11 @@ describe("quote across currencies", () => {
   const env = makeEnv();
   it("does not charge 30 yen or 30 fils as the flat fee", () => {
     expect(quote(1000, "USD", env).processorFee.amountCents).toBe(59);
-    expect(quote(10_000, "KWD", env).processorFee.amountCents).toBe(Math.round(10_000 * 0.029) + 300);
-    expect(quote(1000, "JPY", env).processorFee.amountCents).toBe(Math.round(1000 * 0.029));
-    expect(quote(1000, "JPY", makeEnv({ PROCESSOR_FLAT_OVERRIDES: '{"JPY":45}' })).processorFee.amountCents).toBe(29 + 45);
+    // 10.000 KWD: 2.9% = 0.290 KWD = 290 fils, plus a flat 0.300 KWD = 300 fils.
+    expect(quote(10_000, "KWD", env).processorFee.amountCents).toBe(590);
+    // 1000 yen: 2.9% = 29 yen, and 30 hundredths of a yen is no yen.
+    expect(quote(1000, "JPY", env).processorFee.amountCents).toBe(29);
+    expect(quote(1000, "JPY", makeEnv({ PROCESSOR_FLAT_OVERRIDES: '{"JPY":45}' })).processorFee.amountCents).toBe(74);
   });
   it("a mistyped rate falls back instead of producing NaN", () => {
     const q = quote(1000, "USD", makeEnv({ PROCESSOR_PCT_BPS: "abc", PLATFORM_FEE_BPS: "-5", PROCESSOR_FLAT_CENTS: "x" }));
@@ -57,15 +59,17 @@ describe("quote across currencies", () => {
 });
 
 describe("applicationFeePercent", () => {
-  it("never under-collects and stays within one hundredth of a percent", () => {
-    for (const [fee, amount] of [[59 + 150, 1000], [29 + 150 + 50, 333], [1, 3], [17, 99], [4999, 9999]] as const) {
-      const pct = Number(applicationFeePercent(fee, amount));
-      expect(pct / 100 * amount).toBeGreaterThanOrEqual(fee - 1e-9);
-      expect(pct / 100 * amount - fee).toBeLessThan(amount * 0.0001 + 1e-9);
-    }
+  // Hand-computed: fee/amount to hundredths of a percent, rounded up so the platform never under-collects.
+  it.each([
+    [209, 1000, "20.90"], // 20.9 exactly
+    [1, 3, "33.34"], // 33.3333...
+    [17, 99, "17.18"], // 17.1717...
+    [229, 333, "68.77"], // 68.7687...
+    [4999, 9999, "50.00"], // 49.995 rounds up
+  ])("fee %i of %i is %s", (fee, amount, expected) => {
+    expect(applicationFeePercent(fee, amount)).toBe(expected);
   });
   it("is clamped to 0..100 with two decimals", () => {
-    expect(applicationFeePercent(209, 1000)).toBe("20.90");
     expect(applicationFeePercent(5000, 100)).toBe("100.00");
     expect(applicationFeePercent(0, 100)).toBe("0.00");
   });

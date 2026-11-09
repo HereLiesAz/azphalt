@@ -710,6 +710,11 @@ export function sellerBreakdown(listing: { amountCents: number; currency: string
 }
 
 async function stripe(env: Env, path: string, init: RequestInit): Promise<Record<string, unknown>> {
+  return (await stripeCall(env, path, init)).body;
+}
+
+/** Like {@link stripe}, also telling whether Stripe answered from its idempotency cache (`Idempotent-Replayed`). */
+async function stripeCall(env: Env, path: string, init: RequestInit): Promise<{ body: Record<string, unknown>; replayed: boolean }> {
   if (!env.STRIPE_SECRET_KEY) throw new Error("Stripe is not configured");
   const headers = new Headers(init.headers);
   headers.set("authorization", "Bearer " + env.STRIPE_SECRET_KEY);
@@ -726,7 +731,7 @@ async function stripe(env: Env, path: string, init: RequestInit): Promise<Record
     const error = body.error as { message?: string } | undefined;
     throw new Error(error?.message || "Stripe request failed");
   }
-  return body;
+  return { body, replayed: response.headers.get("idempotent-replayed") === "true" };
 }
 
 function urlForm(fields: Record<string, string | undefined>): string {
@@ -1613,7 +1618,7 @@ async function checkout(req: Request, env: Env): Promise<Response> {
   }
 
   try {
-    const createSession = async (retryOf?: string) => stripe(env, "/v1/checkout/sessions", {
+    const createSession = async (retryOf?: string) => stripeCall(env, "/v1/checkout/sessions", {
       method: "POST",
       headers: {
         "content-type": "application/x-www-form-urlencoded",
@@ -1627,15 +1632,19 @@ async function checkout(req: Request, env: Env): Promise<Response> {
       body: urlForm(fields),
     });
 
-    let session = await createSession();
-    // Within 24 hours the same key returns the SAME session. If that one is finished it has no URL to
-    // send the buyer to: a completed one means the purchase went through (never "no checkout URL"), an
-    // expired one is replaced by a fresh session under a new key.
-    if (typeof session.url !== "string" || !session.url) {
-      if (session.status === "complete") {
+    let { body: session, replayed } = await createSession();
+    // Within 24 hours the same key returns Stripe's SAVED creation response: the same session, still
+    // showing the url and `open` status it was created with, whatever has happened to it since. So when the
+    // answer is a replay (or carries no url) the live session is fetched before its state is trusted: a
+    // completed one means the purchase went through (never "no checkout URL"), an expired one is replaced
+    // under a new key, an open one is resumed at its current url.
+    if (typeof session.id === "string" && (replayed || typeof session.url !== "string" || !session.url)) {
+      const live = (await stripe(env, "/v1/checkout/sessions/" + encodeURIComponent(session.id), { method: "GET" })) as Record<string, unknown>;
+      if (live.status === "complete") {
         return json({ error: "this purchase is already complete", code: "already_owned" }, 409);
       }
-      if (session.status === "expired" && typeof session.id === "string") session = await createSession(session.id);
+      if (live.status === "expired") session = (await createSession(session.id)).body;
+      else session = live;
     }
 
     const id = typeof session.id === "string" ? session.id : "";
@@ -2027,6 +2036,7 @@ async function webhook(req: Request, env: Env): Promise<Response> {
         interval: "month" | "year";
       };
       await entitlementFor(env, "invoice:" + invoiceId, sub.packageId, sub.subject, sub.interval);
+      await linkEntitlementToSubscription(env, "invoice:" + invoiceId, subscriptionId);
       await recordPaymentRefs(env, "invoice:" + invoiceId, { invoice: invoiceId, payment_intent: object.payment_intent });
       // A refund that arrived before this renewal was recorded applies to it too.
       await applyPendingRefund(env, "invoice:" + invoiceId, { invoice: invoiceId, payment_intent: object.payment_intent });
@@ -2191,13 +2201,16 @@ async function fulfilSession(
   f: { sessionId: string; packageId: string; subject: string; interval?: "month" | "year"; object: Record<string, unknown> },
 ): Promise<EntitlementRecord> {
   const record = await entitlementFor(env, f.sessionId, f.packageId, f.subject, f.interval);
+  const subscriptionId = objectId(f.object.subscription);
+  if (subscriptionId && f.interval) await linkEntitlementToSubscription(env, f.sessionId, subscriptionId);
   await recordPaymentRefs(env, f.sessionId, f.object);
   await queueGoogleReport(env, f.sessionId, f.object);
   const refunded = await applyPendingRefund(env, f.sessionId, {
     payment_intent: f.object.payment_intent, invoice: f.object.invoice,
   });
-  const subscriptionId = objectId(f.object.subscription);
-  if (subscriptionId && f.interval && !refunded) {
+  // A subscription a refund or lost dispute has ended stays ended: a replay of its checkout completion
+  // (Stripe retries, or the success page's own fallback) must not bring the renewal mapping back.
+  if (subscriptionId && f.interval && !refunded && !(await subscriptionTerminated(env, subscriptionId))) {
     await stateJson(env, "/subscription/" + encodeURIComponent(subscriptionId), {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -2205,6 +2218,18 @@ async function fulfilSession(
     });
   }
   return record;
+}
+
+async function linkEntitlementToSubscription(env: Env, sessionId: string, subscriptionId: string): Promise<void> {
+  await stateJson(env, "/entitlement-subscription/" + encodeURIComponent(sessionId), {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ subscriptionId }),
+  });
+}
+
+async function subscriptionTerminated(env: Env, subscriptionId: string): Promise<boolean> {
+  return (await stateJson<{ terminated: boolean }>(env, "/subscription-termination/" + encodeURIComponent(subscriptionId))).terminated;
 }
 
 function pendingRefundKeys(refs: { paymentIntent?: string; invoice?: string; charge?: string }, sessionId?: string): string[] {
@@ -2694,6 +2719,19 @@ export class AzphaltState {
       sql.exec(
         "CREATE INDEX IF NOT EXISTS entitlement_revocations_sig_idx ON entitlement_revocations(signature)"
       );
+      // Which Stripe subscription each licence period came from, and which subscriptions have been ended by
+      // a refund or a lost dispute. Termination is durable so a replayed checkout completion cannot revive it,
+      // and revocation is scoped to ONE subscription so a buyer's replacement purchase is never touched.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS entitlement_subscriptions (session_id TEXT PRIMARY KEY, subscription_id TEXT NOT NULL)"
+      );
+      sql.exec(
+        "CREATE INDEX IF NOT EXISTS entitlement_subscriptions_sub_idx ON entitlement_subscriptions(subscription_id)"
+      );
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS subscription_terminations (" +
+        "subscription_id TEXT PRIMARY KEY, reason TEXT NOT NULL, terminated_at TEXT NOT NULL)"
+      );
       // Every token signature issued for a purchase. A subscription is exchanged again on restore and
       // renewal, each time signing a new token; `entitlements` keeps only the first, so a revocation
       // must reach the later ones through this table.
@@ -2999,17 +3037,38 @@ export class AzphaltState {
       return json({ revoked: !!row });
     }
 
+    match = path.match(/^\/entitlement-subscription\/([^/]+)$/);
+    if (match && req.method === "PUT") {
+      const { subscriptionId } = await req.json() as { subscriptionId: string };
+      sql.exec(
+        "INSERT OR REPLACE INTO entitlement_subscriptions(session_id,subscription_id) VALUES(?,?)",
+        decodeURIComponent(match[1]), subscriptionId,
+      );
+      return json({ ok: true });
+    }
+
+    match = path.match(/^\/subscription-termination\/([^/]+)$/);
+    if (match && req.method === "GET") {
+      const row = first(sql.exec("SELECT reason FROM subscription_terminations WHERE subscription_id=?", decodeURIComponent(match[1])));
+      return json({ terminated: !!row, reason: row ? String(row.reason) : null });
+    }
+
+    // End the subscription this licence period came from: revoke every period of THAT subscription (and no
+    // other purchase of the same package), drop its renewal mapping and record the termination for good.
     match = path.match(/^\/subscription-revocation\/([^/]+)$/);
     if (match && req.method === "PUT") {
       const sessionId = decodeURIComponent(match[1]);
       const { reason, revokedAt } = await req.json() as { reason: string; revokedAt: string };
-      const ent = first(sql.exec("SELECT subject,package_id,token_json FROM entitlements WHERE session_id=?", sessionId));
-      if (!ent) return json({ revoked: 0 });
-      if ((JSON.parse(String(ent.token_json)) as EntitlementToken).claims?.kind !== "subscription") return json({ revoked: 0 });
+      const link = first(sql.exec("SELECT subscription_id FROM entitlement_subscriptions WHERE session_id=?", sessionId));
+      if (!link) return json({ revoked: 0 });
+      const subscriptionId = String(link.subscription_id);
       let revoked = 0;
-      for (const row of rows(sql.exec("SELECT session_id,token_json FROM entitlements WHERE subject=? AND package_id=?", String(ent.subject), String(ent.package_id)))) {
+      for (const row of rows(sql.exec(
+        "SELECT e.session_id AS session_id, e.token_json AS token_json FROM entitlements e " +
+        "JOIN entitlement_subscriptions s ON s.session_id=e.session_id WHERE s.subscription_id=?",
+        subscriptionId,
+      ))) {
         const token = JSON.parse(String(row.token_json)) as EntitlementToken;
-        if (token.claims?.kind !== "subscription") continue;
         sql.exec(
           "INSERT INTO entitlement_revocations(session_id,signature,reason,revoked_at) VALUES(?,?,?,?) " +
           "ON CONFLICT(session_id) DO UPDATE SET reason=CASE WHEN excluded.reason='refund' THEN 'refund' ELSE reason END",
@@ -3017,7 +3076,12 @@ export class AzphaltState {
         );
         revoked++;
       }
-      sql.exec("DELETE FROM subscriptions WHERE subject=? AND package_id=?", String(ent.subject), String(ent.package_id));
+      sql.exec("DELETE FROM subscriptions WHERE subscription_id=?", subscriptionId);
+      sql.exec(
+        "INSERT INTO subscription_terminations(subscription_id,reason,terminated_at) VALUES(?,?,?) " +
+        "ON CONFLICT(subscription_id) DO UPDATE SET reason=CASE WHEN excluded.reason='refund' THEN 'refund' ELSE reason END",
+        subscriptionId, reason, revokedAt,
+      );
       return json({ revoked });
     }
 
