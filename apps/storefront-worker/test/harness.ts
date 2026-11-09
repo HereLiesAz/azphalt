@@ -7,6 +7,7 @@
  * - `durableState()` runs the real `AzphaltState` class over `node:sqlite`, the same SQLite the
  *   Durable Object storage API wraps, so every SQL statement the Worker issues is executed for real.
  */
+import { createHmac } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { AzphaltState } from "../src/index";
 
@@ -69,3 +70,10 @@ export const baseVars = {
   PUBLIC_ORIGIN: "https://azphalt.store",
   GITHUB_RAW_BASE: "https://raw.githubusercontent.com/HereLiesAz/azphalt/main/apps/storefront/registry",
 };
+
+/** A signed buyer cookie for `subject`, as the Worker issues it (`makeBuyerCookie`), for tests that act as that buyer. */
+export function buyerCookie(subject: string, key: string): string {
+  const payload = Buffer.from(JSON.stringify({ v: 1, subjects: [subject] })).toString("base64url");
+  const signature = createHmac("sha256", key).update(payload).digest("base64url");
+  return "azphalt_buyer_session=" + payload + "." + signature;
+}

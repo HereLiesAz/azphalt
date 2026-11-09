@@ -399,9 +399,11 @@ A buyer's licence lives in the signed `azphalt_buyer_session` cookie and behind 
 `session_id` link. Checkout always collects an email (and creates a Stripe Customer for one-time
 purchases), and Stripe sends the receipt there. A buyer who has lost both the cookie and the link
 writes in with that email; find the payment in the Stripe dashboard by email, take its Checkout Session
-id (`cs_…`), and either send them `https://azphalt.store/checkout/success?session_id=cs_…` (opening it
-restores the cookie) or fetch the token with `GET /api/admin/entitlements/{sessionId}` (admin) and send
-that.
+id (`cs_…`) and fetch the token with `GET /api/admin/entitlements/{sessionId}` (admin), then send that.
+(The success link alone no longer works: `GET /api/checkout/session/{id}` answers only the buyer who
+started the checkout, by their buyer cookie or by the one-time `session.claim` the checkout response
+returned, sent as `x-checkout-claim`; anyone else gets the same `404` as an unknown session, and a
+claim delivers the token once.)
 
 Known limit: ratings are one-per-browser only for honest browsers — a client that discards its
 cookie can add more, and the per-IP `WRITE_LIMITER` binding is the only brake. Bind it in production.
