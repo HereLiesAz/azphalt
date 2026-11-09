@@ -179,6 +179,35 @@ describe("response hardening", () => {
   });
 });
 
+describe("Worker module exports", () => {
+  it("export only functions, classes and the default handler: workerd refuses to load any other named export", async () => {
+    const mod = await import("../src/index") as Record<string, unknown>;
+    const bad = Object.entries(mod).filter(([name, v]) => name !== "default" && typeof v !== "function").map(([name]) => name);
+    expect(bad).toEqual([]);
+  });
+});
+
+describe("storefront content security policy", () => {
+  const page = (host: string, path = "/") =>
+    worker.fetch(new Request(`https://${host}${path}`, { headers: { accept: "text/html" } }), makeEnv({
+      ASSETS: assets({ "/index.html": "<title>store</title>", "/catalog.json": "[]", "/listings.json": "[]" }),
+    }));
+
+  it("the storefront shell gets a script-src 'self' policy with no inline scripts or eval", async () => {
+    const csp = (await page("azphalt.store")).headers.get("content-security-policy")!;
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).not.toMatch(/script-src[^;]*unsafe/);
+    expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).toContain("connect-src 'self'");
+  });
+
+  it("JSON responses keep only the frame-ancestors baseline", async () => {
+    const res = await worker.fetch(new Request("https://azphalt.store/api/health"), makeEnv());
+    expect(res.headers.get("content-security-policy")).toBe("frame-ancestors 'none'");
+  });
+});
+
 describe("publish zip cap", () => {
   it("refuses an archive that inflates past the uncompressed ceiling", async () => {
     // 40 MB of zeros deflates to a few KB but exceeds the 32 MB per-entry ceiling.

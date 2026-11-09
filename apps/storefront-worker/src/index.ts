@@ -3705,8 +3705,8 @@ async function serveStorefront(req: Request, env: Env): Promise<Response> {
 }
 
 /**
- * Baseline hardening headers for every response (API, assets, docs). No blanket CSP here — the store
- * and docs ship inline bootstrap scripts a strict policy would break — but clickjacking (the store's
+ * Baseline hardening headers for every response (API, assets, docs). The only blanket policy is
+ * `frame-ancestors`; the storefront's HTML additionally gets {@link STOREFRONT_CSP}. Clickjacking (the store's
  * moderation page takes an admin token), MIME sniffing, referrer leakage and downgrade are closed.
  */
 const SECURITY_HEADERS: Record<string, string> = {
@@ -3717,10 +3717,32 @@ const SECURITY_HEADERS: Record<string, string> = {
   "strict-transport-security": "max-age=31536000; includeSubDomains",
 };
 
-function withSecurityHeaders(res: Response): Response {
+/**
+ * The storefront's page policy. The built shell is one external module script and the React app styles
+ * through `style` attributes, so scripts are same-origin only (no inline, no eval) while styles allow
+ * inline plus the one Google Fonts stylesheet it imports. Everything the page fetches is same-origin API.
+ * Applied to the storefront's HTML only: the docs site (azphalt.org) ships inline bootstrap scripts.
+ */
+const STOREFRONT_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: https:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
+function withSecurityHeaders(res: Response, req?: Request): Response {
   if (res.status === 101) return res;
   const headers = new Headers(res.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) if (!headers.has(name)) headers.set(name, value);
+  if (req && !DOCS_HOST.test(new URL(req.url).hostname) && (headers.get("content-type") ?? "").includes("text/html")) {
+    headers.set("content-security-policy", STOREFRONT_CSP);
+  }
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
@@ -3749,9 +3771,9 @@ function withCors(req: Request, res: Response): Response {
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     if (req.method === "OPTIONS" && PUBLIC_READ.test(new URL(req.url).pathname)) {
-      return withSecurityHeaders(withCors(req, new Response(null, { status: 204 })));
+      return withSecurityHeaders(withCors(req, new Response(null, { status: 204 })), req);
     }
-    return withSecurityHeaders(withCors(req, await handle(req, env)));
+    return withSecurityHeaders(withCors(req, await handle(req, env)), req);
   },
   async scheduled(_event: unknown, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
     const job = runScheduled(env);
