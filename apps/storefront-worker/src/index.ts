@@ -796,6 +796,14 @@ async function allowWrite(req: Request, env: Env): Promise<boolean> {
   return (await env.WRITE_LIMITER.limit({ key })).success;
 }
 
+/** A keyed hash of the caller's address, or undefined when it is unknown. Not reversible without the key. */
+async function addressHash(req: Request, env: Env): Promise<string | undefined> {
+  const ip = req.headers.get("cf-connecting-ip");
+  if (!ip) return undefined;
+  const key = (await runtimeSecrets(env)).buyerSessionSecret;
+  return b64url(await hmac(key, "addr:" + ip)).slice(0, 22);
+}
+
 async function readJson(req: Request, max = MAX_JSON_BODY): Promise<Record<string, unknown> | undefined> {
   const body = await readCappedJson(req, max);
   return body && body !== "too-large" && typeof body === "object" && !Array.isArray(body)
@@ -844,7 +852,7 @@ async function rate(req: Request, env: Env): Promise<Response> {
   const aggregate = await stateJson<RatingAggregate>(env, "/rating", {
     method: "PUT",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ packageId, subject, stars }),
+    body: JSON.stringify({ packageId, subject, stars, ipHash: await addressHash(req, env) }),
   });
   const cookie = await makeBuyerCookie(req, subject, env);
   return json(aggregate, 200, cookie ? { "set-cookie": cookie } : {});
@@ -1074,6 +1082,7 @@ const MAX_INSTALL_BODY = 256 * 1024;
 
 /** `POST /installs` — install/uninstall transitions against report tokens (repository-api.md § 8). */
 async function reportInstalls(req: Request, env: Env): Promise<Response> {
+  if (!(await allowWrite(req, env))) return REPO_ERROR(429, "rate_limited", "too many requests");
   const raw = await readCappedJson(req, MAX_INSTALL_BODY);
   if (raw === "too-large") return REPO_ERROR(413, "payload_too_large", "at most 200 events per request");
   const body = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : undefined;
@@ -1100,7 +1109,7 @@ async function reportInstalls(req: Request, env: Env): Promise<Response> {
   return json(await stateJson(env, "/installs", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ events: clean }),
+    body: JSON.stringify({ events: clean, ipHash: await addressHash(req, env) }),
   }));
 }
 
@@ -2773,6 +2782,15 @@ export class AzphaltState {
         "package_id TEXT NOT NULL, subject TEXT NOT NULL, stars INTEGER NOT NULL, updated_at TEXT NOT NULL, " +
         "PRIMARY KEY(package_id, subject))"
       );
+      // A keyed hash of the rater's network address (never the address itself): a browser that drops its
+      // cookie to rate again lands on the same hash, so one address holds one rating per package.
+      try { sql.exec("ALTER TABLE ratings ADD COLUMN ip_hash TEXT"); } catch { /* already added */ }
+      // One counted install per (package, address hash, UTC day): report tokens are single-use, but a
+      // client can mint as many as it likes by downloading again.
+      sql.exec(
+        "CREATE TABLE IF NOT EXISTS install_dedupe (" +
+        "package_id TEXT NOT NULL, ip_hash TEXT NOT NULL, day TEXT NOT NULL, PRIMARY KEY(package_id, ip_hash, day))"
+      );
       // Filed reports. Nothing here identifies the filer beyond a `claimant` they chose to type.
       sql.exec(
         "CREATE TABLE IF NOT EXISTS reports (" +
@@ -3367,18 +3385,22 @@ export class AzphaltState {
     }
 
     if (req.method === "PUT" && path === "/rating") {
-      const { packageId, subject, stars } = await req.json() as {
+      const { packageId, subject, stars, ipHash } = await req.json() as {
         packageId: string;
         subject: string;
         stars: number;
+        ipHash?: string;
       };
+      // One rating per address per package: a fresh cookie from the same address replaces, not adds.
+      if (ipHash) sql.exec("DELETE FROM ratings WHERE package_id=? AND ip_hash=? AND subject<>?", packageId, ipHash, subject);
       sql.exec(
-        "INSERT INTO ratings(package_id,subject,stars,updated_at) VALUES(?,?,?,?) " +
-        "ON CONFLICT(package_id,subject) DO UPDATE SET stars=excluded.stars, updated_at=excluded.updated_at",
+        "INSERT INTO ratings(package_id,subject,stars,updated_at,ip_hash) VALUES(?,?,?,?,?) " +
+        "ON CONFLICT(package_id,subject) DO UPDATE SET stars=excluded.stars, updated_at=excluded.updated_at, ip_hash=excluded.ip_hash",
         packageId,
         subject,
         stars,
         new Date().toISOString(),
+        ipHash ?? null,
       );
       const row = first(sql.exec(
         "SELECT AVG(stars) AS rating, COUNT(*) AS n FROM ratings WHERE package_id=?",
@@ -3519,7 +3541,8 @@ export class AzphaltState {
 
     if (req.method === "POST" && path === "/installs") {
       // One Durable Object, one thread: each redeem-and-count below is atomic without a transaction.
-      const { events } = await req.json() as { events: InstallEvent[] };
+      const { events, ipHash } = await req.json() as { events: InstallEvent[]; ipHash?: string };
+      const day = new Date().toISOString().slice(0, 10);
       let accepted = 0;
       let rejected = 0;
       const receipts: { id: string; receipt: string }[] = [];
@@ -3535,11 +3558,17 @@ export class AzphaltState {
             rejected++;
             continue;
           }
-          sql.exec(
-            "INSERT INTO install_counts(package_id,installs,uninstalls) VALUES(?,1,0) " +
-            "ON CONFLICT(package_id) DO UPDATE SET installs=installs+1",
-            event.id,
-          );
+          // Accepted (the token is spent and a receipt issued) but counted once per address per day.
+          const fresh = !ipHash || first(sql.exec(
+            "INSERT OR IGNORE INTO install_dedupe(package_id,ip_hash,day) VALUES(?,?,?) RETURNING 1 AS n", event.id, ipHash, day,
+          )) !== undefined;
+          if (fresh) {
+            sql.exec(
+              "INSERT INTO install_counts(package_id,installs,uninstalls) VALUES(?,1,0) " +
+              "ON CONFLICT(package_id) DO UPDATE SET installs=installs+1",
+              event.id,
+            );
+          }
           const bytes = new Uint8Array(32);
           crypto.getRandomValues(bytes);
           const receipt = b64url(bytes);
