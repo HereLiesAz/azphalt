@@ -71,11 +71,19 @@ export interface DownloadOptions {
   /** Progress callback, invoked as bytes arrive: `(received, total)`. */
   onProgress?: (received: number, total: number) => void;
   /**
-   * The container's expected `sha256-<hex>` digest (the version's `digest` from the repository detail
-   * or catalog). When given, the downloaded bytes are hashed and a mismatch throws — corruption,
-   * truncation and a swapped artifact are all caught before a host trusts the file.
+   * The expected `sha256-<hex>` digest of the exact bytes served: the version's **`fileDigest`** from
+   * the repository detail (`versions[].fileDigest`) or catalog. NOT `integrity`, which is the digest of
+   * the unsigned container and never matches a signed download. When given, the downloaded bytes are
+   * hashed and a mismatch throws — corruption, truncation and a swapped artifact are all caught before
+   * a host trusts the file.
    */
   expectedDigest?: string;
+  /**
+   * Look the version's `fileDigest` up in the repository detail and verify the download against it.
+   * Throws when the repository publishes none, so "verified" is never claimed without a digest.
+   * Ignored when `expectedDigest` is given.
+   */
+  verify?: boolean;
   /**
    * Hard ceiling on the download size in bytes (default 1 GiB). The total comes from the server's
    * `Content-Range`, so without a ceiling a hostile server could make the client allocate an arbitrary
@@ -256,14 +264,28 @@ export class RepositoryClient {
    * `401` (no token) and `402` (unlicensed) on a paid package throw, as before.
    */
   public async download(id: string, version: string, opts: DownloadOptions = {}): Promise<Uint8Array> {
+    let expected = opts.expectedDigest;
+    if (expected === undefined && opts.verify) {
+      expected = await this.fileDigest(id, version);
+      if (!expected) throw new Error(`Repository publishes no fileDigest for ${id}@${version}; cannot verify the download`);
+    }
     const bytes = await this.downloadRaw(id, version, opts);
-    if (opts.expectedDigest !== undefined) {
+    if (expected !== undefined) {
       const got = await sha256Digest(bytes);
-      if (got !== opts.expectedDigest) {
-        throw new Error(`Download failed integrity check: expected ${opts.expectedDigest}, got ${got}`);
+      if (got !== expected) {
+        throw new Error(`Download failed integrity check: expected ${expected}, got ${got}`);
       }
     }
     return bytes;
+  }
+
+  /** The `fileDigest` (sha256 of the served bytes) a repository publishes for one version, if any. */
+  public async fileDigest(id: string, version: string): Promise<string | undefined> {
+    const res = await fetch(`${this.baseUrl}/packages/${encodeURIComponent(id)}`, { headers: this.headers });
+    if (!res.ok) throw new Error(`Fetch package ${id} failed: ${res.status}`);
+    const detail = (await res.json()) as { versions?: Array<{ version?: string; fileDigest?: string }> };
+    const found = detail.versions?.find((v) => v.version === version)?.fileDigest;
+    return typeof found === "string" && /^sha256-[0-9a-f]{64}$/.test(found) ? found : undefined;
   }
 
   private async downloadRaw(id: string, version: string, opts: DownloadOptions): Promise<Uint8Array> {

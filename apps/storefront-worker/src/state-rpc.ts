@@ -138,6 +138,23 @@ export function inAppRpc(sql: SqlLike, method: string, a: Args): unknown {
       sql.exec("UPDATE external_reports SET refund_status='pending' WHERE session_id=? AND refund_status IS NULL", String(a.sessionId));
       return {};
 
+    // ── checkout claims: the one-time secret the client that started a checkout holds ──
+    case "claim.put":
+      sql.exec("INSERT OR REPLACE INTO kv(name,value) VALUES(?,?)", "claim:" + String(a.sessionId), "h:" + String(a.hash));
+      return {};
+    case "claim.check": {
+      const row = [...sql.exec("SELECT value FROM kv WHERE name=?", "claim:" + String(a.sessionId))][0];
+      return { valid: !!row && String(row.value) === "h:" + String(a.hash) };
+    }
+    case "claim.consume": {
+      // Atomic in the single-threaded Durable Object: the first caller with the right hash wins, once.
+      const name = "claim:" + String(a.sessionId);
+      const row = [...sql.exec("SELECT value FROM kv WHERE name=?", name)][0];
+      if (!row || String(row.value) !== "h:" + String(a.hash)) return { valid: false };
+      sql.exec("UPDATE kv SET value='used' WHERE name=?", name);
+      return { valid: true };
+    }
+
     // ── cursors ──
     case "kv.get": {
       const row = [...sql.exec("SELECT value FROM kv WHERE name=?", String(a.name))][0];

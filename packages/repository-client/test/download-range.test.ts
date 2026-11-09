@@ -111,6 +111,25 @@ describe("RepositoryClient.download — integrity and hostile servers", () => {
     await expect(client.download("com.x.pack", "1.0.0", { chunkSize: 100, expectedDigest: "sha256-" + "0".repeat(64) })).rejects.toThrow(/integrity/);
   });
 
+  it("verify:true checks the download against the detail's fileDigest, never integrity", async () => {
+    const buf = bytes(300);
+    const good = await sha(buf);
+    const serve = (detail: unknown) => {
+      const inner = rangeServer(buf) as unknown as typeof fetch;
+      global.fetch = ((url: string, init?: RequestInit) =>
+        /\/packages\/[^/]+$/.test(String(url))
+          ? Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(detail) })
+          : inner(url, init)) as unknown as typeof fetch;
+    };
+    const client = new RepositoryClient({ url: "https://r.example" });
+    serve({ versions: [{ version: "1.0.0", integrity: "sha256-" + "1".repeat(64), fileDigest: good }] });
+    await expect(client.download("com.x.pack", "1.0.0", { chunkSize: 100, verify: true })).resolves.toHaveLength(300);
+    serve({ versions: [{ version: "1.0.0", integrity: good, fileDigest: "sha256-" + "2".repeat(64) }] });
+    await expect(client.download("com.x.pack", "1.0.0", { chunkSize: 100, verify: true })).rejects.toThrow(/integrity check/);
+    serve({ versions: [{ version: "1.0.0", integrity: good }] });
+    await expect(client.download("com.x.pack", "1.0.0", { chunkSize: 100, verify: true })).rejects.toThrow(/no fileDigest/);
+  });
+
   it("refuses a server-declared total above maxBytes instead of allocating it", async () => {
     global.fetch = (() =>
       Promise.resolve({

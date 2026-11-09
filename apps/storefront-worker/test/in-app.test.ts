@@ -367,12 +367,13 @@ describe("in-app Stripe checkout", () => {
     stripeCheckout();
     const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid", inApp: true, appId: GRAFFUX, region: "us", externalTransactionToken: "ext-tok" }), env);
     expect(res.status).toBe(200);
+    const { session: { claim } } = await res.json() as { session: { claim: string } };
     const calls = fakeUpstream((url) => {
       if (url.endsWith("/v1/checkout/sessions/cs_1")) return new Response(JSON.stringify({ id: "cs_1", payment_status: "paid", status: "complete", amount_total: 1080, currency: "usd", total_details: { amount_tax: 80 }, created: 1790000000 }));
       if (url.includes("/externalTransactions?")) return new Response("{}");
       return undefined;
     });
-    expect((await worker.fetch(req("GET", "/api/checkout/session/cs_1"), env)).status).toBe(200);
+    expect((await worker.fetch(req("GET", "/api/checkout/session/cs_1", undefined, { "x-checkout-claim": claim }), env)).status).toBe(200);
     const report = calls.find((c) => c.url.includes("/externalTransactions?"))!;
     expect(report.url).toContain(API + GRAFFUX + "/externalTransactions?externalTransactionId=azp-");
     expect(JSON.parse(report.body)).toMatchObject({

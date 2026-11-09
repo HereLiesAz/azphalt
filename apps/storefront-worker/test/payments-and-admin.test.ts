@@ -7,12 +7,14 @@ import { generateKeyPairSync, createHash, createHmac } from "node:crypto";
 import { zipSync, strToU8 } from "fflate";
 import worker from "../src/index";
 import { inspectAzp } from "../src/publish";
-import { assets, baseVars, durableState } from "./harness";
+import { assets, baseVars, buyerCookie, durableState } from "./harness";
 
+const BUYER_ID = "buyer_" + "c".repeat(24);
 const { privateKey, publicKey } = generateKeyPairSync("ed25519");
 const ENTITLEMENT = {
   ENTITLEMENT_PRIVATE_KEY_PKCS8_B64: privateKey.export({ type: "pkcs8", format: "der" }).toString("base64"),
   ENTITLEMENT_PUBLIC_KEY_SPKI_B64: publicKey.export({ type: "spki", format: "der" }).toString("base64"),
+  BUYER_SESSION_SECRET: "buyer-secret",
 };
 
 function makeEnv(extra: Record<string, unknown> = {}) {
@@ -41,7 +43,7 @@ function signedWebhook(secret: string, event: unknown): Request {
 
 const session = (payment_status: string) => ({
   type: "checkout.session.completed",
-  data: { object: { id: "cs_1", payment_status, metadata: { packageId: "com.example.paid", buyerId: "buyer-1" } } },
+  data: { object: { id: "cs_1", payment_status, metadata: { packageId: "com.example.paid", buyerId: BUYER_ID } } },
 });
 
 describe("Stripe Connect is operator-only", () => {
@@ -145,7 +147,7 @@ describe("fulfilment only on settled payment", () => {
     const res = await worker.fetch(signedWebhook("whsec_test", session("paid")), env);
     expect(await res.json()).toEqual({ received: true, fulfilled: true });
 
-    const result = await worker.fetch(new Request("https://azphalt.store/api/checkout/session/cs_1"), env);
+    const result = await worker.fetch(new Request("https://azphalt.store/api/checkout/session/cs_1", { headers: { cookie: buyerCookie(BUYER_ID, "buyer-" + "sec" + "ret") } }), env);
     expect(result.status).toBe(200);
     const { status, packageId, token } = (await result.json()) as { status: string; packageId: string; token: string };
     expect(status).toBe("ready");

@@ -1459,6 +1459,9 @@ async function repositoryDetail(req: Request, env: Env, id: string): Promise<Res
   if (!pkg) return json({ error: { code: "not_found", message: "unknown package: " + id } }, 404);
   const paid = !publicPkg && !!listing;
   const yanked = !!(await isRevoked(env, id, pkg.version));
+  // Paid bytes are stored exactly as uploaded and checked against the listing's integrity, so for them
+  // the two digests coincide; a catalog package carries its own fileDigest.
+  const servedDigest = paid ? listing!.package.integrity : publicPkg?.fileDigest;
   return json({
     ...pkg,
     ...(ratings[id] ?? { ratingCount: 0 }),
@@ -1467,8 +1470,12 @@ async function repositoryDetail(req: Request, env: Env, id: string): Promise<Res
     priceStatus: paid ? "paid" : "free",
     versions: [{
       version: pkg.version,
+      // `integrity` is the digest of the UNSIGNED container (what the publisher built); it never matches
+      // the signed file a download returns. `fileDigest` is the sha256 of the exact bytes served, and is
+      // the value a client verifies a download against. `digest` is kept as its alias for older clients
+      // and is absent when the digest of the served bytes is unknown, rather than a value that cannot match.
       integrity: pkg.integrity,
-      digest: pkg.integrity,
+      ...(servedDigest ? { fileDigest: servedDigest, digest: servedDigest } : {}),
       size: pkg.bytes,
       yanked,
     }],
@@ -1652,12 +1659,17 @@ async function checkout(req: Request, env: Env): Promise<Response> {
       await rpc(env, "sessionExtras.put", { sessionId: id, appId, program, region, adminArea, externalTransactionToken });
     }
 
+    // The one-time value that lets the client that started this checkout (and only it) read the
+    // result from `GET /api/checkout/session/{id}`; only its hash is kept.
+    const claim = b64url(crypto.getRandomValues(new Uint8Array(24)));
+    await rpc(env, "claim.put", { sessionId: id, hash: await sha256Integrity(enc.encode(claim)) });
     const cookie = await makeBuyerCookie(req, buyerId, env);
     return json(
       {
         session: {
           id,
           url,
+          claim,
           status: "pending",
           amount: { amountCents: listing.amountCents, currency: listing.currency },
         },
@@ -2315,7 +2327,36 @@ async function adminEntitlement(req: Request, env: Env, sessionId: string): Prom
   });
 }
 
+/**
+ * `GET /api/checkout/session/{id}` hands out the licence token, so it is not a public lookup: the caller
+ * must be the buyer who started the checkout, shown by either the signed buyer cookie it was given (its
+ * subject is the session's buyer) or the one-time claim `POST /api/checkout` returned, sent as the
+ * `x-checkout-claim` header. A claim is consumed when the token is delivered: the token is retrievable once
+ * that way, and the cookie it sets (or `/api/purchases`) is how the buyer gets it again. Anyone else gets
+ * the same 404 an unknown session gets, whatever the session's state.
+ */
 async function sessionResult(req: Request, env: Env, id: string): Promise<Response> {
+  const notFound = () => json({ error: { code: "not_found", message: "unknown checkout session" } }, 404);
+  const claim = req.headers.get("x-checkout-claim") ?? "";
+  const claimHash = claim ? await sha256Integrity(enc.encode(claim)) : "";
+  const subjects = await readBuyerSubjects(req, env);
+
+  const entRes = await state(env).fetch(new Request("https://state.internal/entitlement/" + encodeURIComponent(id)));
+  let owner: string | undefined;
+  if (entRes.ok) owner = ((await entRes.clone().json()) as EntitlementRecord).subject;
+  else {
+    const stored = await state(env).fetch(new Request("https://state.internal/session/" + encodeURIComponent(id)));
+    if (stored.ok) owner = ((await stored.json()) as { buyerId: string }).buyerId;
+  }
+  if (!owner) return notFound();
+  const byCookie = subjects.includes(owner);
+  const byClaim = !byCookie && !!claimHash &&
+    (await rpc<{ valid: boolean }>(env, "claim.check", { sessionId: id, hash: claimHash })).valid;
+  if (!byCookie && !byClaim) return notFound();
+  const consume = async () => {
+    if (byClaim) await rpc(env, "claim.consume", { sessionId: id, hash: claimHash });
+  };
+
   if (await entitlementRevoked(env, id)) {
     // `error.code` matches every other repository error; `status` stays for clients that read it.
     return json({ status: "revoked", error: { code: "revoked", message: "this purchase was refunded or disputed" } }, 403);
@@ -2325,6 +2366,7 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
   );
   if (existing.ok) {
     const record = await existing.json() as EntitlementRecord;
+    await consume();
     const cookie = await makeBuyerCookie(req, record.subject, env);
     return json(
       {
@@ -2372,6 +2414,7 @@ async function sessionResult(req: Request, env: Env, id: string): Promise<Respon
     return json({ status: "revoked", error: { code: "revoked", message: "this purchase was refunded or disputed" } }, 403);
   }
 
+  await consume();
   const cookie = await makeBuyerCookie(req, record.subject, env);
   return json(
     {

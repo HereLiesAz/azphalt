@@ -11,7 +11,7 @@ import { createHash, createHmac, generateKeyPairSync, sign } from "node:crypto";
 import worker from "../src/index";
 import { inspectAzp, safeKind } from "../src/publish";
 import { zipSync, strToU8 } from "fflate";
-import { assets, baseVars, durableState } from "./harness";
+import { assets, baseVars, buyerCookie, durableState } from "./harness";
 
 const { privateKey, publicKey } = generateKeyPairSync("ed25519");
 const ENTITLEMENT = {
@@ -24,6 +24,7 @@ const BYTES = new Uint8Array([80, 75, 3, 4, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
 const hex = (b: Uint8Array) => createHash("sha256").update(b).digest("hex");
 const BUYER = "buyer_" + "a".repeat(24);
 const BUYER_2 = "buyer_" + "b".repeat(24);
+const asBuyer = (subject = BUYER) => ({ cookie: buyerCookie(subject, ENTITLEMENT.BUYER_SESSION_SECRET) });
 
 type Listing = Record<string, unknown>;
 const paidListing = (extra: Listing = {}): Listing => ({
@@ -190,7 +191,7 @@ describe("checkout", () => {
     const bodies: URLSearchParams[] = [];
     stripeStub(bodies);
     await worker.fetch(signedWebhook(completed("cs_own")), env);
-    const cookie = (await worker.fetch(req("GET", "/api/checkout/session/cs_own"), env)).headers.get("set-cookie")!.split(";")[0];
+    const { cookie } = asBuyer();
     const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }, { cookie }), env);
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({ code: "already_owned" });
@@ -308,7 +309,7 @@ describe("fulfilment", () => {
     const res = await worker.fetch(signedWebhook(completed("cs_1")), env);
     expect(await res.json()).toEqual({ received: true, fulfilled: true });
 
-    const result = await worker.fetch(req("GET", "/api/checkout/session/cs_1"), env);
+    const result = await worker.fetch(req("GET", "/api/checkout/session/cs_1", undefined, asBuyer()), env);
     expect(result.status).toBe(200);
     const { token, packageId } = await result.json() as { token: string; packageId: string };
     expect(packageId).toBe("com.example.paid");
@@ -382,7 +383,7 @@ describe("refunds and disputes revoke one buyer, not the version", () => {
 
   it("a refunded purchase is flagged for a restoring host and dropped from the plain list", async () => {
     const { env } = await twoBuyers();
-    const cookie = (await worker.fetch(req("GET", "/api/checkout/session/cs_a"), env)).headers.get("set-cookie")!.split(";")[0];
+    const { cookie } = asBuyer();
     await worker.fetch(signedWebhook(refund("pi_cs_a")), env);
     const list = async (q: string) =>
       await (await worker.fetch(req("GET", "/api/purchases" + q, undefined, { cookie }), env)).json() as { sessionId: string; revoked?: boolean }[];
@@ -395,7 +396,7 @@ describe("refunds and disputes revoke one buyer, not the version", () => {
     expect(await (await worker.fetch(signedWebhook(refund("pi_cs_a")), env)).json()).toEqual({ received: true, revoked: true, pending: false });
     expect((await download(env, a)).status).toBe(403);
     expect((await download(env, b)).status).toBe(200);
-    expect((await worker.fetch(req("GET", "/api/checkout/session/cs_a"), env)).status).toBe(403);
+    expect((await worker.fetch(req("GET", "/api/checkout/session/cs_a", undefined, asBuyer()), env)).status).toBe(403);
     // The version itself is not yanked.
     expect(await (await worker.fetch(req("GET", "/revocations"), env)).json()).toEqual({ revocations: [] });
   });
@@ -438,7 +439,7 @@ describe("refunds and disputes revoke one buyer, not the version", () => {
   it("a revoked success page carries error.code and keeps status", async () => {
     const { env } = await twoBuyers();
     await worker.fetch(signedWebhook(refund("pi_cs_a")), env);
-    const res = await worker.fetch(req("GET", "/api/checkout/session/cs_a"), env);
+    const res = await worker.fetch(req("GET", "/api/checkout/session/cs_a", undefined, asBuyer()), env);
     expect(res.status).toBe(403);
     expect(await res.json()).toMatchObject({ status: "revoked", error: { code: "revoked" } });
   });
@@ -478,7 +479,7 @@ describe("webhook ordering: a refund or dispute before fulfilment", () => {
     await worker.fetch(signedWebhook(completed("cs_early")), env);
     const token = await tokenFor(env, "cs_early");
     expect((await download(env, token)).status).toBe(403);
-    expect((await worker.fetch(req("GET", "/api/checkout/session/cs_early"), env)).status).toBe(403);
+    expect((await worker.fetch(req("GET", "/api/checkout/session/cs_early", undefined, asBuyer()), env)).status).toBe(403);
   });
 
   it("the usual order (fulfil, then refund) still revokes", async () => {
@@ -763,5 +764,70 @@ describe("publish hygiene", () => {
     const r = await inspectAzp(zipSync({ "manifest.json": strToU8(JSON.stringify(manifest)) }));
     expect("status" in r && r.status).toBe(400);
     expect(JSON.stringify(r)).toMatch(/\.lock/);
+  });
+});
+
+describe("repository detail exposes the digest of the served bytes", () => {
+  it("a catalog package reports its fileDigest, not the unsigned integrity, as digest", async () => {
+    const fileDigest = "sha256-" + "a".repeat(64);
+    const env = makeEnv([], {}, [{ id: "com.example.free", version: "1.0.0", name: "Free", kind: "asset", file: "x.azp", integrity: "sha256-" + "b".repeat(64), fileDigest }]);
+    const body = await (await worker.fetch(req("GET", "/packages/com.example.free"), env)).json() as { versions: Record<string, unknown>[] };
+    expect(body.versions[0]).toMatchObject({ integrity: "sha256-" + "b".repeat(64), fileDigest, digest: fileDigest });
+  });
+  it("a catalog package without a fileDigest advertises no digest rather than one that cannot match", async () => {
+    const env = makeEnv([], {}, [{ id: "com.example.free", version: "1.0.0", name: "Free", kind: "asset", file: "x.azp", integrity: "sha256-" + "b".repeat(64) }]);
+    const body = await (await worker.fetch(req("GET", "/packages/com.example.free"), env)).json() as { versions: Record<string, unknown>[] };
+    expect(body.versions[0].digest).toBeUndefined();
+    expect(body.versions[0].fileDigest).toBeUndefined();
+  });
+  it("a paid package's served bytes are its listing integrity", async () => {
+    const env = makeEnv();
+    const body = await (await worker.fetch(req("GET", "/packages/com.example.paid"), env)).json() as { versions: Record<string, unknown>[] };
+    expect(body.versions[0].fileDigest).toBe("sha256-" + hex(BYTES));
+  });
+});
+
+describe("the success page is bound to the buyer who started the checkout", () => {
+  async function started() {
+    const env = makeEnv();
+    await upload(env);
+    stub((url, init) => {
+      if (url.endsWith("/v1/accounts/acct_seller")) return readyAccount();
+      if (url.endsWith("/v1/checkout/sessions") && init?.method === "POST") return new Response(JSON.stringify({ id: "cs_bound", url: "https://checkout.stripe.com/c/cs_bound" }));
+      return undefined;
+    });
+    const res = await worker.fetch(req("POST", "/api/checkout", { packageId: "com.example.paid" }), env);
+    const out = await res.json() as { session: { claim: string } };
+    const cookie = res.headers.get("set-cookie")!.split(";")[0];
+    const subject = JSON.parse(Buffer.from(cookie.split("=")[1].split(".")[0], "base64url").toString()).subjects[0] as string;
+    await worker.fetch(signedWebhook(completed("cs_bound", {}, { buyerId: subject })), env);
+    return { env, claim: out.session.claim, cookie };
+  }
+  const get = (env: never, headers: Record<string, string>) => worker.fetch(req("GET", "/api/checkout/session/cs_bound", undefined, headers), env);
+
+  it("hands the token to nobody who is not the buyer, and does not reveal the session exists", async () => {
+    const { env } = await started();
+    expect((await get(env, {})).status).toBe(404);
+    expect((await get(env, { "x-checkout-claim": "guess" })).status).toBe(404);
+    expect((await get(env, asBuyer(BUYER_2))).status).toBe(404);
+    expect((await worker.fetch(req("GET", "/api/checkout/session/cs_unknown"), env)).status).toBe(404);
+  });
+
+  it("the initiating browser (cookie) gets it, repeatedly", async () => {
+    const { env, cookie } = await started();
+    for (let i = 0; i < 2; i++) {
+      const res = await get(env, { cookie });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({ status: "ready", packageId: "com.example.paid" });
+    }
+  });
+
+  it("a claim holder without the cookie gets it exactly once", async () => {
+    const { env, claim } = await started();
+    const first = await get(env, { "x-checkout-claim": claim });
+    expect(first.status).toBe(200);
+    expect(((await first.json()) as { token: string }).token).toBeTruthy();
+    expect(first.headers.get("set-cookie")).toContain("azphalt_buyer_session=");
+    expect((await get(env, { "x-checkout-claim": claim })).status).toBe(404);
   });
 });

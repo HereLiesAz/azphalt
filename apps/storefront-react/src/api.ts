@@ -72,6 +72,8 @@ export interface AppBlock {
 export interface CheckoutSession {
   id: string;
   url: string;
+  /** One-time value that lets this browser read the result from the success page; kept in sessionStorage. */
+  claim?: string;
   status: string;
   amount?: Price;
 }
@@ -127,6 +129,7 @@ export async function startCheckout(packageId: string): Promise<CheckoutResponse
   // Creating a real Stripe session is only step one. Continue the purchase on the hosted checkout
   // page instead of treating session creation itself as a completed UI action.
   const checkoutUrl = checkout.session?.url;
+  if (checkout.session?.claim) rememberClaim(checkout.session.id, checkout.session.claim);
   if (!checkout.stub && !checkout.error && checkoutUrl) {
     window.location.assign(checkoutUrl);
   }
@@ -134,8 +137,26 @@ export async function startCheckout(packageId: string): Promise<CheckoutResponse
   return checkout;
 }
 
+const CLAIM_KEY = "azphalt.checkout-claim:";
+function rememberClaim(sessionId: string, claim: string): void {
+  try {
+    sessionStorage.setItem(CLAIM_KEY + sessionId, claim);
+  } catch {
+    // Storage blocked: the buyer cookie still identifies this browser.
+  }
+}
+function recalledClaim(sessionId: string): string | null {
+  try {
+    return sessionStorage.getItem(CLAIM_KEY + sessionId);
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchCheckoutStatus(sessionId: string): Promise<CheckoutStatus> {
+  const claim = recalledClaim(sessionId);
   const res = await fetch(`${API_BASE}/api/checkout/session/${encodeURIComponent(sessionId)}`, {
+    headers: claim ? { "x-checkout-claim": claim } : {},
     credentials: "same-origin",
     cache: "no-store",
   });

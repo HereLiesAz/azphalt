@@ -25,6 +25,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import models.CheckoutResponse
+import models.mayReceiveEntitlement
 import models.PackageSummary
 
 /** The public azphalt repository. Overridable per request so a host can point at its own. */
@@ -171,9 +172,14 @@ public data class DownloadedPackage(
 /**
  * Fetch one package's `.azp`.
  *
- * `integrity` comes from the repository's own summary rather than being recomputed here: it is the
- * digest of the *unsigned* package, which cannot be derived from signed bytes without reproducing the
- * exact archive the publisher built.
+ * `integrity` is set only when it was verified here: the repository's detail publishes `fileDigest`, the
+ * sha256 of the exact bytes it serves, and the bytes fetched are hashed and compared before this returns
+ * (a mismatch throws). A repository that publishes no `fileDigest` yields `integrity = null`, which the
+ * host must read as "not verified by the store", never as a digest to trust. (The detail's own
+ * `integrity` is the digest of the *unsigned* container and cannot be checked against signed bytes.)
+ *
+ * An `entitlement` is a bearer credential, so it is sent only to the store's own origin; a different
+ * `repository` (an Intent extra any installed app can set) is refused rather than handed the token.
  */
 public suspend fun downloadPackage(
     id: String,
@@ -182,18 +188,27 @@ public suspend fun downloadPackage(
     entitlement: String? = null,
 ): DownloadedPackage = withContext(Dispatchers.IO) {
     val base = (repository ?: DEFAULT_REPOSITORY).trimEnd('/')
+    require(entitlement == null || mayReceiveEntitlement(base)) {
+        "refusing to send a purchase entitlement to a repository other than the store"
+    }
 
-    val integrity = runCatching {
+    val fileDigest = runCatching {
         val detail = httpGet("$base/packages/${enc(id)}").decodeToString()
         json.parseToJsonElement(detail).jsonObject["versions"]?.jsonArray
             ?.firstOrNull { it.jsonObject["version"]?.jsonPrimitive?.content == version }
-            ?.jsonObject?.get("integrity")?.jsonPrimitive?.content
-    }.getOrNull()
+            ?.jsonObject?.get("fileDigest")?.jsonPrimitive?.content
+    }.getOrNull()?.takeIf { Regex("^sha256-[0-9a-f]{64}$").matches(it) }
 
     val fetched = httpFetch("$base/packages/${enc(id)}/versions/${enc(version)}/download", bearer = entitlement)
+    val verified = fileDigest?.let { expected ->
+        val actual = "sha256-" + java.security.MessageDigest.getInstance("SHA-256").digest(fetched.bytes)
+            .joinToString("") { "%02x".format(it) }
+        check(actual == expected) { "downloaded package does not match the repository's fileDigest" }
+        expected
+    }
     DownloadedPackage(
         bytes = fetched.bytes,
-        integrity = integrity,
+        integrity = verified,
         entitlement = entitlement,
         reportToken = fetched.headers["azphalt-report-token"],
     )
