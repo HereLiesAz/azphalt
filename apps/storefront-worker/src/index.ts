@@ -3652,7 +3652,7 @@ const SECURITY_HEADERS: Record<string, string> = {
  * inline plus the one Google Fonts stylesheet it imports. Everything the page fetches is same-origin API.
  * Applied to the storefront's HTML only: the docs site (azphalt.org) ships inline bootstrap scripts.
  */
-export const STOREFRONT_CSP = [
+const STOREFRONT_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",

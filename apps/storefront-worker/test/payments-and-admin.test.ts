@@ -179,6 +179,14 @@ describe("response hardening", () => {
   });
 });
 
+describe("Worker module exports", () => {
+  it("export only functions, classes and the default handler: workerd refuses to load any other named export", async () => {
+    const mod = await import("../src/index") as Record<string, unknown>;
+    const bad = Object.entries(mod).filter(([name, v]) => name !== "default" && typeof v !== "function").map(([name]) => name);
+    expect(bad).toEqual([]);
+  });
+});
+
 describe("storefront content security policy", () => {
   const page = (host: string, path = "/") =>
     worker.fetch(new Request(`https://${host}${path}`, { headers: { accept: "text/html" } }), makeEnv({
