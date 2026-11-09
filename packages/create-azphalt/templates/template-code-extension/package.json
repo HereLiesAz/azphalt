@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@azphalt/azp": "^0.6.0",
-    "@azphalt/azdk": "^0.6.0"
+    "@azphalt/azdk": "^0.7.0"
   },
   "devDependencies": {
     "@azphalt/runtime-reference": "^0.2.0"

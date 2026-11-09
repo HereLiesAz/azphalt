@@ -10,7 +10,7 @@
   "dependencies": {
     "@azphalt/azp": "^0.6.0",
     "@azphalt/repository-client": "^0.4.0",
-    "@azphalt/azdk": "^0.6.0"
+    "@azphalt/azdk": "^0.7.0"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
