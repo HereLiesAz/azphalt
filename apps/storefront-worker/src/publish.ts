@@ -73,6 +73,33 @@ export interface PublishEnv {
 
 /** Open `publish/*` pull requests across the whole repository before new ones are refused (a spam backstop). */
 const MAX_OPEN_PUBLISH_TOTAL = 100;
+/** Pages of 100 open pull requests read before the repository is treated as full. */
+const MAX_PULL_PAGES = 10;
+
+/**
+ * The response body as text, read incrementally: the server is the publisher's, so it may stream far more
+ * than the cap. Returns undefined, and cancels the stream, the moment the cap is passed.
+ */
+async function readCapped(res: Response, max: number): Promise<string | undefined> {
+  if (!res.body) return "";
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await reader.cancel().catch(() => undefined);
+      return undefined;
+    }
+    chunks.push(value);
+  }
+  const all = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) { all.set(c, at); at += c.byteLength; }
+  return new TextDecoder().decode(all);
+}
 
 /**
  * The domains whose owner may vouch for a reverse-DNS id: `com.example.tool` -> `example.com`, and one
@@ -108,8 +135,8 @@ export async function namespaceProven(
         headers: { accept: "application/json" },
       });
       if (res.status !== 200) continue;
-      const text = await res.text();
-      if (text.length > 16 * 1024) continue;
+      const text = await readCapped(res, 16 * 1024);
+      if (text === undefined) continue;
       const doc = JSON.parse(text) as { publicKeys?: unknown };
       if (Array.isArray(doc.publicKeys) && doc.publicKeys.includes(publicKey)) return true;
     } catch {
@@ -478,6 +505,11 @@ export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishCo
     // submissions/ and not deployed yet) is the floor. Semver precedence, so a prerelease of 1.0.0 sorts
     // below 1.0.0 and 1.0.0 -> 0.9.0 is a refused downgrade, not a "new version".
     const onMain = await gh.call<{ content?: string }>("GET", "/contents/submissions/" + id + "/manifest.json?ref=" + head.object.sha);
+    // Only a 404 means "no submission folder on main". Any other failure (a 500, a rate limit) must not
+    // read as absence, or an upstream error would bypass the merged-version floor: it fails the publish.
+    if (onMain.status !== 200 && onMain.status !== 404) {
+      throw new Error(`GitHub GET submissions/${id}/manifest.json answered ${onMain.status}`);
+    }
     let mergedVersion: string | undefined;
     if (onMain.status === 200 && onMain.data.content) {
       try {
@@ -530,8 +562,22 @@ export async function publish(bytes: Uint8Array, env: PublishEnv, ctx: PublishCo
 
     // Open publish pull requests: per id, per signer key and overall, so one party cannot bury the
     // reviewers (or squat an id's version slots) with pull requests nobody has looked at yet.
-    const open = await gh.ok<Array<{ head: { ref: string }; body: string | null }>>("GET", "/pulls?state=open&per_page=100");
-    const mine = open.filter((p) => p.head.ref.startsWith("publish/"));
+    // Every open pull request, page by page: the 101st must count as much as the first, or older publish
+    // requests would drop out of the per-id and per-key totals. A repository with more open pulls than
+    // MAX_PULL_PAGES pages can hold is treated as full rather than guessed at.
+    const mine: Array<{ head: { ref: string }; body: string | null }> = [];
+    let exhausted = true;
+    for (let page = 1; page <= MAX_PULL_PAGES; page++) {
+      const batch = await gh.ok<Array<{ head: { ref: string }; body: string | null }>>("GET", `/pulls?state=open&per_page=100&page=${page}`);
+      for (const p of batch) if (p.head.ref.startsWith("publish/")) mine.push(p);
+      if (batch.length < 100) {
+        exhausted = false;
+        break;
+      }
+    }
+    if (exhausted) {
+      return { status: 429, code: "rate_limited", message: "too many pull requests are open; try again later" };
+    }
     const limitId = Math.max(1, Number(env.PUBLISH_MAX_OPEN_PER_ID) || 3);
     const limitKey = Math.max(1, Number(env.PUBLISH_MAX_OPEN_PER_KEY) || 5);
     if (mine.filter((p) => p.head.ref.startsWith("publish/" + id + "/")).length >= limitId) {

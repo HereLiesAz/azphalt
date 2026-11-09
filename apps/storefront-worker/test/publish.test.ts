@@ -22,7 +22,7 @@ function build(id: string, version: string, key?: { privateKey: string }, payloa
 }
 
 /** A GitHub REST stand-in holding one repository: a main branch, its trees, refs and pull requests. */
-function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pinnedAt: string }>; pinnedFiles?: string[]; merged?: Record<string, string>; openPulls?: Array<{ head: { ref: string }; body: string | null }> } = {}) {
+function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pinnedAt: string }>; pinnedFiles?: string[]; merged?: Record<string, string>; mergedStatus?: number; openPulls?: Array<{ head: { ref: string }; body: string | null }> } = {}) {
   const calls: Array<{ method: string; path: string; body?: any; auth?: string }> = [];
   const refs = new Set<string>();
   const handler = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -42,10 +42,15 @@ function fakeGitHub(opts: { publishers?: Record<string, { publicKey: string; pin
     }
     const mergedManifest = path.match(/^\/contents\/submissions\/([^/]+)\/manifest\.json\?ref=c0$/);
     if (method === "GET" && mergedManifest) {
+      if (opts.mergedStatus) return reply(opts.mergedStatus, { message: "upstream" });
       const version = opts.merged?.[mergedManifest[1]];
       return version ? reply(200, { content: btoa(JSON.stringify({ id: mergedManifest[1], version })) }) : reply(404, { message: "Not Found" });
     }
-    if (method === "GET" && path === "/pulls?state=open&per_page=100") return reply(200, opts.openPulls ?? []);
+    const pulls = path.match(/^\/pulls\?state=open&per_page=100&page=(\d+)$/);
+    if (method === "GET" && pulls) {
+      const page = Number(pulls[1]);
+      return reply(200, (opts.openPulls ?? []).slice((page - 1) * 100, page * 100));
+    }
     if (method === "GET" && path === "/git/trees/t0") return reply(200, { tree: [{ path: "submissions", type: "tree", sha: "ts" }] });
     if (method === "GET" && path === "/git/trees/ts") return reply(200, { tree: [{ path: "com.example.pinned", type: "tree", sha: "tp" }] });
     if (method === "GET" && path === "/git/trees/tp?recursive=1") {
@@ -273,6 +278,15 @@ describe("POST /packages: abuse limits", () => {
     expect(await status(build("com.example.pinned", "2.1.0", key))).toBe(202);
   });
 
+  it("an upstream failure reading the merged manifest fails the publish; only a 404 means absent", async () => {
+    const key = generateSigningKey();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    github = fakeGitHub({ publishers: pinnedFor(key), merged: { "com.example.pinned": "2.0.0" }, mergedStatus: 500 });
+    expect(await status(build("com.example.pinned", "1.5.0", key))).toBe(502);
+    github = fakeGitHub({ publishers: pinnedFor(key), mergedStatus: 404 });
+    expect(await status(build("com.example.pinned", "1.5.0", key))).toBe(202);
+  });
+
   it("an id with three open publish pull requests takes no more; another id is unaffected", async () => {
     const key = generateSigningKey();
     const open = ["1.0.1", "1.0.2", "1.0.3"].map((v) => ({ head: { ref: `publish/com.example.pinned/${v}` }, body: "x" }));
@@ -285,6 +299,29 @@ describe("POST /packages: abuse limits", () => {
     const key = generateSigningKey();
     const open = [1, 2, 3, 4, 5].map((n) => ({ head: { ref: `publish/com.example.id${n}/1.0.0` }, body: "Signer:\n\n    " + key.publicKey }));
     github = fakeGitHub({ publishers: pinnedFor(key), openPulls: open });
+    expect(await status(build("com.example.pinned", "1.0.1", key))).toBe(429);
+  });
+
+  it("counts publish pull requests beyond the first page of open pulls", async () => {
+    const key = generateSigningKey();
+    const noise = Array.from({ length: 100 }, (_, n) => ({ head: { ref: `feature/x${n}` }, body: null }));
+    const old = ["1.0.1", "1.0.2", "1.0.3"].map((v) => ({ head: { ref: `publish/com.example.pinned/${v}` }, body: "x" }));
+    // The id's three open publishes sit on page 2, behind 100 ordinary pulls.
+    github = fakeGitHub({ publishers: pinnedFor(key), openPulls: [...noise, ...old] });
+    expect(await status(build("com.example.pinned", "1.0.4", key))).toBe(429);
+  });
+
+  it("101 open publish pull requests across pages hit the overall limit", async () => {
+    const key = generateSigningKey();
+    const many = Array.from({ length: 101 }, (_, n) => ({ head: { ref: `publish/com.example.id${n}/1.0.0` }, body: "x" }));
+    github = fakeGitHub({ publishers: pinnedFor(key), openPulls: many });
+    expect(await status(build("com.example.pinned", "1.0.1", key))).toBe(429);
+  });
+
+  it("a repository with more open pulls than the page budget is treated as full", async () => {
+    const key = generateSigningKey();
+    const flood = Array.from({ length: 1001 }, (_, n) => ({ head: { ref: `feature/y${n}` }, body: null }));
+    github = fakeGitHub({ publishers: pinnedFor(key), openPulls: flood });
     expect(await status(build("com.example.pinned", "1.0.1", key))).toBe(429);
   });
 
@@ -339,5 +376,33 @@ describe("POST /packages: namespace proof for a first publish", () => {
     github = fakeGitHub({ publishers: { "com.example.pinned": { publicKey: key.publicKey, pinnedAt: "2026-01-01T00:00:00Z" } } });
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => github.handler(input, init));
     expect((await worker.fetch(post(build("com.example.pinned", "1.0.1", key)), env)).status).toBe(202);
+  });
+});
+
+describe("namespace proof reads a hostile response incrementally", () => {
+  it("cancels an oversized streamed body as soon as the cap is passed", async () => {
+    const { namespaceProven } = await import("../src/publish");
+    let pulled = 0;
+    let cancelled = false;
+    const chunk = new Uint8Array(4096).fill(97);
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled++;
+        if (pulled > 1000) return controller.close();
+        controller.enqueue(chunk);
+      },
+      cancel() { cancelled = true; },
+    });
+    const proven = await namespaceProven("com.example.tool", "KEY", async () => new Response(body, { status: 200 }));
+    expect(proven).toBe(false);
+    expect(cancelled).toBe(true);
+    // 16 KiB is 4 chunks; the reader stops within a few pulls, nowhere near the 1000 on offer.
+    expect(pulled).toBeLessThan(10);
+  });
+
+  it("still accepts a well-formed small document read from a stream", async () => {
+    const { namespaceProven } = await import("../src/publish");
+    const doc = JSON.stringify({ publicKeys: ["KEY"] });
+    expect(await namespaceProven("com.example.tool", "KEY", async () => new Response(doc))).toBe(true);
   });
 });
