@@ -3751,7 +3751,7 @@ function withSecurityHeaders(res: Response, req?: Request): Response {
  * (Morphont's browser build, say) browses and installs from here. Public, unauthenticated data, so `*` —
  * no credentials are ever honoured cross-origin. Writes, admin and payments stay same-origin.
  */
-const PUBLIC_READ = /^\/(?:packages(?:\/[^/]+(?:\/versions\/[^/]+\/download)?)?|revocations|\.well-known\/azphalt(?:-repository)?\.json)$/;
+const PUBLIC_READ = /^\/(?:api\/a2a\/agents|packages(?:\/[^/]+(?:\/versions\/[^/]+\/download)?)?|revocations|\.well-known\/azphalt(?:-repository)?\.json)$/;
 
 const CORS_HEADERS: Record<string, string> = {
   "access-control-allow-origin": "*",
@@ -3781,6 +3781,38 @@ export default {
     else await job;
   },
 };
+
+/** Only a fixed, public SearchA2A snapshot may enter this non-installable directory. */
+async function searchA2AListings(): Promise<Response> {
+  const feedUrl = "https://searcha2a.azphalt.store/api/v1/azphalt-listings.json";
+  let response: Response;
+  try {
+    response = await fetch(feedUrl, { redirect: "error", signal: AbortSignal.timeout(8000) });
+  } catch {
+    return json({ error: "SearchA2A directory temporarily unavailable" }, 502);
+  }
+  if (!response.ok || Number(response.headers.get("content-length") || 0) > 1_000_000) {
+    return json({ error: "SearchA2A directory temporarily unavailable" }, 502);
+  }
+  const body = await response.text();
+  if (body.length > 1_000_000) return json({ error: "SearchA2A directory exceeds size limit" }, 502);
+  let feed: unknown;
+  try { feed = JSON.parse(body); }
+  catch { return json({ error: "Invalid SearchA2A directory" }, 502); }
+  if (!feed || typeof feed !== "object") return json({ error: "Invalid SearchA2A directory" }, 502);
+  const listingFeed = feed as { schema?: number; source?: string; listings?: unknown };
+  if (listingFeed.schema !== 1 || listingFeed.source !== "searcha2a" || !Array.isArray(listingFeed.listings)) {
+    return json({ error: "Unexpected SearchA2A directory format" }, 502);
+  }
+  const listings = listingFeed.listings.filter((item): item is Record<string, unknown> =>
+    !!item && typeof item === "object" && item.kind === "a2a-agent" && item.installable === false &&
+    item.verification === "card_read_only" && typeof item.name === "string" &&
+    typeof item.source_url === "string" && item.source_url.startsWith("https://")
+  ).slice(0, 200);
+  return new Response(JSON.stringify({ schema: 1, source: "searcha2a", listings, count: listings.length }), {
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" },
+  });
+}
 
 async function handle(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
@@ -3821,6 +3853,7 @@ async function handle(req: Request, env: Env): Promise<Response> {
       if (adminSurface && !(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
 
       if (req.method === "GET" && path === "/api/packages") return apiPackages(req, env);
+      if (req.method === "GET" && path === "/api/a2a/agents") return searchA2AListings();
       if (req.method === "POST" && path === "/api/checkout") return checkout(req, env);
       if (req.method === "POST" && path === "/api/webhooks/stripe") return webhook(req, env);
       if (req.method === "GET" && path === "/api/purchases") return purchases(req, env);

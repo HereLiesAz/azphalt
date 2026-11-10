@@ -4,6 +4,23 @@ export interface Price {
   currency: string;
 }
 
+/** SearchA2A cards are external discovery entries, never .azp packages or purchases. */
+export interface A2AAgentListing {
+  id: string;
+  kind: "a2a-agent";
+  name: string;
+  description: string;
+  endpoint: string;
+  source_url: string;
+  discovery_url: string;
+  skills: { name: string; description: string; tags: string[] }[];
+  protocols: string[];
+  security_schemes: string[];
+  capabilities: Record<string, boolean>;
+  verification: "card_read_only";
+  installable: false;
+}
+
 export interface PackageSummary {
   id: string;
   name: string;
@@ -109,6 +126,25 @@ export interface SellerStatus {
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
+
+/** Same-origin proxy for the automatically generated, read-only SearchA2A directory. */
+export async function fetchA2AAgents(): Promise<A2AAgentListing[]> {
+  const response = await fetch(`${API_BASE}/api/a2a/agents`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`A2A directory unavailable (${response.status})`);
+  const feed: unknown = await response.json();
+  if (!feed || typeof feed !== "object" || !("source" in feed) || feed.source !== "searcha2a" ||
+      !("schema" in feed) || feed.schema !== 1 || !("listings" in feed) || !Array.isArray(feed.listings)) {
+    throw new Error("Invalid external-agent directory");
+  }
+  return feed.listings.filter((item: unknown): item is A2AAgentListing => {
+    if (!item || typeof item !== "object") return false;
+    const record = item as Partial<A2AAgentListing>;
+    return record.kind === "a2a-agent" && record.installable === false &&
+      record.verification === "card_read_only" && typeof record.name === "string" &&
+      typeof record.id === "string" && typeof record.source_url === "string" &&
+      !!safeHref(record.source_url) && Array.isArray(record.skills);
+  }).slice(0, 200);
+}
 
 export async function fetchPackages(): Promise<PackageSummary[]> {
   const res = await fetch(`${API_BASE}/api/packages`);
