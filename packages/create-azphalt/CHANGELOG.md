@@ -1,5 +1,13 @@
 # create-azphalt
 
+## 0.5.3
+
+### Patch Changes
+
+- Bring the bundled template dependency ranges up to the current workspace release lines:
+  
+  - template-host-app: @azphalt/repository-client ^0.4.0 (workspace is 0.5.0) -> ^0.5.0
+
 ## 0.5.2
 
 ### Patch Changes

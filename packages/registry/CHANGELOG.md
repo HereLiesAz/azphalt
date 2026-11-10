@@ -1,5 +1,11 @@
 # @azphalt/registry
 
+## 0.5.1
+
+### Patch Changes
+
+- 62cfc0e: `quote()` scaled its flat processor fee as 30 minor units in every currency (¥30, 0.030 KWD). It is now 30 hundredths of a major unit, converted to the currency's ISO 4217 minor unit.
+
 ## 0.5.0
 
 ### Minor Changes
