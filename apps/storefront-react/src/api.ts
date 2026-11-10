@@ -4,6 +4,23 @@ export interface Price {
   currency: string;
 }
 
+/** SearchA2A cards are external discovery entries, never .azp packages or purchases. */
+export interface A2AAgentListing {
+  id: string;
+  kind: "a2a-agent";
+  name: string;
+  description: string;
+  endpoint: string;
+  source_url: string;
+  discovery_url: string;
+  skills: { name: string; description: string; tags: string[] }[];
+  protocols: string[];
+  security_schemes: string[];
+  capabilities: Record<string, boolean>;
+  verification: "card_read_only";
+  installable: false;
+}
+
 export interface PackageSummary {
   id: string;
   name: string;
@@ -109,6 +126,52 @@ export interface SellerStatus {
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
+
+/** Same-origin proxy for the automatically generated, read-only SearchA2A directory. */
+export async function fetchA2AAgents(): Promise<A2AAgentListing[]> {
+  const response = await fetch(`${API_BASE}/api/a2a/agents`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`A2A directory unavailable (${response.status})`);
+  const feed: unknown = await response.json();
+  if (!feed || typeof feed !== "object" || !("source" in feed) || feed.source !== "searcha2a" ||
+      !("schema" in feed) || feed.schema !== 1 || !("listings" in feed) || !Array.isArray(feed.listings)) {
+    throw new Error("Invalid external-agent directory");
+  }
+  // Treat third-party card metadata as untrusted input, including nested arrays.
+  return (feed.listings as unknown[]).flatMap((item): A2AAgentListing[] => {
+    if (!item || typeof item !== "object") return [];
+    const record = item as Record<string, unknown>;
+    if (record.kind !== "a2a-agent" || record.installable !== false ||
+        record.verification !== "card_read_only" || typeof record.id !== "string" ||
+        typeof record.name !== "string" || typeof record.source_url !== "string" ||
+        !safeHref(record.source_url)) return [];
+    const strings = (data: unknown, limit = 40): string[] =>
+      Array.isArray(data) ? data.filter((value): value is string => typeof value === "string").slice(0, limit) : [];
+    const skills: A2AAgentListing["skills"] = Array.isArray(record.skills) ? record.skills
+      .filter((skill): skill is Record<string, unknown> =>
+        !!skill && typeof skill === "object" && typeof skill.name === "string")
+      .slice(0, 40)
+      .map((skill) => ({
+        name: String(skill.name).slice(0, 160),
+        description: typeof skill.description === "string" ? skill.description.slice(0, 500) : "",
+        tags: strings(skill.tags, 20),
+      })) : [];
+    return [{
+      id: record.id.slice(0, 120), kind: "a2a-agent",
+      name: record.name.slice(0, 160),
+      description: typeof record.description === "string" ? record.description.slice(0, 1200) : "",
+      endpoint: typeof record.endpoint === "string" && safeHref(record.endpoint) ? record.endpoint : "",
+      source_url: record.source_url,
+      discovery_url: typeof record.discovery_url === "string" && safeHref(record.discovery_url) ? record.discovery_url : "",
+      skills,
+      protocols: strings(record.protocols),
+      security_schemes: strings(record.security_schemes),
+      capabilities: typeof record.capabilities === "object" && record.capabilities !== null
+        ? Object.fromEntries(Object.entries(record.capabilities).filter(([, value]) => typeof value === "boolean"))
+        : {},
+      verification: "card_read_only", installable: false,
+    }];
+  }).slice(0, 200);
+}
 
 export async function fetchPackages(): Promise<PackageSummary[]> {
   const res = await fetch(`${API_BASE}/api/packages`);

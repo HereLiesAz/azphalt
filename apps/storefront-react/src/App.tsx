@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   fetchPackages,
+  fetchA2AAgents,
   fetchCheckoutStatus,
   fetchPurchases,
   fetchSellerStatus,
@@ -21,6 +22,7 @@ import {
   safeHref,
   hostOf,
   startCheckout,
+  type A2AAgentListing,
   type LlmBlock,
   type PackageSummary,
   type Purchase,
@@ -933,6 +935,7 @@ function StorefrontApp() {
           <a className="chip" href="/purchases" style={{ textDecoration: "none" }}>Purchases</a>
           <a className="chip" href="/connect/onboard" style={{ textDecoration: "none" }}>Sell on Azphalt</a>
           <a className="chip" href="/publish" style={{ textDecoration: "none" }}>Publish</a>
+          <a className="chip" href="/agents" style={{ textDecoration: "none" }}>A2A Agents</a>
         </nav>
         <div style={{ marginBottom: 24 }}>
           <input
@@ -1577,6 +1580,81 @@ function PublishPage() {
   );
 }
 
+/**
+ * /agents is a discovery directory of external A2A agents, not the signed Azphalt
+ * package catalog. A model asset or an Azphalt llm install is NEVER inferred from a card.
+ */
+function AgentDirectoryPage() {
+  const [agents, setAgents] = useState<A2AAgentListing[]>([]);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchA2AAgents()
+      .then(setAgents)
+      .catch((failure: Error) => setError(failure.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const terms = query.trim().toLowerCase();
+  const filtered = agents.filter((agent) =>
+    !terms || [agent.name, agent.description, agent.endpoint, ...agent.skills.flatMap((skill) =>
+      [skill.name, skill.description, ...(Array.isArray(skill.tags) ? skill.tags : [])])]
+      .some((value) => typeof value === "string" && value.toLowerCase().includes(terms))
+  );
+
+  return (
+    <main style={{ minHeight: "100vh", padding: 32, maxWidth: 1100, margin: "0 auto" }}>
+      <a href="/" className="chip" style={{ textDecoration: "none" }}>← Azphalt Store</a>
+      <h1 style={{ fontSize: 44, margin: "32px 0 6px" }}>A2A Agents</h1>
+      <p style={{ color: "var(--on-surface-variant)", maxWidth: 700 }}>
+        Discovered automatically by SearchA2A. These are third-party agent endpoints, not verified
+        running services, installable models, or signed Azphalt packages.
+      </p>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "20px 0 28px" }}>
+        <input type="search" className="field" value={query} onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search agent names, skills, protocols…" aria-label="Search discovered A2A agents"
+          style={{ flex: "1 1 240px", padding: "13px 20px" }} />
+        <a className="chip" href="https://searcha2a.azphalt.store/" rel="noopener noreferrer"
+          target="_blank" style={{ textDecoration: "none" }}>Live SearchA2A</a>
+      </div>
+      {loading && <p>Loading discovered agents…</p>}
+      {error && <p role="alert">{error}</p>}
+      {!loading && !error && <p style={{ color: "var(--on-surface-variant)" }}>
+        {filtered.length} discovered agent{filtered.length === 1 ? "" : "s"}
+      </p>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 14 }}>
+        {filtered.map((agent) => (
+          <article key={agent.id} style={{ background: "var(--surface-highest)", borderRadius: 22, padding: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 750, color: "var(--on-surface-variant)" }}>
+              EXTERNAL A2A · CARD ONLY
+            </div>
+            <h2 style={{ fontSize: 20, margin: "10px 0 8px" }}>{agent.name}</h2>
+            <p style={{ fontSize: 14, color: "var(--on-surface-variant)", whiteSpace: "pre-wrap" }}>
+              {agent.description || "No description supplied by the Agent Card."}
+            </p>
+            {agent.skills.length > 0 && <div style={{ marginBottom: 12, fontSize: 13 }}>
+              <strong>Skills: </strong>{agent.skills.map((skill) => skill.name).join(", ")}
+            </div>}
+            {agent.protocols.length > 0 && <div style={{ fontSize: 13 }}>
+              <strong>Protocols: </strong>{agent.protocols.join(", ")}
+            </div>}
+            {agent.security_schemes.length > 0 && <div style={{ fontSize: 13 }}>
+              <strong>Authentication: </strong>{agent.security_schemes.join(", ")}
+            </div>}
+            <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap", fontSize: 13 }}>
+              {safeHref(agent.source_url) && <a href={safeHref(agent.source_url)} target="_blank" rel="noopener noreferrer">Agent Card</a>}
+              {safeHref(agent.discovery_url) && <a href={safeHref(agent.discovery_url)} target="_blank" rel="noopener noreferrer">Metadata</a>}
+              {safeHref(agent.endpoint) && <a href={safeHref(agent.endpoint)} target="_blank" rel="noopener noreferrer">Endpoint</a>}
+            </div>
+          </article>
+        ))}
+      </div>
+    </main>
+  );
+}
+
 /** Every page's footer: the legal pages, and the version of the build that is actually deployed. */
 function SiteFooter() {
   return (
@@ -1600,6 +1678,7 @@ function Page() {
   if (path === "/report") return <ReportPage />;
   if (path === "/moderation") return <ModerationPage />;
   if (path === "/publish") return <PublishPage />;
+  if (path === "/agents") return <AgentDirectoryPage />;
   const app = path.match(/^\/app\/([^/]+)$/);
   if (app) return <AppCatalogPage appId={decodeURIComponent(app[1])} />;
   return <StorefrontApp />;
