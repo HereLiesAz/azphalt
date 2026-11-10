@@ -1,5 +1,12 @@
 # @azphalt/storefront-react
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [62cfc0e]
+  - @azphalt/registry@0.5.1
+
 ## 0.2.2
 
 ### Patch Changes
