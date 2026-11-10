@@ -136,13 +136,40 @@ export async function fetchA2AAgents(): Promise<A2AAgentListing[]> {
       !("schema" in feed) || feed.schema !== 1 || !("listings" in feed) || !Array.isArray(feed.listings)) {
     throw new Error("Invalid external-agent directory");
   }
-  return feed.listings.filter((item: unknown): item is A2AAgentListing => {
-    if (!item || typeof item !== "object") return false;
-    const record = item as Partial<A2AAgentListing>;
-    return record.kind === "a2a-agent" && record.installable === false &&
-      record.verification === "card_read_only" && typeof record.name === "string" &&
-      typeof record.id === "string" && typeof record.source_url === "string" &&
-      !!safeHref(record.source_url) && Array.isArray(record.skills);
+  // Treat third-party card metadata as untrusted input, including nested arrays.
+  return (feed.listings as unknown[]).flatMap((item): A2AAgentListing[] => {
+    if (!item || typeof item !== "object") return [];
+    const record = item as Record<string, unknown>;
+    if (record.kind !== "a2a-agent" || record.installable !== false ||
+        record.verification !== "card_read_only" || typeof record.id !== "string" ||
+        typeof record.name !== "string" || typeof record.source_url !== "string" ||
+        !safeHref(record.source_url)) return [];
+    const strings = (data: unknown, limit = 40): string[] =>
+      Array.isArray(data) ? data.filter((value): value is string => typeof value === "string").slice(0, limit) : [];
+    const skills: A2AAgentListing["skills"] = Array.isArray(record.skills) ? record.skills
+      .filter((skill): skill is Record<string, unknown> =>
+        !!skill && typeof skill === "object" && typeof skill.name === "string")
+      .slice(0, 40)
+      .map((skill) => ({
+        name: String(skill.name).slice(0, 160),
+        description: typeof skill.description === "string" ? skill.description.slice(0, 500) : "",
+        tags: strings(skill.tags, 20),
+      })) : [];
+    return [{
+      id: record.id.slice(0, 120), kind: "a2a-agent",
+      name: record.name.slice(0, 160),
+      description: typeof record.description === "string" ? record.description.slice(0, 1200) : "",
+      endpoint: typeof record.endpoint === "string" && safeHref(record.endpoint) ? record.endpoint : "",
+      source_url: record.source_url,
+      discovery_url: typeof record.discovery_url === "string" && safeHref(record.discovery_url) ? record.discovery_url : "",
+      skills,
+      protocols: strings(record.protocols),
+      security_schemes: strings(record.security_schemes),
+      capabilities: typeof record.capabilities === "object" && record.capabilities !== null
+        ? Object.fromEntries(Object.entries(record.capabilities).filter(([, value]) => typeof value === "boolean"))
+        : {},
+      verification: "card_read_only", installable: false,
+    }];
   }).slice(0, 200);
 }
 
