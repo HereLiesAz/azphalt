@@ -483,6 +483,8 @@ schema and per-listing read-only markers, and never treats these as installable 
 The deployment verifier also checks `/api/a2a/agents` end to end, failing a broken feed deployment.
 The external fetch uses `redirect: "manual"` because Cloudflare Workers reject the Fetch
 API’s `redirect: "error"` mode; unexpected redirects are rejected via non-2xx status.
+The SearchA2A feed supports the expanded 150-card crawl with a 16-MiB streamed byte cap; oversized or malformed feeds fail closed rather than disappearing after the old 1-MB threshold.
+
 The public proxy **projects only documented fields**, never arbitrary third-party
 registry properties or nested tool/server credentials. Card and metadata URLs with
 private hosts, embedded credentials, queries, or fragments are dropped rather
