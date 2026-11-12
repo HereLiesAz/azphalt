@@ -37,6 +37,8 @@ interface Env {
   STATE: DurableObjectNamespaceLike;
   PUBLIC_ORIGIN: string;
   GITHUB_RAW_BASE: string;
+  /** Optional fixed public base for a read-only MCP Registry v0.1 compatible catalog. */
+  MCP_REGISTRY_BASE_URL?: string;
   PLATFORM_FEE_BPS?: string;
   PROCESSOR_PCT_BPS?: string;
   /** Flat processor fee in hundredths of a major unit (30 = $0.30), scaled to each currency's minor unit. */
@@ -3804,14 +3806,231 @@ async function searchA2AListings(): Promise<Response> {
   if (listingFeed.schema !== 1 || listingFeed.source !== "searcha2a" || !Array.isArray(listingFeed.listings)) {
     return json({ error: "Unexpected SearchA2A directory format" }, 502);
   }
-  const listings = listingFeed.listings.filter((item): item is Record<string, unknown> =>
-    !!item && typeof item === "object" && item.kind === "a2a-agent" && item.installable === false &&
-    item.verification === "card_read_only" && typeof item.name === "string" &&
-    typeof item.source_url === "string" && item.source_url.startsWith("https://")
-  ).slice(0, 200);
+  const publicMetadataUrl = (value: unknown): value is string => {
+    if (typeof value !== "string" || value.length > 2048) return false;
+    try {
+      const url = new URL(value);
+      const host = url.hostname.toLowerCase();
+      return url.protocol === "https:" && !url.username && !url.password &&
+        !url.search && !url.hash && (url.port === "" || url.port === "443") &&
+        host.includes(".") && !host.includes(":") &&
+        host !== "localhost" && !host.endsWith(".localhost") &&
+        !host.endsWith(".local") && !host.endsWith(".internal") &&
+        !/^\d+\.\d+\.\d+\.\d+$/.test(host);
+    } catch { return false; }
+  };
+  // Whitelist public metadata. Registry v0.1 feeds can include Authorization headers:
+  // a read-only feed must never become a credential exfiltration API.
+  const listings = listingFeed.listings.flatMap((item): Record<string, unknown>[] => {
+    if (!item || typeof item !== "object") return [];
+    const record = item as Record<string, unknown>;
+    if (record.kind !== "a2a-agent" || record.installable !== false ||
+        record.verification !== "card_read_only" || typeof record.name !== "string" ||
+        !publicMetadataUrl(record.source_url)) return [];
+    const projected: Record<string, unknown> = {
+      kind: "a2a-agent", installable: false, verification: "card_read_only",
+      name: record.name.slice(0, 160), source_url: record.source_url.slice(0, 2048),
+    };
+    for (const key of ["id", "description", "endpoint", "discovery_url", "version", "source"]) {
+      if (typeof record[key] === "string" &&
+          (!["endpoint", "discovery_url"].includes(key) || publicMetadataUrl(record[key]))) {
+        projected[key] = (record[key] as string).slice(0, key === "description" ? 1200 : 2048);
+      }
+    }
+    if (Array.isArray(record.skills)) {
+      projected.skills = record.skills.slice(0, 40).flatMap((raw): Record<string, unknown>[] => {
+        if (!raw || typeof raw !== "object" || typeof raw.name !== "string") return [];
+        const skill: Record<string, unknown> = { name: raw.name.slice(0, 160) };
+        if (typeof raw.description === "string") skill.description = raw.description.slice(0, 500);
+        if (Array.isArray(raw.tags)) skill.tags = raw.tags.filter((tag: unknown): tag is string =>
+          typeof tag === "string").slice(0, 20).map((tag: string) => tag.slice(0, 70));
+        return [skill];
+      });
+    }
+    for (const key of ["protocols", "security_schemes"]) {
+      if (Array.isArray(record[key])) {
+        projected[key] = (record[key] as unknown[]).filter((value): value is string =>
+          typeof value === "string").slice(0, 40).map(value => value.slice(0, 80));
+      }
+    }
+    if (record.capabilities && typeof record.capabilities === "object" &&
+        !Array.isArray(record.capabilities)) {
+      projected.capabilities = Object.fromEntries(Object.entries(record.capabilities)
+        .filter(([, value]) => typeof value === "boolean").slice(0, 40));
+    }
+    const proof = record.publisher_verification;
+    if (proof && typeof proof === "object" && !Array.isArray(proof)) {
+      const v = proof as Record<string, unknown>;
+      if (v.method === "https-origin-opt-in") {
+        const evidence: Record<string, unknown> = { method: "https-origin-opt-in" };
+        for (const key of ["proof_url", "checked_at", "expires_at", "host"]) {
+          if (typeof v[key] === "string" &&
+              (key !== "proof_url" || publicMetadataUrl(v[key]))) {
+            evidence[key] = (v[key] as string).slice(0, 2048);
+          }
+        }
+        projected.publisher_verification = evidence;
+      }
+    }
+    const candidate = record.ans_claim;
+    if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
+      const claim = candidate as Record<string, unknown>;
+      if (typeof claim.name === "string" && typeof claim.agent_host === "string" &&
+          claim.verification === "unverified" && claim.name.length <= 259 &&
+          claim.agent_host.length <= 251) {
+        const host = claim.agent_host.toLowerCase();
+        const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/i;
+        const hostLabels = host.split(".");
+        const name = claim.name.toLowerCase();
+        const version = name.startsWith("ans://") && name.endsWith("." + host)
+          ? name.slice(6, -host.length - 1) : "";
+        if (hostLabels.length >= 2 && hostLabels.every(labelPart => label.test(labelPart)) &&
+            !host.endsWith(".local") && !host.endsWith(".internal") &&
+            !host.endsWith(".localhost") &&
+            version.split(".").every(labelPart => label.test(labelPart))) {
+          projected.ans_claim = {
+            name: claim.name, agent_host: claim.agent_host, verification: "unverified",
+          };
+        }
+      }
+    }
+    return [projected];
+  }).slice(0, 200);
   return new Response(JSON.stringify({ schema: 1, source: "searcha2a", listings, count: listings.length }), {
     headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" },
   });
+}
+
+/**
+ * Read-only MCP Registry v0.1 discovery. This is external catalog metadata, not signed
+ * Azphalt software or authenticated ANS identity. Never forward an upstream object:
+ * compatible self-hosted registries may expose secret Authorization headers in remotes.
+ */
+async function searchExternalMcpServers(req: Request, env: Env): Promise<Response> {
+  const clientUrl = new URL(req.url);
+  const query = clientUrl.searchParams.get("search")?.trim() ?? "";
+  if (query.length > 120 || (query.length > 0 && query.length < 3)) {
+    return json({ error: "Search must be 3–120 characters" }, 400);
+  }
+  const cursor = clientUrl.searchParams.get("cursor") ?? "";
+  if (cursor && (cursor.length > 512 || /[\u0000-\u001f\u007f]/.test(cursor))) {
+    return json({ error: "Invalid cursor" }, 400);
+  }
+  let base: URL;
+  try {
+    base = new URL(env.MCP_REGISTRY_BASE_URL || "https://registry.modelcontextprotocol.io");
+  } catch {
+    return json({ error: "MCP registry configuration invalid" }, 503);
+  }
+  const host = base.hostname.toLowerCase();
+  const validLabel = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
+  if (base.protocol !== "https:" || base.username || base.password ||
+      base.search || base.hash || (base.port && base.port !== "443") ||
+      !host.includes(".") || host.split(".").some(label => !validLabel.test(label)) ||
+      /^\d+$/.test(host.split(".").at(-1) || "") ||
+      host.endsWith(".local") || host.endsWith(".localhost") ||
+      host.endsWith(".internal")) {
+    return json({ error: "MCP registry configuration invalid" }, 503);
+  }
+  // The base is deployer-controlled, never a user-supplied URL.
+  const upstreamUrl = new URL(base.href.replace(/\/$/, "") + "/v0.1/servers");
+  upstreamUrl.searchParams.set("limit", "30");
+  if (query) upstreamUrl.searchParams.set("search", query);
+  if (cursor) upstreamUrl.searchParams.set("cursor", cursor);
+  let response: Response;
+  try {
+    response = await fetch(upstreamUrl.toString(), {
+      redirect: "manual", signal: AbortSignal.timeout(8000),
+      headers: { Accept: "application/json" },
+    });
+  } catch {
+    return json({ error: "MCP directory temporarily unavailable" }, 502);
+  }
+  if (response.status !== 200 || Number(response.headers.get("content-length") || 0) > 1_000_000) {
+    return json({ error: "MCP directory temporarily unavailable" }, 502);
+  }
+  let payload: unknown;
+  try {
+    const reader = response.body?.getReader();
+    if (!reader) throw Error("No upstream body");
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      size += next.value.byteLength;
+      if (size > 1_000_000) {
+        await reader.cancel();
+        return json({ error: "MCP directory exceeds size limit" }, 502);
+      }
+      chunks.push(next.value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  } catch {
+    return json({ error: "Invalid MCP directory response" }, 502);
+  }
+  if (!payload || typeof payload !== "object" || !Array.isArray((payload as Record<string, unknown>).servers)) {
+    return json({ error: "Invalid MCP directory response" }, 502);
+  }
+  const data = payload as Record<string, unknown>;
+  const validHttpsEndpoint = (raw: unknown): raw is string => {
+    if (typeof raw !== "string" || raw.length > 2048) return false;
+    try {
+      const url = new URL(raw);
+      const domain = url.hostname.toLowerCase();
+      return url.protocol === "https:" && !url.username && !url.password &&
+        !url.search && !url.hash && !url.port && domain.includes(".") &&
+        domain.split(".").every(label => validLabel.test(label)) &&
+        !/^\d+$/.test(domain.split(".").at(-1) || "") &&
+        !domain.endsWith(".local") && !domain.endsWith(".internal") &&
+        !domain.endsWith(".localhost");
+    } catch { return false; }
+  };
+  const servers = (data.servers as unknown[]).slice(0, 30).flatMap((entry): Record<string, unknown>[] => {
+    if (!entry || typeof entry !== "object") return [];
+    const parent = entry as Record<string, unknown>;
+    if (!parent.server || typeof parent.server !== "object") return [];
+    const server = parent.server as Record<string, unknown>;
+    if (typeof server.name !== "string" || !server.name.trim() || server.name.length > 256 ||
+        typeof server.version !== "string" || !server.version || server.version.length > 160) return [];
+    const meta = parent._meta;
+    if (meta && typeof meta === "object") {
+      const official = (meta as Record<string, unknown>)["io.modelcontextprotocol.registry/official"];
+      if (official && typeof official === "object" &&
+          (official as Record<string, unknown>).status === "deleted") return [];
+    }
+    const result: Record<string, unknown> = {
+      kind: "mcp-server", name: server.name,
+      title: typeof server.title === "string" ? server.title.slice(0, 160) : server.name,
+      description: typeof server.description === "string" ? server.description.slice(0, 1200) : "",
+      version: server.version, installable: false,
+      verification: "registry_metadata_only",
+    };
+    if (Array.isArray(server.remotes)) {
+      result.remotes = server.remotes.slice(0, 12).flatMap((raw): Record<string, string>[] => {
+        if (!raw || typeof raw !== "object") return [];
+        const remote = raw as Record<string, unknown>;
+        const protocol = remote.type ?? remote.transportType;
+        if (!validHttpsEndpoint(remote.url) ||
+            !["streamable-http", "sse"].includes(String(protocol))) return [];
+        return [{ type: String(protocol), url: remote.url }];
+      });
+    }
+    return [result];
+  });
+  const metadata = data.metadata;
+  const next = metadata && typeof metadata === "object"
+    ? (metadata as Record<string, unknown>).nextCursor : undefined;
+  const nextCursor = typeof next === "string" && next.length > 0 && next.length <= 512 &&
+    !/[\u0000-\u001f\u007f]/.test(next) ? next : undefined;
+  return new Response(JSON.stringify({
+    schema: 1, source: "mcp-registry-v0.1", count: servers.length, servers,
+    ...(nextCursor ? { nextCursor } : {}),
+  }), { headers: { "content-type": "application/json; charset=utf-8",
+                  "cache-control": "public, max-age=120" } });
 }
 
 async function handle(req: Request, env: Env): Promise<Response> {
@@ -3854,6 +4073,7 @@ async function handle(req: Request, env: Env): Promise<Response> {
 
       if (req.method === "GET" && path === "/api/packages") return apiPackages(req, env);
       if (req.method === "GET" && path === "/api/a2a/agents") return searchA2AListings();
+      if (req.method === "GET" && path === "/api/mcp/servers") return searchExternalMcpServers(req, env);
       if (req.method === "POST" && path === "/api/checkout") return checkout(req, env);
       if (req.method === "POST" && path === "/api/webhooks/stripe") return webhook(req, env);
       if (req.method === "GET" && path === "/api/purchases") return purchases(req, env);

@@ -443,6 +443,31 @@ workspace, builds and tests this package, checks the exported catalog, deploys w
 runs [`scripts/verify-deployment.mjs`](scripts/verify-deployment.mjs) against the new version's own
 `workers.dev` URL. The central controller needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
+## External MCP Registry v0.1 discovery
+
+`GET /api/mcp/servers` is a **read-only, non-installable MCP catalog adapter**.
+It uses the official MCP Registry (`https://registry.modelcontextprotocol.io`) by
+default; a self-hosted compatible registry can be selected with the deployer-only
+`MCP_REGISTRY_BASE_URL` value (HTTPS host, optional path prefix, no URL credentials
+or query). The upstream endpoint is `/v0.1/servers`, not a proprietary API.
+
+Optional `search` requires 3–120 characters, and an opaque `cursor` continues
+pagination. The adapter requests up to 30 entries per page and returns
+`schema:1`, `source:"mcp-registry-v0.1"`, `count`, `servers` and optional
+`nextCursor`. It preserves publisher versions verbatim rather than applying
+SemVer or ANS naming heuristics. Each entry is explicitly
+`kind:"mcp-server"`, `installable:false` and
+`verification:"registry_metadata_only"`. It never installs or connects tools.
+A returned remote URL is only a lead for an independently approved connection.
+
+Registry pages are byte-bounded, redirects are refused, and only selected
+public descriptive fields and credential-free HTTPS remote URLs are returned.
+Raw packages, environment variables, Authorization headers, token-bearing
+queries, private endpoints and deleted records are not forwarded. A 502
+signals source failure; a 503 signals invalid deployer configuration.
+This adapter does not change signed package distribution, A2A discovery,
+or Aive's explicit role-selection and tool-approval rules.
+
 ## Domains
 
 The four hostnames are attached to this Worker as **Custom Domains** in the Cloudflare dashboard
@@ -458,6 +483,20 @@ schema and per-listing read-only markers, and never treats these as installable 
 The deployment verifier also checks `/api/a2a/agents` end to end, failing a broken feed deployment.
 The external fetch uses `redirect: "manual"` because Cloudflare Workers reject the Fetch
 API’s `redirect: "error"` mode; unexpected redirects are rejected via non-2xx status.
+The public proxy **projects only documented fields**, never arbitrary third-party
+registry properties or nested tool/server credentials. Card and metadata URLs with
+private hosts, embedded credentials, queries, or fragments are dropped rather
+than displayed as publicly actionable links. This is particularly important for
+agentregistry MCP Registry v0.1 feeds, which can publish stored Authorization headers.
+The optional SearchA2A `ans_claim` field is kept only when its explicit DNS host and
+publisher-chosen versioned name match; it remains visibly `unverified` and is
+never treated as an Azphalt signer, publisher identity or install permission. Future
+`publisher_verification` metadata is narrowly projected as an origin-opt-in hint,
+not upgraded to cryptographic identity proof. This matters because SearchA2A and the
+Azphalt Store are replaceable, independently governed components, not a single
+authority for packages and agent identities.
+
+
 
 All four are attached. What remains of the move off Vercel:
 

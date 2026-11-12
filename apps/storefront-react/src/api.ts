@@ -19,6 +19,8 @@ export interface A2AAgentListing {
   capabilities: Record<string, boolean>;
   verification: "card_read_only";
   installable: false;
+  /** Publisher-supplied registry claim. Neither the Store nor SearchA2A has authenticated it. */
+  ans_claim?: { name: string; agent_host: string; verification: "unverified" };
 }
 
 export interface PackageSummary {
@@ -155,6 +157,25 @@ export async function fetchA2AAgents(): Promise<A2AAgentListing[]> {
         description: typeof skill.description === "string" ? skill.description.slice(0, 500) : "",
         tags: strings(skill.tags, 20),
       })) : [];
+    const rawAns = record.ans_claim;
+    let ansClaim: A2AAgentListing["ans_claim"];
+    if (rawAns && typeof rawAns === "object" && !Array.isArray(rawAns)) {
+      const claim = rawAns as Record<string, unknown>;
+      if (typeof claim.name === "string" && typeof claim.agent_host === "string" &&
+          claim.verification === "unverified" && claim.name.length <= 259 &&
+          claim.agent_host.length <= 251) {
+        const host = claim.agent_host.toLowerCase();
+        const labels = (claim.name.toLowerCase().startsWith("ans://") &&
+          claim.name.toLowerCase().endsWith("." + host))
+          ? claim.name.slice(6, -host.length - 1).split(".") : [];
+        const validLabel = (label: string) => /^(?!-)[a-z0-9-]{1,63}(?<!-)$/i.test(label);
+        if (host.split(".").length >= 2 && host.split(".").every(validLabel) &&
+            labels.length > 0 && labels.every(validLabel) && !host.endsWith(".local") &&
+            !host.endsWith(".internal") && !host.endsWith(".localhost")) {
+          ansClaim = { name: claim.name, agent_host: claim.agent_host, verification: "unverified" };
+        }
+      }
+    }
     return [{
       id: record.id.slice(0, 120), kind: "a2a-agent",
       name: record.name.slice(0, 160),
@@ -169,6 +190,7 @@ export async function fetchA2AAgents(): Promise<A2AAgentListing[]> {
         ? Object.fromEntries(Object.entries(record.capabilities).filter(([, value]) => typeof value === "boolean"))
         : {},
       verification: "card_read_only", installable: false,
+      ...(ansClaim ? { ans_claim: ansClaim } : {}),
     }];
   }).slice(0, 200);
 }

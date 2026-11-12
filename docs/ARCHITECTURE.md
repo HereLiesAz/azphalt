@@ -31,6 +31,37 @@ Each is enforced in code; the reference is where.
 
 Keeping these separable is the core constraint: anyone can implement azphalt and even run their own store; yours is just the flagship.
 
+## External ANS interoperability
+
+SearchA2A discovers external A2A metadata. The public Store's `/agents`
+directory is a **read-only catalog of leads**, not a path to `.azp`
+installation. It consumes a bounded SearchA2A feed through the Store's
+credential-sanitizing Worker proxy. A publisher may claim a versioned
+`ans://<version>.<agentHost>` name without Store-imposed SemVer rules.
+The Store displays that claim as **unverified**. Its independent package
+signing establishes an Azphalt package's integrity, not the identity or
+authorization of the remote agent.
+
+Aive may consume the same discovery claim either directly from SearchA2A
+or from the mirrored Store feed; only its keeper's explicit connection
+and fresh A2A Agent Card validation can enable a provider. No external product becomes a mandatory runtime or trust authority. Their compatible discovery, gateway and Kubernetes
+interfaces remain potential replaceable adapters.
+
+## Interoperable agent and tool catalogs
+
+The Store exposes **two separate external discovery classes**:
+SearchA2A supplies untrusted A2A Agent Cards and optional opaque-version ANS
+claims, while the MCP Registry v0.1-compatible catalog supplies MCP server
+metadata. Both are descriptive leads, not signed, installable Azphalt
+packages or automatic tool permissions. The MCP adapter supports the official
+public registry and deployer-selected, self-hosted compatible endpoints; it
+filters credentials and unsafe URLs from externally returned JSON.
+
+Aive owns agent execution and orchestration. It can consume standard A2A/MCP
+interfaces exposed by external runtimes and gateways without adopting their
+branding or treating those implementations as trust authorities.
+Integration stays replaceable, with no vendor-specific name imposed on Aive.
+
 ## Why azphalt is a separate repo from its hosts
 
 - **Credible neutrality.** A standard trapped in an app's repo reads as that app's private thing, and no competitor adopts it. Separation is the first structural signal that it's shared infrastructure.
