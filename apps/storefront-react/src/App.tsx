@@ -546,7 +546,6 @@ function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p
           if (event.pointerType === "mouse" && event.button !== 0) return;
           pointer.current = { id: event.pointerId, startX: event.clientX, start: focus, moved: false };
           suppressClick.current = false;
-          event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event) => {
           const p = pointer.current;
@@ -557,7 +556,12 @@ function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p
             suppressClick.current = true;
             setDragging(true);
           }
-          if (p.moved) setFocus(clamp(p.start - delta / SLOT));
+          if (p.moved) {
+            if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }
+            setFocus(clamp(p.start - delta / SLOT));
+          }
         }}
         onPointerUp={(event) => {
           const p = pointer.current;
