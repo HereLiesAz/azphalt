@@ -160,6 +160,38 @@ describe("SearchA2A external directory", () => {
     }
   });
 
+  it("excludes private and credential-bearing URL fields from public registry feeds", async () => {
+    const good = {
+      id: "external.a2a.0123456789abcdefabcd", name: "Safe", kind: "a2a-agent",
+      source_url: "https://agent.example.com/card", verification: "card_read_only",
+      installable: false, endpoint: "https://agent.example.com/api?token=secret-token",
+      discovery_url: "https://localhost/metadata",
+    };
+    const bad = [
+      { ...good, id: "external.a2a.aaaaaaaaaaaaaaaaaaaa",
+        source_url: "https://user:secret@agent.example.com/card" },
+      { ...good, id: "external.a2a.bbbbbbbbbbbbbbbbbbbb",
+        source_url: "https://agent.example.com/card?auth=secret" },
+      { ...good, id: "external.a2a.cccccccccccccccccccc",
+        source_url: "https://127.0.0.1/card" },
+    ];
+    const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
+      schema: 1, source: "searcha2a", listings: [...bad, good],
+    }), { status: 200 }));
+    try {
+      const response = await get("https://azphalt.store/api/a2a/agents");
+      expect(response.status).toBe(200);
+      const body = await response.text();
+      expect(body).not.toContain("secret");
+      expect(body).not.toContain("localhost");
+      const feed = JSON.parse(body);
+      expect(feed.count).toBe(1);
+      expect(feed.listings[0].source_url).toBe("https://agent.example.com/card");
+      expect(feed.listings[0].endpoint).toBeUndefined();
+      expect(feed.listings[0].discovery_url).toBeUndefined();
+    } finally { network.mockRestore(); }
+  });
+
   it("rejects redirects instead of fetching an unexpected upstream URL", async () => {
     const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, {
       status: 302, headers: { location: "https://unexpected.example/agent-feed.json" },
