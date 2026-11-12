@@ -456,6 +456,8 @@ returned HTTP 502. `searcha2a`'s daily Pages Action maintains both publications;
 the mirror is **public metadata**, not a separately curated source. The store validates
 schema and per-listing read-only markers, and never treats these as installable `.azp` packages.
 The deployment verifier also checks `/api/a2a/agents` end to end, failing a broken feed deployment.
+The external fetch uses `redirect: "manual"` because Cloudflare Workers reject the Fetch
+API’s `redirect: "error"` mode; unexpected redirects are rejected via non-2xx status.
 
 All four are attached. What remains of the move off Vercel:
 
