@@ -17,6 +17,7 @@ import { flatFeeMinor, microsToMinorRound, minorToMicros } from "./currency";
 import { payoutCents, PlayLedger, splitPlaySale, type FeeSettings, type Part } from "./ledger";
 import { productIdFor, syncPlayProducts, type ProductStore } from "./play-products";
 import { inAppRpc, migrateInApp } from "./state-rpc";
+import { verifyGoogleCredential, type GoogleIdentity } from "./google-account";
 
 type Fetcher = { fetch(input: Request): Promise<Response> };
 type DurableObjectNamespaceLike = {
@@ -64,6 +65,8 @@ interface Env {
   ROOT_ENDORSEMENT_ENTITLEMENT?: string;
   ROOT_ENDORSEMENT_CATALOG?: string;
   BUYER_SESSION_SECRET?: string;
+  /** Google OAuth 2.0 Web Client ID, required to enable account login (public). */
+  GOOGLE_CLIENT_ID?: string;
   ADMIN_TOKEN?: string;
   /**
    * Optional key material for seller invite codes. Unset, invites are keyed by an HKDF derivation of
@@ -216,6 +219,8 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 const CHUNK_BYTES = 1024 * 1024;
 const BUYER_COOKIE = "azphalt_buyer_session";
+const ACCOUNT_COOKIE = "__Host-azphalt_account";
+const ACCOUNT_AGE_SECONDS = 30 * 24 * 60 * 60;
 const BUYER_SUBJECT = /^buyer_[A-Za-z0-9_-]{20,128}$/;
 const PACKAGE_ID = /^[A-Za-z0-9._-]{1,200}$/;
 const VERSION = /^[A-Za-z0-9.+_-]{1,80}$/;
@@ -382,7 +387,8 @@ async function runtimeSecrets(env: Env): Promise<RuntimeSecrets> {
   return stateJson<RuntimeSecrets>(env, "/system-secrets");
 }
 
-async function readBuyerSubjects(req: Request, env: Env): Promise<string[]> {
+/** Legacy anonymous buyer recovery, authenticated with a signed HttpOnly cookie. */
+async function readBrowserBuyerSubjects(req: Request, env: Env): Promise<string[]> {
   const value = cookieValue(req, BUYER_COOKIE);
   if (!value) return [];
   const secret = (await runtimeSecrets(env)).buyerSessionSecret;
@@ -402,10 +408,53 @@ async function readBuyerSubjects(req: Request, env: Env): Promise<string[]> {
   }
 }
 
+/** The Google session is a distinct, domain-separated MAC, never a Google token in a cookie. */
+async function readAccount(req: Request, env: Env): Promise<GoogleIdentity | null> {
+  const value = cookieValue(req, ACCOUNT_COOKIE);
+  if (!value) return null;
+  const dot = value.indexOf(".");
+  if (dot < 1) return null;
+  const payload = value.slice(0, dot);
+  try {
+    const secret = (await runtimeSecrets(env)).buyerSessionSecret;
+    if (!constantEqual(
+      await hmac(secret, "google-account:v1:" + payload),
+      fromB64url(value.slice(dot + 1)),
+    )) return null;
+    const account = JSON.parse(dec.decode(fromB64url(payload))) as
+      GoogleIdentity & { v?: number; exp?: number };
+    if (account.v !== 1 || typeof account.sub !== "string" ||
+        !/^\d{10,40}$/.test(account.sub) ||
+        typeof account.email !== "string" || account.email.length > 320 ||
+        typeof account.name !== "string" || account.name.length > 120 ||
+        typeof account.exp !== "number" || account.exp <= Date.now()) return null;
+    return { sub: account.sub, email: account.email, name: account.name };
+  } catch {
+    return null;
+  }
+}
+
+async function accountBuyerSubject(sub: string, env: Env): Promise<string> {
+  const secret = (await runtimeSecrets(env)).buyerSessionSecret;
+  return "buyer_" + b64url(await hmac(secret, "google-buyer:v1:" + sub)).slice(0, 32);
+}
+
+/**
+ * When signed in, never inherit an unrelated browser cookie's purchases.
+ * Only identities explicitly linked during verified sign-in are included.
+ */
+async function readBuyerSubjects(req: Request, env: Env): Promise<string[]> {
+  const account = await readAccount(req, env);
+  if (!account) return readBrowserBuyerSubjects(req, env);
+  const primary = await accountBuyerSubject(account.sub, env);
+  const linked = await rpc<string[]>(env, "account.subjects", { sub: account.sub });
+  return [...new Set([primary, ...linked.filter((v) => BUYER_SUBJECT.test(v))])];
+}
+
 async function makeBuyerCookie(req: Request, subject: string, env: Env): Promise<string | undefined> {
   if (!BUYER_SUBJECT.test(subject)) return undefined;
   const secret = (await runtimeSecrets(env)).buyerSessionSecret;
-  const existing = await readBuyerSubjects(req, env);
+  const existing = await readBrowserBuyerSubjects(req, env);
   const subjects = [subject, ...existing.filter((x) => x !== subject)].slice(0, 12);
   const payload = b64url(enc.encode(JSON.stringify({ v: 1, subjects })));
   const signature = b64url(await hmac(secret, payload));
@@ -417,6 +466,85 @@ async function makeBuyerCookie(req: Request, subject: string, env: Env): Promise
     "SameSite=Lax",
     "Secure",
   ].join("; ");
+}
+
+/** Google Identity Services signs in only through a server-validated credential. */
+async function accountSignIn(req: Request, env: Env): Promise<Response> {
+  if (!env.GOOGLE_CLIENT_ID) return json({ error: "Google sign-in is not configured" }, 503);
+  if (req.headers.get("origin") !== new URL(env.PUBLIC_ORIGIN).origin) {
+    return json({ error: "invalid request origin" }, 403);
+  }
+  if (!(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
+  const body = await readJson(req, 12 * 1024);
+  const verified = await verifyGoogleCredential(body?.credential, env.GOOGLE_CLIENT_ID);
+  if (!verified) return json({ error: "invalid Google identity credential" }, 401);
+
+  // A verified legacy buyer cookie proves only THIS browser's prior purchases.
+  // Never merge when switching directly from a different Google account.
+  const previous = await readAccount(req, env);
+  if (!previous || previous.sub === verified.sub) {
+    const legacy = await readBrowserBuyerSubjects(req, env);
+    await rpc(env, "account.link", { sub: verified.sub, subjects: legacy });
+  }
+  const secret = (await runtimeSecrets(env)).buyerSessionSecret;
+  const payload = b64url(enc.encode(JSON.stringify({
+    v: 1, ...verified, exp: Date.now() + ACCOUNT_AGE_SECONDS * 1000,
+  })));
+  const signature = b64url(await hmac(secret, "google-account:v1:" + payload));
+  return json({ account: verified }, 200, {
+    "set-cookie": [
+      ACCOUNT_COOKIE + "=" + payload + "." + signature,
+      "Path=/", "Max-Age=" + ACCOUNT_AGE_SECONDS,
+      "HttpOnly", "Secure", "SameSite=Lax",
+    ].join("; "),
+  });
+}
+
+async function accountInfo(req: Request, env: Env): Promise<Response> {
+  return json({ clientId: env.GOOGLE_CLIENT_ID ?? null, account: await readAccount(req, env) });
+}
+
+async function accountSignOut(req: Request, env: Env): Promise<Response> {
+  if (req.headers.get("origin") !== new URL(env.PUBLIC_ORIGIN).origin) {
+    return json({ error: "invalid request origin" }, 403);
+  }
+  const response = json({ account: null });
+  response.headers.append("set-cookie",
+    ACCOUNT_COOKIE + "=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
+  // Sign-out must not expose purchases linked on the prior account to a guest
+  // using the same browser.
+  response.headers.append("set-cookie",
+    BUYER_COOKIE + "=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
+  return response;
+}
+
+/** Browser handoffs only. This is NOT a claim of a completed host install. */
+async function accountLibrary(req: Request, env: Env): Promise<Response> {
+  const account = await readAccount(req, env);
+  if (!account) return json({ error: "sign in required" }, 401);
+  if (req.method === "GET") {
+    return json(await rpc(env, "account.installs", { sub: account.sub }));
+  }
+  if (req.headers.get("origin") !== new URL(env.PUBLIC_ORIGIN).origin) {
+    return json({ error: "invalid request origin" }, 403);
+  }
+  if (!(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
+  const body = await readJson(req, 64 * 1024);
+  if (!Array.isArray(body?.entries) || body.entries.length > 300) {
+    return json({ error: "entries must be an array of at most 300 records" }, 400);
+  }
+  const entries = body.entries.filter((e): e is Record<string, unknown> =>
+    !!e && typeof e === "object" && !Array.isArray(e));
+  const now = Date.now();
+  const verified = entries.map((entry) => ({
+    id: entry.id,
+    version: entry.version,
+    state: entry.state,
+    at: typeof entry.at === "string" && Number.isFinite(Date.parse(entry.at)) &&
+      Date.parse(entry.at) <= now + 5 * 60_000
+      ? new Date(entry.at).toISOString() : "1970-01-01T00:00:00.000Z",
+  }));
+  return json(await rpc(env, "account.installs.merge", { sub: account.sub, entries: verified }));
 }
 
 function canonicalClaims(claims: EntitlementClaims): string {
@@ -4073,6 +4201,12 @@ async function handle(req: Request, env: Env): Promise<Response> {
         (req.method === "GET" && (path === "/reports" || path === "/api/reports"));
       if (adminSurface && !(await allowWrite(req, env))) return json({ error: "too many requests" }, 429);
 
+      if (req.method === "GET" && path === "/api/account") return accountInfo(req, env);
+      if (req.method === "POST" && path === "/api/account/google") return accountSignIn(req, env);
+      if (req.method === "POST" && path === "/api/account/logout") return accountSignOut(req, env);
+      if (path === "/api/account/library" && (req.method === "GET" || req.method === "POST")) {
+        return accountLibrary(req, env);
+      }
       if (req.method === "GET" && path === "/api/packages") return apiPackages(req, env);
       if (req.method === "GET" && path === "/api/a2a/agents") return searchA2AListings();
       if (req.method === "GET" && path === "/api/mcp/servers") return searchExternalMcpServers(req, env);
