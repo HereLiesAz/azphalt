@@ -212,9 +212,6 @@ function PreviewCanvas({ pkg, tint, active }: { pkg: PackageSummary; tint: strin
 /** A pack of surfaces (`spec/package-format.md` § Surface format): it lists at least one `surface` asset. */
 export const isSurfacePack = (p: PackageSummary) => (p.types ?? []).includes("surface");
 
-/** Filter category for packs of surfaces; not a media domain, so it is added beside them. */
-const SURFACES_CATEGORY = "surfaces";
-
 /**
  * The front outline of each surface in a pack of surfaces, drawn from the surface's own profile data
  * (tools/surface-previews.mjs), on a light tile so the stroke reads on any card colour.
