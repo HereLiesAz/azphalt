@@ -2,7 +2,8 @@
  * Types for `kind:"llm"` — an off-device language model: a hosted OpenAI-compatible endpoint, or open
  * weights run in a private GitHub Actions sandbox. See `spec/llm.md`.
  *
- * Like `kind:"mcp"`, the package is a signed header plus a bundled setup script. It carries no
+ * Standard hosted and sandbox packages contain a setup script; direct A2A agent headers are
+ * signed, script-free endpoints. All variants carry no
  * azphalt `capabilities` and no `/code` sandbox `entry`/`runtime`, and a host MUST NOT run its setup
  * script on the user's device.
  */
@@ -11,8 +12,8 @@ import type { McpInput, ModelLicense, ModelRequirements, RemoteModelFileMember }
 /** Where prompts go: a third-party service, or open weights in the private sandbox. */
 export type LlmTier = "endpoint" | "sandbox-weights";
 
-/** How a host talks to a set-up model. `sandbox-weights` permits only `github-actions-runner`. */
-export type LlmProtocol = "openai-chat" | "github-actions-runner" | "moyai-session";
+/** Protocol used by a host. A2A is a remote agent protocol, not MCP or OpenAI Chat. */
+export type LlmProtocol = "openai-chat" | "github-actions-runner" | "moyai-session" | "a2a-jsonrpc";
 
 /** Bearer-key requirement of the endpoint. A bearer mode names its key via `authInput`. */
 export type LlmAuth = "none" | "optional-bearer" | "required-bearer";
@@ -24,8 +25,8 @@ export interface LlmManifest {
   tier: LlmTier;
   /** Values the host prompts for (provider keys), never stored in the package. */
   inputs?: LlmInput[];
-  /** Required for every tier. */
-  setup: LlmSetup;
+  /** Optional only for endpoint-tier, A2A-only agents; all existing model formats require setup. */
+  setup?: LlmSetup;
   /** Required for `sandbox-weights`, forbidden for `endpoint`. */
   weights?: LlmWeights;
   endpoint: LlmEndpoint;
@@ -72,8 +73,10 @@ export interface LlmRunnerRequirements extends Omit<ModelRequirements, "quantiza
 
 export interface LlmEndpoint {
   protocols: LlmProtocol[];
-  /** Required for direct endpoint protocols. A full `${input:<id>}` may defer a self-hosted URL to install time. */
+  /** Required for direct protocols. A2A must use a fixed HTTPS URL on the Agent Card origin. */
   baseUrl?: string;
+  /** Required for a2a-jsonrpc. The host re-fetches this Agent Card before connecting. */
+  agentCardUrl?: string;
   defaultModel?: string;
   auth: LlmAuth;
   /** The `inputs[].id` holding the bearer key. */
