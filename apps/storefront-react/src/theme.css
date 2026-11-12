@@ -295,6 +295,7 @@ textarea.field {
   padding: 8px 0 4px;
 }
 .store-filter-select {
+  position: relative;
   display: flex;
   flex: 1 0 130px;
   flex-direction: column;
@@ -309,13 +310,27 @@ textarea.field {
   min-height: 44px;
   border: 0;
   border-radius: 999px;
-  padding: 8px 28px 8px 14px;
+  padding: 8px 38px 8px 14px;
+  appearance: none;
   background: var(--surface-highest);
   color: var(--on-surface);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
+.store-filter-select::after {
+  content: "";
+  position: absolute;
+  right: 17px;
+  bottom: 19px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-50%) rotate(45deg);
+  pointer-events: none;
+}
+
 .store-filter-select select:focus-visible {
   outline: 2px solid var(--on-surface);
   outline-offset: 2px;
