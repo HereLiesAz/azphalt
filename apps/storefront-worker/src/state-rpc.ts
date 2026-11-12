@@ -35,6 +35,21 @@ export function migrateInApp(sql: SqlLike): void {
     "attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT)",
   );
   sql.exec("CREATE TABLE IF NOT EXISTS kv (name TEXT PRIMARY KEY, value TEXT NOT NULL)");
+  // An account links only buyer subjects already proven by a signed browser
+  // session during a verified Google sign-in. No entitlement is copied or minted.
+  sql.exec(
+    "CREATE TABLE IF NOT EXISTS account_subjects (" +
+    "google_sub TEXT NOT NULL, buyer_subject TEXT NOT NULL, " +
+    "PRIMARY KEY(google_sub, buyer_subject))",
+  );
+  // Handoff history, not authoritative host-install telemetry. Tombstones are
+  // retained so removal on one device reaches the next.
+  sql.exec(
+    "CREATE TABLE IF NOT EXISTS account_installs (" +
+    "google_sub TEXT NOT NULL, package_id TEXT NOT NULL, version TEXT NOT NULL, " +
+    "state TEXT NOT NULL, recorded_at TEXT NOT NULL, " +
+    "PRIMARY KEY(google_sub, package_id))",
+  );
 }
 
 type Args = Record<string, unknown>;
@@ -153,6 +168,66 @@ export function inAppRpc(sql: SqlLike, method: string, a: Args): unknown {
       if (!row || String(row.value) !== "h:" + String(a.hash)) return { valid: false };
       sql.exec("UPDATE kv SET value='used' WHERE name=?", name);
       return { valid: true };
+    }
+
+    // ── Account-backed browser library ──
+    case "account.link": {
+      const sub = String(a.sub);
+      const subjects = Array.isArray(a.subjects) ? a.subjects : [];
+      for (const item of subjects) {
+        if (typeof item !== "string" || !/^buyer_[A-Za-z0-9_-]{20,128}$/.test(item)) continue;
+        sql.exec(
+          "INSERT OR IGNORE INTO account_subjects(google_sub,buyer_subject) VALUES(?,?)",
+          sub, item,
+        );
+      }
+      return {};
+    }
+    case "account.subjects":
+      return [...sql.exec(
+        "SELECT buyer_subject FROM account_subjects WHERE google_sub=? ORDER BY buyer_subject",
+        String(a.sub),
+      )].map((row) => String(row.buyer_subject));
+    case "account.installs": {
+      const sub = String(a.sub);
+      return [...sql.exec(
+        "SELECT package_id,version,state,recorded_at FROM account_installs WHERE google_sub=? ORDER BY recorded_at DESC",
+        sub,
+      )].map((row) => ({
+        id: String(row.package_id), version: String(row.version),
+        state: String(row.state), at: String(row.recorded_at),
+      }));
+    }
+    case "account.installs.merge": {
+      const sub = String(a.sub);
+      const entries = Array.isArray(a.entries) ? a.entries : [];
+      if (entries.length > 300) throw new Error("too many entries");
+      for (const raw of entries) {
+        if (!raw || typeof raw !== "object") continue;
+        const item = raw as Record<string, unknown>;
+        const id = String(item.id ?? "");
+        const version = String(item.version ?? "");
+        const state = String(item.state ?? "");
+        const at = String(item.at ?? "");
+        if (!/^[A-Za-z0-9._-]{1,200}$/.test(id) ||
+            !/^[A-Za-z0-9.+_-]{1,80}$/.test(version) ||
+            !["downloaded", "installed", "active", "failed", "removed"].includes(state) ||
+            !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(at)) continue;
+        sql.exec(
+          "INSERT INTO account_installs(google_sub,package_id,version,state,recorded_at) " +
+          "VALUES(?,?,?,?,?) ON CONFLICT(google_sub,package_id) DO UPDATE SET " +
+          "version=excluded.version,state=excluded.state,recorded_at=excluded.recorded_at " +
+          "WHERE excluded.recorded_at>account_installs.recorded_at",
+          sub, id, version, state, at,
+        );
+      }
+      return [...sql.exec(
+        "SELECT package_id,version,state,recorded_at FROM account_installs WHERE google_sub=? ORDER BY recorded_at DESC",
+        sub,
+      )].map((row) => ({
+        id: String(row.package_id), version: String(row.version),
+        state: String(row.state), at: String(row.recorded_at),
+      }));
     }
 
     // ── cursors ──
