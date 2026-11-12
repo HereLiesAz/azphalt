@@ -749,7 +749,7 @@ function Detail({
       {(pkg.targetApps ?? []).length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 16 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" }}>Available in</span>
-          {(pkg.targetApps ?? []).map((a) => (
+          {[...new Set((pkg.targetApps ?? []).map(canonicalAppId))].map((a) => (
             <a key={a} className="chip" href={`/app/${encodeURIComponent(a)}`} style={{ textDecoration: "none" }}>
               {a.split(".").pop() ?? a}
             </a>
@@ -938,7 +938,7 @@ function StorefrontApp() {
   useEffect(load, []);
 
   const categories = useMemo(() => availableStoreCategories(packages), [packages]);
-  const apps = useMemo(() => [...new Set(packages.flatMap((p) => p.targetApps ?? []))].sort(), [packages]);
+  const apps = useMemo(() => [...new Set(packages.flatMap((p) => (p.targetApps ?? []).map(canonicalAppId)))].sort(), [packages]);
 
   const filtering = query.trim() !== "" || price !== 0 || category !== null || app !== null || owned !== 0;
   const shown = useMemo(() => {
@@ -947,7 +947,7 @@ function StorefrontApp() {
       const matchesQuery = !q || [p.name, p.description ?? "", p.author ?? "", p.id].some((s) => s.toLowerCase().includes(q));
       const matchesPrice = price === 1 ? !isPaid(p) : price === 2 ? isPaid(p) : true;
       const matchesCat = !category || storeCategoryKeys(p).includes(category);
-      const matchesApp = !app || (p.targetApps ?? []).length === 0 || (p.targetApps ?? []).includes(app);
+      const matchesApp = !app || (p.targetApps ?? []).length === 0 || (p.targetApps ?? []).some((target) => canonicalAppId(target) === app);
       // `removed` is kept rather than deleted so a reinstall can be offered, so "have it" is a
       // question about the state and not about the key being present — hence `isHeld`, not `in`.
       const held = isHeld(inventory, p.id);
@@ -1535,6 +1535,11 @@ function ModerationPage() {
   );
 }
 
+/** The former haive ID and Aive ID identify the same host app. */
+function canonicalAppId(id: string): string {
+  return id === "com.hereliesaz.haive" ? "com.hereliesaz.aive" : id;
+}
+
 /**
  * `/app/<appId>` — the packages one host app can see: those scoped to it (its companions and
  * app-specific packages) and every global one (`spec/repository-api.md` § App scoping).
@@ -1547,9 +1552,9 @@ function AppCatalogPage({ appId }: { appId: string }) {
     fetchPackages().then(setPackages).catch((e: Error) => setError(e.message));
   }, []);
 
-  const scoped = (packages ?? []).filter((p) => (p.targetApps ?? []).includes(appId));
+  const scoped = (packages ?? []).filter((p) => (p.targetApps ?? []).some((target) => canonicalAppId(target) === canonicalAppId(appId)));
   const global = (packages ?? []).filter((p) => (p.targetApps ?? []).length === 0);
-  const host = (packages ?? []).find((p) => p.kind === "app" && p.app?.hostId === appId);
+  const host = (packages ?? []).find((p) => p.kind === "app" && p.app?.hostId && canonicalAppId(p.app.hostId) === canonicalAppId(appId));
 
   const list = (title: string, items: PackageSummary[]) =>
     items.length > 0 && (
