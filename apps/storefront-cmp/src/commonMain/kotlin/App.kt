@@ -37,6 +37,9 @@ import models.ExtensionStateEntry
 import models.HandoffSession
 import models.LocalHostInventory
 import models.PackageSummary
+import models.StoreCategory
+import models.StoreTaxonomy
+import models.loadStoreTaxonomy
 import models.installCount
 import models.forgetInstall
 import models.installedEntry
@@ -116,6 +119,12 @@ fun StorefrontApp(
         // 0 = All, 1 = Installed, 2 = Not installed. Filtering on what you already have is the point
         // of keeping the record at all.
         var owned by remember { mutableStateOf(0) }
+        var taxonomy by remember { mutableStateOf<StoreTaxonomy?>(null) }
+        LaunchedEffect(Unit) {
+            try { taxonomy = loadStoreTaxonomy() } catch (e: Exception) {
+                println("Could not read bundled store taxonomy: $e")
+            }
+        }
 
         LaunchedEffect(handoff, reloadKey) {
             loading = true
@@ -132,7 +141,11 @@ fun StorefrontApp(
             }
         }
 
-        val categories = remember(packages) { packages.flatMap { it.mediaDomains }.distinct().sorted() }
+        val categories = remember(packages, taxonomy) {
+            taxonomy?.available(packages) ?: packages.flatMap { it.mediaDomains }.distinct().sorted().map {
+                StoreCategory(id = it, label = it.replaceFirstChar { char -> char.uppercase() })
+            }
+        }
         val apps = remember(packages) { packages.flatMap { it.targetApps }.distinct().sorted() }
 
         // Any active search/filter switches the page from curated section carousels to one results row.
@@ -151,7 +164,7 @@ fun StorefrontApp(
                     2 -> inventory[p.id]?.state.let { it == null || it == ExtensionState.REMOVED }
                     else -> true
                 }) &&
-                (category == null || category in p.mediaDomains) &&
+                (category == null || (taxonomy?.keys(p)?.contains(category) ?: (category in p.mediaDomains))) &&
                 (app == null || p.targetApps.isEmpty() || app in p.targetApps)
         }
         val shown = when (sort) {
@@ -160,7 +173,7 @@ fun StorefrontApp(
             SortMode.RECENT -> filtered.sortedByDescending { it.updatedAt ?: "" }
             SortMode.NAME -> filtered.sortedBy { it.name.lowercase() }
         }
-        val sections = remember(packages) { buildSections(packages) }
+        val sections = remember(packages, taxonomy) { buildSections(packages, taxonomy) }
 
         // Hoisted above the catalog↔detail swap so the browse scroll position survives expanding an
         // item and coming back.
@@ -398,7 +411,7 @@ private fun CapsuleFilters(
     onPrice: (Int) -> Unit,
     owned: Int,
     onOwned: (Int) -> Unit,
-    categories: List<String>,
+    categories: List<StoreCategory>,
     category: String?,
     onCategory: (String?) -> Unit,
 ) {
@@ -423,8 +436,10 @@ private fun CapsuleFilters(
         row(listOf("All" to (price == 0), "Free" to (price == 1), "Paid" to (price == 2))) { onPrice(it) }
         row(listOf("Any" to (owned == 0), "Installed" to (owned == 1), "Not installed" to (owned == 2))) { onOwned(it) }
         if (categories.isNotEmpty()) {
-            val labels = listOf("All types" to (category == null)) + categories.map { it to (category == it) }
-            row(labels) { i -> onCategory(if (i == 0) null else categories[i - 1]) }
+            val labels = listOf("All types" to (category == null)) + categories.map {
+                (if (it.parent != null) "↳ " else "") + it.label to (category == it.id)
+            }
+            row(labels) { i -> onCategory(if (i == 0) null else categories[i - 1].id) }
         }
     }
 }

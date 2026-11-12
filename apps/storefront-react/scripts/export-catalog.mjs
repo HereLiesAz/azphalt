@@ -68,4 +68,12 @@ for (const item of generated.packages ?? []) {
 packages.sort((a, b) => a.name.localeCompare(b.name));
 await mkdir(outDir, { recursive: true });
 await writeFile(resolve(outDir, "catalog.json"), JSON.stringify(packages) + "\n");
+// Publish the SAME frontend-only taxonomy bundled by Compose as a static file
+// for independently packaged in-app stores. No Worker API or DB changes.
+const taxonomySource = resolve(root, "apps/storefront-cmp/src/commonMain/composeResources/files/store-taxonomy.json");
+const taxonomy = JSON.parse(await readFile(taxonomySource, "utf8"));
+if (taxonomy.schema !== 1 || !Array.isArray(taxonomy.categories)) {
+  throw new Error("Unsupported storefront taxonomy schema");
+}
+await writeFile(resolve(outDir, "store-taxonomy.json"), JSON.stringify(taxonomy) + "\n");
 console.log("export-catalog: wrote " + packages.length + " package summaries");

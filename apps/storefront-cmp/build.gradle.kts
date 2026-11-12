@@ -32,6 +32,24 @@ val versionFile: File = File(repoRoot, "version.properties")
 val versionTool: File = File(repoRoot, "tools/version.mjs")
 
 /**
+ * React and Compose consume the same signed-by-digest Azrienoch 1.1 release.
+ * Generate the resource before Compose generates its accessors and copies fonts;
+ * cache matches are cheap, and a changed upstream release fails hash verification.
+ */
+val syncStoreFont by tasks.registering(Exec::class) {
+    workingDir(repoRoot)
+    commandLine("node", File(repoRoot, "tools/sync-store-font.mjs").absolutePath)
+}
+tasks.configureEach {
+    if (name.startsWith("generateResourceAccessorsFor") ||
+        name.startsWith("prepareComposeResourcesTaskFor") ||
+        name.startsWith("copyNonXmlValueResourcesFor")) {
+        dependsOn(syncStoreFont)
+    }
+}
+
+
+/**
  * Whether this invocation should bump the version.
  *
  * The requirement is that a compile always bumps — so the test is on the *requested tasks*, not on
@@ -143,7 +161,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
-                // Bundles src/commonMain/composeResources — the Jost typeface the Capsule system specifies.
+                // Bundles the verified Azrienoch font and the portable storefront taxonomy.
                 implementation(compose.components.resources)
                 implementation(compose.ui)
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")

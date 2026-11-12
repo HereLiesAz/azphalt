@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import models.PackageSummary
+import models.StoreTaxonomy
 import models.installCount
 import theme.azTurnstileEntrance
 
@@ -43,38 +44,36 @@ data class CatalogSection(
  * hidden. Items may repeat across rows — the same way a marketplace surfaces a popular pack under both
  * "Popular" and its category — and each row is capped so a carousel stays a carousel.
  */
-fun buildSections(packages: List<PackageSummary>): List<CatalogSection> {
+fun buildSections(packages: List<PackageSummary>, taxonomy: StoreTaxonomy? = null): List<CatalogSection> {
     if (packages.isEmpty()) return emptyList()
     val sections = mutableListOf<CatalogSection>()
-    fun add(title: String, subtitle: String?, items: List<PackageSummary>, limit: Int = 14) {
-        if (items.isNotEmpty()) sections += CatalogSection(title, subtitle, items.take(limit))
-    }
-
-    add("Popular", "Most installed across every host", packages.sortedByDescending { it.installCount })
-    add(
-        "Top rated",
-        "Highest rated by the community",
-        packages.filter { it.rating != null && it.ratingCount > 0 }.sortedByDescending { it.rating },
+    sections += CatalogSection(
+        "Popular", "Most installed across every host",
+        packages.sortedByDescending { it.installCount }.take(14),
     )
-    add(
-        "Fresh",
-        "Recently published and updated",
-        packages.filter { it.updatedAt != null }.sortedByDescending { it.updatedAt },
-    )
-
-    // One section per media-domain category (VSCode-style browse-by-category).
-    val categories = packages.flatMap { it.mediaDomains }.distinct().sorted()
-    for (c in categories) {
-        add(
-            c.replaceFirstChar { it.uppercase() },
-            null,
-            packages.filter { c in it.mediaDomains }.sortedByDescending { it.installCount },
-        )
+    if (taxonomy != null) {
+        for (category in taxonomy.available(packages)) {
+            val matching = packages.filter { category.id in taxonomy.keys(it) }
+            if (matching.isEmpty()) continue
+            val title = if (category.parent == null) category.label
+                else "${taxonomy.label(category.parent)} / ${category.label}"
+            sections += CatalogSection(
+                title,
+                "${matching.size} ${if (matching.size == 1) "extension" else "extensions"}",
+                matching,
+            )
+        }
+    } else {
+        // The embedded resource is loading; keep the pre-existing discovery
+        // path instead of showing an empty catalog on a slow start.
+        for (domain in packages.flatMap { it.mediaDomains }.distinct().sorted()) {
+            sections += CatalogSection(
+                domain.replaceFirstChar { it.uppercase() }, null,
+                packages.filter { domain in it.mediaDomains },
+            )
+        }
+        sections += CatalogSection("Other extensions", null, packages.filter { it.mediaDomains.isEmpty() })
     }
-
-    // Anything with no category still gets a home.
-    add("More extensions", null, packages.filter { it.mediaDomains.isEmpty() }.sortedByDescending { it.installCount })
-
     return sections
 }
 
