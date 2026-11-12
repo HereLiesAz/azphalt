@@ -3927,13 +3927,13 @@ async function searchExternalMcpServers(req: Request, env: Env): Promise<Respons
   if (base.protocol !== "https:" || base.username || base.password ||
       base.search || base.hash || (base.port && base.port !== "443") ||
       !host.includes(".") || host.split(".").some(label => !validLabel.test(label)) ||
-      /^\\d+$/.test(host.split(".").at(-1) || "") ||
+      /^\d+$/.test(host.split(".").at(-1) || "") ||
       host.endsWith(".local") || host.endsWith(".localhost") ||
       host.endsWith(".internal")) {
     return json({ error: "MCP registry configuration invalid" }, 503);
   }
   // The base is deployer-controlled, never a user-supplied URL.
-  const upstreamUrl = new URL(base.href.replace(/\\/$/, "") + "/v0.1/servers");
+  const upstreamUrl = new URL(base.href.replace(/\/$/, "") + "/v0.1/servers");
   upstreamUrl.searchParams.set("limit", "30");
   if (query) upstreamUrl.searchParams.set("search", query);
   if (cursor) upstreamUrl.searchParams.set("cursor", cursor);
@@ -3984,7 +3984,7 @@ async function searchExternalMcpServers(req: Request, env: Env): Promise<Respons
       return url.protocol === "https:" && !url.username && !url.password &&
         !url.search && !url.hash && !url.port && domain.includes(".") &&
         domain.split(".").every(label => validLabel.test(label)) &&
-        !/^\\d+$/.test(domain.split(".").at(-1) || "") &&
+        !/^\d+$/.test(domain.split(".").at(-1) || "") &&
         !domain.endsWith(".local") && !domain.endsWith(".internal") &&
         !domain.endsWith(".localhost");
     } catch { return false; }
