@@ -3858,7 +3858,7 @@ async function searchA2AListings(): Promise<Response> {
       const claim = candidate as Record<string, unknown>;
       if (typeof claim.name === "string" && typeof claim.agent_host === "string" &&
           claim.verification === "unverified" && claim.name.length <= 259 &&
-          claim.agent_host.length <= 237) {
+          claim.agent_host.length <= 251) {
         const host = claim.agent_host.toLowerCase();
         const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/i;
         const hostLabels = host.split(".");
