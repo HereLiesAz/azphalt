@@ -117,6 +117,22 @@ describe("SearchA2A external directory", () => {
       expect(network.mock.calls[0][0]).toBe(
         "https://raw.githubusercontent.com/HereLiesAz/searcha2a/agent-feed/site/api/v1/azphalt-listings.json",
       );
+      expect(network.mock.calls[0][1]).toMatchObject({ redirect: "manual" });
+    } finally {
+      network.mockRestore();
+    }
+  });
+
+  it("rejects redirects instead of fetching an unexpected upstream URL", async () => {
+    const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, {
+      status: 302, headers: { location: "https://unexpected.example/agent-feed.json" },
+    }));
+    try {
+      const res = await get("https://azphalt.store/api/a2a/agents");
+      expect(res.status).toBe(502);
+      expect((await res.json()).error).toBe("SearchA2A directory temporarily unavailable");
+      expect(network).toHaveBeenCalledOnce();
+      expect(network.mock.calls[0][1]).toMatchObject({ redirect: "manual" });
     } finally {
       network.mockRestore();
     }

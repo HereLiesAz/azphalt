@@ -3787,7 +3787,7 @@ async function searchA2AListings(): Promise<Response> {
   const feedUrl = "https://raw.githubusercontent.com/HereLiesAz/searcha2a/agent-feed/site/api/v1/azphalt-listings.json";
   let response: Response;
   try {
-    response = await fetch(feedUrl, { redirect: "error", signal: AbortSignal.timeout(8000) });
+    response = await fetch(feedUrl, { redirect: "manual", signal: AbortSignal.timeout(8000) });
   } catch {
     return json({ error: "SearchA2A directory temporarily unavailable" }, 502);
   }
