@@ -3814,7 +3814,7 @@ async function searchA2AListings(): Promise<Response> {
         host.includes(".") && !host.includes(":") &&
         host !== "localhost" && !host.endsWith(".localhost") &&
         !host.endsWith(".local") && !host.endsWith(".internal") &&
-        !/^\\d+\\.\\d+\\.\\d+\\.\\d+$/.test(host);
+        !/^\d+\.\d+\.\d+\.\d+$/.test(host);
     } catch { return false; }
   };
   // Whitelist public metadata. Registry v0.1 feeds can include Authorization headers:
