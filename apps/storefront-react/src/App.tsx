@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   fetchPackages,
   fetchA2AAgents,
@@ -52,49 +52,47 @@ const SORTS: Array<[Sort, string]> = [
 ];
 const STILL = 0.32;
 
-// Hero-carousel card geometry. The card is drawn at HERO width; a per-item mask (see .carousel-item)
-// clips it down toward the edges, so a row reads thin · small · medium · HERO · medium · small · thin ·
-// thin… symmetric around a centered focus keyline (the M3 Expressive hero layout).
-// The top hero carousel's masked tiers.
+// Expressive hero keylines: width changes continuously as the focal index moves.
+// The focal slot stays at the same left inset; cards move through that keyline.
 const HERO = 268;
 const MEDIUM = 186;
 const SMALL = 120;
 const THIN = 64;
-const HERO_H = 282; // the hero row's cards are taller than the plain rows below
+const HERO_H = 282;
+const CAROUSEL_GAP = 12;
+const HERO_INSET = 24;
+const SLOT = MEDIUM + CAROUSEL_GAP;
 
-// The plain rows below the hero carousel: uniform cards (the design we had before the carousels).
 const ROW_W = 244;
 const ROW_H = 216;
 
-// The hero sits at the 2nd slot at rest (index 1), so a row reads small · HERO · medium · small ·
-// thin · thin …, and shifts one slot per SLOT pixels of scroll.
-const HERO_SLOT = 1;
-/**
- * Scroll distance that advances the focus by one card: the card's laid-out width plus the flex gap
- * between items (`.carousel` gap, theme.css).
- *
- * The gap used to be left out — SLOT was set equal to MEDIUM — which made the focus index drift by
- * the gap's share of the pitch on every slot, about 5%, so roughly one whole card after sixteen. It
- * was wrong before the cards shrank and shrinking made it worse, because the gap is a larger fraction
- * of a smaller card.
- */
-const CAROUSEL_GAP = 12;
-const SLOT = MEDIUM + CAROUSEL_GAP;
+/** Width of a visible hero card at its distance from the fixed keyline. */
+function slotWidth(distance: number): number {
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  if (distance <= -2) return THIN;
+  if (distance <= -1) return lerp(THIN, SMALL, distance + 2);
+  if (distance <= 0) return lerp(SMALL, HERO, distance + 1);
+  if (distance <= 1) return lerp(HERO, MEDIUM, distance);
+  if (distance <= 2) return lerp(MEDIUM, SMALL, distance - 1);
+  if (distance <= 3) return lerp(SMALL, THIN, distance - 2);
+  return THIN;
+}
 
 /**
- * Mask width for a card `d` slots from the focus (0 = the hero; negative = to its left). Asymmetric:
- * a single small peek on the left, and a medium → small → thin falloff on the right — so a row reads
- * small · HERO · medium · small · thin · thin … with the hero as the 2nd card at rest.
+ * Keyline layout computed in track coordinates. All widths and positions are
+ * derived together, so changing a card's mask cannot move the scroll origin or
+ * leave gaps where the old index-based scroll math expected a fixed item pitch.
  */
-function slotWidth(d: number): number {
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-  if (d <= -2) return THIN; // scrolled-past cards on the left collapse to thin
-  if (d <= -1) return lerp(THIN, SMALL, d + 2); // [-2,-1]: thin → small (the left peek)
-  if (d <= 0) return lerp(SMALL, HERO, d + 1); //  [-1, 0]: small → hero
-  if (d <= 1) return lerp(HERO, MEDIUM, d); //      [ 0, 1]: hero → medium
-  if (d <= 2) return lerp(MEDIUM, SMALL, d - 1); // [ 1, 2]: medium → small
-  if (d <= 3) return lerp(SMALL, THIN, d - 2); //   [ 2, 3]: small → thin
-  return THIN; // anything further right stays thin
+export function heroKeylines(count: number, focus: number): Array<{ left: number; width: number }> {
+  if (count <= 0) return [];
+  const position = Math.max(0, Math.min(count - 1, focus));
+  const widths = Array.from({ length: count }, (_, i) => slotWidth(i - position));
+  const origins = widths.map(() => 0);
+  for (let i = 1; i < count; i++) origins[i] = origins[i - 1] + widths[i - 1] + CAROUSEL_GAP;
+  const before = Math.floor(position);
+  const fraction = position - before;
+  const focalOrigin = origins[before] + fraction * ((origins[before + 1] ?? origins[before]) - origins[before]);
+  return widths.map((width, i) => ({ left: origins[i] + HERO_INSET - focalOrigin, width }));
 }
 
 /* ─────────────── shared bits ─────────────── */
@@ -211,9 +209,6 @@ function PreviewCanvas({ pkg, tint, active }: { pkg: PackageSummary; tint: strin
 
 /** A pack of surfaces (`spec/package-format.md` § Surface format): it lists at least one `surface` asset. */
 export const isSurfacePack = (p: PackageSummary) => (p.types ?? []).includes("surface");
-
-/** Filter category for packs of surfaces; not a media domain, so it is added beside them. */
-const SURFACES_CATEGORY = "surfaces";
 
 /**
  * The front outline of each surface in a pack of surfaces, drawn from the surface's own profile data
@@ -371,21 +366,6 @@ function Hero({ total, loading, failed }: { total: number; loading: boolean; fai
   );
 }
 
-function ChipRow<T>({ items, value, onSelect, label }: { items: Array<[T, string]>; value: T; onSelect: (v: T) => void; label?: string }) {
-  return (
-    <div style={{ marginTop: 8 }}>
-      {label && <div style={{ fontSize: 12, fontWeight: 700, color: "var(--on-surface-variant)", marginBottom: 6 }}>{label}</div>}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {items.map(([v, text]) => (
-          <button key={String(v)} className="chip" aria-pressed={value === v} onClick={() => onSelect(v)}>
-            {text}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ─────────────── card + hero carousel ─────────────── */
 
 function PackageCard({
@@ -398,7 +378,7 @@ function PackageCard({
   pkg: PackageSummary;
   active: boolean;
   onOpen: (p: PackageSummary) => void;
-  width?: number;
+  width?: number | string;
   height?: number;
 }) {
   const [container, on] = paletteFor(pkg.id);
@@ -455,118 +435,182 @@ interface CatalogSection {
   items: PackageSummary[];
 }
 
-/** VSCode-style browse sections (mirrors the Compose storefront's buildSections). */
-function buildSections(packages: PackageSummary[]): CatalogSection[] {
-  if (packages.length === 0) return [];
-  const out: CatalogSection[] = [];
-  const add = (title: string, subtitle: string | undefined, items: PackageSummary[], limit = 14) => {
-    if (items.length) out.push({ title, subtitle, items: items.slice(0, limit) });
-  };
-  const byDownloads = (a: PackageSummary, b: PackageSummary) => installCount(b) - installCount(a);
+/** A package may advertise several types; never infer the list from mediaDomains alone. */
+export function packageTypeKeys(pkg: PackageSummary): string[] {
+  const values = [
+    pkg.kind,
+    ...(pkg.types ?? []),
+    ...(pkg.mediaDomains ?? []),
+  ];
+  return [...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean))];
+}
 
-  add("Popular", "Most installed across every host", [...packages].sort(byDownloads));
-  add(
-    "Top rated",
-    "Highest rated by the community",
-    packages.filter((p) => p.rating != null && (p.ratingCount ?? 0) > 0).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
-  );
-  add(
-    "Fresh",
-    "Recently published and updated",
-    packages.filter((p) => p.updatedAt).sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "")),
-  );
-  add("Surfaces", "Ready-made 3D shapes to paint on", packages.filter(isSurfacePack).sort(byDownloads));
-  for (const c of [...new Set(packages.flatMap((p) => p.mediaDomains ?? []))].sort()) {
-    add(c[0].toUpperCase() + c.slice(1), undefined, packages.filter((p) => (p.mediaDomains ?? []).includes(c)).sort(byDownloads));
+export function typeLabel(type: string): string {
+  const names: Record<string, string> = {
+    "3d": "3D", "2d": "2D", ai: "AI", a2a: "A2A", llm: "LLM",
+    mcp: "MCP", ui: "UI", ux: "UX", hdri: "HDRI", vr: "VR", ar: "AR",
+  };
+  return names[type] ?? type.split(/[ _-]+/).map((part) =>
+    part ? part[0].toUpperCase() + part.slice(1) : "",
+  ).join(" ");
+}
+
+/** Featured carousel followed by complete, dynamically discovered type grids. */
+export function buildSections(packages: PackageSummary[]): CatalogSection[] {
+  if (packages.length === 0) return [];
+  const byDownloads = (a: PackageSummary, b: PackageSummary) => installCount(b) - installCount(a);
+  const groups = new Map<string, PackageSummary[]>();
+  for (const pkg of packages) {
+    for (const type of packageTypeKeys(pkg)) {
+      const group = groups.get(type) ?? [];
+      group.push(pkg);
+      groups.set(type, group);
+    }
   }
-  add("More extensions", undefined, packages.filter((p) => (p.mediaDomains ?? []).length === 0).sort(byDownloads));
-  return out;
+  return [
+    { title: "Popular", subtitle: "Most installed across every host", items: [...packages].sort(byDownloads).slice(0, 14) },
+    ...[...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([type, items]) => ({
+      title: typeLabel(type),
+      subtitle: `${items.length} ${items.length === 1 ? "extension" : "extensions"}`,
+      items,
+    })),
+  ];
 }
 
 /**
- * The single top **M3 Expressive hero carousel**. A scroll strip whose cards are masked by width around
- * a fixed keyline that sits just left of centre, so a row reads thin · small · medium · HERO · medium ·
- * small · thin · thin …, symmetric around the hero (the 4th item at rest). Each item's mask width comes
- * from its centre's distance to the keyline (see slotWidth); the card is clipped, never squished. Its
- * cards are taller than the plain rows below. One live preview animates at a time.
+ * Start-aligned Material 3 Expressive hero: one fixed focal keyline,
+ * continuous card resizing, and horizontal drag/wheel/keyboard navigation.
+ * Widths change within the tiles rather than cutting off a full-size card.
+ * No automatic advancing: interaction, not a timer, owns the scroll position.
  */
 function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p: PackageSummary) => void }) {
   const scroller = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(0);
+  const [focus, setFocus] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const pointer = useRef<{ id: number; startX: number; start: number; moved: boolean } | null>(null);
+  const suppressClick = useRef(false);
+  const lastWheel = useRef(0);
+  const max = section.items.length - 1;
+  const clamp = (index: number) => Math.max(0, Math.min(max, index));
+  const layout = heroKeylines(section.items.length, focus);
+  const active = Math.round(focus);
 
   useEffect(() => {
-    if (section.items.length === 0) return;
-    const t = setInterval(() => setActive((i) => (i + 1) % section.items.length), 2600);
-    return () => clearInterval(t);
-  }, [section.items.length]);
+    setFocus(0);
+  }, [section.title, section.items.length]);
 
-  useLayoutEffect(() => {
-    const el = scroller.current;
-    if (!el) return;
-    let raf = 0;
-    const update = () => {
-      // Index-based keylines (like M3's carousel): a card's mask width is a function of how many slots
-      // it is from the focus, which advances continuously with scroll. This tracks the arrangement
-      // exactly (item HERO_SLOT is the hero at rest) without the width↔position circularity of measuring.
-      const items = Array.from(el.querySelectorAll<HTMLElement>(".carousel-item"));
-      const focus = HERO_SLOT + el.scrollLeft / SLOT;
-      items.forEach((m, i) => {
-        m.style.width = `${Math.round(slotWidth(i - focus))}px`;
-      });
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    const wheel = (event: WheelEvent) => {
+      const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey;
+      if (!horizontal) return;
+      const delta = event.shiftKey && event.deltaX === 0 ? event.deltaY : event.deltaX;
+      if ((delta < 0 && focus <= 0) || (delta > 0 && focus >= max)) return;
+      event.preventDefault();
+      if (event.timeStamp - lastWheel.current < 350) return;
+      lastWheel.current = event.timeStamp;
+      setFocus((previous) => clamp(Math.round(previous) + Math.sign(delta)));
     };
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(update);
-    };
-    update(); // size before first paint
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      cancelAnimationFrame(raf);
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [section.items]);
+    element.addEventListener("wheel", wheel, { passive: false });
+    return () => element.removeEventListener("wheel", wheel);
+  }, [focus, max]);
+
+  const settle = (next: number) => {
+    setDragging(false);
+    setFocus(clamp(Math.round(next)));
+  };
 
   return (
-    <section style={{ marginBottom: 34 }}>
-      <div style={{ padding: "0 24px 16px" }}>
-        <h2 style={{ fontSize: 26, fontWeight: 760, margin: 0 }}>{section.title}</h2>
-        {section.subtitle && <div style={{ fontSize: 15, color: "var(--on-surface-variant)", marginTop: 2 }}>{section.subtitle}</div>}
+    <section className="expressive-hero-section" aria-label={section.title}>
+      <div className="expressive-hero-heading">
+        <div>
+          <h2>{section.title}</h2>
+          {section.subtitle && <div className="catalog-section-subtitle">{section.subtitle}</div>}
+        </div>
+        <div className="expressive-hero-actions">
+          <button className="chip" type="button" aria-label="Previous featured extension"
+            disabled={active === 0} onClick={() => settle(active - 1)}>‹</button>
+          <button className="chip" type="button" aria-label="Next featured extension"
+            disabled={active >= max} onClick={() => settle(active + 1)}>›</button>
+        </div>
       </div>
-      <div ref={scroller} className="carousel">
-        {section.items.map((pkg, i) => (
-          <div key={pkg.id} className="carousel-item" style={{ width: HERO, height: HERO_H }}>
-            <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} width={HERO} height={HERO_H} />
-          </div>
-        ))}
+      <div ref={scroller} className="expressive-hero-track" data-dragging={dragging ? "true" : "false"}
+        role="region" aria-roledescription="carousel" aria-label={section.title} tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowRight") { event.preventDefault(); settle(active + 1); }
+          if (event.key === "ArrowLeft") { event.preventDefault(); settle(active - 1); }
+          if (event.key === "Home") { event.preventDefault(); settle(0); }
+          if (event.key === "End") { event.preventDefault(); settle(max); }
+        }}
+        onPointerDown={(event) => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          pointer.current = { id: event.pointerId, startX: event.clientX, start: focus, moved: false };
+          suppressClick.current = false;
+        }}
+        onPointerMove={(event) => {
+          const p = pointer.current;
+          if (!p || p.id !== event.pointerId) return;
+          const delta = event.clientX - p.startX;
+          if (Math.abs(delta) > 6) {
+            p.moved = true;
+            suppressClick.current = true;
+            setDragging(true);
+          }
+          if (p.moved) {
+            if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }
+            setFocus(clamp(p.start - delta / SLOT));
+          }
+        }}
+        onPointerUp={(event) => {
+          const p = pointer.current;
+          if (!p || p.id !== event.pointerId) return;
+          pointer.current = null;
+          settle(p.moved ? focus : p.start);
+        }}
+        onPointerCancel={() => {
+          pointer.current = null;
+          suppressClick.current = false;
+          setDragging(false);
+          setFocus((previous) => clamp(Math.round(previous)));
+        }}
+        onClickCapture={(event) => {
+          if (suppressClick.current) {
+            event.preventDefault();
+            event.stopPropagation();
+            suppressClick.current = false;
+          }
+        }}
+      >
+        {section.items.map((pkg, i) => {
+          const item = layout[i];
+          return (
+            <div key={pkg.id} className="expressive-hero-item" role="group"
+              aria-roledescription="slide" aria-label={`${pkg.name}, ${i + 1} of ${section.items.length}`}
+              style={{ left: item.left, width: item.width, height: HERO_H }}>
+              <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} width="100%" height={HERO_H} />
+            </div>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-/**
- * A plain browse row: uniform cards in a horizontal scroll strip (the design from before the carousel
- * work). Used for every section below the top hero carousel. One live preview animates at a time.
- */
+/** Responsive grid: show every matching extension without a horizontal scroll strip. */
 function CardRow({ section, onOpen }: { section: CatalogSection; onOpen: (p: PackageSummary) => void }) {
-  const [active, setActive] = useState(0);
-  useEffect(() => {
-    if (section.items.length === 0) return;
-    const t = setInterval(() => setActive((i) => (i + 1) % section.items.length), 2600);
-    return () => clearInterval(t);
-  }, [section.items.length]);
-
   return (
-    <section style={{ marginBottom: 30 }}>
-      <div style={{ padding: "0 24px 14px" }}>
-        <h2 style={{ fontSize: 22, fontWeight: 720, margin: 0 }}>{section.title}</h2>
-        {section.subtitle && <div style={{ fontSize: 14, color: "var(--on-surface-variant)", marginTop: 2 }}>{section.subtitle}</div>}
+    <section className="catalog-section">
+      <div className="catalog-section-heading">
+        <h2>{section.title}</h2>
+        {section.subtitle && <div className="catalog-section-subtitle">{section.subtitle}</div>}
       </div>
-      <div className="card-row">
-        {section.items.map((pkg, i) => (
-          <div key={pkg.id} className="row-item" style={{ width: ROW_W }}>
-            <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} width={ROW_W} height={ROW_H} />
+      <div className="catalog-grid">
+        {section.items.map((pkg) => (
+          <div key={pkg.id} className="catalog-grid-item">
+            <PackageCard pkg={pkg} active={false} onOpen={onOpen} width="100%" height={ROW_H} />
           </div>
         ))}
       </div>
@@ -897,11 +941,10 @@ function StorefrontApp() {
   useEffect(load, []);
 
   const categories = useMemo(
-    () => [...new Set([...packages.flatMap((p) => p.mediaDomains ?? []), ...(packages.some(isSurfacePack) ? [SURFACES_CATEGORY] : [])])].sort(),
+    () => [...new Set(packages.flatMap(packageTypeKeys))].sort(),
     [packages],
   );
   const apps = useMemo(() => [...new Set(packages.flatMap((p) => p.targetApps ?? []))].sort(), [packages]);
-  const sections = useMemo(() => buildSections(packages), [packages]);
 
   const filtering = query.trim() !== "" || price !== 0 || category !== null || app !== null || owned !== 0;
   const shown = useMemo(() => {
@@ -909,7 +952,7 @@ function StorefrontApp() {
     const filtered = packages.filter((p) => {
       const matchesQuery = !q || [p.name, p.description ?? "", p.author ?? "", p.id].some((s) => s.toLowerCase().includes(q));
       const matchesPrice = price === 1 ? !isPaid(p) : price === 2 ? isPaid(p) : true;
-      const matchesCat = !category || (category === SURFACES_CATEGORY ? isSurfacePack(p) : (p.mediaDomains ?? []).includes(category));
+      const matchesCat = !category || packageTypeKeys(p).includes(category);
       const matchesApp = !app || (p.targetApps ?? []).length === 0 || (p.targetApps ?? []).includes(app);
       // `removed` is kept rather than deleted so a reinstall can be offered, so "have it" is a
       // question about the state and not about the key being present — hence `isHeld`, not `in`.
@@ -925,6 +968,7 @@ function StorefrontApp() {
     }[sort];
     return [...filtered].sort(by);
   }, [packages, query, price, category, app, owned, inventory, sort]);
+  const sections = useMemo(() => buildSections(shown), [shown]);
 
   return (
     <InventoryContext.Provider value={inventory}>
@@ -947,23 +991,44 @@ function StorefrontApp() {
             placeholder="Search extensions…"
             style={{ padding: "14px 22px" }}
           />
-          <ChipRow label="Sort" items={SORTS} value={sort} onSelect={setSort} />
-          <ChipRow label="Filter" items={[[0, "All"], [1, "Free"], [2, "Paid"]] as Array<[number, string]>} value={price} onSelect={setPrice} />
-          <ChipRow items={[[0, "Any"], [1, "Installed"], [2, "Not installed"]] as Array<[number, string]>} value={owned} onSelect={setOwned} />
-          {categories.length > 0 && (
-            <ChipRow
-              items={[[null, "All types"], ...categories.map((c) => [c, c[0].toUpperCase() + c.slice(1)] as [string, string])] as Array<[string | null, string]>}
-              value={category}
-              onSelect={setCategory}
-            />
-          )}
-          {apps.length > 0 && (
-            <ChipRow
-              items={[[null, "All apps"], ...apps.map((a) => [a, a.split(".").pop() ?? a] as [string, string])] as Array<[string | null, string]>}
-              value={app}
-              onSelect={setApp}
-            />
-          )}
+          <div className="store-filter-bar" role="group" aria-label="Store filters">
+            <label className="store-filter-select">
+              <span>Sort</span>
+              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+                {SORTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+            <label className="store-filter-select">
+              <span>Price</span>
+              <select value={price} onChange={(e) => setPrice(Number(e.target.value))}>
+                <option value={0}>All</option>
+                <option value={1}>Free</option>
+                <option value={2}>Paid</option>
+              </select>
+            </label>
+            <label className="store-filter-select">
+              <span>Installed</span>
+              <select value={owned} onChange={(e) => setOwned(Number(e.target.value))}>
+                <option value={0}>Any</option>
+                <option value={1}>Installed</option>
+                <option value={2}>Not installed</option>
+              </select>
+            </label>
+            <label className="store-filter-select">
+              <span>Types</span>
+              <select value={category ?? ""} onChange={(e) => setCategory(e.target.value || null)}>
+                <option value="">All types</option>
+                {categories.map((type) => <option key={type} value={type}>{typeLabel(type)}</option>)}
+              </select>
+            </label>
+            <label className="store-filter-select">
+              <span>Apps</span>
+              <select value={app ?? ""} onChange={(e) => setApp(e.target.value || null)}>
+                <option value="">All apps</option>
+                {apps.map((value) => <option key={value} value={value}>{value.split(".").pop() ?? value}</option>)}
+              </select>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -975,19 +1040,35 @@ function StorefrontApp() {
           <p style={{ color: "var(--on-surface-variant)", margin: "8px auto 16px", maxWidth: 480 }}>{loadError}</p>
           <button className="chip" onClick={load} style={{ background: "var(--primary)", color: "var(--on-primary)" }}>Retry</button>
         </div>
-      ) : filtering ? (
-        shown.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>No extensions match your search.</div>
-        ) : (
-          // A search collapses to one plain results row (the hero carousel is reserved for the top of browse).
-          <CardRow section={{ title: "Results", subtitle: `${shown.length} matching`, items: shown }} onOpen={open} />
-        )
+      ) : shown.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>No extensions match your search.</div>
       ) : (
         <>
-          {sections[0] && <HeroCarousel section={sections[0]} onOpen={open} />}
-          {sections.slice(1).map((s) => (
-            <CardRow key={s.title} section={s} onOpen={open} />
-          ))}
+          {category === null ? (
+            <>
+              {query.trim() === "" && sort !== "name" && shown.length > 0 && (
+                <HeroCarousel
+                  section={{
+                    title: SORTS.find(([key]) => key === sort)?.[1] ?? "Featured",
+                    subtitle: sort === "popular" ? "Most installed across every host" : sort === "rating" ? "Highest rated by the community" : "Recently published and updated",
+                    items: shown.slice(0, 14),
+                  }}
+                  onOpen={open}
+                />
+              )}
+              {filtering && (
+                <div className="catalog-results-heading">
+                  <h2>Results</h2>
+                  <div>{shown.length} matching</div>
+                </div>
+              )}
+              {sections.slice(1).map((section) => (
+                <CardRow key={section.title} section={section} onOpen={open} />
+              ))}
+            </>
+          ) : (
+            <CardRow section={{ title: typeLabel(category), subtitle: `${shown.length} matching`, items: shown }} onOpen={open} />
+          )}
         </>
       )}
 
