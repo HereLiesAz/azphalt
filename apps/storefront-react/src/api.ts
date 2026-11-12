@@ -129,6 +129,65 @@ export interface SellerStatus {
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
+export interface StoreAccount {
+  sub: string;
+  email: string;
+  name: string;
+}
+
+export interface StoreAccountInfo {
+  clientId: string | null;
+  account: StoreAccount | null;
+}
+
+export interface StoreInventoryEntry {
+  id: string;
+  version: string;
+  state: "downloaded" | "installed" | "active" | "failed" | "removed";
+  at?: string;
+}
+
+export async function fetchStoreAccount(): Promise<StoreAccountInfo> {
+  const response = await fetch(`${API_BASE}/api/account`, { credentials: "same-origin", cache: "no-store" });
+  if (!response.ok) throw new Error(`Account unavailable (${response.status})`);
+  return await response.json() as StoreAccountInfo;
+}
+
+export async function signInWithGoogle(credential: string): Promise<StoreAccount> {
+  const response = await fetch(`${API_BASE}/api/account/google`, {
+    method: "POST", credentials: "same-origin",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ credential }),
+  });
+  if (!response.ok) throw new Error(`Google sign-in failed (${response.status})`);
+  const body = await response.json() as { account: StoreAccount };
+  return body.account;
+}
+
+export async function signOutStore(): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/account/logout`, {
+    method: "POST", credentials: "same-origin",
+  });
+  if (!response.ok) throw new Error(`Sign-out failed (${response.status})`);
+}
+
+export async function fetchStoreLibrary(): Promise<StoreInventoryEntry[]> {
+  const response = await fetch(`${API_BASE}/api/account/library`, { credentials: "same-origin", cache: "no-store" });
+  if (!response.ok) throw new Error(`Library unavailable (${response.status})`);
+  return await response.json() as StoreInventoryEntry[];
+}
+
+export async function syncStoreLibrary(entries: StoreInventoryEntry[]): Promise<StoreInventoryEntry[]> {
+  const response = await fetch(`${API_BASE}/api/account/library`, {
+    method: "POST", credentials: "same-origin",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ entries }),
+  });
+  if (!response.ok) throw new Error(`Library sync failed (${response.status})`);
+  return await response.json() as StoreInventoryEntry[];
+}
+
+
 /** Same-origin proxy for the automatically generated, read-only SearchA2A directory. */
 export async function fetchA2AAgents(): Promise<A2AAgentListing[]> {
   const response = await fetch(`${API_BASE}/api/a2a/agents`, { cache: "no-store" });
