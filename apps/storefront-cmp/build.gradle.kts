@@ -19,11 +19,6 @@ plugins {
  * not a contributor, not a local checkout. Gating on the file's presence keeps the app buildable
  * everywhere and simply leaves Firebase out where it cannot be configured.
  */
-// Stable generated resource package across Android, desktop and Wasm.
-compose.resources {
-    packageOfResClass = "azphalt.storefront.resources"
-}
-
 val firebaseConfigured = file("google-services.json").exists()
 
 // --- Version ---------------------------------------------------------------------------------
