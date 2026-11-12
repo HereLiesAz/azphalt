@@ -468,6 +468,38 @@ signals source failure; a 503 signals invalid deployer configuration.
 This adapter does not change signed package distribution, A2A discovery,
 or Aive's explicit role-selection and tool-approval rules.
 
+### AgentRegistry and agentgateway interoperability
+
+[AgentRegistry](https://github.com/agentregistry-dev/agentregistry) exposes an
+**optional** read-only MCP Registry v0.1 compatibility surface. Operators of a
+self-hosted AgentRegistry instance must explicitly enable
+`AGENT_REGISTRY_MCP_REGISTRY_COMPAT_ENABLED=true`; it is disabled by default.
+When deployed at a public HTTPS origin, set the Store's deployer-owned
+`MCP_REGISTRY_BASE_URL` to that origin, for example
+`https://registry.example.org`. If AgentRegistry sets
+`AGENT_REGISTRY_MCP_REGISTRY_COMPAT_PATH_PREFIX=/mcp-registry`, configure
+`MCP_REGISTRY_BASE_URL=https://registry.example.org/mcp-registry`, **without**
+appending `/v0.1/servers`. The Store appends the standard path itself.
+
+The AgentRegistry compatibility feed is flattened across namespaces, where
+server names take the form `namespace/resourceName`. Its default open-source
+read API does not add tenancy filtering; operators must not enable public
+cross-namespace exposure unless that is intentional. AgentRegistry entries
+that advertise only synthesized localhost package endpoints are **not**
+connectable Store leads; our public-HTTPS remote filter drops those URLs.
+The catalog's `/v0/agents`, `/v0/skills`, and `/v0/prompts` endpoints
+are **native resource APIs**, not A2A Agent Cards or MCP Registry v0.1
+listings. They must never be silently converted into signed, installable
+Store packages.
+
+[agentgateway](https://github.com/agentgateway/agentgateway) can be deployed
+independently as an A2A/MCP proxy, including its own authentication, routing,
+and observability policies. Our Store indexes only publicly advertised
+read-only metadata; it does not deploy or configure the proxy, confer its
+authorization onto discovered servers, or adopt its branding. Aive connects
+through ordinary explicitly approved A2A/MCP endpoints when an operator has
+configured the gateway.
+
 ## Domains
 
 The four hostnames are attached to this Worker as **Custom Domains** in the Cloudflare dashboard
