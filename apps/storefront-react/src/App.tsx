@@ -371,21 +371,6 @@ function Hero({ total, loading, failed }: { total: number; loading: boolean; fai
   );
 }
 
-function ChipRow<T>({ items, value, onSelect, label }: { items: Array<[T, string]>; value: T; onSelect: (v: T) => void; label?: string }) {
-  return (
-    <div style={{ marginTop: 8 }}>
-      {label && <div style={{ fontSize: 12, fontWeight: 700, color: "var(--on-surface-variant)", marginBottom: 6 }}>{label}</div>}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {items.map(([v, text]) => (
-          <button key={String(v)} className="chip" aria-pressed={value === v} onClick={() => onSelect(v)}>
-            {text}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ─────────────── card + hero carousel ─────────────── */
 
 function PackageCard({
@@ -398,7 +383,7 @@ function PackageCard({
   pkg: PackageSummary;
   active: boolean;
   onOpen: (p: PackageSummary) => void;
-  width?: number;
+  width?: number | string;
   height?: number;
 }) {
   const [container, on] = paletteFor(pkg.id);
@@ -455,32 +440,46 @@ interface CatalogSection {
   items: PackageSummary[];
 }
 
-/** VSCode-style browse sections (mirrors the Compose storefront's buildSections). */
+/** A package may advertise several types; never infer the list from mediaDomains alone. */
+export function packageTypeKeys(pkg: PackageSummary): string[] {
+  const values = [
+    pkg.kind,
+    ...(pkg.types ?? []),
+    ...(pkg.mediaDomains ?? []),
+  ];
+  return [...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean))];
+}
+
+export function typeLabel(type: string): string {
+  const names: Record<string, string> = {
+    "3d": "3D", "2d": "2D", ai: "AI", a2a: "A2A", llm: "LLM",
+    mcp: "MCP", ui: "UI", ux: "UX", hdri: "HDRI", vr: "VR", ar: "AR",
+  };
+  return names[type] ?? type.split(/[ _-]+/).map((part) =>
+    part ? part[0].toUpperCase() + part.slice(1) : "",
+  ).join(" ");
+}
+
+/** Featured carousel followed by complete, dynamically discovered type grids. */
 function buildSections(packages: PackageSummary[]): CatalogSection[] {
   if (packages.length === 0) return [];
-  const out: CatalogSection[] = [];
-  const add = (title: string, subtitle: string | undefined, items: PackageSummary[], limit = 14) => {
-    if (items.length) out.push({ title, subtitle, items: items.slice(0, limit) });
-  };
   const byDownloads = (a: PackageSummary, b: PackageSummary) => installCount(b) - installCount(a);
-
-  add("Popular", "Most installed across every host", [...packages].sort(byDownloads));
-  add(
-    "Top rated",
-    "Highest rated by the community",
-    packages.filter((p) => p.rating != null && (p.ratingCount ?? 0) > 0).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
-  );
-  add(
-    "Fresh",
-    "Recently published and updated",
-    packages.filter((p) => p.updatedAt).sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "")),
-  );
-  add("Surfaces", "Ready-made 3D shapes to paint on", packages.filter(isSurfacePack).sort(byDownloads));
-  for (const c of [...new Set(packages.flatMap((p) => p.mediaDomains ?? []))].sort()) {
-    add(c[0].toUpperCase() + c.slice(1), undefined, packages.filter((p) => (p.mediaDomains ?? []).includes(c)).sort(byDownloads));
+  const groups = new Map<string, PackageSummary[]>();
+  for (const pkg of packages) {
+    for (const type of packageTypeKeys(pkg)) {
+      const group = groups.get(type) ?? [];
+      group.push(pkg);
+      groups.set(type, group);
+    }
   }
-  add("More extensions", undefined, packages.filter((p) => (p.mediaDomains ?? []).length === 0).sort(byDownloads));
-  return out;
+  return [
+    { title: "Popular", subtitle: "Most installed across every host", items: [...packages].sort(byDownloads).slice(0, 14) },
+    ...[...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([type, items]) => ({
+      title: typeLabel(type),
+      subtitle: `${items.length} ${items.length === 1 ? "extension" : "extensions"}`,
+      items,
+    })),
+  ];
 }
 
 /**
@@ -545,28 +544,18 @@ function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p
   );
 }
 
-/**
- * A plain browse row: uniform cards in a horizontal scroll strip (the design from before the carousel
- * work). Used for every section below the top hero carousel. One live preview animates at a time.
- */
+/** Responsive grid: show every matching extension without a horizontal scroll strip. */
 function CardRow({ section, onOpen }: { section: CatalogSection; onOpen: (p: PackageSummary) => void }) {
-  const [active, setActive] = useState(0);
-  useEffect(() => {
-    if (section.items.length === 0) return;
-    const t = setInterval(() => setActive((i) => (i + 1) % section.items.length), 2600);
-    return () => clearInterval(t);
-  }, [section.items.length]);
-
   return (
-    <section style={{ marginBottom: 30 }}>
-      <div style={{ padding: "0 24px 14px" }}>
-        <h2 style={{ fontSize: 22, fontWeight: 720, margin: 0 }}>{section.title}</h2>
-        {section.subtitle && <div style={{ fontSize: 14, color: "var(--on-surface-variant)", marginTop: 2 }}>{section.subtitle}</div>}
+    <section className="catalog-section">
+      <div className="catalog-section-heading">
+        <h2>{section.title}</h2>
+        {section.subtitle && <div className="catalog-section-subtitle">{section.subtitle}</div>}
       </div>
-      <div className="card-row">
-        {section.items.map((pkg, i) => (
-          <div key={pkg.id} className="row-item" style={{ width: ROW_W }}>
-            <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} width={ROW_W} height={ROW_H} />
+      <div className="catalog-grid">
+        {section.items.map((pkg) => (
+          <div key={pkg.id} className="catalog-grid-item">
+            <PackageCard pkg={pkg} active={false} onOpen={onOpen} width="100%" height={ROW_H} />
           </div>
         ))}
       </div>
@@ -897,11 +886,10 @@ function StorefrontApp() {
   useEffect(load, []);
 
   const categories = useMemo(
-    () => [...new Set([...packages.flatMap((p) => p.mediaDomains ?? []), ...(packages.some(isSurfacePack) ? [SURFACES_CATEGORY] : [])])].sort(),
+    () => [...new Set(packages.flatMap(packageTypeKeys))].sort(),
     [packages],
   );
   const apps = useMemo(() => [...new Set(packages.flatMap((p) => p.targetApps ?? []))].sort(), [packages]);
-  const sections = useMemo(() => buildSections(packages), [packages]);
 
   const filtering = query.trim() !== "" || price !== 0 || category !== null || app !== null || owned !== 0;
   const shown = useMemo(() => {
@@ -909,7 +897,7 @@ function StorefrontApp() {
     const filtered = packages.filter((p) => {
       const matchesQuery = !q || [p.name, p.description ?? "", p.author ?? "", p.id].some((s) => s.toLowerCase().includes(q));
       const matchesPrice = price === 1 ? !isPaid(p) : price === 2 ? isPaid(p) : true;
-      const matchesCat = !category || (category === SURFACES_CATEGORY ? isSurfacePack(p) : (p.mediaDomains ?? []).includes(category));
+      const matchesCat = !category || packageTypeKeys(p).includes(category);
       const matchesApp = !app || (p.targetApps ?? []).length === 0 || (p.targetApps ?? []).includes(app);
       // `removed` is kept rather than deleted so a reinstall can be offered, so "have it" is a
       // question about the state and not about the key being present — hence `isHeld`, not `in`.
@@ -925,6 +913,7 @@ function StorefrontApp() {
     }[sort];
     return [...filtered].sort(by);
   }, [packages, query, price, category, app, owned, inventory, sort]);
+  const sections = useMemo(() => buildSections(shown), [shown]);
 
   return (
     <InventoryContext.Provider value={inventory}>
@@ -947,23 +936,44 @@ function StorefrontApp() {
             placeholder="Search extensions…"
             style={{ padding: "14px 22px" }}
           />
-          <ChipRow label="Sort" items={SORTS} value={sort} onSelect={setSort} />
-          <ChipRow label="Filter" items={[[0, "All"], [1, "Free"], [2, "Paid"]] as Array<[number, string]>} value={price} onSelect={setPrice} />
-          <ChipRow items={[[0, "Any"], [1, "Installed"], [2, "Not installed"]] as Array<[number, string]>} value={owned} onSelect={setOwned} />
-          {categories.length > 0 && (
-            <ChipRow
-              items={[[null, "All types"], ...categories.map((c) => [c, c[0].toUpperCase() + c.slice(1)] as [string, string])] as Array<[string | null, string]>}
-              value={category}
-              onSelect={setCategory}
-            />
-          )}
-          {apps.length > 0 && (
-            <ChipRow
-              items={[[null, "All apps"], ...apps.map((a) => [a, a.split(".").pop() ?? a] as [string, string])] as Array<[string | null, string]>}
-              value={app}
-              onSelect={setApp}
-            />
-          )}
+          <div className="store-filter-bar" role="group" aria-label="Store filters">
+            <label className="store-filter-select">
+              <span>Sort</span>
+              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+                {SORTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+            <label className="store-filter-select">
+              <span>Price</span>
+              <select value={price} onChange={(e) => setPrice(Number(e.target.value))}>
+                <option value={0}>All</option>
+                <option value={1}>Free</option>
+                <option value={2}>Paid</option>
+              </select>
+            </label>
+            <label className="store-filter-select">
+              <span>Installed</span>
+              <select value={owned} onChange={(e) => setOwned(Number(e.target.value))}>
+                <option value={0}>Any</option>
+                <option value={1}>Installed</option>
+                <option value={2}>Not installed</option>
+              </select>
+            </label>
+            <label className="store-filter-select">
+              <span>Types</span>
+              <select value={category ?? ""} onChange={(e) => setCategory(e.target.value || null)}>
+                <option value="">All types</option>
+                {categories.map((type) => <option key={type} value={type}>{typeLabel(type)}</option>)}
+              </select>
+            </label>
+            <label className="store-filter-select">
+              <span>Apps</span>
+              <select value={app ?? ""} onChange={(e) => setApp(e.target.value || null)}>
+                <option value="">All apps</option>
+                {apps.map((value) => <option key={value} value={value}>{value.split(".").pop() ?? value}</option>)}
+              </select>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -975,19 +985,26 @@ function StorefrontApp() {
           <p style={{ color: "var(--on-surface-variant)", margin: "8px auto 16px", maxWidth: 480 }}>{loadError}</p>
           <button className="chip" onClick={load} style={{ background: "var(--primary)", color: "var(--on-primary)" }}>Retry</button>
         </div>
-      ) : filtering ? (
-        shown.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>No extensions match your search.</div>
-        ) : (
-          // A search collapses to one plain results row (the hero carousel is reserved for the top of browse).
-          <CardRow section={{ title: "Results", subtitle: `${shown.length} matching`, items: shown }} onOpen={open} />
-        )
+      ) : shown.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>No extensions match your search.</div>
       ) : (
         <>
-          {sections[0] && <HeroCarousel section={sections[0]} onOpen={open} />}
-          {sections.slice(1).map((s) => (
-            <CardRow key={s.title} section={s} onOpen={open} />
-          ))}
+          {category === null ? (
+            <>
+              {!filtering && sections[0] && <HeroCarousel section={sections[0]} onOpen={open} />}
+              {filtering && (
+                <div className="catalog-results-heading">
+                  <h2>Results</h2>
+                  <div>{shown.length} matching</div>
+                </div>
+              )}
+              {sections.slice(1).map((section) => (
+                <CardRow key={section.title} section={section} onOpen={open} />
+              ))}
+            </>
+          ) : (
+            <CardRow section={{ title: typeLabel(category), subtitle: `${shown.length} matching`, items: shown }} onOpen={open} />
+          )}
         </>
       )}
 
