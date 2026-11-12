@@ -123,6 +123,43 @@ describe("SearchA2A external directory", () => {
     }
   });
 
+  it("preserves unverified ANS names but strips remote registry credentials and unknown fields", async () => {
+    const external = {
+      id: "external.a2a.0123456789abcdefabcd", name: "Weather", kind: "a2a-agent",
+      source_url: "https://agent.example.com/card",
+      verification: "card_read_only", installable: false,
+      headers: { Authorization: "Bearer not-for-the-public" },
+      ans_claim: {
+        name: "ans://release-2026.11.agent.example.com", agent_host: "agent.example.com",
+        verification: "unverified", headers: { Authorization: "secret" },
+      },
+      skills: [{ name: "Forecast", headers: { Authorization: "nested" } }],
+    };
+    const badClaim = { ...external, id: "external.a2a.ffffffffffffffffffff",
+      ans_claim: { ...external.ans_claim, agent_host: "attacker.example.com" } };
+    const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
+      schema: 1, source: "searcha2a", listings: [external, badClaim],
+    }), { status: 200 }));
+    try {
+      const res = await get("https://azphalt.store/api/a2a/agents");
+      expect(res.status).toBe(200);
+      const raw = await res.text();
+      expect(raw).not.toContain("Authorization");
+      expect(raw).not.toContain("not-for-the-public");
+      expect(raw).not.toContain("nested");
+      const data = JSON.parse(raw);
+      expect(data.count).toBe(2);
+      expect(data.listings[0].ans_claim).toEqual({
+        name: "ans://release-2026.11.agent.example.com", agent_host: "agent.example.com",
+        verification: "unverified",
+      });
+      expect(data.listings[0].skills).toEqual([{ name: "Forecast" }]);
+      expect(data.listings[1].ans_claim).toBeUndefined();
+    } finally {
+      network.mockRestore();
+    }
+  });
+
   it("rejects redirects instead of fetching an unexpected upstream URL", async () => {
     const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, {
       status: 302, headers: { location: "https://unexpected.example/agent-feed.json" },
