@@ -63,6 +63,7 @@ const CAROUSEL_GAP = 12;
 const HERO_INSET = 24;
 const SLOT = MEDIUM + CAROUSEL_GAP;
 
+const ROW_W = 244;
 const ROW_H = 216;
 
 /** Width of a visible hero card at its distance from the fixed keyline. */
