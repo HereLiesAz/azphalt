@@ -3793,13 +3793,15 @@ async function searchA2AListings(): Promise<Response> {
   } catch {
     return json({ error: "SearchA2A directory temporarily unavailable" }, 502);
   }
-  if (!response.ok || Number(response.headers.get("content-length") || 0) > 1_000_000) {
+  if (!response.ok) {
     return json({ error: "SearchA2A directory temporarily unavailable" }, 502);
   }
-  const body = await response.text();
-  if (body.length > 1_000_000) return json({ error: "SearchA2A directory exceeds size limit" }, 502);
+  // A 150-Agent-Card snapshot can exceed 1 MB. Reuse the Worker's stream
+  // cap instead of reading an unbounded response or silently losing listings.
+  const body = await readCappedStream(response.body, response.headers.get("content-length"), 16_777_216);
+  if (!body) return json({ error: "SearchA2A directory exceeds size limit" }, 502);
   let feed: unknown;
-  try { feed = JSON.parse(body); }
+  try { feed = JSON.parse(dec.decode(body)); }
   catch { return json({ error: "Invalid SearchA2A directory" }, 502); }
   if (!feed || typeof feed !== "object") return json({ error: "Invalid SearchA2A directory" }, 502);
   const listingFeed = feed as { schema?: number; source?: string; listings?: unknown };

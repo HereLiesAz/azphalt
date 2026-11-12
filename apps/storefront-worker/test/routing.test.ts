@@ -123,6 +123,35 @@ describe("SearchA2A external directory", () => {
     }
   });
 
+  it("accepts bounded expanded SearchA2A snapshots larger than one megabyte", async () => {
+    const agent = {
+      id: "external.a2a.0123456789abcdefabcd", name: "Weather", kind: "a2a-agent",
+      source_url: "https://agent.example.org/card", verification: "card_read_only",
+      installable: false, padding: "x".repeat(1_050_000),
+    };
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(
+      JSON.stringify({ schema: 1, source: "searcha2a", listings: [agent] }),
+      { status: 200 }));
+    try {
+      const result = await get("https://azphalt.store/api/a2a/agents");
+      expect(result.status).toBe(200);
+      const json = await result.json() as { count: number; listings: Record<string, unknown>[] };
+      expect(json.count).toBe(1);
+      expect(json.listings[0].name).toBe("Weather");
+      expect(json.listings[0].padding).toBeUndefined();
+    } finally { fetcher.mockRestore(); }
+  });
+
+  it("rejects oversized streamed SearchA2A feeds without trusting Content-Length", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(
+      new Uint8Array(16_777_217), { status: 200 }));
+    try {
+      const response = await get("https://azphalt.store/api/a2a/agents");
+      expect(response.status).toBe(502);
+      expect((await response.json()).error).toContain("size limit");
+    } finally { fetcher.mockRestore(); }
+  });
+
   it("preserves unverified ANS names but strips remote registry credentials and unknown fields", async () => {
     const external = {
       id: "external.a2a.0123456789abcdefabcd", name: "Weather", kind: "a2a-agent",

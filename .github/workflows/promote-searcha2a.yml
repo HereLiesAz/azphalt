@@ -22,7 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: true
+          # Untrusted Agent Cards and existing submission data must never inherit write access.
+          persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: HereLiesAz/searcha2a
@@ -65,9 +66,9 @@ jobs:
         if: steps.pending.outputs.skip == 'false'
         run: |
           python3 .searcha2a/src/azphalt_promote.py --submissions submissions --max-new 12
-          for script in submissions/org.azphalt.a2a.*/setup/setup.sh; do
-            if [ -f "$script" ]; then bash "$script"; fi
-          done
+          # Do NOT execute submission setup payloads in a write-token CI job.
+          # The promoter validates existing automation scripts against its fixed
+          # template; the package verifier checks the generated source as data.
       - name: Validate generated source with Azphalt's actual package verifier
         if: steps.pending.outputs.skip == 'false'
         run: |
@@ -90,7 +91,17 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c automation/verified-a2a
           git commit -m "chore: propose publisher-verified A2A agent headers"
-          git push --force-with-lease origin HEAD:refs/heads/automation/verified-a2a
+          # Checkout does not persist credentials. Use the token only after
+          # all source generation and validation have completed.
+          gh auth setup-git
+          target=refs/heads/automation/verified-a2a
+          if git ls-remote --exit-code --heads origin "$target" >/dev/null; then
+            git fetch --no-tags origin "$target:refs/remotes/origin/automation/verified-a2a"
+            expected="$(git rev-parse refs/remotes/origin/automation/verified-a2a)"
+          else
+            expected=""
+          fi
+          git push --force-with-lease="$target:$expected" origin "HEAD:$target"
           gh pr create --base main --head automation/verified-a2a \
             --title "Promote publisher-verified SearchA2A agents as signed llm headers" \
             --body "Automatically generated from freshly revalidated A2A Agent Cards and same-origin MIT-licensed opt-in proofs. All bundled setup scripts are deterministic and contain no publisher code. Review the source, then merge to trigger Azphalt's existing independent package/signature build and second reviewed PR. No agent execution occurs."
