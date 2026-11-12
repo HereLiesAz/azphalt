@@ -3784,7 +3784,7 @@ export default {
 
 /** Only a fixed, public SearchA2A snapshot may enter this non-installable directory. */
 async function searchA2AListings(): Promise<Response> {
-  const feedUrl = "https://searcha2a.azphalt.store/api/v1/azphalt-listings.json";
+  const feedUrl = "https://raw.githubusercontent.com/HereLiesAz/searcha2a/agent-feed/site/api/v1/azphalt-listings.json";
   let response: Response;
   try {
     response = await fetch(feedUrl, { redirect: "error", signal: AbortSignal.timeout(8000) });

@@ -3,9 +3,6 @@
   "name": "azphalt",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-17",
-  // SearchA2A is on the same Cloudflare zone; route its GitHub Pages feed through public DNS.
-  // No global fetch targets this Worker’s own custom domains (avoids recursive dispatch).
-  "compatibility_flags": ["global_fetch_strictly_public"],
   // No `routes` here: azphalt.store, www.azphalt.store, azphalt.org and www.azphalt.org are attached to
   // this Worker as Custom Domains in the Cloudflare dashboard (README § Domains). Declaring them here
   // would make every deploy fail until those zones are on the account.
