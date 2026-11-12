@@ -449,6 +449,12 @@ The four hostnames are attached to this Worker as **Custom Domains** in the Clou
 (Workers & Pages → `azphalt` → Settings → Domains & Routes), not in `wrangler.jsonc`, so a deploy
 never fails on a zone that isn't on the account yet.
 
+The read-only `/api/a2a/agents` endpoint fetches SearchA2A's public GitHub Pages JSON feed
+from `searcha2a.azphalt.store` (same Cloudflare zone). `global_fetch_strictly_public`
+in `wrangler.jsonc` makes this subrequest follow the public hostname rather than a
+same-zone origin/Worker route; the store never invokes itself. The directory remains
+separate from installable, signed `.azp` packages.
+
 All four are attached. What remains of the move off Vercel:
 
 1. Set the secrets above.
