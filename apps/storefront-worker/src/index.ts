@@ -37,6 +37,8 @@ interface Env {
   STATE: DurableObjectNamespaceLike;
   PUBLIC_ORIGIN: string;
   GITHUB_RAW_BASE: string;
+  /** Optional fixed public base for a read-only MCP Registry v0.1 compatible catalog. */
+  MCP_REGISTRY_BASE_URL?: string;
   PLATFORM_FEE_BPS?: string;
   PROCESSOR_PCT_BPS?: string;
   /** Flat processor fee in hundredths of a major unit (30 = $0.30), scaled to each currency's minor unit. */
@@ -3899,6 +3901,138 @@ async function searchA2AListings(): Promise<Response> {
   });
 }
 
+/**
+ * Read-only MCP Registry v0.1 discovery. This is external catalog metadata, not signed
+ * Azphalt software or authenticated ANS identity. Never forward an upstream object:
+ * compatible self-hosted registries may expose secret Authorization headers in remotes.
+ */
+async function searchExternalMcpServers(req: Request, env: Env): Promise<Response> {
+  const clientUrl = new URL(req.url);
+  const query = clientUrl.searchParams.get("search")?.trim() ?? "";
+  if (query.length > 120 || (query.length > 0 && query.length < 3)) {
+    return json({ error: "Search must be 3–120 characters" }, 400);
+  }
+  const cursor = clientUrl.searchParams.get("cursor") ?? "";
+  if (cursor && !/^[A-Za-z0-9+/_=-]{1,512}$/.test(cursor)) {
+    return json({ error: "Invalid cursor" }, 400);
+  }
+  let base: URL;
+  try {
+    base = new URL(env.MCP_REGISTRY_BASE_URL || "https://registry.modelcontextprotocol.io");
+  } catch {
+    return json({ error: "MCP registry configuration invalid" }, 503);
+  }
+  const host = base.hostname.toLowerCase();
+  const validLabel = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
+  if (base.protocol !== "https:" || base.username || base.password ||
+      base.search || base.hash || (base.port && base.port !== "443") ||
+      !host.includes(".") || host.split(".").some(label => !validLabel.test(label)) ||
+      /^\\d+$/.test(host.split(".").at(-1) || "") ||
+      host.endsWith(".local") || host.endsWith(".localhost") ||
+      host.endsWith(".internal")) {
+    return json({ error: "MCP registry configuration invalid" }, 503);
+  }
+  // The base is deployer-controlled, never a user-supplied URL.
+  const upstreamUrl = new URL(base.href.replace(/\\/$/, "") + "/v0.1/servers");
+  upstreamUrl.searchParams.set("limit", "30");
+  if (query) upstreamUrl.searchParams.set("search", query);
+  if (cursor) upstreamUrl.searchParams.set("cursor", cursor);
+  let response: Response;
+  try {
+    response = await fetch(upstreamUrl.toString(), {
+      redirect: "manual", signal: AbortSignal.timeout(8000),
+      headers: { Accept: "application/json" },
+    });
+  } catch {
+    return json({ error: "MCP directory temporarily unavailable" }, 502);
+  }
+  if (response.status !== 200 || Number(response.headers.get("content-length") || 0) > 1_000_000) {
+    return json({ error: "MCP directory temporarily unavailable" }, 502);
+  }
+  let payload: unknown;
+  try {
+    const reader = response.body?.getReader();
+    if (!reader) throw Error("No upstream body");
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      size += next.value.byteLength;
+      if (size > 1_000_000) {
+        await reader.cancel();
+        return json({ error: "MCP directory exceeds size limit" }, 502);
+      }
+      chunks.push(next.value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  } catch {
+    return json({ error: "Invalid MCP directory response" }, 502);
+  }
+  if (!payload || typeof payload !== "object" || !Array.isArray((payload as Record<string, unknown>).servers)) {
+    return json({ error: "Invalid MCP directory response" }, 502);
+  }
+  const data = payload as Record<string, unknown>;
+  const validHttpsEndpoint = (raw: unknown): raw is string => {
+    if (typeof raw !== "string" || raw.length > 2048) return false;
+    try {
+      const url = new URL(raw);
+      const domain = url.hostname.toLowerCase();
+      return url.protocol === "https:" && !url.username && !url.password &&
+        !url.search && !url.hash && !url.port && domain.includes(".") &&
+        domain.split(".").every(label => validLabel.test(label)) &&
+        !/^\\d+$/.test(domain.split(".").at(-1) || "") &&
+        !domain.endsWith(".local") && !domain.endsWith(".internal") &&
+        !domain.endsWith(".localhost");
+    } catch { return false; }
+  };
+  const servers = (data.servers as unknown[]).slice(0, 30).flatMap((entry): Record<string, unknown>[] => {
+    if (!entry || typeof entry !== "object") return [];
+    const parent = entry as Record<string, unknown>;
+    if (!parent.server || typeof parent.server !== "object") return [];
+    const server = parent.server as Record<string, unknown>;
+    if (typeof server.name !== "string" || !server.name.trim() || server.name.length > 256 ||
+        typeof server.version !== "string" || !server.version || server.version.length > 160) return [];
+    const meta = parent._meta;
+    if (meta && typeof meta === "object") {
+      const official = (meta as Record<string, unknown>)["io.modelcontextprotocol.registry/official"];
+      if (official && typeof official === "object" &&
+          (official as Record<string, unknown>).status === "deleted") return [];
+    }
+    const result: Record<string, unknown> = {
+      kind: "mcp-server", name: server.name,
+      title: typeof server.title === "string" ? server.title.slice(0, 160) : server.name,
+      description: typeof server.description === "string" ? server.description.slice(0, 1200) : "",
+      version: server.version, installable: false,
+      verification: "registry_metadata_only",
+    };
+    if (Array.isArray(server.remotes)) {
+      result.remotes = server.remotes.slice(0, 12).flatMap((raw): Record<string, string>[] => {
+        if (!raw || typeof raw !== "object") return [];
+        const remote = raw as Record<string, unknown>;
+        const protocol = remote.type ?? remote.transportType;
+        if (!validHttpsEndpoint(remote.url) ||
+            !["streamable-http", "sse"].includes(String(protocol))) return [];
+        return [{ type: String(protocol), url: remote.url }];
+      });
+    }
+    return [result];
+  });
+  const metadata = data.metadata;
+  const next = metadata && typeof metadata === "object"
+    ? (metadata as Record<string, unknown>).nextCursor : undefined;
+  const nextCursor = typeof next === "string" && /^[A-Za-z0-9+/_=-]{1,512}$/.test(next)
+    ? next : undefined;
+  return new Response(JSON.stringify({
+    schema: 1, source: "mcp-registry-v0.1", count: servers.length, servers,
+    ...(nextCursor ? { nextCursor } : {}),
+  }), { headers: { "content-type": "application/json; charset=utf-8",
+                  "cache-control": "public, max-age=120" } });
+}
+
 async function handle(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
@@ -3939,6 +4073,7 @@ async function handle(req: Request, env: Env): Promise<Response> {
 
       if (req.method === "GET" && path === "/api/packages") return apiPackages(req, env);
       if (req.method === "GET" && path === "/api/a2a/agents") return searchA2AListings();
+      if (req.method === "GET" && path === "/api/mcp/servers") return searchExternalMcpServers(req, env);
       if (req.method === "POST" && path === "/api/checkout") return checkout(req, env);
       if (req.method === "POST" && path === "/api/webhooks/stripe") return webhook(req, env);
       if (req.method === "GET" && path === "/api/purchases") return purchases(req, env);
