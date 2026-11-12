@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   fetchPackages,
   fetchA2AAgents,
@@ -52,49 +52,46 @@ const SORTS: Array<[Sort, string]> = [
 ];
 const STILL = 0.32;
 
-// Hero-carousel card geometry. The card is drawn at HERO width; a per-item mask (see .carousel-item)
-// clips it down toward the edges, so a row reads thin · small · medium · HERO · medium · small · thin ·
-// thin… symmetric around a centered focus keyline (the M3 Expressive hero layout).
-// The top hero carousel's masked tiers.
+// Expressive hero keylines: width changes continuously as the focal index moves.
+// The focal slot stays at the same left inset; cards move through that keyline.
 const HERO = 268;
 const MEDIUM = 186;
 const SMALL = 120;
 const THIN = 64;
-const HERO_H = 282; // the hero row's cards are taller than the plain rows below
-
-// The plain rows below the hero carousel: uniform cards (the design we had before the carousels).
-const ROW_W = 244;
-const ROW_H = 216;
-
-// The hero sits at the 2nd slot at rest (index 1), so a row reads small · HERO · medium · small ·
-// thin · thin …, and shifts one slot per SLOT pixels of scroll.
-const HERO_SLOT = 1;
-/**
- * Scroll distance that advances the focus by one card: the card's laid-out width plus the flex gap
- * between items (`.carousel` gap, theme.css).
- *
- * The gap used to be left out — SLOT was set equal to MEDIUM — which made the focus index drift by
- * the gap's share of the pitch on every slot, about 5%, so roughly one whole card after sixteen. It
- * was wrong before the cards shrank and shrinking made it worse, because the gap is a larger fraction
- * of a smaller card.
- */
+const HERO_H = 282;
 const CAROUSEL_GAP = 12;
+const HERO_INSET = 24;
 const SLOT = MEDIUM + CAROUSEL_GAP;
 
-/**
- * Mask width for a card `d` slots from the focus (0 = the hero; negative = to its left). Asymmetric:
- * a single small peek on the left, and a medium → small → thin falloff on the right — so a row reads
- * small · HERO · medium · small · thin · thin … with the hero as the 2nd card at rest.
- */
-function slotWidth(d: number): number {
+const ROW_H = 216;
+
+/** Width of a visible hero card at its distance from the fixed keyline. */
+function slotWidth(distance: number): number {
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-  if (d <= -2) return THIN; // scrolled-past cards on the left collapse to thin
-  if (d <= -1) return lerp(THIN, SMALL, d + 2); // [-2,-1]: thin → small (the left peek)
-  if (d <= 0) return lerp(SMALL, HERO, d + 1); //  [-1, 0]: small → hero
-  if (d <= 1) return lerp(HERO, MEDIUM, d); //      [ 0, 1]: hero → medium
-  if (d <= 2) return lerp(MEDIUM, SMALL, d - 1); // [ 1, 2]: medium → small
-  if (d <= 3) return lerp(SMALL, THIN, d - 2); //   [ 2, 3]: small → thin
-  return THIN; // anything further right stays thin
+  if (distance <= -2) return THIN;
+  if (distance <= -1) return lerp(THIN, SMALL, distance + 2);
+  if (distance <= 0) return lerp(SMALL, HERO, distance + 1);
+  if (distance <= 1) return lerp(HERO, MEDIUM, distance);
+  if (distance <= 2) return lerp(MEDIUM, SMALL, distance - 1);
+  if (distance <= 3) return lerp(SMALL, THIN, distance - 2);
+  return THIN;
+}
+
+/**
+ * Keyline layout computed in track coordinates. All widths and positions are
+ * derived together, so changing a card's mask cannot move the scroll origin or
+ * leave gaps where the old index-based scroll math expected a fixed item pitch.
+ */
+export function heroKeylines(count: number, focus: number): Array<{ left: number; width: number }> {
+  if (count <= 0) return [];
+  const position = Math.max(0, Math.min(count - 1, focus));
+  const widths = Array.from({ length: count }, (_, i) => slotWidth(i - position));
+  const origins = widths.map(() => 0);
+  for (let i = 1; i < count; i++) origins[i] = origins[i - 1] + widths[i - 1] + CAROUSEL_GAP;
+  const before = Math.floor(position);
+  const fraction = position - before;
+  const focalOrigin = origins[before] + fraction * ((origins[before + 1] ?? origins[before]) - origins[before]);
+  return widths.map((width, i) => ({ left: origins[i] + HERO_INSET - focalOrigin, width }));
 }
 
 /* ─────────────── shared bits ─────────────── */
@@ -480,62 +477,117 @@ export function buildSections(packages: PackageSummary[]): CatalogSection[] {
 }
 
 /**
- * The single top **M3 Expressive hero carousel**. A scroll strip whose cards are masked by width around
- * a fixed keyline that sits just left of centre, so a row reads thin · small · medium · HERO · medium ·
- * small · thin · thin …, symmetric around the hero (the 4th item at rest). Each item's mask width comes
- * from its centre's distance to the keyline (see slotWidth); the card is clipped, never squished. Its
- * cards are taller than the plain rows below. One live preview animates at a time.
+ * Start-aligned Material 3 Expressive hero: one fixed focal keyline,
+ * continuous card resizing, and horizontal drag/wheel/keyboard navigation.
+ * Widths change within the tiles rather than cutting off a full-size card.
+ * No automatic advancing: interaction, not a timer, owns the scroll position.
  */
 function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p: PackageSummary) => void }) {
   const scroller = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(0);
+  const [focus, setFocus] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const pointer = useRef<{ id: number; startX: number; start: number; moved: boolean } | null>(null);
+  const suppressClick = useRef(false);
+  const lastWheel = useRef(0);
+  const max = section.items.length - 1;
+  const clamp = (index: number) => Math.max(0, Math.min(max, index));
+  const layout = heroKeylines(section.items.length, focus);
+  const active = Math.round(focus);
 
   useEffect(() => {
-    if (section.items.length === 0) return;
-    const t = setInterval(() => setActive((i) => (i + 1) % section.items.length), 2600);
-    return () => clearInterval(t);
-  }, [section.items.length]);
+    setFocus(0);
+  }, [section.title]);
 
-  useLayoutEffect(() => {
-    const el = scroller.current;
-    if (!el) return;
-    let raf = 0;
-    const update = () => {
-      // Index-based keylines (like M3's carousel): a card's mask width is a function of how many slots
-      // it is from the focus, which advances continuously with scroll. This tracks the arrangement
-      // exactly (item HERO_SLOT is the hero at rest) without the width↔position circularity of measuring.
-      const items = Array.from(el.querySelectorAll<HTMLElement>(".carousel-item"));
-      const focus = HERO_SLOT + el.scrollLeft / SLOT;
-      items.forEach((m, i) => {
-        m.style.width = `${Math.round(slotWidth(i - focus))}px`;
-      });
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    const wheel = (event: WheelEvent) => {
+      const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey;
+      if (!horizontal) return;
+      const delta = event.shiftKey && event.deltaX === 0 ? event.deltaY : event.deltaX;
+      if ((delta < 0 && focus <= 0) || (delta > 0 && focus >= max)) return;
+      event.preventDefault();
+      if (event.timeStamp - lastWheel.current < 350) return;
+      lastWheel.current = event.timeStamp;
+      setFocus((previous) => clamp(Math.round(previous) + Math.sign(delta)));
     };
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(update);
-    };
-    update(); // size before first paint
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      cancelAnimationFrame(raf);
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [section.items]);
+    element.addEventListener("wheel", wheel, { passive: false });
+    return () => element.removeEventListener("wheel", wheel);
+  }, [focus, max]);
+
+  const settle = (next: number) => {
+    setDragging(false);
+    setFocus(clamp(Math.round(next)));
+  };
 
   return (
-    <section style={{ marginBottom: 34 }}>
-      <div style={{ padding: "0 24px 16px" }}>
-        <h2 style={{ fontSize: 26, fontWeight: 760, margin: 0 }}>{section.title}</h2>
-        {section.subtitle && <div style={{ fontSize: 15, color: "var(--on-surface-variant)", marginTop: 2 }}>{section.subtitle}</div>}
+    <section className="expressive-hero-section" aria-label={section.title}>
+      <div className="expressive-hero-heading">
+        <div>
+          <h2>{section.title}</h2>
+          {section.subtitle && <div className="catalog-section-subtitle">{section.subtitle}</div>}
+        </div>
+        <div className="expressive-hero-actions">
+          <button className="chip" type="button" aria-label="Previous featured extension"
+            disabled={active === 0} onClick={() => settle(active - 1)}>‹</button>
+          <button className="chip" type="button" aria-label="Next featured extension"
+            disabled={active >= max} onClick={() => settle(active + 1)}>›</button>
+        </div>
       </div>
-      <div ref={scroller} className="carousel">
-        {section.items.map((pkg, i) => (
-          <div key={pkg.id} className="carousel-item" style={{ width: HERO, height: HERO_H }}>
-            <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} width={HERO} height={HERO_H} />
-          </div>
-        ))}
+      <div ref={scroller} className="expressive-hero-track" data-dragging={dragging ? "true" : "false"}
+        role="region" aria-roledescription="carousel" aria-label={section.title} tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowRight") { event.preventDefault(); settle(active + 1); }
+          if (event.key === "ArrowLeft") { event.preventDefault(); settle(active - 1); }
+          if (event.key === "Home") { event.preventDefault(); settle(0); }
+          if (event.key === "End") { event.preventDefault(); settle(max); }
+        }}
+        onPointerDown={(event) => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          pointer.current = { id: event.pointerId, startX: event.clientX, start: focus, moved: false };
+          suppressClick.current = false;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          const p = pointer.current;
+          if (!p || p.id !== event.pointerId) return;
+          const delta = event.clientX - p.startX;
+          if (Math.abs(delta) > 6) {
+            p.moved = true;
+            suppressClick.current = true;
+            setDragging(true);
+          }
+          if (p.moved) setFocus(clamp(p.start - delta / SLOT));
+        }}
+        onPointerUp={(event) => {
+          const p = pointer.current;
+          if (!p || p.id !== event.pointerId) return;
+          pointer.current = null;
+          settle(p.moved ? focus : p.start);
+        }}
+        onPointerCancel={() => {
+          pointer.current = null;
+          setDragging(false);
+          setFocus((previous) => clamp(Math.round(previous)));
+        }}
+        onClickCapture={(event) => {
+          if (suppressClick.current) {
+            event.preventDefault();
+            event.stopPropagation();
+            suppressClick.current = false;
+          }
+        }}
+      >
+        {section.items.map((pkg, i) => {
+          const item = layout[i];
+          return (
+            <div key={pkg.id} className="expressive-hero-item" role="group"
+              aria-roledescription="slide" aria-label={`${pkg.name}, ${i + 1} of ${section.items.length}`}
+              style={{ left: item.left, width: item.width, height: HERO_H }}>
+              <PackageCard pkg={pkg} active={i === active} onOpen={onOpen} width="100%" height={HERO_H} />
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -988,7 +1040,16 @@ function StorefrontApp() {
         <>
           {category === null ? (
             <>
-              {!filtering && sections[0] && <HeroCarousel section={sections[0]} onOpen={open} />}
+              {query.trim() === "" && sort !== "name" && shown.length > 0 && (
+                <HeroCarousel
+                  section={{
+                    title: SORTS.find(([key]) => key === sort)?.[1] ?? "Featured",
+                    subtitle: sort === "popular" ? "Most installed across every host" : sort === "rating" ? "Highest rated by the community" : "Recently published and updated",
+                    items: shown.slice(0, 14),
+                  }}
+                  onOpen={open}
+                />
+              )}
               {filtering && (
                 <div className="catalog-results-heading">
                   <h2>Results</h2>
