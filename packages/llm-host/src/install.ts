@@ -150,6 +150,12 @@ export async function installLlm(opts: InstallOptions): Promise<InstallResult> {
   }
   if (!PACKAGE_ID.test(manifest.id)) throw new Error(`invalid package id for an install path: ${JSON.stringify(manifest.id)}`);
   const llm = llmBlock(manifest);
+  // Pure A2A headers must not provision a GitHub repo or request Actions secrets.
+  // Connection is a separate user-consented A2A host operation.
+  if (llm.endpoint.protocols.includes("a2a-jsonrpc")) {
+    throw new Error("A2A packages are direct endpoints; connect through an A2A-capable host, not the GitHub sandbox installer");
+  }
+  if (!llm.setup) throw new Error("sandbox-backed llm packages require setup");
   if (llm.setup.sandbox !== "github-actions") throw new Error(`unsupported sandbox ${llm.setup.sandbox}`);
 
   const inputs = opts.inputs ?? {};

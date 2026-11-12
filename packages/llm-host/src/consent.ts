@@ -41,7 +41,7 @@ function hostOf(baseUrl: string): string {
 
 export function llmConsent(manifest: Manifest): LlmConsent {
   const llm = llmBlock(manifest);
-  const secretFor = new Map((llm.setup.secrets ?? []).map((s) => [s.input, s.name]));
+  const secretFor = new Map((llm.setup?.secrets ?? []).map((s) => [s.input, s.name]));
   return {
     packageId: manifest.id,
     name: manifest.name,
@@ -55,14 +55,14 @@ export function llmConsent(manifest: Manifest): LlmConsent {
     dataHandling: llm.dataHandling,
     modelLicense: llm.weights?.modelLicense,
     weightsBytes: (llm.weights?.files ?? []).reduce((n, f) => n + (f.byteSize ?? 0), 0),
-    setupTokenPermissions: llm.setup.requires?.githubToken ?? [],
+    setupTokenPermissions: llm.setup?.requires?.githubToken ?? [],
     inputs: (llm.inputs ?? []).map((i) => ({
       id: i.id,
       description: i.description,
       optional: i.optional === true,
       secretName: secretFor.get(i.id),
     })),
-    fetches: [...(llm.setup.fetches ?? []).map((f) => f.url), ...(llm.weights?.files ?? []).map((f) => f.remoteUrl)],
+    fetches: [...(llm.setup?.fetches ?? []).map((f) => f.url), ...(llm.weights?.files ?? []).map((f) => f.remoteUrl)],
     runPermissions: { ...(llm.run?.permissions ?? {}) },
   };
 }

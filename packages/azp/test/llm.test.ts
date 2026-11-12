@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { strToU8 } from "fflate";
 import type { Manifest } from "@azphalt/azdk";
-import { validateLlmManifest, verifyAzp, writeAzp } from "../src/index";
+import { generateSigningKey, signAzp, validateLlmManifest, verifyAzp, writeAzp } from "../src/index";
 
 const SUM = "sha256-" + "a".repeat(64);
 const payload = { "setup/setup.sh": strToU8("#!/usr/bin/env bash\nexit 0\n") };
@@ -79,6 +79,22 @@ const weightsManifest: Omit<Manifest, "files"> = {
 };
 
 const build = (m: Omit<Manifest, "files">) => writeAzp({ manifest: m, payload, license: "Apache-2.0\n" });
+const agentManifest: Omit<Manifest, "files"> = {
+  azphalt: "0.1", id: "org.example.azphalt.agent.weather",
+  name: "Weather A2A Agent", version: "1.0.0", kind: "llm",
+  license: "MIT", compat: ">=0.1",
+  llm: {
+    tier: "endpoint",
+    endpoint: {
+      protocols: ["a2a-jsonrpc"], baseUrl: "https://weather.example.org/a2a",
+      agentCardUrl: "https://weather.example.org/.well-known/agent-card.json",
+      auth: "none",
+    },
+    dataHandling: { prompts: "unknown", operator: "weather.example.org" },
+    role: "agent",
+  },
+};
+const agentBuild = () => writeAzp({ manifest: agentManifest, payload: {}, license: "MIT\n" });
 const clone = (m: Manifest): Manifest => JSON.parse(JSON.stringify(m));
 const errorsOf = (mutate: (m: Manifest) => void, base = endpointManifest) => {
   const m = clone(build(base).manifest);
@@ -93,6 +109,60 @@ describe("validateLlmManifest", () => {
       expect(validateLlmManifest(manifest)).toEqual([]);
       expect(verifyAzp(azp)).toMatchObject({ ok: true });
     }
+  });
+
+  it("accepts a script-free signed A2A JSON-RPC llm header and verifies its signature", () => {
+    const { manifest, azp } = agentBuild();
+    expect(validateLlmManifest(manifest)).toEqual([]);
+    expect(verifyAzp(azp)).toMatchObject({ ok: true, signed: false });
+    const key = generateSigningKey();
+    const signed = signAzp(azp, { privateKey: key.privateKey });
+    expect(verifyAzp(signed)).toMatchObject({ ok: true, signed: true });
+  });
+
+  it("accepts generated A2A setup and pins both script and agent metadata in a signed azp", () => {
+    const endpoint = agentManifest.llm!.endpoint;
+    const withSetup: Omit<Manifest, "files"> = {
+      ...agentManifest,
+      llm: {
+        ...agentManifest.llm!,
+        setup: { sandbox: "github-actions", script: "setup/setup.sh", fetches: [] },
+      },
+    };
+    const { azp } = writeAzp({
+      manifest: withSetup,
+      payload: {
+        "setup/setup.sh": strToU8("#!/usr/bin/env bash\\nset -euo pipefail\\n"),
+        "setup/agent.json": strToU8(JSON.stringify({
+          protocol: "a2a-jsonrpc",
+          baseUrl: "https://weather.example.org/a2a",
+          agentCardUrl: "https://weather.example.org/.well-known/agent-card.json",
+          auth: "none",
+        }) + "\\n"),
+      },
+      license: "MIT\\n",
+    });
+    expect(verifyAzp(azp)).toMatchObject({ ok: true, signed: false });
+    const signer = generateSigningKey();
+    const signed = signAzp(azp, { privateKey: signer.privateKey });
+    expect(verifyAzp(signed)).toMatchObject({ ok: true, signed: true });
+    expect(endpoint.protocols).toEqual(["a2a-jsonrpc"]);
+  });
+
+  it("refuses protocol confusion, cross-origin endpoints and setup permissions in A2A headers", () => {
+    const errors = (change: (m: Manifest) => void): string => {
+      const manifest = clone(agentBuild().manifest);
+      change(manifest);
+      return validateLlmManifest(manifest).join("\n");
+    };
+    expect(errors(m => { m.llm!.endpoint.agentCardUrl = "https://other.example.org/card"; })).toMatch(/same origin/);
+    expect(errors(m => { m.llm!.endpoint.agentCardUrl = "https://127.0.0.1/card"; })).toMatch(/public HTTPS/);
+    expect(errors(m => { m.llm!.endpoint.baseUrl = "https://weather.example.org:8443/agent"; })).toMatch(/public HTTPS/);
+    expect(errors(m => { m.llm!.endpoint.protocols = ["a2a-jsonrpc", "openai-chat"]; })).toMatch(/sole protocol/);
+    expect(errors(m => { m.llm!.run = { permissions: { contents: "write" } }; })).toMatch(/no sandbox run permissions/);
+    expect(errors(m => { m.llm!.endpoint.defaultModel = "unknown"; })).toMatch(/does not declare defaultModel/);
+    expect(errors(m => { m.llm!.setup = undefined; m.llm!.endpoint.protocols = ["openai-chat"]; })).toMatch(/setup is required/);
+    expect(errors(m => { m.llm!.endpoint.agentCardUrl = "https://weather.example.org/card?token=secret"; })).toMatch(/public HTTPS/);
   });
 
   it("requires the llm block and forbids sandbox and other-kind surfaces", () => {
@@ -115,10 +185,10 @@ describe("validateLlmManifest", () => {
   });
 
   it("checks setup", () => {
-    expect(errorsOf((m) => { m.llm!.setup.sandbox = "docker"; })).toMatch(/sandbox must be github-actions/);
-    expect(errorsOf((m) => { m.llm!.setup.script = "setup/missing.sh"; })).toMatch(/not in manifest.files/);
-    expect(errorsOf((m) => { m.llm!.setup.fetches = [{ url: "http://x", checksum: "sha256-" }]; })).toMatch(/https:\/\/[\s\S]*sha256/);
-    expect(errorsOf((m) => { m.llm!.setup.secrets![0].input = "nope"; })).toMatch(/undeclared input "nope"/);
+    expect(errorsOf((m) => { m.llm!.setup!.sandbox = "docker"; })).toMatch(/sandbox must be github-actions/);
+    expect(errorsOf((m) => { m.llm!.setup!.script = "setup/missing.sh"; })).toMatch(/not in manifest.files/);
+    expect(errorsOf((m) => { m.llm!.setup!.fetches = [{ url: "http://x", checksum: "sha256-" }]; })).toMatch(/https:\/\/[\s\S]*sha256/);
+    expect(errorsOf((m) => { m.llm!.setup!.secrets![0].input = "nope"; })).toMatch(/undeclared input "nope"/);
   });
 
   it("checks protocols and auth", () => {

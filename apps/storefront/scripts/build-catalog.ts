@@ -470,6 +470,11 @@ function walk(dir: string, prefix = ""): string[] {
  * anything else this repo ships, rather than over a separate runtime code path.
  */
 function buildFolder(base: string, id: string, label: string): Built {
+  // SearchA2A promotions can never be published unsigned, even when ordinary
+  // packages choose the repository's backwards-compatible unsigned path.
+  if (id.startsWith("org.azphalt.a2a.") && !signingKey && !check) {
+    throw new Error("A2A promotion requires AZPHALT_PACKAGE_SIGNING_KEY; refusing unsigned release");
+  }
   const dir = join(base, id);
   const manifest = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8")) as Manifest;
   if (manifest.id !== id) {
@@ -743,7 +748,10 @@ async function main(): Promise<void> {
           // unsigned digest the lockfile pins. (Comparing raw bytes would break whenever a key is
           // configured; the unsigned digest is signature-agnostic by design.) Without this, swapping
           // any .azp for different bytes left the check green.
-          const problem = committedFileProblem(join(packagesDir, c.file), c, Boolean(committed.signed));
+          const problem = committedFileProblem(
+            join(packagesDir, c.file), c,
+            Boolean(committed.signed) || b.source.id.startsWith("org.azphalt.a2a."),
+          );
           if (problem) drift.push(`${b.source.id}: ${problem}`);
         }
         byId.delete(b.source.id);

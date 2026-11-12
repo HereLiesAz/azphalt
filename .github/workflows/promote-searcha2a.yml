@@ -1,0 +1,96 @@
+name: Propose verified A2A agents for signed Azphalt publication
+
+on:
+  schedule:
+    - cron: '47 4 * * *'
+  workflow_dispatch:
+
+# Only proposed source is written here. Signed binaries are built by existing
+# registry-sync after merge, preserving source and package review gates.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: verified-a2a-source-promotion
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/checkout@v4
+        with:
+          repository: HereLiesAz/searcha2a
+          ref: main
+          path: .searcha2a
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Require real package signer
+        env:
+          AZPHALT_PACKAGE_SIGNING_KEY: ${{ secrets.AZPHALT_PACKAGE_SIGNING_KEY }}
+        run: |
+          if [ -z "$AZPHALT_PACKAGE_SIGNING_KEY" ]; then
+            echo "::error::AZPHALT_PACKAGE_SIGNING_KEY must be configured before automatic signed A2A promotion"
+            exit 1
+          fi
+      - name: Skip while a promotion is under review
+        id: pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          number="$(gh pr list --state open --head automation/verified-a2a --json number --jq '.[0].number // empty')"
+          if [ -n "$number" ]; then
+            echo "::notice::Existing A2A promotion PR #$number remains under review"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check SearchA2A promotion tests
+        if: steps.pending.outputs.skip == 'false'
+        run: |
+          python3 -m unittest discover -s .searcha2a/tests -p 'test_azphalt_promote.py' -v
+          python3 -m unittest discover -s .searcha2a/tests -p 'test_discover.py' -v
+      - name: Generate candidate source from fresh verified Agent Cards
+        if: steps.pending.outputs.skip == 'false'
+        run: |
+          python3 .searcha2a/src/azphalt_promote.py --submissions submissions --max-new 12
+          for script in submissions/org.azphalt.a2a.*/setup/setup.sh; do
+            if [ -f "$script" ]; then bash "$script"; fi
+          done
+      - name: Validate generated source with Azphalt's actual package verifier
+        if: steps.pending.outputs.skip == 'false'
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm --filter '@azphalt/submit-check...' build
+          pnpm --filter @azphalt/submit-check validate
+      - name: Create reviewed submission PR
+        if: steps.pending.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.AZPHALT_AUTOMATION_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          git add submissions/
+          if git diff --cached --quiet; then
+            echo "No newly verified or changed A2A publishers"
+            exit 0
+          fi
+          git config user.name "Azphalt A2A Promotion Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c automation/verified-a2a
+          git commit -m "chore: propose publisher-verified A2A agent headers"
+          git push --force-with-lease origin HEAD:refs/heads/automation/verified-a2a
+          gh pr create --base main --head automation/verified-a2a \
+            --title "Promote publisher-verified SearchA2A agents as signed llm headers" \
+            --body "Automatically generated from freshly revalidated A2A Agent Cards and same-origin MIT-licensed opt-in proofs. All bundled setup scripts are deterministic and contain no publisher code. Review the source, then merge to trigger Azphalt's existing independent package/signature build and second reviewed PR. No agent execution occurs."

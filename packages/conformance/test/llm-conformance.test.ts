@@ -40,7 +40,7 @@ const llmHost: LlmHost = {
       disclosure: {
         tier: manifest.llm.tier,
         prompts: manifest.llm.dataHandling?.prompts,
-        setupTokenPermissions: manifest.llm.setup.requires?.githubToken,
+        setupTokenPermissions: manifest.llm.setup?.requires?.githubToken,
       },
     };
   },
