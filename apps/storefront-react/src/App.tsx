@@ -497,7 +497,7 @@ function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p
 
   useEffect(() => {
     setFocus(0);
-  }, [section.title]);
+  }, [section.title, section.items.length]);
 
   useEffect(() => {
     const element = scroller.current;
@@ -572,6 +572,7 @@ function HeroCarousel({ section, onOpen }: { section: CatalogSection; onOpen: (p
         }}
         onPointerCancel={() => {
           pointer.current = null;
+          suppressClick.current = false;
           setDragging(false);
           setFocus((previous) => clamp(Math.round(previous)));
         }}
