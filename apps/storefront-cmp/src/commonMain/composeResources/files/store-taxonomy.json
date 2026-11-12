@@ -1,0 +1,201 @@
+{
+  "schema": 1,
+  "description": "Presentation-only storefront categories. Shared by React and Compose apps; does not change package or backend metadata.",
+  "categories": [
+    {
+      "id": "brushes",
+      "label": "Brushes",
+      "idContains": [
+        ".brush-",
+        ".brushes.",
+        ".kinetic."
+      ],
+      "idEquals": [
+        "com.hereliesaz.azphalt.pack.oil",
+        "com.hereliesaz.azphalt.pack.ink-and-marker",
+        "com.hereliesaz.azphalt.pack.charcoal-and-chalk"
+      ]
+    },
+    {
+      "id": "brushes/acrylic",
+      "label": "Acrylic",
+      "parent": "brushes",
+      "idContains": [
+        ".brush-acrylic-"
+      ]
+    },
+    {
+      "id": "brushes/oil",
+      "label": "Oil Painting",
+      "parent": "brushes",
+      "idContains": [
+        ".brush-oil-"
+      ],
+      "idEquals": [
+        "com.hereliesaz.azphalt.pack.oil"
+      ]
+    },
+    {
+      "id": "brushes/watercolor",
+      "label": "Watercolor",
+      "parent": "brushes",
+      "idContains": [
+        ".brush-watercolor-"
+      ]
+    },
+    {
+      "id": "brushes/ink",
+      "label": "Ink & Markers",
+      "parent": "brushes",
+      "idContains": [
+        ".brush-ink-",
+        ".brush-chisel-marker",
+        ".brush-china-marker",
+        ".brush-paint-pen",
+        ".brushes.line-and-nib",
+        ".kinetic.noir-ink",
+        ".kinetic.calligraphy"
+      ],
+      "idEquals": [
+        "com.hereliesaz.azphalt.pack.ink-and-marker"
+      ]
+    },
+    {
+      "id": "brushes/spray",
+      "label": "Spray & Graffiti",
+      "parent": "brushes",
+      "idContains": [
+        ".brush-spray-",
+        ".kinetic.spray-caps",
+        ".kinetic.street-and-mural",
+        ".brushes.street-kit"
+      ]
+    },
+    {
+      "id": "brushes/dry-media",
+      "label": "Dry Media",
+      "parent": "brushes",
+      "idContains": [
+        ".brush-conte-crayon",
+        ".brush-hard-chalk",
+        ".brush-soft-charcoal",
+        ".brush-smudge-stick",
+        ".brushes.dry-goods"
+      ],
+      "idEquals": [
+        "com.hereliesaz.azphalt.pack.charcoal-and-chalk"
+      ]
+    },
+    {
+      "id": "brushes/kinetic",
+      "label": "Kinetic Brushes",
+      "parent": "brushes",
+      "idContains": [
+        ".kinetic."
+      ]
+    },
+    {
+      "id": "image-effects",
+      "label": "Image & Effects",
+      "mediaDomains": [
+        "image"
+      ]
+    },
+    {
+      "id": "video-motion",
+      "label": "Video & Motion",
+      "mediaDomains": [
+        "video"
+      ]
+    },
+    {
+      "id": "3d-surfaces",
+      "label": "3D & Surfaces",
+      "mediaDomains": [
+        "3d"
+      ],
+      "types": [
+        "surface"
+      ],
+      "idContains": [
+        ".surface-",
+        ".surfaces."
+      ]
+    },
+    {
+      "id": "ai-models",
+      "label": "AI & Models",
+      "kinds": [
+        "llm"
+      ],
+      "mediaDomains": [
+        "model"
+      ]
+    },
+    {
+      "id": "automation",
+      "label": "Workflows",
+      "kinds": [
+        "workflow"
+      ]
+    },
+    {
+      "id": "agents",
+      "label": "Agents & Skills",
+      "kinds": [
+        "mcp",
+        "skill",
+        "role"
+      ]
+    },
+    {
+      "id": "apps",
+      "label": "Apps",
+      "kinds": [
+        "app"
+      ]
+    },
+    {
+      "id": "packs",
+      "label": "Extension Packs",
+      "kinds": [
+        "pack"
+      ]
+    },
+    {
+      "id": "code-tools",
+      "label": "Code & Tools",
+      "kinds": [
+        "code",
+        "script"
+      ]
+    },
+    {
+      "id": "fonts",
+      "label": "Fonts & Typography",
+      "kinds": [
+        "font"
+      ],
+      "types": [
+        "font"
+      ]
+    },
+    {
+      "id": "audio",
+      "label": "Audio",
+      "mediaDomains": [
+        "audio"
+      ]
+    },
+    {
+      "id": "color",
+      "label": "Color & Palettes",
+      "idContains": [
+        ".lut",
+        ".palette",
+        ".color-grade",
+        ".colour-"
+      ]
+    }
+  ]
+}
