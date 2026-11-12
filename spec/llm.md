@@ -51,7 +51,7 @@ An `llm` package declares one **tier**, which fixes where prompts go:
 
 ## The package (`kind: "llm"`)
 
-A normal signed `.azp` whose `kind` is `"llm"`. Its manifest adds one block, `llm`. Standard model packages carry a setup script (integrity-covered by `manifest.files`); **direct A2A agent headers contain no setup script or executable payload**. They reuse the same Ed25519 package signature and trusted-publisher checks without inventing a new package kind.
+A normal signed `.azp` whose `kind` is `"llm"`. Its manifest adds one block, `llm`. Standard model packages carry a setup script (integrity-covered by `manifest.files`); **generated A2A agent packages contain a deterministic setup script and declarative connection metadata, with no publisher-supplied executable payload**. They reuse the same Ed25519 package signature and trusted-publisher checks without inventing a new package kind.
 
 ~~~jsonc
 {
@@ -186,6 +186,11 @@ An A2A agent is a remote **agent endpoint**, not a model offering OpenAI chat co
   "description": "Agent Card-based remote service. Host verification does not guarantee safe behavior.",
   "llm": {
     "tier": "endpoint",
+    "setup": {
+      "sandbox": "github-actions",
+      "script": "setup/setup.sh",
+      "fetches": []
+    },
     "endpoint": {
       "protocols": ["a2a-jsonrpc"],
       "baseUrl": "https://weather.example.org/a2a",
@@ -198,15 +203,15 @@ An A2A agent is a remote **agent endpoint**, not a model offering OpenAI chat co
 }
 ```
 
-There is **no `llm.setup`**, `llm.run`, `endpoint.defaultModel`, or bundled workflow. The validator permits this omission **only** when `a2a-jsonrpc` is the sole protocol of an `endpoint` tier package. Both `baseUrl` and `agentCardUrl` must be public HTTPS URLs on the same origin with no credentials, non-default port, query string, or fragment. A2A and OpenAI/Moyai protocols cannot share a header.
+SearchA2A **automatically generates** `setup/setup.sh` and `setup/agent.json` from an independently revalidated Agent Card. The script is fixed, publisher-independent code that checks signed declarative connection metadata; it does not run remote publisher instructions, contact task endpoints, request credentials or grant permissions. The package carries no `llm.run`, `endpoint.defaultModel` or bundled workflow. Direct-only A2A headers can omit `llm.setup` when generated packaging isn't used, but the standard automatic promotion includes it. Both `baseUrl` and `agentCardUrl` must be public HTTPS URLs on the same origin with no credentials, non-default port, query string, or fragment. A2A and OpenAI/Moyai protocols cannot share a header.
 
 An A2A-capable host **MUST** verify the signed `.azp` and the signer's trusted key, disclose the remote origin and unknown prompt-handling policy, obtain user consent, then fetch and validate the **current** Agent Card. It must verify that the live JSON-RPC endpoint is still on the signed package's origin and re-check requested credentials and capabilities before sending anything. An outdated card, vanished origin proof, changed endpoint, or revoked signing key prevents a new connection. Signed metadata proves Azphalt packaged a previously reviewed connection description, **not** an independently certified agent identity, runtime health, or permission to execute tasks. An OpenAI-only or GitHub-runner-only host must refuse this protocol without attempting setup.
 
-For automated store submissions, SearchA2A requires a publisher-controlled, same-origin, short-lived opt-in proof at `/.well-known/azphalt-a2a-verification.json` and a fresh Agent Card before proposing source. Azphalt's existing submission and signed registry build, not SearchA2A, produces the final signed `.azp` with normal publisher pinning and immutable versions. A first-party signature identifies the Azphalt packaging authority, not the third-party A2A operator.
+For automated store submissions, SearchA2A requires a publisher-controlled, same-origin, short-lived opt-in proof at `/.well-known/azphalt-a2a-verification.json` with explicit MIT metadata-redistribution consent and a fresh Agent Card before proposing source. The daily Azphalt promotion workflow re-fetches both, generates the manifest and setup payload, checks them through the real `verifyAzp` submission validator, and opens a review PR. Azphalt's existing submission and signed registry build, not SearchA2A, produces the final signed `.azp` with normal publisher pinning and immutable versions. A first-party signature identifies the Azphalt packaging authority, not the third-party A2A operator.
 
 ## Setup
 
-Every sandbox-backed or model `llm` package carries a setup script (direct A2A agent headers are the only exception), even when all it has to do is confirm that a GitHub token
+Every sandbox-backed or model `llm` package carries a setup script; SearchA2A-generated direct A2A packages carry a deterministic one, although direct-only headers are permitted to omit it. For ordinary model packages the script may only have to confirm that a GitHub token
 with the needed permissions exists. Setup is **off-device only**.
 
 - **`sandbox`** — where setup and the model run. `0.1` defines only `github-actions`. A host MUST NOT
