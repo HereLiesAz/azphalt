@@ -163,7 +163,7 @@ export async function fetchA2AAgents(): Promise<A2AAgentListing[]> {
       const claim = rawAns as Record<string, unknown>;
       if (typeof claim.name === "string" && typeof claim.agent_host === "string" &&
           claim.verification === "unverified" && claim.name.length <= 259 &&
-          claim.agent_host.length <= 237) {
+          claim.agent_host.length <= 251) {
         const host = claim.agent_host.toLowerCase();
         const labels = (claim.name.toLowerCase().startsWith("ans://") &&
           claim.name.toLowerCase().endsWith("." + host))
