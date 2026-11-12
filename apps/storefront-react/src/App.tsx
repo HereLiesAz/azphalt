@@ -458,7 +458,7 @@ export function typeLabel(type: string): string {
 }
 
 /** Featured carousel followed by complete, dynamically discovered type grids. */
-function buildSections(packages: PackageSummary[]): CatalogSection[] {
+export function buildSections(packages: PackageSummary[]): CatalogSection[] {
   if (packages.length === 0) return [];
   const byDownloads = (a: PackageSummary, b: PackageSummary) => installCount(b) - installCount(a);
   const groups = new Map<string, PackageSummary[]>();
