@@ -30,6 +30,7 @@ import {
   type Report,
 } from "./api";
 import { drawPreview, paletteFor, rgba } from "./preview";
+import { availableStoreCategories, storeCategoryKeys, storeCategoryLabel } from "./taxonomy";
 import {
   attemptHandoff,
   downloadUrl,
@@ -459,21 +460,17 @@ export function typeLabel(type: string): string {
 export function buildSections(packages: PackageSummary[]): CatalogSection[] {
   if (packages.length === 0) return [];
   const byDownloads = (a: PackageSummary, b: PackageSummary) => installCount(b) - installCount(a);
-  const groups = new Map<string, PackageSummary[]>();
-  for (const pkg of packages) {
-    for (const type of packageTypeKeys(pkg)) {
-      const group = groups.get(type) ?? [];
-      group.push(pkg);
-      groups.set(type, group);
-    }
-  }
+  const groups = availableStoreCategories(packages);
   return [
     { title: "Popular", subtitle: "Most installed across every host", items: [...packages].sort(byDownloads).slice(0, 14) },
-    ...[...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([type, items]) => ({
-      title: typeLabel(type),
-      subtitle: `${items.length} ${items.length === 1 ? "extension" : "extensions"}`,
-      items,
-    })),
+    ...groups.map((group) => {
+      const items = packages.filter((pkg) => storeCategoryKeys(pkg).includes(group.id));
+      return {
+        title: group.parent ? `${storeCategoryLabel(group.parent)} / ${group.label}` : group.label,
+        subtitle: `${items.length} ${items.length === 1 ? "extension" : "extensions"}`,
+        items,
+      };
+    }),
   ];
 }
 
@@ -940,10 +937,7 @@ function StorefrontApp() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(load, []);
 
-  const categories = useMemo(
-    () => [...new Set(packages.flatMap(packageTypeKeys))].sort(),
-    [packages],
-  );
+  const categories = useMemo(() => availableStoreCategories(packages), [packages]);
   const apps = useMemo(() => [...new Set(packages.flatMap((p) => p.targetApps ?? []))].sort(), [packages]);
 
   const filtering = query.trim() !== "" || price !== 0 || category !== null || app !== null || owned !== 0;
@@ -952,7 +946,7 @@ function StorefrontApp() {
     const filtered = packages.filter((p) => {
       const matchesQuery = !q || [p.name, p.description ?? "", p.author ?? "", p.id].some((s) => s.toLowerCase().includes(q));
       const matchesPrice = price === 1 ? !isPaid(p) : price === 2 ? isPaid(p) : true;
-      const matchesCat = !category || packageTypeKeys(p).includes(category);
+      const matchesCat = !category || storeCategoryKeys(p).includes(category);
       const matchesApp = !app || (p.targetApps ?? []).length === 0 || (p.targetApps ?? []).includes(app);
       // `removed` is kept rather than deleted so a reinstall can be offered, so "have it" is a
       // question about the state and not about the key being present — hence `isHeld`, not `in`.
@@ -1018,7 +1012,7 @@ function StorefrontApp() {
               <span>Types</span>
               <select value={category ?? ""} onChange={(e) => setCategory(e.target.value || null)}>
                 <option value="">All types</option>
-                {categories.map((type) => <option key={type} value={type}>{typeLabel(type)}</option>)}
+                {categories.map((item) => <option key={item.id} value={item.id}>{item.parent ? `  ${item.label}` : item.label}</option>)}
               </select>
             </label>
             <label className="store-filter-select">
@@ -1067,7 +1061,7 @@ function StorefrontApp() {
               ))}
             </>
           ) : (
-            <CardRow section={{ title: typeLabel(category), subtitle: `${shown.length} matching`, items: shown }} onOpen={open} />
+            <CardRow section={{ title: categories.find((item) => item.id === category)?.label ?? category, subtitle: `${shown.length} matching`, items: shown }} onOpen={open} />
           )}
         </>
       )}

@@ -9,7 +9,14 @@
  * point at. Renaming them all at once would have made this diff about find-and-replace instead of
  * about the design.
  */
-@import url("https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700;800;900&display=swap");
+/* Variable Azrienoch 1.1, verified and copied during the storefront build. */
+@font-face {
+  font-family: "Azrienoch";
+  src: url("/fonts/azrienoch-v1.1.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* Ground */
@@ -76,7 +83,7 @@ body,
 }
 
 body {
-  font-family: Jost, Futura, "Century Gothic", Helvetica, sans-serif;
+  font-family: Azrienoch, Futura, "Century Gothic", Helvetica, sans-serif;
   background: linear-gradient(100deg, #e4c21c 0%, #f0d42a 46%, #d9b615 50%, #f2d82c 54%, #e8c81e 100%);
   background-attachment: fixed;
   color: var(--on-background);
