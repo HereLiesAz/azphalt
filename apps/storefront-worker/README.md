@@ -459,7 +459,9 @@ The deployment verifier also checks `/api/a2a/agents` end to end, failing a brok
 The external fetch uses `redirect: "manual"` because Cloudflare Workers reject the Fetch
 API’s `redirect: "error"` mode; unexpected redirects are rejected via non-2xx status.
 The public proxy **projects only documented fields**, never arbitrary third-party
-registry properties or nested tool/server credentials. This is particularly important for
+registry properties or nested tool/server credentials. Card and metadata URLs with
+private hosts, embedded credentials, queries, or fragments are dropped rather
+than displayed as publicly actionable links. This is particularly important for
 agentregistry MCP Registry v0.1 feeds, which can publish stored Authorization headers.
 The optional SearchA2A `ans_claim` field is kept only when its explicit DNS host and
 publisher-chosen versioned name match; it remains visibly `unverified` and is
