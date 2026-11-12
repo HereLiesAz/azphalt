@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSections, packageTypeKeys, typeLabel } from "../../storefront-react/src/App";
+import { buildSections, heroKeylines, packageTypeKeys, typeLabel } from "../../storefront-react/src/App";
 import type { PackageSummary } from "../../storefront-react/src/api";
 
 const item = (id: string, kind: string, types: string[] = [], mediaDomains: string[] = []): PackageSummary => ({
@@ -36,4 +36,32 @@ describe("storefront type grids", () => {
     expect(sections.find((section) => section.title === "Workflow")?.items.map((p) => p.id))
       .toEqual(["z", "a"]);
   });
+  it("anchors the featured card at a fixed position across focus changes", () => {
+    const initial = heroKeylines(4, 0);
+    const next = heroKeylines(4, 1);
+    expect(initial).toEqual([
+      { left: 24, width: 268 },
+      { left: 304, width: 186 },
+      { left: 502, width: 120 },
+      { left: 634, width: 64 },
+    ]);
+    expect(next).toEqual([
+      { left: -108, width: 120 },
+      { left: 24, width: 268 },
+      { left: 304, width: 186 },
+      { left: 502, width: 120 },
+    ]);
+  });
+
+  it("interpolates both position and width continuously during a drag", () => {
+    expect(heroKeylines(4, 0.5)).toEqual([
+      { left: -79, width: 194 },
+      { left: 127, width: 227 },
+      { left: 366, width: 153 },
+      { left: 531, width: 92 },
+    ]);
+    expect(heroKeylines(1, 999)).toEqual([{ left: 24, width: 268 }]);
+    expect(heroKeylines(0, 0)).toEqual([]);
+  });
+
 });
