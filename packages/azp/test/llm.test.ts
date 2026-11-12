@@ -120,6 +120,35 @@ describe("validateLlmManifest", () => {
     expect(verifyAzp(signed)).toMatchObject({ ok: true, signed: true });
   });
 
+  it("accepts generated A2A setup and pins both script and agent metadata in a signed azp", () => {
+    const endpoint = agentManifest.llm!.endpoint;
+    const withSetup: Omit<Manifest, "files"> = {
+      ...agentManifest,
+      llm: {
+        ...agentManifest.llm!,
+        setup: { sandbox: "github-actions", script: "setup/setup.sh", fetches: [] },
+      },
+    };
+    const { azp } = writeAzp({
+      manifest: withSetup,
+      payload: {
+        "setup/setup.sh": strToU8("#!/usr/bin/env bash\\nset -euo pipefail\\n"),
+        "setup/agent.json": strToU8(JSON.stringify({
+          protocol: "a2a-jsonrpc",
+          baseUrl: "https://weather.example.org/a2a",
+          agentCardUrl: "https://weather.example.org/.well-known/agent-card.json",
+          auth: "none",
+        }) + "\\n"),
+      },
+      license: "MIT\\n",
+    });
+    expect(verifyAzp(azp)).toMatchObject({ ok: true, signed: false });
+    const signer = generateSigningKey();
+    const signed = signAzp(azp, { privateKey: signer.privateKey });
+    expect(verifyAzp(signed)).toMatchObject({ ok: true, signed: true });
+    expect(endpoint.protocols).toEqual(["a2a-jsonrpc"]);
+  });
+
   it("refuses protocol confusion, cross-origin endpoints and setup permissions in A2A headers", () => {
     const errors = (change: (m: Manifest) => void): string => {
       const manifest = clone(agentBuild().manifest);
