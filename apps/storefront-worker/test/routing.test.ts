@@ -218,3 +218,108 @@ describe("SearchA2A external directory", () => {
     }
   });
 });
+
+describe("vendor-neutral MCP Registry v0.1 discovery", () => {
+  it("projects external metadata without leaking credentials, package instructions or tokenized URLs", async () => {
+    const upstream = {
+      servers: [{
+        server: {
+          name: "default/weather", title: "Weather", description: "Forecasts",
+          version: "nightly.2026-Q4",
+          headers: { Authorization: "Bearer secret-registry-token" },
+          packages: [{ identifier: "internal-private-package", env: { API_KEY: "secret" } }],
+          remotes: [
+            { type: "streamable-http", url: "https://mcp.example.com/mcp",
+              headers: { Authorization: "Bearer secret-remote-token" } },
+            { type: "sse", url: "http://localhost:8080/sse" },
+            { type: "streamable-http", url: "https://mcp.example.com/mcp?token=secret" },
+          ],
+        },
+        _meta: { "io.modelcontextprotocol.registry/official": { status: "active" } },
+      }],
+      metadata: { nextCursor: "eyJvZmZzZXQiOjMwfQ" },
+    };
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(upstream), { status: 200 }));
+    try {
+      const response = await get("https://azphalt.store/api/mcp/servers?search=weath%65r");
+      expect(response.status).toBe(200);
+      const output = await response.text();
+      for (const secret of ["secret", "Authorization", "API_KEY", "internal-private-package", "localhost"]) {
+        expect(output).not.toContain(secret);
+      }
+      const doc = JSON.parse(output);
+      expect(doc).toEqual({
+        schema: 1, source: "mcp-registry-v0.1", count: 1,
+        nextCursor: "eyJvZmZzZXQiOjMwfQ",
+        servers: [{
+          kind: "mcp-server", name: "default/weather", title: "Weather",
+          description: "Forecasts", version: "nightly.2026-Q4",
+          verification: "registry_metadata_only", installable: false,
+          remotes: [{ type: "streamable-http", url: "https://mcp.example.com/mcp" }],
+        }],
+      });
+      const target = new URL(String(fetcher.mock.calls[0][0]));
+      expect(target.origin).toBe("https://registry.modelcontextprotocol.io");
+      expect(target.pathname).toBe("/v0.1/servers");
+      expect(target.searchParams.get("search")).toBe("weather");
+      expect(target.searchParams.get("limit")).toBe("30");
+    } finally { fetcher.mockRestore(); }
+  });
+
+  it("supports a fixed compatible registry base and opaque cursor, not user-specified hosts", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(
+      JSON.stringify({ servers: [], metadata: {} }), { status: 200 }));
+    try {
+      const response = await worker.fetch(new Request(
+        "https://azphalt.store/api/mcp/servers?cursor=cGFnZTI="), {
+          ...env(), MCP_REGISTRY_BASE_URL: "https://catalog.example.org/registry",
+        } as never);
+      expect(response.status).toBe(200);
+      const target = new URL(String(fetcher.mock.calls[0][0]));
+      expect(target.origin).toBe("https://catalog.example.org");
+      expect(target.pathname).toBe("/registry/v0.1/servers");
+      expect(target.searchParams.get("cursor")).toBe("cGFnZTI=");
+      expect(target.searchParams.get("limit")).toBe("30");
+      expect(target.searchParams.has("search")).toBe(false);
+    } finally { fetcher.mockRestore(); }
+  });
+
+  it("rejects malformed searches and registry URLs before external traffic", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch");
+    try {
+      expect((await get("https://azphalt.store/api/mcp/servers?search=ab")).status).toBe(400);
+      expect((await get("https://azphalt.store/api/mcp/servers?cursor=%0A")).status).toBe(400);
+      const result = await worker.fetch(new Request("https://azphalt.store/api/mcp/servers"), {
+        ...env(), MCP_REGISTRY_BASE_URL: "http://127.0.0.1:8080",
+      } as never);
+      expect(result.status).toBe(503);
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally { fetcher.mockRestore(); }
+  });
+
+  it("rejects redirects, oversized payloads and deleted server versions", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(null, { status: 302,
+        headers: { Location: "https://unexpected.example/mcp" } }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200,
+        headers: { "Content-Length": "1000001" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        servers: [
+          { server: { name: "hidden/server", version: "custom" },
+            _meta: { "io.modelcontextprotocol.registry/official": { status: "deleted" } } },
+          { server: { name: "visible/server", version: "1.0",
+            remotes: [{ type: "sse", url: "https://tools.example.net/sse" }] } },
+        ],
+      }), { status: 200 }));
+    try {
+      expect((await get("https://azphalt.store/api/mcp/servers")).status).toBe(502);
+      expect((await get("https://azphalt.store/api/mcp/servers")).status).toBe(502);
+      const response = await get("https://azphalt.store/api/mcp/servers");
+      expect(response.status).toBe(200);
+      const page = await response.json() as { count: number; servers: { name: string }[] };
+      expect(page.count).toBe(1);
+      expect(page.servers[0].name).toBe("visible/server");
+    } finally { fetcher.mockRestore(); }
+  });
+});
