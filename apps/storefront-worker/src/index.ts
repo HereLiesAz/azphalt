@@ -3913,7 +3913,7 @@ async function searchExternalMcpServers(req: Request, env: Env): Promise<Respons
     return json({ error: "Search must be 3–120 characters" }, 400);
   }
   const cursor = clientUrl.searchParams.get("cursor") ?? "";
-  if (cursor && !/^[A-Za-z0-9+/_=-]{1,512}$/.test(cursor)) {
+  if (cursor && (cursor.length > 512 || /[\u0000-\u001f\u007f]/.test(cursor))) {
     return json({ error: "Invalid cursor" }, 400);
   }
   let base: URL;
@@ -4024,8 +4024,8 @@ async function searchExternalMcpServers(req: Request, env: Env): Promise<Respons
   const metadata = data.metadata;
   const next = metadata && typeof metadata === "object"
     ? (metadata as Record<string, unknown>).nextCursor : undefined;
-  const nextCursor = typeof next === "string" && /^[A-Za-z0-9+/_=-]{1,512}$/.test(next)
-    ? next : undefined;
+  const nextCursor = typeof next === "string" && next.length > 0 && next.length <= 512 &&
+    !/[\u0000-\u001f\u007f]/.test(next) ? next : undefined;
   return new Response(JSON.stringify({
     schema: 1, source: "mcp-registry-v0.1", count: servers.length, servers,
     ...(nextCursor ? { nextCursor } : {}),
