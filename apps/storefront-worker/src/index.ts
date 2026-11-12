@@ -3804,6 +3804,19 @@ async function searchA2AListings(): Promise<Response> {
   if (listingFeed.schema !== 1 || listingFeed.source !== "searcha2a" || !Array.isArray(listingFeed.listings)) {
     return json({ error: "Unexpected SearchA2A directory format" }, 502);
   }
+  const publicMetadataUrl = (value: unknown): value is string => {
+    if (typeof value !== "string" || value.length > 2048) return false;
+    try {
+      const url = new URL(value);
+      const host = url.hostname.toLowerCase();
+      return url.protocol === "https:" && !url.username && !url.password &&
+        !url.search && !url.hash && (url.port === "" || url.port === "443") &&
+        host.includes(".") && !host.includes(":") &&
+        host !== "localhost" && !host.endsWith(".localhost") &&
+        !host.endsWith(".local") && !host.endsWith(".internal") &&
+        !/^\\d+\\.\\d+\\.\\d+\\.\\d+$/.test(host);
+    } catch { return false; }
+  };
   // Whitelist public metadata. Registry v0.1 feeds can include Authorization headers:
   // a read-only feed must never become a credential exfiltration API.
   const listings = listingFeed.listings.flatMap((item): Record<string, unknown>[] => {
@@ -3811,13 +3824,14 @@ async function searchA2AListings(): Promise<Response> {
     const record = item as Record<string, unknown>;
     if (record.kind !== "a2a-agent" || record.installable !== false ||
         record.verification !== "card_read_only" || typeof record.name !== "string" ||
-        typeof record.source_url !== "string" || !record.source_url.startsWith("https://")) return [];
+        !publicMetadataUrl(record.source_url)) return [];
     const projected: Record<string, unknown> = {
       kind: "a2a-agent", installable: false, verification: "card_read_only",
       name: record.name.slice(0, 160), source_url: record.source_url.slice(0, 2048),
     };
     for (const key of ["id", "description", "endpoint", "discovery_url", "version", "source"]) {
-      if (typeof record[key] === "string") {
+      if (typeof record[key] === "string" &&
+          (!["endpoint", "discovery_url"].includes(key) || publicMetadataUrl(record[key]))) {
         projected[key] = (record[key] as string).slice(0, key === "description" ? 1200 : 2048);
       }
     }
@@ -3848,7 +3862,10 @@ async function searchA2AListings(): Promise<Response> {
       if (v.method === "https-origin-opt-in") {
         const evidence: Record<string, unknown> = { method: "https-origin-opt-in" };
         for (const key of ["proof_url", "checked_at", "expires_at", "host"]) {
-          if (typeof v[key] === "string") evidence[key] = (v[key] as string).slice(0, 2048);
+          if (typeof v[key] === "string" &&
+              (key !== "proof_url" || publicMetadataUrl(v[key]))) {
+            evidence[key] = (v[key] as string).slice(0, 2048);
+          }
         }
         projected.publisher_verification = evidence;
       }
