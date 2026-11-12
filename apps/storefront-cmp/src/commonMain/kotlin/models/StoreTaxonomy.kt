@@ -2,6 +2,7 @@ package models
 
 import com.azphalt.storefront.storefront_cmp.generated.resources.Res
 import kotlinx.serialization.Serializable
+import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlinx.serialization.json.Json
 
 /**
@@ -67,6 +68,7 @@ data class StoreTaxonomy(
 }
 
 /** The same JSON React imports directly; no platform-specific rule duplication. */
+@OptIn(ExperimentalResourceApi::class)
 suspend fun loadStoreTaxonomy(): StoreTaxonomy {
     val source = Res.readBytes("files/store-taxonomy.json").decodeToString()
     return Json { ignoreUnknownKeys = true }.decodeFromString<StoreTaxonomy>(source).also {
