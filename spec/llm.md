@@ -51,8 +51,7 @@ An `llm` package declares one **tier**, which fixes where prompts go:
 
 ## The package (`kind: "llm"`)
 
-A normal signed `.azp` whose `kind` is `"llm"`. Its manifest adds one block, `llm`; its payload
-carries the setup script (integrity-covered by `manifest.files`).
+A normal signed `.azp` whose `kind` is `"llm"`. Its manifest adds one block, `llm`. Standard model packages carry a setup script (integrity-covered by `manifest.files`); **direct A2A agent headers contain no setup script or executable payload**. They reuse the same Ed25519 package signature and trusted-publisher checks without inventing a new package kind.
 
 ~~~jsonc
 {
@@ -144,7 +143,7 @@ The weights are cached between runs (§ Sandbox); the Actions cache needs no ent
 - **`inputs[]`** — values the host prompts for (provider keys and the like), never stored in the
   package. Same shape and `${input:<id>}` substitution as `mcp-server.md § Inputs & secrets`, plus
   `optional: true` for a key the model works without.
-- **`setup`** — required, for every tier (§ Setup).
+- **`setup`** — required except for `endpoint` tier packages with only `a2a-jsonrpc` (§ Direct A2A agents).
 - **`weights`** — required for `sandbox-weights`, forbidden for `endpoint`.
   `{ runtime, files[], requirements?, modelLicense? }`:
   - `runtime` names the inference runtime the setup script installs (open vocabulary, e.g.
@@ -156,7 +155,7 @@ The weights are cached between runs (§ Sandbox); the Actions cache needs no ent
   - `modelLicense` carries the weights' own terms, in the shape of
     `extension-manifest.md § Model license`; a host MUST surface it before install.
 - **`endpoint`** — how the host talks to the model once set up (§ Protocols). Required.
-  - `protocols` — a non-empty subset of `openai-chat`, `moyai-session`, `github-actions-runner`. `sandbox-weights`
+  - `protocols` — a non-empty subset of `openai-chat`, `moyai-session`, `github-actions-runner`, `a2a-jsonrpc`.  `sandbox-weights`
     permits only `github-actions-runner`.
   - `baseUrl` — required for direct endpoint protocols (`openai-chat`, `moyai-session`). It MUST be an
     `https://` URL or a full `${input:<id>}` reference to a declared non-secret input that the host resolves
@@ -171,9 +170,43 @@ The weights are cached between runs (§ Sandbox); the Actions cache needs no ent
   (URL). A host MUST surface it before install, like `modelLicense`.
 - **`role`** — open vocabulary routing hint, as for model assets; `text-generation` is blessed.
 
+## Direct A2A agents (`endpoint.protocols: ["a2a-jsonrpc"]`)
+
+An A2A agent is a remote **agent endpoint**, not a model offering OpenAI chat completions. An Azphalt `kind: "llm"` package can describe it as a *signed, header-only connection definition*, while the host's A2A client uses the A2A protocol.
+
+```json
+{
+  "azphalt": "0.1",
+  "id": "org.example.azphalt.agent.weather",
+  "name": "Weather Agent",
+  "version": "1.0.0",
+  "kind": "llm",
+  "license": "MIT",
+  "compat": ">=0.1",
+  "description": "Agent Card-based remote service. Host verification does not guarantee safe behavior.",
+  "llm": {
+    "tier": "endpoint",
+    "endpoint": {
+      "protocols": ["a2a-jsonrpc"],
+      "baseUrl": "https://weather.example.org/a2a",
+      "agentCardUrl": "https://weather.example.org/.well-known/agent-card.json",
+      "auth": "none"
+    },
+    "dataHandling": { "prompts": "unknown", "operator": "weather.example.org" },
+    "role": "agent"
+  }
+}
+```
+
+There is **no `llm.setup`**, `llm.run`, `endpoint.defaultModel`, or bundled workflow. The validator permits this omission **only** when `a2a-jsonrpc` is the sole protocol of an `endpoint` tier package. Both `baseUrl` and `agentCardUrl` must be public HTTPS URLs on the same origin with no credentials, non-default port, query string, or fragment. A2A and OpenAI/Moyai protocols cannot share a header.
+
+An A2A-capable host **MUST** verify the signed `.azp` and the signer's trusted key, disclose the remote origin and unknown prompt-handling policy, obtain user consent, then fetch and validate the **current** Agent Card. It must verify that the live JSON-RPC endpoint is still on the signed package's origin and re-check requested credentials and capabilities before sending anything. An outdated card, vanished origin proof, changed endpoint, or revoked signing key prevents a new connection. Signed metadata proves Azphalt packaged a previously reviewed connection description, **not** an independently certified agent identity, runtime health, or permission to execute tasks. An OpenAI-only or GitHub-runner-only host must refuse this protocol without attempting setup.
+
+For automated store submissions, SearchA2A requires a publisher-controlled, same-origin, short-lived opt-in proof at `/.well-known/azphalt-a2a-verification.json` and a fresh Agent Card before proposing source. Azphalt's existing submission and signed registry build, not SearchA2A, produces the final signed `.azp` with normal publisher pinning and immutable versions. A first-party signature identifies the Azphalt packaging authority, not the third-party A2A operator.
+
 ## Setup
 
-Every `llm` package carries a setup script, even when all it has to do is confirm that a GitHub token
+Every sandbox-backed or model `llm` package carries a setup script (direct A2A agent headers are the only exception), even when all it has to do is confirm that a GitHub token
 with the needed permissions exists. Setup is **off-device only**.
 
 - **`sandbox`** — where setup and the model run. `0.1` defines only `github-actions`. A host MUST NOT
@@ -345,7 +378,7 @@ and signature checks:
 - `llm.tier` is `endpoint` or `sandbox-weights`; `weights` is present exactly when the tier is
   `sandbox-weights`, and every `weights.files[]` member has `remoteUrl`, a `sha256-` `checksum`, and
   `byteSize`.
-- `llm.setup` is present; `setup.sandbox` is a known value; `setup.script` names a path in
+- `llm.setup` is present except for direct, A2A-only endpoint headers; `setup.sandbox` is a known value when present; `setup.script` names a path in
   `manifest.files`; every `setup.fetches[]` entry has `url` and a `sha256-` `checksum`.
 - `llm.endpoint.protocols` is non-empty and allowed for the tier; direct endpoint protocols require an
   `https://` `baseUrl` or a full declared `${input:...}` URL reference; a bearer `auth` names an `authInput`
