@@ -3804,11 +3804,79 @@ async function searchA2AListings(): Promise<Response> {
   if (listingFeed.schema !== 1 || listingFeed.source !== "searcha2a" || !Array.isArray(listingFeed.listings)) {
     return json({ error: "Unexpected SearchA2A directory format" }, 502);
   }
-  const listings = listingFeed.listings.filter((item): item is Record<string, unknown> =>
-    !!item && typeof item === "object" && item.kind === "a2a-agent" && item.installable === false &&
-    item.verification === "card_read_only" && typeof item.name === "string" &&
-    typeof item.source_url === "string" && item.source_url.startsWith("https://")
-  ).slice(0, 200);
+  // Whitelist public metadata. Registry v0.1 feeds can include Authorization headers:
+  // a read-only feed must never become a credential exfiltration API.
+  const listings = listingFeed.listings.flatMap((item): Record<string, unknown>[] => {
+    if (!item || typeof item !== "object") return [];
+    const record = item as Record<string, unknown>;
+    if (record.kind !== "a2a-agent" || record.installable !== false ||
+        record.verification !== "card_read_only" || typeof record.name !== "string" ||
+        typeof record.source_url !== "string" || !record.source_url.startsWith("https://")) return [];
+    const projected: Record<string, unknown> = {
+      kind: "a2a-agent", installable: false, verification: "card_read_only",
+      name: record.name.slice(0, 160), source_url: record.source_url.slice(0, 2048),
+    };
+    for (const key of ["id", "description", "endpoint", "discovery_url", "version", "source"]) {
+      if (typeof record[key] === "string") {
+        projected[key] = (record[key] as string).slice(0, key === "description" ? 1200 : 2048);
+      }
+    }
+    if (Array.isArray(record.skills)) {
+      projected.skills = record.skills.slice(0, 40).flatMap((raw): Record<string, unknown>[] => {
+        if (!raw || typeof raw !== "object" || typeof raw.name !== "string") return [];
+        const skill: Record<string, unknown> = { name: raw.name.slice(0, 160) };
+        if (typeof raw.description === "string") skill.description = raw.description.slice(0, 500);
+        if (Array.isArray(raw.tags)) skill.tags = raw.tags.filter((tag: unknown): tag is string =>
+          typeof tag === "string").slice(0, 20).map((tag: string) => tag.slice(0, 70));
+        return [skill];
+      });
+    }
+    for (const key of ["protocols", "security_schemes"]) {
+      if (Array.isArray(record[key])) {
+        projected[key] = (record[key] as unknown[]).filter((value): value is string =>
+          typeof value === "string").slice(0, 40).map(value => value.slice(0, 80));
+      }
+    }
+    if (record.capabilities && typeof record.capabilities === "object" &&
+        !Array.isArray(record.capabilities)) {
+      projected.capabilities = Object.fromEntries(Object.entries(record.capabilities)
+        .filter(([, value]) => typeof value === "boolean").slice(0, 40));
+    }
+    const proof = record.publisher_verification;
+    if (proof && typeof proof === "object" && !Array.isArray(proof)) {
+      const v = proof as Record<string, unknown>;
+      if (v.method === "https-origin-opt-in") {
+        const evidence: Record<string, unknown> = { method: "https-origin-opt-in" };
+        for (const key of ["proof_url", "checked_at", "expires_at", "host"]) {
+          if (typeof v[key] === "string") evidence[key] = (v[key] as string).slice(0, 2048);
+        }
+        projected.publisher_verification = evidence;
+      }
+    }
+    const candidate = record.ans_claim;
+    if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
+      const claim = candidate as Record<string, unknown>;
+      if (typeof claim.name === "string" && typeof claim.agent_host === "string" &&
+          claim.verification === "unverified" && claim.name.length <= 259 &&
+          claim.agent_host.length <= 237) {
+        const host = claim.agent_host.toLowerCase();
+        const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/i;
+        const hostLabels = host.split(".");
+        const name = claim.name.toLowerCase();
+        const version = name.startsWith("ans://") && name.endsWith("." + host)
+          ? name.slice(6, -host.length - 1) : "";
+        if (hostLabels.length >= 2 && hostLabels.every(labelPart => label.test(labelPart)) &&
+            !host.endsWith(".local") && !host.endsWith(".internal") &&
+            !host.endsWith(".localhost") &&
+            version.split(".").every(labelPart => label.test(labelPart))) {
+          projected.ans_claim = {
+            name: claim.name, agent_host: claim.agent_host, verification: "unverified",
+          };
+        }
+      }
+    }
+    return [projected];
+  }).slice(0, 200);
   return new Response(JSON.stringify({ schema: 1, source: "searcha2a", listings, count: listings.length }), {
     headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" },
   });
