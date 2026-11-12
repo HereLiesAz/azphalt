@@ -237,7 +237,7 @@ describe("vendor-neutral MCP Registry v0.1 discovery", () => {
         },
         _meta: { "io.modelcontextprotocol.registry/official": { status: "active" } },
       }],
-      metadata: { nextCursor: "eyJvZmZzZXQiOjMwfQ" },
+      metadata: { nextCursor: "default/weather:nightly.2026-Q4" },
     };
     const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify(upstream), { status: 200 }));
@@ -251,7 +251,7 @@ describe("vendor-neutral MCP Registry v0.1 discovery", () => {
       const doc = JSON.parse(output);
       expect(doc).toEqual({
         schema: 1, source: "mcp-registry-v0.1", count: 1,
-        nextCursor: "eyJvZmZzZXQiOjMwfQ",
+        nextCursor: "default/weather:nightly.2026-Q4",
         servers: [{
           kind: "mcp-server", name: "default/weather", title: "Weather",
           description: "Forecasts", version: "nightly.2026-Q4",
@@ -272,14 +272,14 @@ describe("vendor-neutral MCP Registry v0.1 discovery", () => {
       JSON.stringify({ servers: [], metadata: {} }), { status: 200 }));
     try {
       const response = await worker.fetch(new Request(
-        "https://azphalt.store/api/mcp/servers?cursor=cGFnZTI="), {
+        "https://azphalt.store/api/mcp/servers?cursor=default%2Fweather%3Anightly.2026-Q4"), {
           ...env(), MCP_REGISTRY_BASE_URL: "https://catalog.example.org/registry",
         } as never);
       expect(response.status).toBe(200);
       const target = new URL(String(fetcher.mock.calls[0][0]));
       expect(target.origin).toBe("https://catalog.example.org");
       expect(target.pathname).toBe("/registry/v0.1/servers");
-      expect(target.searchParams.get("cursor")).toBe("cGFnZTI=");
+      expect(target.searchParams.get("cursor")).toBe("default/weather:nightly.2026-Q4");
       expect(target.searchParams.get("limit")).toBe("30");
       expect(target.searchParams.has("search")).toBe(false);
     } finally { fetcher.mockRestore(); }
