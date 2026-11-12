@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import worker from "../src/index";
 import { assets, baseVars, durableState } from "./harness";
 
@@ -95,5 +95,41 @@ describe("cross-origin reads", () => {
     expect(page.headers.get("access-control-allow-origin")).toBeNull();
     const publish = await worker.fetch(new Request("https://azphalt.store/packages", { method: "POST", body: "x" }), env());
     expect(publish.headers.get("access-control-allow-origin")).toBeNull();
+  });
+});
+
+describe("SearchA2A external directory", () => {
+  it("reads the public GitHub mirror and exposes only non-installable cards", async () => {
+    const valid = {
+      id: "external.a2a.0123456789abcdefabcd", name: "Weather Agent", kind: "a2a-agent",
+      source_url: "https://agents.example/.well-known/agent-card.json",
+      verification: "card_read_only", installable: false, skills: [{ name: "forecast" }],
+    };
+    const invalid = { ...valid, id: "external.a2a.abcdef0123456789abcd", name: "Unsafe install", installable: true };
+    const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
+      schema: 1, source: "searcha2a", listings: [valid, invalid],
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    try {
+      const res = await get("https://azphalt.store/api/a2a/agents");
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ schema: 1, source: "searcha2a", count: 1, listings: [valid] });
+      expect(network).toHaveBeenCalledOnce();
+      expect(network.mock.calls[0][0]).toBe(
+        "https://raw.githubusercontent.com/HereLiesAz/searcha2a/agent-feed/site/api/v1/azphalt-listings.json",
+      );
+    } finally {
+      network.mockRestore();
+    }
+  });
+
+  it("returns 502 instead of inventing results when the mirrored feed is unavailable", async () => {
+    const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("not found", { status: 404 }));
+    try {
+      const res = await get("https://azphalt.store/api/a2a/agents");
+      expect(res.status).toBe(502);
+      expect((await res.json()).error).toBe("SearchA2A directory temporarily unavailable");
+    } finally {
+      network.mockRestore();
+    }
   });
 });
