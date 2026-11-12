@@ -302,7 +302,7 @@ describe("vendor-neutral MCP Registry v0.1 discovery", () => {
     try {
       const response = await worker.fetch(new Request(
         "https://azphalt.store/api/mcp/servers?cursor=default%2Fweather%3Anightly.2026-Q4"), {
-          ...env(), MCP_REGISTRY_BASE_URL: "https://catalog.example.org/registry",
+          ...(env() as object), MCP_REGISTRY_BASE_URL: "https://catalog.example.org/registry",
         } as never);
       expect(response.status).toBe(200);
       const target = new URL(String(fetcher.mock.calls[0][0]));
@@ -320,7 +320,7 @@ describe("vendor-neutral MCP Registry v0.1 discovery", () => {
       expect((await get("https://azphalt.store/api/mcp/servers?search=ab")).status).toBe(400);
       expect((await get("https://azphalt.store/api/mcp/servers?cursor=%0A")).status).toBe(400);
       const result = await worker.fetch(new Request("https://azphalt.store/api/mcp/servers"), {
-        ...env(), MCP_REGISTRY_BASE_URL: "http://127.0.0.1:8080",
+        ...(env() as object), MCP_REGISTRY_BASE_URL: "http://127.0.0.1:8080",
       } as never);
       expect(result.status).toBe(503);
       expect(fetcher).not.toHaveBeenCalled();
