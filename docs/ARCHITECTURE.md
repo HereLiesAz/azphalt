@@ -31,6 +31,24 @@ Each is enforced in code; the reference is where.
 
 Keeping these separable is the core constraint: anyone can implement azphalt and even run their own store; yours is just the flagship.
 
+## External ANS interoperability
+
+SearchA2A discovers external A2A metadata. The public Store's `/agents`
+directory is a **read-only catalog of leads**, not a path to `.azp`
+installation. It consumes a bounded SearchA2A feed through the Store's
+credential-sanitizing Worker proxy. A publisher may claim a versioned
+`ans://<version>.<agentHost>` name without Store-imposed SemVer rules.
+The Store displays that claim as **unverified**. Its independent package
+signing establishes an Azphalt package's integrity, not the identity or
+authorization of the remote agent.
+
+Aive may consume the same discovery claim either directly from SearchA2A
+or from the mirrored Store feed; only its keeper's explicit connection
+and fresh A2A Agent Card validation can enable a provider. Neither
+agentregistry, agentgateway nor kagent is made a mandatory runtime or
+trust authority. Their compatible discovery, gateway and Kubernetes
+interfaces remain potential replaceable adapters.
+
 ## Why azphalt is a separate repo from its hosts
 
 - **Credible neutrality.** A standard trapped in an app's repo reads as that app's private thing, and no competitor adopts it. Separation is the first structural signal that it's shared infrastructure.
