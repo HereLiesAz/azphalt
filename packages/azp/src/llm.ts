@@ -15,7 +15,7 @@ import type { Manifest } from "@azphalt/azdk";
 
 const TIERS = new Set(["endpoint", "sandbox-weights"]);
 const SANDBOXES = new Set(["github-actions"]);
-const PROTOCOLS = new Set(["openai-chat", "github-actions-runner", "moyai-session"]);
+const PROTOCOLS = new Set(["openai-chat", "github-actions-runner", "moyai-session", "a2a-jsonrpc"]);
 const AUTH = new Set(["none", "optional-bearer", "required-bearer"]);
 const PROMPTS = new Set(["not-retained", "logged", "may-train", "unknown"]);
 /** Highest level each runner permission may take; anything unlisted is forbidden. */
@@ -60,6 +60,22 @@ function endpointUrl(value: unknown, declared: Set<string>): boolean {
   return !!ref && declared.has(ref[1]);
 }
 
+/** Strict origin pin for packaged A2A endpoints: no credentials, local IP or alternate ports. */
+function publicA2aOrigin(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 2048) return null;
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase().replace(/\.$/, "");
+    if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
+        url.port || host === "localhost" || host.endsWith(".local") ||
+        host.endsWith(".localhost") || host.endsWith(".internal") ||
+        !host.includes(".") || /^[0-9.]+$/.test(host) || host.includes(":")) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 export function validateLlmManifest(manifest: Manifest): string[] {
   const errors: string[] = [];
   const llm = manifest.llm as unknown;
@@ -96,10 +112,14 @@ export function validateLlmManifest(manifest: Manifest): string[] {
     }
   }
 
-  // Setup.
+  // A2A-only hosted agents are remote service headers. Nothing is set up or executed
+  // in a GitHub Actions sandbox, so a script and setup credentials are inappropriate.
+  const protocolsForSetup = isObject(llm.endpoint) ? llm.endpoint.protocols : undefined;
+  const a2aOnly = tier === "endpoint" && Array.isArray(protocolsForSetup) &&
+    protocolsForSetup.length === 1 && protocolsForSetup[0] === "a2a-jsonrpc";
   const setup = llm.setup;
   if (!isObject(setup)) {
-    errors.push("llm: setup is required");
+    if (!a2aOnly || setup !== undefined) errors.push("llm: setup is required except for a2a-jsonrpc-only endpoint headers");
   } else {
     if (typeof setup.sandbox !== "string" || !SANDBOXES.has(setup.sandbox)) {
       errors.push("llm: setup.sandbox must be github-actions");
@@ -196,6 +216,18 @@ export function validateLlmManifest(manifest: Manifest): string[] {
     }
     if (endpoint.baseUrl !== undefined && !endpointUrl(endpoint.baseUrl, declared)) {
       errors.push("llm: endpoint.baseUrl must be https:// with no credentials or a declared ${input:…} URL");
+    }
+    if (Array.isArray(protocols) && protocols.includes("a2a-jsonrpc")) {
+      if (!a2aOnly) errors.push("llm: a2a-jsonrpc must be the sole protocol of an endpoint-tier package");
+      const cardOrigin = publicA2aOrigin(endpoint.agentCardUrl);
+      const apiOrigin = publicA2aOrigin(endpoint.baseUrl);
+      if (!cardOrigin || !apiOrigin || cardOrigin !== apiOrigin) {
+        errors.push("llm: a2a-jsonrpc requires public HTTPS agentCardUrl and baseUrl on the same origin");
+      }
+      if (endpoint.defaultModel !== undefined) errors.push("llm: a2a-jsonrpc does not declare defaultModel");
+      if (llm.run !== undefined) errors.push("llm: a2a-jsonrpc has no sandbox run permissions");
+    } else if (endpoint.agentCardUrl !== undefined) {
+      errors.push("llm: endpoint.agentCardUrl is only for a2a-jsonrpc");
     }
     if (typeof endpoint.auth !== "string" || !AUTH.has(endpoint.auth)) {
       errors.push("llm: endpoint.auth must be none, optional-bearer, or required-bearer");
