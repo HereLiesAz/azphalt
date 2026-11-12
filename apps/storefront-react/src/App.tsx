@@ -1599,7 +1599,7 @@ function AgentDirectoryPage() {
 
   const terms = query.trim().toLowerCase();
   const filtered = agents.filter((agent) =>
-    !terms || [agent.name, agent.description, agent.endpoint, ...agent.skills.flatMap((skill) =>
+    !terms || [agent.name, agent.description, agent.endpoint, agent.ans_claim?.name ?? "", ...agent.skills.flatMap((skill) =>
       [skill.name, skill.description, ...(Array.isArray(skill.tags) ? skill.tags : [])])]
       .some((value) => typeof value === "string" && value.toLowerCase().includes(terms))
   );
@@ -1631,6 +1631,9 @@ function AgentDirectoryPage() {
               EXTERNAL A2A · CARD ONLY
             </div>
             <h2 style={{ fontSize: 20, margin: "10px 0 8px" }}>{agent.name}</h2>
+            {agent.ans_claim && <p style={{ fontSize: 12, color: "var(--on-surface-variant)", overflowWrap: "anywhere" }}>
+              <strong>ANS claim (unverified): </strong>{agent.ans_claim.name}
+            </p>}
             <p style={{ fontSize: 14, color: "var(--on-surface-variant)", whiteSpace: "pre-wrap" }}>
               {agent.description || "No description supplied by the Agent Card."}
             </p>
