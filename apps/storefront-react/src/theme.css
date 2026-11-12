@@ -215,25 +215,68 @@ textarea.field {
      width only.) */
 }
 
-/* Plain browse rows below the hero carousel: uniform cards, horizontal scroll, no mask. */
-.card-row {
-  display: flex;
-  /* Scaled with the cards. At 20px against a 244px card the gaps read as part of the rhythm rather
-     than as separation. */
+/* All catalog sections use the same responsive grid, never a horizontal card strip. */
+.catalog-section {
+  margin-bottom: 32px;
+}
+.catalog-section-heading, .catalog-results-heading {
+  padding: 0 24px 14px;
+}
+.catalog-section-heading h2, .catalog-results-heading h2 {
+  font-size: 22px;
+  font-weight: 720;
+  margin: 0;
+}
+.catalog-section-subtitle, .catalog-results-heading > div {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+  margin-top: 2px;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 14px;
+  padding: 0 24px 8px;
+}
+.catalog-grid-item {
+  min-width: 0;
+}
+.catalog-grid-item > .pkg-card {
+  width: 100%;
+}
+.store-filter-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 10px;
   overflow-x: auto;
-  scroll-snap-type: x proximity;
-  padding: 0 24px 6px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  overscroll-behavior-x: contain;
+  padding: 8px 0 4px;
 }
-.card-row::-webkit-scrollbar {
-  display: none;
+.store-filter-select {
+  display: flex;
+  flex: 1 0 130px;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--on-surface-variant);
 }
-.row-item {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
+.store-filter-select select {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 28px 8px 14px;
+  background: var(--surface-highest);
+  color: var(--on-surface);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.store-filter-select select:focus-visible {
+  outline: 2px solid var(--on-surface);
+  outline-offset: 2px;
 }
 
 /* Not a card: the Capsule system has no bordered surfaces. Full radius, solid fill, no border, no
