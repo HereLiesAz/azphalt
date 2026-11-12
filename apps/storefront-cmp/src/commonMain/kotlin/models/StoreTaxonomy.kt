@@ -1,6 +1,6 @@
 package models
 
-import azphalt.storefront.resources.Res
+import com.azphalt.storefront.storefront_cmp.generated.resources.Res
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
