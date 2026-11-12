@@ -188,31 +188,66 @@ textarea.field {
   min-height: 44px;
 }
 
-/* ── M3 Expressive hero carousel ──
-   A horizontal, scroll-snapping strip. Each item is a fixed-width card inside a mask whose width is
-   driven by scroll position (see App.tsx): the focused card is full width, neighbours peek smaller —
-   the multi-browse "hero" layout. The mask clips (never squishes) the card. */
-.carousel {
+/* M3 Expressive start-aligned hero: the visible card width changes at a fixed
+   keyline. The track is stable, rather than scrolling a series of resized slots. */
+.expressive-hero-section {
+  margin-bottom: 34px;
+}
+.expressive-hero-heading {
+  padding: 0 24px 16px;
   display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: 12px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  padding: 0 24px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  overscroll-behavior-x: contain;
 }
-.carousel::-webkit-scrollbar {
-  display: none;
+.expressive-hero-heading h2 {
+  font-size: 26px;
+  font-weight: 760;
+  margin: 0;
 }
-.carousel-item {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-  overflow: hidden; /* the mask */
-  /* Height comes from the inline style in App.tsx (HERO_H). A number here was a second, stale copy
-     of that one — it read as the source of the card's height while being overridden on every render,
-     so shrinking the cards left it untouched and still saying 300. (The scroll handler animates
-     width only.) */
+.expressive-hero-actions {
+  display: flex;
+  gap: 8px;
+}
+.expressive-hero-actions .chip {
+  font-size: 22px;
+  padding: 0;
+  width: 44px;
+  flex: 0 0 44px;
+}
+.expressive-hero-actions .chip:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.expressive-hero-track {
+  position: relative;
+  width: 100%;
+  height: 282px;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  outline-offset: -3px;
+}
+.expressive-hero-track[data-dragging="true"] {
+  cursor: grabbing;
+}
+.expressive-hero-item {
+  position: absolute;
+  top: 0;
+  overflow: hidden;
+  border-radius: 26px;
+  transition: left 460ms cubic-bezier(.2, 0, 0, 1), width 460ms cubic-bezier(.2, 0, 0, 1);
+  will-change: left, width;
+}
+.expressive-hero-item > .pkg-card {
+  width: 100%;
+}
+.expressive-hero-track[data-dragging="true"] .expressive-hero-item {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .expressive-hero-item { transition: none; }
 }
 
 /* All catalog sections use the same responsive grid, never a horizontal card strip. */
