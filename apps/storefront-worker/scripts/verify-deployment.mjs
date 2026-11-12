@@ -54,4 +54,11 @@ await eventually("Aive workflow in the app-scoped catalog", () =>
   packageVisible("feature-delivery", "com.hereliesaz.haive.feature-delivery", "workflow"));
 await eventually("Aive role in the app-scoped catalog", () =>
   packageVisible("ux-researcher", "com.hereliesaz.haive.role.ux-researcher", "role"));
+await eventually("SearchA2A read-only directory", async () => {
+  const res = await fetch(`${base}/api/a2a/agents`, { redirect: "manual" });
+  if (!res.ok) throw new Error("/api/a2a/agents answered " + res.status);
+  const feed = await res.json();
+  return feed.schema === 1 && feed.source === "searcha2a" &&
+    Array.isArray(feed.listings) && feed.count === feed.listings.length;
+});
 console.log("verify-deployment: " + base + " is serving this build");

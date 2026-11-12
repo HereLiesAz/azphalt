@@ -455,6 +455,7 @@ Cloudflare Worker subrequests to `searcha2a.azphalt.store` on the store's own zo
 returned HTTP 502. `searcha2a`'s daily Pages Action maintains both publications;
 the mirror is **public metadata**, not a separately curated source. The store validates
 schema and per-listing read-only markers, and never treats these as installable `.azp` packages.
+The deployment verifier also checks `/api/a2a/agents` end to end, failing a broken feed deployment.
 
 All four are attached. What remains of the move off Vercel:
 
