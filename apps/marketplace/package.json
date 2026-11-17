@@ -14,8 +14,8 @@
     "@azphalt/azdk": "workspace:*",
     "@azphalt/repository-client": "workspace:*",
     "@azphalt/web-handoff": "workspace:*",
-    "framer-motion": "^14.10.1",
-    "lucide-react": "^1.70.0",
+    "framer-motion": "^14.14.0",
+    "lucide-react": "^1.73.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
@@ -23,9 +23,9 @@
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.2.1",
-    "oxlint": "^1.92.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "oxlint": "^1.93.0",
     "typescript": "~7.0.2",
-    "vite": "^8.3.6"
+    "vite": "^8.3.8"
   }
 }
