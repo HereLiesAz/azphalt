@@ -7,7 +7,7 @@ plugins {
     id("com.android.application") version "9.5.1"
     // Applied conditionally below — it hard-fails when google-services.json is absent, and that file
     // is a secret this repository does not carry. See `firebaseConfigured`.
-    id("com.google.gms.google-services") version "4.5.0" apply false
+    id("com.google.gms.google-services") version "4.6.0" apply false
 }
 
 /**
@@ -164,7 +164,7 @@ kotlin {
                 // Bundles the verified Azrienoch font and the portable storefront taxonomy.
                 implementation(compose.components.resources)
                 implementation(compose.ui)
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.13.0")
             }
         }
         val wasmJsMain by getting
@@ -206,7 +206,7 @@ kotlin {
                     // `project.dependencies.platform(...)`, not a bare `platform(...)`: a multiplatform
                     // source set's dependency block is a KotlinDependencyHandler, which has no
                     // platform() of its own, so the BOM has to be built through the project's handler.
-                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:35.1.0"))
+                    implementation(project.dependencies.platform("com.google.firebase:firebase-bom:35.2.0"))
                     implementation("com.google.firebase:firebase-analytics")
                 }
             }

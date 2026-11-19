@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
-        with: { node-version: '24' }
+        with: { node-version: '26' }
       - run: npm install --no-audit --no-fund
       - run: npm run build
       - name: Sign the .azp
