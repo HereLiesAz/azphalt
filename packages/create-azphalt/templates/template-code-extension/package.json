@@ -12,7 +12,7 @@
     "@azphalt/azdk": "^0.8.0"
   },
   "devDependencies": {
-    "@azphalt/runtime-reference": "^0.2.0"
+    "@azphalt/runtime-reference": "^0.2.2"
   },
   "license": "MIT",
   "author": "Your Name"

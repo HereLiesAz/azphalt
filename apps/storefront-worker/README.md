@@ -102,7 +102,7 @@ decrypts the key in memory, refuses any key that is not the pinned root
 (`MCowBQYDK2VwAyEAjVS5e0Si26c3lzFyqnuW7VwMUmnwRF5AmBUBzYwrh6M=`), and prints the endorsement as one
 JSON line. Nothing is written to disk.
 
-Step by step, on Windows in PowerShell, from a checkout of this repository (Node 24 or later):
+Step by step, on Windows in PowerShell, from a checkout of this repository (Node 26 or later):
 
 ~~~powershell
 # 1. Read the two public keys the store serves now.
