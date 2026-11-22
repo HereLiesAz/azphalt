@@ -11,6 +11,10 @@
  * counterpart, deliberately making the same decisions in the same order. Two storefronts that
  * disagree about what pressing Install does would be two products wearing one name.
  */
+import { isInstalled } from "./not-installed.js";
+
+export * from "./not-installed.js";
+
 /**
  * The minimum a package must look like for this module to act on it.
  *
@@ -137,14 +141,15 @@ export function forgetInstall(
 }
 
 /**
- * Whether the viewer has this package.
+ * Whether the viewer has this package, installed and usable.
  *
- * `removed` is kept rather than deleted so a reinstall can be offered, so "has it" is a question
- * about the state and not about the key being present.
+ * `removed`, `downloaded` and `failed` are kept rather than deleted so a reinstall, install or retry
+ * can be offered — and none of them is installed, so "has it" is a question about the state and not
+ * about the key being present. (`downloaded` and `failed` used to count: a card could say it was
+ * installed about bytes that never were. See `not-installed.ts`.)
  */
 export function isHeld(inventory: Record<string, InventoryEntry>, id: string): boolean {
-  const s = inventory[id]?.state;
-  return s !== undefined && s !== "removed";
+  return isInstalled(inventory[id]);
 }
 
 /**

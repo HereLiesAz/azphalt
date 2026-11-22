@@ -344,6 +344,17 @@ body {
   gap: 8px;
 }
 
+/* 48px targets and a visible focus ring for the not-installed actions: `.btn` removes the browser's
+   outline, so without this a keyboard user could not see where they were. */
+.not-installed-panel .btn {
+  min-height: 48px;
+  text-decoration: none;
+}
+.not-installed-panel .btn:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
 .btn-large {
   padding: 16px 32px;
   font-size: 1.1rem;

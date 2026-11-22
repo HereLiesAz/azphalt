@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import theme.CapsuleShape
@@ -117,6 +118,10 @@ private fun HandoffFlow(
     // The package the user pressed Install on, while it is being bought / downloaded / verified.
     var acquiring by remember { mutableStateOf<PackageSummary?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
+    // The package whose acquisition just failed, so the failure can offer to run it again rather than
+    // leaving the user to find the package and start over. Null for failures with nothing to retry
+    // (the catalogue not loading).
+    var retryPkg by remember { mutableStateOf<PackageSummary?>(null) }
 
     val session = remember(request, callerLabel) {
         HandoffSession(
@@ -180,8 +185,34 @@ private fun HandoffFlow(
             shape = CapsuleShape.Panel,
             onDismissRequest = { failure = null },
             confirmButton = {
-                TextButton(onClick = { failure = null }, shape = CapsuleShape.Full) { Text("OK") }
+                val again = retryPkg
+                if (again != null) {
+                    TextButton(
+                        onClick = {
+                            failure = null
+                            retryPkg = null
+                            acquiring = again
+                        },
+                        shape = CapsuleShape.Full,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("Retry install") }
+                } else {
+                    TextButton(
+                        onClick = { failure = null },
+                        shape = CapsuleShape.Full,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("OK") }
+                }
             },
+            dismissButton = if (retryPkg != null) {
+                {
+                    TextButton(
+                        onClick = { failure = null; retryPkg = null },
+                        shape = CapsuleShape.Full,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("Close") }
+                }
+            } else null,
             title = { Text("Couldn't finish") },
             text = { Text(message) },
         )
@@ -198,6 +229,7 @@ private fun HandoffFlow(
                 val activity = context as? Activity
                     ?: return@LaunchedEffect run {
                         failure = "no activity for the purchase flow"
+                        retryPkg = pkg
                         acquiring = null
                     }
                 when (val outcome = Billing(context).purchase(activity, pkg.id, request.repository)) {
@@ -207,6 +239,7 @@ private fun HandoffFlow(
                     is PurchaseOutcome.Cancelled -> return@LaunchedEffect run { acquiring = null }
                     is PurchaseOutcome.Failed -> return@LaunchedEffect run {
                         failure = outcome.message
+                        retryPkg = pkg
                         acquiring = null
                     }
                 }
@@ -229,6 +262,7 @@ private fun HandoffFlow(
             onAcquired(acquired)
         } catch (e: Exception) {
             failure = e.message ?: "verification failed"
+            retryPkg = pkg
             acquiring = null
         }
     }

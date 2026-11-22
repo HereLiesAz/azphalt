@@ -65,15 +65,18 @@ actual suspend fun attemptHandoff(link: String): Boolean {
 actual fun downloadUrl(id: String, version: String): String =
     "$DEFAULT_REPOSITORY/packages/$id/versions/$version/download"
 
-actual fun openExternal(url: String) {
-    if (!isSafeExternalUrl(url, allowMarket = true)) return
-    val context = AndroidAppContext.get() ?: return
+actual fun openExternal(url: String): Boolean {
+    if (!isSafeExternalUrl(url, allowMarket = true)) return false
+    val context = AndroidAppContext.get() ?: return false
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
-    try {
+    return try {
         context.startActivity(intent)
+        true
     } catch (_: ActivityNotFoundException) {
-        // A device with no browser at all. Nothing useful to do, and nothing worth crashing over.
+        // A device with no browser at all, or a `market://` link on a device with no Play Store. Not
+        // worth crashing over; the caller says so and offers a retry.
+        false
     }
 }

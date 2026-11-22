@@ -29,13 +29,16 @@ import {
   type PublishTicket,
   type Report,
 } from "./api";
+import { ActionControl, NoHostSheetBody, NothingInstalled, Spinner } from "./NotInstalled";
 import { drawPreview, paletteFor, rgba } from "./preview";
 import { availableStoreCategories, storeCategoryKeys, storeCategoryLabel } from "./taxonomy";
 import {
   attemptHandoff,
-  downloadUrl,
   forgetInstall,
   hostsFor,
+  notInstalledStateFor,
+  requiredActionsFor,
+  statusLineFor,
   installLink,
   isHeld,
   loadInventory,
@@ -632,9 +635,12 @@ function Detail({
   /** The user says the store's record is wrong. See `forgetInstall`. */
   onForget: (p: PackageSummary) => void;
 }) {
-  const held = isHeld(useContext(InventoryContext), pkg.id);
+  const inventory = useContext(InventoryContext);
+  const held = isHeld(inventory, pkg.id);
   const [container, on] = paletteFor(pkg.id);
   const [dialog, setDialog] = useState<string | null>(null);
+  // A failed checkout is not a dead end: the dialog then offers to start it again.
+  const [checkoutFailed, setCheckoutFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   // The install fallback (spec/web-handoff.md § When no host is installed). Set only once a handoff
   // attempt has come back with "nothing claimed it" — never shown pre-emptively, because on a device
@@ -647,6 +653,18 @@ function Detail({
   const [rateNote, setRateNote] = useState<string | null>(null);
   const ratingLabel = formatRating(aggregate.rating, aggregate.ratingCount);
   const hosts = useMemo(() => hostsFor(pkg, catalog), [pkg, catalog]);
+  // What is not installed about this package, and so what the main button has to do. Null when it is
+  // installed. One pure decision (`@azphalt/web-handoff` → not-installed.ts), shared with the Compose
+  // storefront.
+  const missing = useMemo(
+    () =>
+      notInstalledStateFor(inventory[pkg.id], {
+        ...(paid ? { priceLabel: priceLabel(pkg) } : {}),
+      }),
+    [inventory, pkg, paid],
+  );
+  const primaryAction = missing ? requiredActionsFor(missing, pkg.name)[0] : undefined;
+  const statusLine = missing ? statusLineFor(missing) : null;
 
   const rate = async (stars: number) => {
     setMyStars(stars);
@@ -697,10 +715,13 @@ function Detail({
       return;
     }
     setBusy(true);
+    setCheckoutFailed(false);
     try {
       const r = await startCheckout(pkg.id);
+      setCheckoutFailed(r.error !== undefined && r.error !== null && r.error !== "");
       setDialog(r.error ?? r.message ?? "Checkout started.");
     } catch (e) {
+      setCheckoutFailed(true);
       setDialog((e as Error).message);
     } finally {
       setBusy(false);
@@ -773,12 +794,32 @@ function Detail({
         ))}
       </div>
       <div role="status" aria-live="polite" style={{ fontSize: 13, color: "var(--on-surface-variant)", marginTop: 6 }}>{rateNote}</div>
+      {statusLine && (
+        <p role="status" style={{ marginTop: 28, marginBottom: 0, color: "var(--on-surface-variant)" }}>{statusLine}</p>
+      )}
       <button
+        type="button"
         onClick={buy}
         disabled={busy}
-        style={{ marginTop: 32, border: "none", borderRadius: 999, padding: "14px 28px", fontSize: 16, fontWeight: 700, background: "var(--primary)", color: "var(--on-primary)" }}
+        aria-busy={busy || undefined}
+        aria-label={busy ? "Working" : held ? `Install ${pkg.name} again` : primaryAction?.description}
+        style={{
+          marginTop: statusLine ? 12 : 32,
+          border: "none",
+          borderRadius: 999,
+          padding: "14px 28px",
+          minHeight: 48,
+          fontSize: 16,
+          fontWeight: 700,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 10,
+          background: "var(--primary)",
+          color: "var(--on-primary)",
+        }}
       >
-        {busy ? "Working…" : held ? "Install again" : paid ? `Get  ·  ${priceLabel(pkg)}` : "Install  ·  Free"}
+        {busy && <Spinner />}
+        {busy ? "Working…" : held ? "Install again" : (primaryAction?.label ?? "Install again")}
       </button>
 
       {/* The store's record is a guess: a handoff can succeed and the install still not happen, and
@@ -788,6 +829,7 @@ function Detail({
           <button
             className="chip"
             style={{ marginTop: 12 }}
+            aria-label={`Not installed? Remove ${pkg.name} from my library`}
             onClick={() => onForget(pkg)}
           >
             Not installed? Remove from my library
@@ -807,7 +849,22 @@ function Detail({
       {dialog && (
         <Dialog title={paid ? "Checkout" : "Install"} onClose={() => setDialog(null)}>
           <p style={{ color: "var(--on-surface-variant)", marginTop: 8 }}>{dialog}</p>
-          <button className="chip" style={{ marginTop: 8 }} onClick={() => setDialog(null)}>OK</button>
+          {checkoutFailed ? (
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <button
+                className="chip"
+                onClick={() => {
+                  setDialog(null);
+                  void buy();
+                }}
+              >
+                Retry checkout
+              </button>
+              <button className="chip" onClick={() => { setDialog(null); setCheckoutFailed(false); }}>Close</button>
+            </div>
+          ) : (
+            <button className="chip" style={{ marginTop: 8 }} onClick={() => setDialog(null)}>OK</button>
+          )}
         </Dialog>
       )}
 
@@ -820,12 +877,8 @@ function Detail({
 
 /**
  * What happens when nothing on the device claimed the link — spec/web-handoff.md § When no host is
- * installed.
- *
- * Deliberately not phrased as an error. On a device with no host, downloading the package *is* the
- * successful outcome of pressing Install: a host registered for the `.azp` media type opens the file
- * directly, with no link support involved at all. The copy this replaced sent the user back to the app
- * they had just left and stopped there.
+ * installed. The rows, their labels and their order come from `requiredActionsFor` (see
+ * `NotInstalled.tsx`); this is only the dialog around them.
  */
 function NoHostSheet({
   pkg,
@@ -840,44 +893,7 @@ function NoHostSheet({
 }) {
   return (
     <Dialog title={`Install “${pkg.name}”`} onClose={onDismiss}>
-        <p style={{ color: "var(--on-surface-variant)", marginTop: 8 }}>
-          Nothing on this device opened the link. Download the package and open it in a host, or install one below.
-        </p>
-
-        <a
-          href={downloadUrl(pkg.id, pkg.version)}
-          download
-          className="action"
-          style={{ marginTop: 16, background: "var(--primary)", color: "var(--on-primary)" }}
-        >
-          Download .azp
-        </a>
-
-        {hosts.length > 0 && (
-          <>
-            <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: "var(--on-surface-variant)" }}>
-              {(pkg.targetApps ?? []).length === 0 ? "Apps that run Azphalt extensions" : "Made for"}
-            </div>
-            {hosts.map((h) => (
-              <a
-                key={h.hostId}
-                href={h.installUrl}
-                target="_blank"
-                /* The listings are third-party URLs from the registry — deny them window.opener. */
-                rel="noopener noreferrer"
-                className="action"
-                style={{ background: "var(--surface-highest)", color: "var(--on-surface)" }}
-              >
-                Get {h.name}
-              </a>
-            ))}
-          </>
-        )}
-
-        <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-          <button className="chip" onClick={onRetry}>Try again</button>
-          <button className="chip" onClick={onDismiss}>Close</button>
-        </div>
+      <NoHostSheetBody pkg={pkg} hosts={hosts} onRetry={onRetry} onDismiss={onDismiss} />
     </Dialog>
   );
 }
@@ -1035,7 +1051,12 @@ function StorefrontApp() {
           <button className="chip" onClick={load} style={{ background: "var(--primary)", color: "var(--on-primary)" }}>Retry</button>
         </div>
       ) : shown.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>No extensions match your search.</div>
+        owned === 1 && query.trim() === "" && price === 0 && category === null && app === null ? (
+          // "Installed" with nothing installed: say so, and offer the one thing that changes it.
+          <NothingInstalled onBrowse={() => setOwned(0)} />
+        ) : (
+          <div style={{ textAlign: "center", padding: 60, color: "var(--on-surface-variant)" }}>No extensions match your search.</div>
+        )
       ) : (
         <>
           {category === null ? (
@@ -1556,6 +1577,20 @@ function AppCatalogPage({ appId }: { appId: string }) {
   const global = (packages ?? []).filter((p) => (p.targetApps ?? []).length === 0);
   const host = (packages ?? []).find((p) => p.kind === "app" && p.app?.hostId && canonicalAppId(p.app.hostId) === canonicalAppId(appId));
 
+  // Where to get the app itself. This page is where "Find an app that runs extensions" lands for a
+  // package scoped to one app, so it has to be able to finish the job: the install button for the host,
+  // from its own listing. Same pure mapping as the fallback sheet (`requiredActionsFor`).
+  const getHost = requiredActionsFor(
+    {
+      type: "host-missing",
+      hosts: hostsFor(
+        { id: appId, name: host?.name ?? appId, version: "0", targetApps: [host?.app?.hostId ?? appId] },
+        packages ?? [],
+      ),
+    },
+    host?.name ?? appId,
+  ).find((a) => a.kind === "install-host");
+
   const list = (title: string, items: PackageSummary[]) =>
     items.length > 0 && (
       <section style={{ marginTop: 28 }}>
@@ -1582,6 +1617,11 @@ function AppCatalogPage({ appId }: { appId: string }) {
       <p style={{ color: "var(--on-surface-variant)" }}>
         Everything <code>{appId}</code> can use: packages made for it, plus every package that works in any app.
       </p>
+      {getHost && (
+        <div style={{ maxWidth: 360, marginTop: 20 }}>
+          <ActionControl action={getHost} primary />
+        </div>
+      )}
       {error && <p style={{ color: "var(--on-surface-variant)" }}>{error}</p>}
       {!packages && !error && <p style={{ color: "var(--on-surface-variant)" }}>Loading…</p>}
       {packages && scoped.length === 0 && <p style={{ color: "var(--on-surface-variant)" }}>Nothing is made specifically for this app yet.</p>}

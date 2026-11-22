@@ -172,6 +172,12 @@ A conforming storefront attempts the link and then falls back:
    - **Get a host** — from the directory in § Host directory, filtered by the package's `targetApps`.
    - **Retry** the link, for the case where the user installed a host and came back.
 
+The fallback MUST NOT be a dead end: when the directory has nothing for the package (no host listed,
+or none whose `hostId` is in a non-empty `targetApps`), the storefront still offers a way to find one —
+the store's own page for that app when the package is scoped to one, the store itself otherwise. Each
+host is offered as a button naming the action (`Install <host name>`), not as a bare link or a list of
+names.
+
 A storefront MUST NOT treat the fallback as an error state. On a device with no host, downloading the
 package is a *successful* outcome of tapping Install.
 

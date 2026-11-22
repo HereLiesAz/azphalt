@@ -44,11 +44,17 @@ actual suspend fun attemptHandoff(link: String): Boolean = withContext(Dispatche
 actual fun downloadUrl(id: String, version: String): String =
     "${API_BASE.trimEnd('/')}/packages/$id/versions/$version/download"
 
-actual fun openExternal(url: String) {
-    if (!isSafeExternalUrl(url)) return
-    runCatching {
+actual fun openExternal(url: String): Boolean {
+    if (!isSafeExternalUrl(url)) return false
+    // A headless or restricted environment simply cannot open a browser: report it, so the caller can
+    // show a retry rather than a button that appears to have done nothing.
+    return runCatching {
         val desktop = Desktop.getDesktop()
-        if (desktop.isSupported(Desktop.Action.BROWSE)) desktop.browse(URI(url))
-    }
-    // A headless or restricted environment simply cannot open a browser. Nothing to recover.
+        if (!desktop.isSupported(Desktop.Action.BROWSE)) {
+            false
+        } else {
+            desktop.browse(URI(url))
+            true
+        }
+    }.getOrDefault(false)
 }

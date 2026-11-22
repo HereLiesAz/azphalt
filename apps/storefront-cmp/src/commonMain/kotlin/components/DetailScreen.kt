@@ -32,14 +32,19 @@ import kotlinx.coroutines.launch
 import models.CheckoutResponse
 import models.installCount
 import models.ExtensionState
+import models.ExtensionStateEntry
 import models.HostOption
+import models.NotInstalled
+import models.RequiredAction
+import models.isInstalled
+import models.notInstalledStateFor
+import models.requiredActionsFor
+import models.statusLineFor
 import models.LocalHostInventory
 import models.PackageSummary
 import models.hostsFor
 import network.attemptHandoff
-import network.downloadUrl
 import network.handoffUri
-import network.openExternal
 import network.startCheckout
 import network.submitIpClaim
 import network.submitRating
@@ -54,6 +59,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.graphics.Color
 import theme.azTurnstileEntrance
 import util.formatCount
@@ -133,7 +141,20 @@ fun DetailScreen(
 
     // Whether the store believes the viewer already has this — from a host's report where there is
     // one, otherwise from the store's own record (`models/LocalInventory.kt`).
-    val held = LocalHostInventory.current[pkg.id]?.state.let { it != null && it != ExtensionState.REMOVED }
+    val entry = LocalHostInventory.current[pkg.id]
+    // Installed and usable. `DOWNLOADED` and `FAILED` are not: counting them here is how a package that
+    // had never been installed was offered as "Install again" and badged "Have".
+    val held = isInstalled(entry)
+    // What is not installed about this package, and so what the main button has to do. Null when it
+    // is installed. One pure decision (`models/NotInstalled.kt`), the same on every platform.
+    val missing = notInstalledStateFor(
+        entry = entry,
+        priceLabel = if (isPaid(pkg)) priceLabel(pkg) else null,
+        packItems = pkg.pack?.entries?.size,
+    )
+    val primaryAction: RequiredAction? = missing?.let { requiredActionsFor(it, pkg.name).first() }
+    // The last checkout failure, kept so the dialog can offer *Retry checkout* instead of only OK.
+    var checkoutFailed by remember(pkg.id) { mutableStateOf(false) }
 
     /**
      * The web handoff — one implementation for the Install button and for the sheet's *Try again*.
@@ -168,6 +189,30 @@ fun DetailScreen(
                     "if it didn't arrive, install it again."
             }
             busy = false
+        }
+    }
+
+    /** What the main button does: buy if paid, hand back if acting for a caller, otherwise the handoff. */
+    val installAction: () -> Unit = {
+        when {
+            // Acting for a caller: purchase (if paid), download, verify and return — all
+            // of it driven by the entry point that owes the result.
+            onAcquire != null -> onAcquire(pkg)
+            isPaid(pkg) -> {
+                scope.launch {
+                    busy = true
+                    checkoutFailed = false
+                    val result = try {
+                        startCheckout(pkg.id)
+                    } catch (e: Exception) {
+                        CheckoutResponse(error = e.message ?: "Checkout failed")
+                    }
+                    checkoutFailed = result.error != null
+                    dialogText = result.error ?: result.message ?: "Checkout started."
+                    busy = false
+                }
+            }
+            else -> handoff()
         }
     }
 
@@ -369,45 +414,43 @@ fun DetailScreen(
             }
 
             Spacer(Modifier.height(32.dp))
+            // Said before the button, so a recorded-but-not-installed state is never silent: the
+            // line explains what is wrong and the button does the one thing that fixes it.
+            missing?.let(::statusLineFor)?.let { line ->
+                Text(
+                    line,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
+            val mainLabel = when {
+                busy -> "Working…"
+                held -> "Install again"
+                else -> primaryAction?.label ?: "Install again"
+            }
             Button(
                 enabled = !busy,
                 shape = CapsuleShape.Full,
-                modifier = Modifier.azTurnstileEntrance(index = 3),
-                onClick = {
-                    when {
-                        // Acting for a caller: purchase (if paid), download, verify and return — all
-                        // of it driven by the entry point that owes the result.
-                        onAcquire != null -> onAcquire(pkg)
-                        isPaid(pkg) -> {
-                            scope.launch {
-                                busy = true
-                                val result = try {
-                                    startCheckout(pkg.id)
-                                } catch (e: Exception) {
-                                    CheckoutResponse(error = e.message ?: "Checkout failed")
-                                }
-                                dialogText = result.error ?: result.message ?: "Checkout started."
-                                busy = false
-                            }
-                        }
-                        else -> handoff()
-                    }
-                },
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .azTurnstileEntrance(index = 3)
+                    .semantics {
+                        // The visible label is a short form ("Install · Free"); say the whole thing.
+                        contentDescription = if (busy) "Working" else (primaryAction?.description ?: "Install ${pkg.name} again")
+                        role = Role.Button
+                    },
+                onClick = installAction,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (held) Roles.Acquired.first else Roles.Acquire.first,
                     contentColor = Color.White,
                 ),
             ) {
-                Text(
-                    text = when {
-                        busy -> "Working…"
-                        held -> "Install again"
-                        pkg.pack != null -> "Install pack  ·  ${pkg.pack.entries.size} items"
-                        isPaid(pkg) -> "Get  ·  ${priceLabel(pkg)}"
-                        else -> "Install  ·  Free"
-                    },
-                    fontWeight = FontWeight.Bold,
-                )
+                if (busy) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+                    Spacer(Modifier.width(10.dp))
+                }
+                Text(text = mainLabel, fontWeight = FontWeight.Bold)
             }
 
             if (receipt.isNotEmpty()) {
@@ -419,7 +462,15 @@ fun DetailScreen(
             // and on the web nothing will ever contradict it. This is how the user says so.
             if (held) {
                 Spacer(Modifier.height(10.dp))
-                TextButton(onClick = { onForget(pkg) }, shape = CapsuleShape.Full) {
+                // The line above says it is installed and the button above installs it again; this is for
+                // the third case, where the store's guess was simply wrong. A 48dp target, like the rest.
+                TextButton(
+                    onClick = { onForget(pkg) },
+                    shape = CapsuleShape.Full,
+                    modifier = Modifier.heightIn(min = 48.dp).semantics {
+                        contentDescription = "Not installed? Remove ${pkg.name} from my library"
+                    },
+                ) {
                     Text("Not installed? Remove from my library", color = cs.onSurfaceVariant)
                 }
             }
@@ -442,7 +493,24 @@ fun DetailScreen(
         AlertDialog(
             shape = CapsuleShape.Panel,
             onDismissRequest = { dialogText = null },
-            confirmButton = { TextButton(onClick = { dialogText = null }, shape = CapsuleShape.Full) { Text("OK") } },
+            confirmButton = {
+                if (checkoutFailed) {
+                    // A failed checkout is not a dead end: the next step is to start it again.
+                    TextButton(
+                        onClick = {
+                            dialogText = null
+                            installAction()
+                        },
+                        shape = CapsuleShape.Full,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("Retry checkout") }
+                } else {
+                    TextButton(onClick = { dialogText = null }, shape = CapsuleShape.Full, modifier = Modifier.heightIn(min = 48.dp)) { Text("OK") }
+                }
+            },
+            dismissButton = if (checkoutFailed) {
+                { TextButton(onClick = { dialogText = null; checkoutFailed = false }, shape = CapsuleShape.Full, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") } }
+            } else null,
             title = { Text(if (isPaid(pkg)) "Checkout" else "Install") },
             text = { Text(message) },
         )
@@ -451,7 +519,7 @@ fun DetailScreen(
     if (noHost) {
         NoHostSheet(
             pkg = pkg,
-            hosts = hosts,
+            state = NotInstalled.HostMissing(hosts = hosts, scopedTo = pkg.targetApps),
             onRetry = {
                 // Close the sheet, then run the same handoff the button runs — including recording it
                 // and telling the user. The user may have installed a host and come back, which is
@@ -462,63 +530,6 @@ fun DetailScreen(
             onDismiss = { noHost = false },
         )
     }
-}
-
-/**
- * What happens when nothing on the device claimed the link — `spec/web-handoff.md` § When no host is
- * installed.
- *
- * Deliberately not phrased as an error. On a device with no host, downloading the package **is** the
- * successful outcome of pressing Install: a host registered for the `.azp` media type opens the file
- * directly, with no link support involved at all. The old copy sent the user back to an app they had
- * just left and stopped there; this sends them somewhere.
- */
-@Composable
-private fun NoHostSheet(
-    pkg: PackageSummary,
-    hosts: List<HostOption>,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val cs = MaterialTheme.colorScheme
-    AlertDialog(
-        shape = CapsuleShape.Panel,
-        onDismissRequest = onDismiss,
-        title = { Text("Install “${pkg.name}”") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "Nothing on this device opened the link. Download the package and open it in a " +
-                        "host, or install one below.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = cs.onSurfaceVariant,
-                )
-                Button(
-                    onClick = { openExternal(downloadUrl(pkg.id, pkg.version)) },
-                    shape = CapsuleShape.Full,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
-                ) { Text("Download .azp", fontWeight = FontWeight.Bold) }
-
-                if (hosts.isNotEmpty()) {
-                    Text(
-                        if (pkg.targetApps.isEmpty()) "Hosts that run azphalt extensions" else "Made for",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = cs.onBackground,
-                    )
-                    hosts.forEach { host ->
-                        OutlinedButton(
-                            onClick = { openExternal(host.installUrl) },
-                            shape = CapsuleShape.Full,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Get ${host.name}") }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onRetry, shape = CapsuleShape.Full) { Text("Try again") } },
-        dismissButton = { TextButton(onClick = onDismiss, shape = CapsuleShape.Full) { Text("Close") } },
-    )
 }
 
 /**

@@ -33,6 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,7 +42,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
 import models.ExtensionState
 import models.LocalHostInventory
+import models.NotInstalled
 import models.PackageSummary
+import models.isInstalled
+import models.notInstalledStateFor
+import models.statusLabelFor
 import theme.Cascade
 import theme.CapsuleMotion
 import theme.Ground
@@ -147,9 +153,14 @@ private fun CategoryCapsule(
  */
 @Composable
 private fun EntryCapsule(pkg: PackageSummary, index: Int, onOpen: (PackageSummary) -> Unit) {
-    val held = LocalHostInventory.current[pkg.id]?.state
-        .let { it != null && it != ExtensionState.REMOVED }
+    val entry = LocalHostInventory.current[pkg.id]
+    // Only installed and usable counts as having it. A host's `DOWNLOADED` and `FAILED` are not
+    // installs, and a card that said *Have* about them hid the one thing the user needed to do.
+    val held = isInstalled(entry)
     val paid = isPaid(pkg)
+    // A recorded state that is not an install: say what it is, in words, and let the screen reader
+    // say what pressing the card leads to. The card opens the detail screen, whose button acts.
+    val pending = notInstalledStateFor(entry).takeIf { it !is NotInstalled.Absent }
 
     UnfoldingCapsule(
         label = pkg.name,
@@ -162,6 +173,7 @@ private fun EntryCapsule(pkg: PackageSummary, index: Int, onOpen: (PackageSummar
         },
         capText = when {
             held -> "Have"
+            pending != null -> statusLabelFor(entry) ?: pkg.kind
             paid -> priceLabel(pkg)
             else -> pkg.llm?.tierLabel ?: pkg.kind
         },
@@ -170,7 +182,10 @@ private fun EntryCapsule(pkg: PackageSummary, index: Int, onOpen: (PackageSummar
         onClick = { onOpen(pkg) },
         modifier = Modifier
             .fillMaxWidth(Cascade.widthFraction(index + 2))
-            .padding(start = Cascade.indent(index)),
+            .padding(start = Cascade.indent(index))
+            .semantics {
+                if (pending != null) stateDescription = "${statusLabelFor(entry)}, not installed. Open to install."
+            },
     )
 }
 
@@ -227,6 +242,11 @@ fun CascadeResults(
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
     header: @Composable () -> Unit = {},
+    /**
+     * Shown under the empty state when there is something to do about it — for an "Installed" filter
+     * with nothing in it, the way out to the catalogue. Null leaves the plain empty state.
+     */
+    emptyAction: (@Composable () -> Unit)? = null,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
@@ -247,6 +267,7 @@ fun CascadeResults(
                     modifier = Modifier.fillMaxWidth(0.42f),
                 )
             }
+            if (emptyAction != null) item { emptyAction() }
         }
 
         packages.forEachIndexed { i, pkg ->
