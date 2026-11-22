@@ -1,3 +1,4 @@
+import { SORTS, sortPackages, type Sort } from "./sort";
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   fetchPackages,
@@ -44,13 +45,6 @@ import {
   type InventoryEntry,
 } from "@azphalt/web-handoff";
 
-type Sort = "popular" | "rating" | "recent" | "name";
-const SORTS: Array<[Sort, string]> = [
-  ["popular", "Popular"],
-  ["rating", "Top rated"],
-  ["recent", "Recent"],
-  ["name", "A–Z"],
-];
 const STILL = 0.32;
 
 // Expressive hero keylines: width changes continuously as the focal index moves.
@@ -954,13 +948,7 @@ function StorefrontApp() {
       const matchesOwned = owned === 1 ? held : owned === 2 ? !held : true;
       return matchesQuery && matchesPrice && matchesCat && matchesApp && matchesOwned;
     });
-    const by = {
-      popular: (a: PackageSummary, b: PackageSummary) => installCount(b) - installCount(a),
-      rating: (a: PackageSummary, b: PackageSummary) => (b.rating ?? -1) - (a.rating ?? -1),
-      recent: (a: PackageSummary, b: PackageSummary) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
-      name: (a: PackageSummary, b: PackageSummary) => a.name.localeCompare(b.name),
-    }[sort];
-    return [...filtered].sort(by);
+    return sortPackages(filtered, sort, (id) => isHeld(inventory, id));
   }, [packages, query, price, category, app, owned, inventory, sort]);
   const sections = useMemo(() => buildSections(shown), [shown]);
 
@@ -988,7 +976,7 @@ function StorefrontApp() {
           <div className="store-filter-bar" role="group" aria-label="Store filters">
             <label className="store-filter-select">
               <span>Sort</span>
-              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+              <select aria-label="Sort extensions" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
                 {SORTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
@@ -1040,11 +1028,11 @@ function StorefrontApp() {
         <>
           {category === null ? (
             <>
-              {query.trim() === "" && sort !== "name" && shown.length > 0 && (
+              {query.trim() === "" && sort !== "name" && sort !== "name-desc" && shown.length > 0 && (
                 <HeroCarousel
                   section={{
                     title: SORTS.find(([key]) => key === sort)?.[1] ?? "Featured",
-                    subtitle: sort === "popular" ? "Most installed across every host" : sort === "rating" ? "Highest rated by the community" : "Recently published and updated",
+                    subtitle: sort === "popular" ? "Most installed across every host" : sort === "rating" ? "Highest rated by the community" : sort === "not-installed" ? "Not on this device yet, most installed first" : sort === "installed" ? "Already on this device, most installed first" : "Recently published and updated",
                     items: shown.slice(0, 14),
                   }}
                   onOpen={open}
