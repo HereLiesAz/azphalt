@@ -27,7 +27,9 @@ import components.CatalogSection
 import components.DetailScreen
 import components.HandoffBanner
 import components.HeroSection
-import components.SortMode
+import models.SortMode
+import models.isHeld
+import models.sortPackages
 import components.StorefrontControls
 import components.buildSections
 import kotlinx.coroutines.delay
@@ -155,7 +157,9 @@ fun StorefrontApp(
         val apps = remember(packages) { packages.flatMap { it.targetApps }.distinct().sorted() }
 
         // Any active search/filter switches the page from curated section carousels to one results row.
-        val filtering = query.isNotBlank() || price != 0 || category != null || app != null || owned != 0
+        val filtering = query.isNotBlank() || price != 0 || category != null || app != null || owned != 0 ||
+            // The curated carousels have no single order to change, so a non-default sort shows the one results row.
+            sort != SortMode.POPULAR
         val filtered = packages.filter { p ->
             (query.isBlank() || listOf(p.name, p.description ?: "", p.author ?: "", p.id).any { it.contains(query, ignoreCase = true) }) &&
                 (when (price) {
@@ -174,12 +178,7 @@ fun StorefrontApp(
                 (category == null || (taxonomy?.keys(p)?.contains(category) ?: (category in p.mediaDomains))) &&
                 (app == null || p.targetApps.isEmpty() || app in p.targetApps)
         }
-        val shown = when (sort) {
-            SortMode.POPULAR -> filtered.sortedByDescending { it.installCount }
-            SortMode.RATING -> filtered.sortedByDescending { it.rating ?: -1f }
-            SortMode.RECENT -> filtered.sortedByDescending { it.updatedAt ?: "" }
-            SortMode.NAME -> filtered.sortedBy { it.name.lowercase() }
-        }
+        val shown = sortPackages(filtered, sort) { isHeld(inventory, it) }
         val sections = remember(packages, taxonomy) { buildSections(packages, taxonomy) }
 
         // Hoisted above the catalog↔detail swap so the browse scroll position survives expanding an
@@ -275,6 +274,7 @@ fun StorefrontApp(
                                 )
                                 Spacer(Modifier.height(14.dp))
                                 CapsuleFilters(
+                                    sort = sort, onSort = { sort = it },
                                     price = price, onPrice = { price = it },
                                     owned = owned, onOwned = { owned = it },
                                     categories = categories, category = category, onCategory = { category = it },
@@ -424,11 +424,12 @@ private fun CapsuleHeader(
  *
  * Unselected capsules carry no end-cap — the guide's rule for a small filter — so selection reads as
  * "this one gained a cap and went ink" rather than as a colour change a colour-blind viewer would
- * miss. Sort is gone: with the catalogue as an index rather than a ranked list, a sort order was
- * ordering something the user is no longer reading top-to-bottom.
+ * miss. Sort is back as its own row, because "Not installed first" needs somewhere to live.
  */
 @Composable
 private fun CapsuleFilters(
+    sort: SortMode,
+    onSort: (SortMode) -> Unit,
     price: Int,
     onPrice: (Int) -> Unit,
     owned: Int,
@@ -455,6 +456,8 @@ private fun CapsuleFilters(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Sort comes first: it is the one control that applies to everything below it.
+        row(SortMode.values().map { "Sort: ${it.label}" to (sort == it) }) { onSort(SortMode.values()[it]) }
         row(listOf("All" to (price == 0), "Free" to (price == 1), "Paid" to (price == 2))) { onPrice(it) }
         row(listOf("Any" to (owned == 0), "Installed" to (owned == 1), "Not installed" to (owned == 2))) { onOwned(it) }
         if (categories.isNotEmpty()) {
