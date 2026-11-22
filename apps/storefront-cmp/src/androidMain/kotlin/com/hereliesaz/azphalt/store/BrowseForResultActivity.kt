@@ -152,7 +152,8 @@ private fun HandoffFlow(
     }
 
     Box(Modifier.fillMaxSize()) {
-        StorefrontApp(hostInventory = request.inventory, handoff = session)
+        // `onAcquire` (the host-driven Play Billing path) takes precedence over checkout, so this flag is unused here.
+        StorefrontApp(inAppCheckout = true, hostInventory = request.inventory, handoff = session)
 
         // Over the storefront rather than instead of it: the catalogue the user was just looking at
         // stays put behind this, so a failed or cancelled purchase returns them exactly where they
@@ -196,7 +197,7 @@ private fun HandoffFlow(
                         },
                         shape = CapsuleShape.Full,
                         modifier = Modifier.heightIn(min = 48.dp),
-                    ) { Text("Retry install") }
+                    ) { Text("Try again") }
                 } else {
                     TextButton(
                         onClick = { failure = null },

@@ -4,9 +4,12 @@ import type { PanInfo } from 'framer-motion';
 import { Search, Box, Download, ArrowLeft, Layers, Fingerprint } from 'lucide-react';
 import { RepositoryClient } from '@azphalt/repository-client';
 import type { PackageSummary } from '@azphalt/azdk';
-import { attemptHandoff, buttonStateFor, hostsFor, installLink, runWithPhase, type ActionPhase } from '@azphalt/web-handoff';
+import { attemptHandoff, buttonStateFor, createMainPress, hostsFor, installLink, type ActionPhase, type RequiredAction } from '@azphalt/web-handoff';
 import { NoHostPanel, type HostDirectory } from './NoHostPanel';
 import './index.css';
+
+/** The marketplace installs through the handoff only; it has no checkout. */
+const installAction: RequiredAction = { kind: 'install-extension', label: 'Install', description: 'Install. Install this extension' };
 
 const client = new RepositoryClient({ url: 'http://localhost:3000' });
 
@@ -177,21 +180,34 @@ function App() {
     return () => { current = false; };
   }, [noHost, selectedPkg]);
 
-  const handleInstall = async () => {
-    if (!selectedPkg || installPhase.kind === 'running') return;
-    await runWithPhase(setInstallPhase, async () => {
-      // Physics swell — feedback that the press registered, before anything navigates.
-      await installControls.start({
-        scale: [1, 1.15, 0.9, 1.05, 1],
-        transition: bouncySpring
-      });
-      // Then actually hand the package to a host (spec/web-handoff.md). Until this, the button was
-      // only the animation: it looked like it installed and did nothing at all.
-      const handed = await attemptHandoff(installLink(selectedPkg.id, selectedPkg.version));
-      if (!handed) setDirectory({ status: 'loading' });
-      setNoHost(!handed);
-      return null;
-    });
+  const installInFlight = useRef(false);
+  // The press handler is `createMainPress`: it refuses a second press while one runs (synchronously, on
+  // the ref, so two clicks in one tick cannot both pass), and reports progress and failure on the button.
+  const handleInstall = () => {
+    if (!selectedPkg) return Promise.resolve();
+    return createMainPress({
+      action: installAction,
+      getPhase: () => installPhase,
+      setPhase: setInstallPhase,
+      inFlight: installInFlight,
+      deps: {
+        checkout: async () => ({ error: 'This store has no checkout.' }),
+        handoff: async () => {
+          // Physics swell — feedback that the press registered, before anything navigates.
+          await installControls.start({
+            scale: [1, 1.15, 0.9, 1.05, 1],
+            transition: bouncySpring
+          });
+          // Then actually hand the package to a host (spec/web-handoff.md). Until this, the button was
+          // only the animation: it looked like it installed and did nothing at all.
+          const handed = await attemptHandoff(installLink(selectedPkg.id, selectedPkg.version));
+          if (!handed) setDirectory({ status: 'loading' });
+          setNoHost(!handed);
+          return null;
+        },
+        notice: () => undefined,
+      },
+    })();
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -322,7 +338,7 @@ function App() {
                   </div>
                   {(() => {
                     const state = buttonStateFor(
-                      { kind: 'install-extension', label: 'Install', description: `Install. Install ${selectedPkg.name}` },
+                      { ...installAction, description: `Install. Install ${selectedPkg.name}` },
                       installPhase,
                     );
                     return (

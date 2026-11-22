@@ -84,13 +84,13 @@ import theme.ExpressiveMotion
 
 @Composable
 fun StorefrontApp(
+    /** False for the standalone Android store, which cannot buy paid packages (see [DetailScreen]). Required. */
+    inAppCheckout: Boolean,
     /**
      * What the calling host has already done with these extensions (`spec/state-reporting.md` § 3).
      * Empty for the web store and for the app opened on its own — neither has a host to ask.
      */
     hostInventory: Map<String, ExtensionStateEntry> = emptyMap(),
-    /** False for the standalone Android store, which cannot run checkout (see [DetailScreen]). */
-    inAppCheckout: Boolean = true,
     /**
      * Set when another app launched the store to get something for itself (`models/HandoffSession.kt`).
      *

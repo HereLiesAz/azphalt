@@ -16,7 +16,8 @@ import {
   canStart,
   performAcquire,
   primaryActionFor,
-  webStoreUrl,
+  createMainPress,
+  type InFlight,
   runWithPhase,
   showNothingInstalled,
   isHeld,
@@ -44,7 +45,7 @@ const samples: NotInstalled[] = [
   { type: "downloaded" },
   { type: "failed", reason: "integrity-mismatch" },
   { type: "failed" },
-  { type: "absent", priceLabel: "$4.99", webOnly: true },
+  { type: "absent", priceLabel: "$4.99", checkoutUnavailable: true },
   { type: "removed" },
   { type: "host-missing", hosts: [hostA, hostB] },
   { type: "host-missing", hosts: [] },
@@ -55,7 +56,7 @@ const samples: NotInstalled[] = [
 function expectedKinds(state: NotInstalled): ActionKind[] {
   switch (state.type) {
     case "absent":
-      return [state.priceLabel !== undefined ? (state.webOnly ? "buy-on-web" : "purchase-extension") : state.packItems !== undefined ? "install-pack" : "install-extension"];
+      return [state.priceLabel !== undefined ? (state.checkoutUnavailable ? "paid-unavailable" : "purchase-extension") : state.packItems !== undefined ? "install-pack" : "install-extension"];
     case "downloaded":
       return ["install-extension"];
     case "failed":
@@ -113,10 +114,10 @@ describe("requiredActionsFor", () => {
 
   it("never sends a possible owner back through checkout: only an untouched paid package gets Get", () => {
     const price = "$4.99";
-    const kind = (state?: InventoryState, webOnly = false) =>
-      primaryActionFor(state ? { state } : undefined, "X", { priceLabel: price, webOnly }).kind;
+    const kind = (state?: InventoryState, checkoutUnavailable = false) =>
+      primaryActionFor(state ? { state } : undefined, "X", { priceLabel: price, checkoutUnavailable }).kind;
     expect(kind(undefined)).toBe("purchase-extension");
-    expect(kind(undefined, true)).toBe("buy-on-web");
+    expect(kind(undefined, true)).toBe("paid-unavailable");
     // A host reporting FAILED knows the install failed, not the purchase: retry the install.
     expect(kind("failed")).toBe("retry-install");
     expect(kind("downloaded")).toBe("install-extension");
@@ -288,7 +289,7 @@ describe("acquireRouteFor (what pressing the main button does)", () => {
     "install-extension": "handoff",
     "install-pack": "handoff",
     "purchase-extension": "checkout",
-    "buy-on-web": "web-store",
+    "paid-unavailable": "none",
     "retry-install": "handoff",
     reinstall: "handoff",
     "install-host": "handoff",
@@ -302,10 +303,10 @@ describe("acquireRouteFor (what pressing the main button does)", () => {
   });
 
   it("composes with the mapping: a paid package routes to checkout only when untouched and in-app", () => {
-    const route = (state?: InventoryState, webOnly = false) =>
-      acquireRouteFor(primaryActionFor(state ? { state } : undefined, "X", { priceLabel: "$4.99", webOnly }).kind);
+    const route = (state?: InventoryState, checkoutUnavailable = false) =>
+      acquireRouteFor(primaryActionFor(state ? { state } : undefined, "X", { priceLabel: "$4.99", checkoutUnavailable }).kind);
     expect(route(undefined)).toBe("checkout");
-    expect(route(undefined, true)).toBe("web-store");
+    expect(route(undefined, true)).toBe("none");
     for (const state of ["failed", "downloaded", "removed", "installed", "active"] as const) expect(route(state), state).toBe("handoff");
     // A free package never goes to checkout.
     for (const state of [undefined, "failed", "downloaded", "removed", "installed"] as const) {
@@ -321,7 +322,6 @@ describe("performAcquire (the function the screens call)", () => {
     const deps: AcquireDeps = {
       checkout: async () => { calls.push("checkout"); return { message: "Checkout started." }; },
       handoff: async () => { calls.push("handoff"); return null; },
-      openWebStore: () => { calls.push("web"); return true; },
       notice: (m) => void notices.push(m),
       ...over,
     };
@@ -371,12 +371,10 @@ describe("performAcquire (the function the screens call)", () => {
     expect(calls).toEqual(["handoff"]);
   });
 
-  it("web-store opens the page, and says so when it cannot", async () => {
-    const ok = make();
-    expect(await performAcquire("web-store", ok.deps)).toBeNull();
-    expect(ok.calls).toEqual(["web"]);
-    const bad = make({ openWebStore: () => false });
-    expect(await performAcquire("web-store", bad.deps)).toBe("Couldn't open azphalt.store.");
+  it("the unavailable-paid route does nothing: no checkout, no handoff, no external page", async () => {
+    const { deps, calls } = make();
+    expect(await performAcquire("none", deps)).toBeNull();
+    expect(calls).toEqual([]);
   });
 });
 
@@ -388,10 +386,111 @@ describe("canStart (re-entrancy)", () => {
   });
 });
 
-describe("webStoreUrl", () => {
-  it("links to the package, and falls back to the store for an unsafe id", () => {
-    expect(webStoreUrl("com.acme.lut")).toBe("https://www.azphalt.store/?package=com.acme.lut");
-    expect(webStoreUrl("a b/../x")).toBe("https://www.azphalt.store/");
+describe("standalone Android paid: disabled, explained, no loop", () => {
+  const a = primaryActionFor(undefined, "Acme", { priceLabel: "$4.99", checkoutUnavailable: true });
+  it("is a disabled button with an accessible explanation and no link", () => {
+    expect(a.kind).toBe("paid-unavailable");
+    expect(a.label).toBe("Paid: not available in this app yet");
+    expect(a.enabled).toBe(false);
+    expect(a.url).toBeUndefined();
+    expect(a.description.startsWith(a.label)).toBe(true);
+    expect(a.description).toContain("cannot be bought here");
+  });
+  it("stays disabled in every phase and is never relabelled Retry", () => {
+    for (const phase of [{ kind: "idle" }, { kind: "failed", message: "x" }] as const) {
+      const st = buttonStateFor(a, phase);
+      expect(st.disabled).toBe(true);
+      expect(st.label).toBe(a.label);
+      expect(st.error).toBeNull();
+    }
+  });
+  it("does not affect free packages or owners", () => {
+    expect(primaryActionFor(undefined, "A", { checkoutUnavailable: true }).kind).toBe("install-extension");
+    expect(primaryActionFor({ state: "downloaded" }, "A", { priceLabel: "$4.99", checkoutUnavailable: true }).kind).toBe("install-extension");
+  });
+});
+
+describe("createMainPress (the handler Detail calls)", () => {
+  const setup = (action = primaryActionFor(undefined, "Acme", { priceLabel: "$4.99" })) => {
+    const calls: string[] = [];
+    const phases: ActionPhase[] = [];
+    let phase: ActionPhase = { kind: "idle" };
+    const inFlight: InFlight = { current: false };
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const press = createMainPress({
+      action,
+      getPhase: () => phase,
+      setPhase: (p) => { phase = p; phases.push(p); },
+      inFlight,
+      deps: {
+        checkout: async () => { calls.push("checkout"); await gate; return { message: "Checkout started." }; },
+        handoff: async () => { calls.push("handoff"); return null; },
+        notice: () => undefined,
+      },
+    });
+    return { press, calls, phases, release, inFlight };
+  };
+
+  it("routes from the shown action: Get checks out, everything else installs", async () => {
+    const get = setup();
+    get.release();
+    await get.press();
+    expect(get.calls).toEqual(["checkout"]);
+    for (const state of ["failed", "downloaded", "removed", "installed"] as const) {
+      const s = setup(primaryActionFor({ state }, "Acme", { priceLabel: "$4.99" }));
+      await s.press();
+      expect(s.calls, state).toEqual(["handoff"]);
+    }
+  });
+
+  it("two presses in one tick start one action", async () => {
+    const s = setup();
+    const first = s.press();
+    const second = s.press();
+    expect(s.inFlight.current).toBe(true);
+    s.release();
+    await Promise.all([first, second]);
+    expect(s.calls).toEqual(["checkout"]);
+    expect(s.inFlight.current).toBe(false);
+  });
+
+  it("a press while the phase is running does nothing; after a failure it is allowed", async () => {
+    for (const [phase, expected] of [[{ kind: "running" }, 0], [{ kind: "failed", message: "x" }, 1], [{ kind: "idle" }, 1]] as const) {
+      let ran = 0;
+      await createMainPress({
+        action: primaryActionFor(undefined, "A"),
+        getPhase: () => phase,
+        setPhase: () => undefined,
+        inFlight: { current: false },
+        deps: { checkout: async () => ({}), handoff: async () => { ran++; return null; }, notice: () => undefined },
+      })();
+      expect(ran, phase.kind).toBe(expected);
+    }
+  });
+
+  it("the unavailable-paid button never starts anything", async () => {
+    const s = setup(primaryActionFor(undefined, "Acme", { priceLabel: "$4.99", checkoutUnavailable: true }));
+    await s.press();
+    expect(s.calls).toEqual([]);
+  });
+
+  it("already_owned from checkout installs, and the phases end idle", async () => {
+    const calls: string[] = [];
+    const phases: ActionPhase[] = [];
+    await createMainPress({
+      action: primaryActionFor(undefined, "Acme", { priceLabel: "$4.99" }),
+      getPhase: () => ({ kind: "idle" }),
+      setPhase: (p) => void phases.push(p),
+      inFlight: { current: false },
+      deps: {
+        checkout: async () => ({ error: "you already own this package", code: "already_owned" }),
+        handoff: async () => { calls.push("handoff"); return null; },
+        notice: () => undefined,
+      },
+    })();
+    expect(calls).toEqual(["handoff"]);
+    expect(phases).toEqual([{ kind: "running" }, { kind: "idle" }]);
   });
 });
 

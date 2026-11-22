@@ -6,9 +6,10 @@
  * accessible control per action, the host directory's three states (loading, ready, failed), and
  * that it is never a dead end.
  */
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { HostOption } from '@azphalt/web-handoff';
+import { createMainPress, type ActionPhase, type HostOption } from '@azphalt/web-handoff';
 import { NoHostPanel, type HostDirectory } from '../src/NoHostPanel';
 
 const pkg = { id: 'com.acme.lut', name: 'Acme LUT', version: '1.2.0', targetApps: [] as string[] };
@@ -73,5 +74,39 @@ describe('NoHostPanel', () => {
 
   it('never labels anything OK', () => {
     expect(render({ status: 'ready', hosts: [hostA] })).not.toMatch(/>OK</);
+  });
+});
+
+describe('the Install press (marketplace)', () => {
+  it('two presses in one tick start one handoff', async () => {
+    let handoffs = 0;
+    const inFlight = { current: false };
+    let phase: ActionPhase = { kind: 'idle' };
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const press = createMainPress({
+      action: { kind: 'install-extension', label: 'Install', description: 'Install. Install this extension' },
+      getPhase: () => phase,
+      setPhase: (p) => { phase = p; },
+      inFlight,
+      deps: {
+        checkout: async () => ({ error: 'This store has no checkout.' }),
+        handoff: async () => { handoffs++; await gate; return null; },
+        notice: () => undefined,
+      },
+    });
+    const a = press();
+    const b = press();
+    release();
+    await Promise.all([a, b]);
+    expect(handoffs).toBe(1);
+    expect(phase).toEqual({ kind: 'idle' });
+    expect(inFlight.current).toBe(false);
+  });
+
+  it('backstop: App routes its Install press through createMainPress with a ref guard', () => {
+    const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+    expect(app).toContain('createMainPress({');
+    expect(app).toContain('inFlight: installInFlight');
   });
 });

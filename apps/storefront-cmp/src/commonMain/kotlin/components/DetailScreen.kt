@@ -39,8 +39,6 @@ import models.acquireRouteFor
 import models.canStart
 import models.performAcquire
 import models.primaryActionFor
-import models.webStoreUrl
-import network.openExternal
 import models.ActionPhase
 import models.runWithPhase
 import models.ExtensionStateEntry
@@ -100,11 +98,13 @@ fun DetailScreen(
      */
     onAcquire: ((PackageSummary) -> Unit)? = null,
     /**
-     * Whether this client can run checkout itself. The standalone Android store cannot (paid packages
-     * there go through Play Billing, which only the host-driven flow uses), so a paid package says
-     * *Buy on azphalt.store* and opens the web store instead of calling a checkout that would throw.
+     * Whether this client can buy a paid package. **Required, no default**, here and in
+     * [main.StorefrontApp]: a caller that forgets it does not compile, instead of silently getting
+     * a checkout that may not exist. The standalone Android store cannot (Play Billing is not wired
+     * into it, and `spec/store-app.md` § Paid packages forbids an external payment flow there), so a
+     * paid package shows a disabled, explained button.
      */
-    inAppCheckout: Boolean = true,
+    inAppCheckout: Boolean,
 ) {
     val cs = MaterialTheme.colorScheme
 
@@ -171,9 +171,9 @@ fun DetailScreen(
         name = pkg.name,
         priceLabel = if (isPaid(pkg)) priceLabel(pkg) else null,
         packItems = pkg.pack?.entries?.size,
-        webOnly = !inAppCheckout,
+        checkoutUnavailable = !inAppCheckout,
     )
-    val missing = notInstalledStateFor(entry, if (isPaid(pkg)) priceLabel(pkg) else null, pkg.pack?.entries?.size, !inAppCheckout)
+    val missing = notInstalledStateFor(entry, if (isPaid(pkg)) priceLabel(pkg) else null, pkg.pack?.entries?.size, checkoutUnavailable = !inAppCheckout)
 
     /**
      * The web handoff — one implementation for the Install button and for the sheet's *Try again*.
@@ -221,7 +221,6 @@ fun DetailScreen(
                     AcquireDeps(
                         checkout = { startCheckout(pkg.id).let { CheckoutAnswer(it.error, it.message, it.code) } },
                         handoff = handoffBlock,
-                        openWebStore = { openExternal(webStoreUrl(pkg.id)) },
                         notice = { dialogText = it },
                     ),
                 )

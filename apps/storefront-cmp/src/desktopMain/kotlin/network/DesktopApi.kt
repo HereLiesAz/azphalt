@@ -7,7 +7,7 @@ import java.net.http.HttpResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import models.CheckoutResponse
-import models.checkoutAfterOpen
+import models.finishCheckout
 import models.PackageSummary
 
 internal const val API_BASE = "https://azphalt.store"
@@ -23,27 +23,25 @@ actual suspend fun fetchRegistryList(): List<PackageSummary> = withContext(Dispa
     json.decodeFromString<List<PackageSummary>>(response.body())
 }
 
-actual suspend fun startCheckout(packageId: String): CheckoutResponse = withContext(Dispatchers.IO) {
-    val request = HttpRequest.newBuilder()
-        .uri(URI.create("$API_BASE/api/checkout"))
-        .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(checkoutRequestBody(packageId)))
-        .build()
-    val response = HttpClient.newBuilder().build().send(request, HttpResponse.BodyHandlers.ofString())
-    val checkout = json.decodeFromString<CheckoutResponse>(response.body())
+actual suspend fun startCheckout(packageId: String): CheckoutResponse =
+    desktopCheckout(API_BASE, packageId, ::openExternal)
 
-    // Real checkout continues on Stripe's hosted page. The desktop storefront owns the user gesture,
-    // so it also owns opening the processor URL; returning a successful response without doing this
-    // would leave a paid purchase permanently stuck at "Checkout started".
-    val checkoutUrl = checkout.session?.url.orEmpty()
-    if (!checkout.stub && checkout.error == null && checkoutUrl.isNotBlank()) {
-        // If nothing opened, the user is not at a checkout page: say so (with a Retry on the button)
-        // instead of reporting "Checkout started".
-        return@withContext checkoutAfterOpen(checkout, openExternal(checkoutUrl))
+/**
+ * The desktop checkout against [apiBase], opening the processor's page with [open].
+ *
+ * Separate from [startCheckout] so a test can point it at a local server with a fake opener. The
+ * opener is consulted only through [finishCheckout], which turns "nothing opened" into a failure.
+ */
+internal suspend fun desktopCheckout(apiBase: String, packageId: String, open: (String) -> Boolean): CheckoutResponse =
+    withContext(Dispatchers.IO) {
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("$apiBase/api/checkout"))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(checkoutRequestBody(packageId)))
+            .build()
+        val response = HttpClient.newBuilder().build().send(request, HttpResponse.BodyHandlers.ofString())
+        finishCheckout(json.decodeFromString<CheckoutResponse>(response.body()), open)
     }
-
-    checkout
-}
 
 actual suspend fun httpPostJson(path: String, body: String): String = withContext(Dispatchers.IO) {
     val request = HttpRequest.newBuilder()

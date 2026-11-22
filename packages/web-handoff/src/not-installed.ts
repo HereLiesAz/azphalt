@@ -23,18 +23,22 @@ import type { HostOption, InventoryEntry } from "./index.js";
 /** Every distinct way a screen can find that something is not installed. */
 export type NotInstalled =
   /**
-   * Never acquired. `priceLabel` set ⇒ buy it first; `packItems` set ⇒ a pack. `webOnly` ⇒ this
-   * client cannot run checkout itself (the standalone Android store), so a paid package is bought on
-   * the web store instead.
+   * Never acquired. `priceLabel` set ⇒ buy it first; `packItems` set ⇒ a pack. `checkoutUnavailable`
+   * ⇒ this client has no way to buy a paid package (the standalone Android store: Play Billing is not
+   * wired in, and `spec/store-app.md` § Paid packages forbids an external payment flow there), so a
+   * paid package shows a disabled, explained button rather than one that would throw or loop.
    */
-  | { type: "absent"; priceLabel?: string; packItems?: number; webOnly?: boolean }
+  | { type: "absent"; priceLabel?: string; packItems?: number; checkoutUnavailable?: boolean }
   /** Bytes held and verified by a host, not installed. */
   | { type: "downloaded" }
   /**
-   * The install did not complete. A host reporting `failed` knows the *install* failed, not the
-   * purchase, so this is always a retry of the install, even for a paid package: sending a possible
-   * owner back through checkout risks a second charge (a desktop checkout carries no account, so the
-   * server cannot see that they already own it).
+   * Acquisition or installation did not complete (`spec/state-reporting.md` § 1 does not say which).
+   * The app cannot tell whether a paid package's failure was the purchase or the install, and the
+   * install link carries no entitlement (`spec/web-handoff.md` § Paid packages). So this is always
+   * offered as a retry of the **install**, even for a paid package: the alternative, sending a
+   * possible owner back through checkout, risks a second charge. The cost is that a purchase that
+   * really failed can only be retried by pressing Install on a package the host then refuses; that is
+   * a gap in the protocol, documented in the PR.
    */
   | { type: "failed"; reason?: string }
   /** Had it, does not now. */
@@ -55,7 +59,7 @@ export type ActionKind =
   | "install-extension"
   | "install-pack"
   | "purchase-extension"
-  | "buy-on-web"
+  | "paid-unavailable"
   | "retry-install"
   | "reinstall"
   | "install-host"
@@ -73,6 +77,8 @@ export interface RequiredAction {
   label: string;
   description: string;
   url?: string;
+  /** `false` for an action shown for its explanation that cannot be pressed. Absent means pressable. */
+  enabled?: boolean;
 }
 
 /** All user-facing text for the not-installed states. One place; mirrors `NotInstalledStrings`. */
@@ -80,9 +86,9 @@ export const NOT_INSTALLED_STRINGS = {
   installFree: () => "Install  ·  Free",
   installPack: (items: number) => `Install pack  ·  ${items} items`,
   purchase: (price: string) => `Get  ·  ${price}`,
-  buyOnWebLabel: () => "Buy on azphalt.store",
-  buyOnWebDescription: (name: string) => `Open the azphalt.store page for ${name} to buy it, then install it`,
-  couldNotOpenStore: () => "Couldn't open azphalt.store.",
+  paidUnavailableLabel: () => "Paid: not available in this app yet",
+  paidUnavailableDescription: (name: string) =>
+    `${name} is a paid extension. This app cannot take payment for paid extensions yet, so it cannot be bought here`,
   installDescription: (name: string) => `Install ${name}`,
   purchaseDescription: (name: string, price: string) => `Buy ${name} for ${price}, then install it`,
   installPackDescription: (name: string, items: number) => `Install the pack ${name} with ${items} items`,
@@ -135,7 +141,7 @@ export function isInstalled(entry: Pick<InventoryEntry, "state"> | undefined | n
  */
 export function notInstalledStateFor(
   entry: Pick<InventoryEntry, "state"> & { reason?: string } | undefined | null,
-  opts: { priceLabel?: string; packItems?: number; webOnly?: boolean } = {},
+  opts: { priceLabel?: string; packItems?: number; checkoutUnavailable?: boolean } = {},
 ): NotInstalled | null {
   switch (entry?.state) {
     case undefined:
@@ -143,7 +149,7 @@ export function notInstalledStateFor(
         type: "absent",
         ...(opts.priceLabel !== undefined ? { priceLabel: opts.priceLabel } : {}),
         ...(opts.packItems !== undefined ? { packItems: opts.packItems } : {}),
-        ...(opts.webOnly ? { webOnly: true } : {}),
+        ...(opts.checkoutUnavailable ? { checkoutUnavailable: true } : {}),
       };
     case "downloaded":
       return { type: "downloaded" };
@@ -172,19 +178,20 @@ export function notInstalledStateFor(
  * A required action whose spoken form **starts with its visible label** (WCAG 2.5.3, label in name):
  * a voice-control user says what they read, so the accessible name must contain it.
  */
-const act = (kind: ActionKind, label: string, detail: string, url?: string): RequiredAction => ({
+const act = (kind: ActionKind, label: string, detail: string, url?: string, enabled?: boolean): RequiredAction => ({
   kind,
   label,
   description: `${label}. ${detail}`,
   ...(url !== undefined ? { url } : {}),
+  ...(enabled === false ? { enabled: false } : {}),
 });
 
 export function requiredActionsFor(state: NotInstalled, packageName: string): RequiredAction[] {
   const S = NOT_INSTALLED_STRINGS;
   switch (state.type) {
     case "absent":
-      if (state.priceLabel !== undefined && state.webOnly) {
-        return [act("buy-on-web", S.buyOnWebLabel(), S.buyOnWebDescription(packageName))];
+      if (state.priceLabel !== undefined && state.checkoutUnavailable) {
+        return [act("paid-unavailable", S.paidUnavailableLabel(), S.paidUnavailableDescription(packageName), undefined, false)];
       }
       if (state.priceLabel !== undefined) {
         return [act("purchase-extension", S.purchase(state.priceLabel), S.purchaseDescription(packageName, state.priceLabel))];
@@ -248,7 +255,7 @@ export function buttonStateFor(action: RequiredAction, phase: ActionPhase): Acti
   const S = NOT_INSTALLED_STRINGS;
   switch (phase.kind) {
     case "idle":
-      return { label: action.label, description: action.description, disabled: false, showProgress: false, error: null };
+      return { label: action.label, description: action.description, disabled: action.enabled === false, showProgress: false, error: null };
     case "running":
       return {
         label: S.working(),
@@ -261,6 +268,10 @@ export function buttonStateFor(action: RequiredAction, phase: ActionPhase): Acti
     // Still pressable, and relabelled: a failure that leaves the same word on the button gives no
     // sign that pressing it again is a retry.
     case "failed":
+      // A disabled action never runs, so it never fails: it keeps its own explanation.
+      if (action.enabled === false) {
+        return { label: action.label, description: action.description, disabled: true, showProgress: false, error: null };
+      }
       return {
         label: S.retryPrefix(action.label),
         description: `${S.retryPrefix(action.label)}. ${phase.message}`,
@@ -319,11 +330,11 @@ export function canStart(phase: ActionPhase): boolean {
 }
 
 /** What pressing the main button does. */
-export type AcquireRoute = "checkout" | "handoff" | "web-store";
+export type AcquireRoute = "checkout" | "handoff" | "none";
 
 /**
  * The one routing decision behind the main button, from the action it is showing. Checkout runs only
- * when the button says Get; Buy-on-azphalt.store opens the web store; everything else (install, retry,
+ * when the button says Get; the unavailable-paid button does nothing; everything else (install, retry,
  * reinstall, install again) is the install handoff. An owner is never sent through checkout by a
  * button that says Install.
  */
@@ -331,8 +342,8 @@ export function acquireRouteFor(kind: ActionKind): AcquireRoute {
   switch (kind) {
     case "purchase-extension":
       return "checkout";
-    case "buy-on-web":
-      return "web-store";
+    case "paid-unavailable":
+      return "none";
     case "install-extension":
     case "install-pack":
     case "retry-install":
@@ -353,7 +364,7 @@ export function acquireRouteFor(kind: ActionKind): AcquireRoute {
 export function primaryActionFor(
   entry: Pick<InventoryEntry, "state"> & { reason?: string } | undefined | null,
   name: string,
-  opts: { priceLabel?: string; packItems?: number; webOnly?: boolean } = {},
+  opts: { priceLabel?: string; packItems?: number; checkoutUnavailable?: boolean } = {},
 ): RequiredAction {
   const missing = notInstalledStateFor(entry, opts);
   if (missing === null) {
@@ -362,17 +373,11 @@ export function primaryActionFor(
   return requiredActionsFor(missing, name)[0]!;
 }
 
-/** The store page for a package, for the clients that cannot run checkout themselves. */
-export function webStoreUrl(id: string, origin = "https://www.azphalt.store"): string {
-  return /^[A-Za-z0-9._-]+$/.test(id) ? `${origin}/?package=${id}` : `${origin}/`;
-}
-
 /** What the screens hand to {@link performAcquire}; each is the real function of that platform. */
 export interface AcquireDeps {
   checkout: () => Promise<{ error?: string | null; message?: string | null; code?: string | null }>;
   /** The install handoff. Returns a failure message, or `null` on success. */
   handoff: () => Promise<string | null>;
-  openWebStore: () => boolean;
   notice: (message: string) => void;
 }
 
@@ -385,8 +390,8 @@ export async function performAcquire(route: AcquireRoute, deps: AcquireDeps): Pr
   switch (route) {
     case "handoff":
       return deps.handoff();
-    case "web-store":
-      return deps.openWebStore() ? null : NOT_INSTALLED_STRINGS.couldNotOpenStore();
+    case "none":
+      return null;
     case "checkout": {
       const r = await deps.checkout();
       if (r.code === "already_owned") return deps.handoff();
@@ -395,4 +400,36 @@ export async function performAcquire(route: AcquireRoute, deps: AcquireDeps): Pr
       return null;
     }
   }
+}
+
+/** A mutable flag a screen keeps in a ref, so two presses in one tick cannot both pass. */
+export interface InFlight {
+  current: boolean;
+}
+
+/**
+ * The main button's press handler: **the one function** the Detail screens call on click. Refuses a
+ * press while one is running (checked synchronously on `inFlight`, because React state would not show
+ * "running" until the next render), routes from the action the button is showing (`acquireRouteFor`,
+ * never from the price), and runs it through `performAcquire` inside `runWithPhase`.
+ */
+export function createMainPress(args: {
+  action: RequiredAction;
+  getPhase: () => ActionPhase;
+  setPhase: (phase: ActionPhase) => void;
+  inFlight: InFlight;
+  deps: AcquireDeps;
+  /** Overrides the route (the sheet's Retry presses the handoff whatever the button says). */
+  route?: AcquireRoute;
+}): () => Promise<void> {
+  return async () => {
+    if (args.inFlight.current || !canStart(args.getPhase())) return;
+    args.inFlight.current = true;
+    try {
+      const route = args.route ?? acquireRouteFor(args.action.kind);
+      await runWithPhase(args.setPhase, () => performAcquire(route, args.deps));
+    } finally {
+      args.inFlight.current = false;
+    }
+  };
 }

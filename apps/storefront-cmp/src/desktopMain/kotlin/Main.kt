@@ -7,6 +7,6 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "Azphalt Storefront",
     ) {
-        StorefrontApp()
+        StorefrontApp(inAppCheckout = true)
     }
 }

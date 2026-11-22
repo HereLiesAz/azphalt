@@ -36,14 +36,10 @@ import { availableStoreCategories, storeCategoryKeys, storeCategoryLabel } from 
 import {
   attemptHandoff,
   forgetInstall,
-  acquireRouteFor,
-  canStart,
+  createMainPress,
   hostsFor,
-  performAcquire,
   primaryActionFor,
   requiredActionsFor,
-  runWithPhase,
-  webStoreUrl,
   showNothingInstalled,
   type ActionPhase,
   type AcquireRoute,
@@ -717,31 +713,24 @@ function Detail({
     return null;
   };
 
-  /** Run `route` with progress and failure reported on the main button. One press at a time. */
-  const run = async (route: AcquireRoute) => {
-    if (inFlight.current || !canStart(phase)) return;
-    inFlight.current = true;
-    try {
-      await runWithPhase(setPhase, () =>
-        performAcquire(route, {
-          checkout: () => startCheckout(pkg.id),
-          handoff,
-          // The web store never routes here (it can run checkout itself); `noopener` hides the result anyway.
-          openWebStore: () => {
-            window.open(webStoreUrl(pkg.id), "_blank", "noopener,noreferrer");
-            return true;
-          },
-          notice: setDialog,
-        }),
-      );
-    } finally {
-      inFlight.current = false;
-    }
-  };
-  const hand = () => run("handoff");
-  // Checkout only when the button says Get; an owner who is told "you already own this" is routed to
-  // the install by `performAcquire`.
-  const buy = () => run(acquireRouteFor(mainAction.kind));
+  /**
+   * The press handler. `createMainPress` is the one function that decides what a press does: it
+   * refuses a second press while one runs (synchronously, on `inFlight`), routes from the action the
+   * button shows (never from the price), and reports progress and failure on the button. An owner told
+   * "you already own this" by checkout is sent to the install by `performAcquire`.
+   */
+  const press = (route?: AcquireRoute) =>
+    createMainPress({
+      action: mainAction,
+      getPhase: () => phase,
+      setPhase,
+      inFlight,
+      deps: { checkout: () => startCheckout(pkg.id), handoff, notice: setDialog },
+      route,
+    })();
+  // The sheet's retry installs whatever the button says.
+  const hand = () => press("handoff");
+  const buy = () => press();
 
   return (
     <div style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>

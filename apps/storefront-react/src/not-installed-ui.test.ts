@@ -160,6 +160,23 @@ describe("styles", () => {
   });
 });
 
+describe("a disabled action renders aria-disabled and no link", () => {
+  it("shows the explanation, cannot be pressed, and has no url", () => {
+    const action: RequiredAction = {
+      kind: "paid-unavailable",
+      label: "Paid: not available in this app yet",
+      description: "Paid: not available in this app yet. Acme is a paid extension. This app cannot take payment for paid extensions yet, so it cannot be bought here",
+      enabled: false,
+    };
+    const html = render(createElement(ActionControl, { action, primary: true, onPress: noop }));
+    expect(html).toContain("<button");
+    expect(html).toMatch(/aria-disabled="true"/);
+    expect(html).toContain("cannot be bought here");
+    expect(html).not.toContain("<a ");
+    expect(html).not.toContain('role="alert"');
+  });
+});
+
 describe("the real wiring: the phases the button is given come from runWithPhase", () => {
   // The Detail screens call exactly `runWithPhase(setPhase, …)` and hand the phase to `ActionControl`.
   // Driving that pair with a real async action shows the markup at each step the user would see.
@@ -206,18 +223,15 @@ describe("sort: Downloaded and Failed are not held", () => {
   });
 });
 
-describe("wiring guard: the Detail screen goes through the tested functions", () => {
+describe("backstop wiring guard (the real behaviour is tested through createMainPress in web-handoff)", () => {
   const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
-  it("routes from the shown action, never from the price", () => {
-    expect(app).toContain("run(acquireRouteFor(mainAction.kind))");
-    expect(app).toContain("primaryActionFor(inventory[pkg.id]");
-    expect(app).toContain("performAcquire(route");
-    // Checkout is reached only as a dep of performAcquire.
+  it("Detail presses only through createMainPress, with the shown action, and checkout is only a dep", () => {
+    expect(app).toContain("createMainPress({");
+    expect(app).toContain("action: mainAction,");
+    expect(app).toContain("const buy = () => press();");
+    expect(app).toContain('const hand = () => press("handoff");')
     expect(app.match(/startCheckout\(/g)?.length).toBe(1);
+    expect(app).toContain("checkout: () => startCheckout(pkg.id)");
     expect(app).not.toMatch(/paid\s*\?\s*startCheckout|if \(!paid\)/);
-  });
-  it("refuses a second press while one is running, synchronously", () => {
-    expect(app).toContain("if (inFlight.current || !canStart(phase)) return;");
-    expect(app).toContain("inFlight.current = true;");
   });
 });

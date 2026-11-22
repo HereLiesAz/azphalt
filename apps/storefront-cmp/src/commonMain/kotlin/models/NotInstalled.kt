@@ -32,18 +32,26 @@ sealed interface NotInstalled {
     data class Absent(
         val priceLabel: String? = null,
         val packItems: Int? = null,
-        /** This client cannot run checkout itself (the standalone Android store): buy on the web store. */
-        val webOnly: Boolean = false,
+        /**
+         * This client has no way to buy a paid package (the standalone Android store: Play Billing is
+         * not wired into it, and `spec/store-app.md` § Paid packages forbids sending a Play-distributed
+         * app's user to an external payment flow). A paid package then shows a disabled, explained
+         * button instead of one that would throw or loop.
+         */
+        val checkoutUnavailable: Boolean = false,
     ) : NotInstalled
 
     /** Bytes held and verified by a host, no install (`ExtensionState.DOWNLOADED`). */
     data object Downloaded : NotInstalled
 
     /**
-     * The install did not complete (`ExtensionState.FAILED`). A host reporting it knows the *install*
-     * failed, not the purchase, so this is always a retry of the install, even for a paid package:
-     * sending a possible owner back through checkout risks a second charge (a desktop checkout carries
-     * no account, so the server cannot see that they already own it).
+     * Acquisition or installation did not complete (`ExtensionState.FAILED`;
+     * `spec/state-reporting.md` § 1 does not say which). The app cannot tell whether a paid package's
+     * failure was the purchase or the install, and the install link carries no entitlement
+     * (`spec/web-handoff.md` § Paid packages). So this is always offered as a retry of the **install**,
+     * even for a paid package: the alternative, sending a possible owner back through checkout, risks
+     * a second charge. The cost is that a purchase that really failed can only be retried by pressing
+     * Install on a package the host then refuses; that is a gap in the protocol, documented in the PR.
      */
     data class Failed(val reason: String?) : NotInstalled
 
@@ -75,8 +83,8 @@ enum class ActionKind {
     /** Start checkout for a paid extension; installing follows once it is owned. */
     PURCHASE_EXTENSION,
 
-    /** A client that cannot run checkout opens the web store page for the package instead. */
-    BUY_ON_WEB,
+    /** A paid package in a client with no way to buy it: nothing to press, and it says why. */
+    PAID_UNAVAILABLE,
 
     /** An install that failed, run again. */
     RETRY_INSTALL,
@@ -110,23 +118,25 @@ data class RequiredAction(
     val label: String,
     val description: String,
     val url: String? = null,
+    /** False for an action that is shown for its explanation but cannot be pressed. */
+    val enabled: Boolean = true,
 )
 
 /**
  * A [RequiredAction] whose spoken form **starts with its visible label** (WCAG 2.5.3, label in name):
  * a voice-control user says what they read, so the accessible name must contain it.
  */
-private fun act(kind: ActionKind, label: String, detail: String, url: String? = null) =
-    RequiredAction(kind, label, "$label. $detail", url)
+private fun act(kind: ActionKind, label: String, detail: String, url: String? = null, enabled: Boolean = true) =
+    RequiredAction(kind, label, "$label. $detail", url, enabled)
 
 /** All user-facing text for the not-installed states. One place, so every platform says the same. */
 object NotInstalledStrings {
     fun installFree(): String = "Install  ·  Free"
     fun installPack(items: Int): String = "Install pack  ·  $items items"
     fun purchase(price: String): String = "Get  ·  $price"
-    fun buyOnWebLabel(): String = "Buy on azphalt.store"
-    fun buyOnWebDescription(name: String): String = "Open the azphalt.store page for $name to buy it, then install it"
-    fun couldNotOpenStore(): String = "Couldn't open azphalt.store."
+    fun paidUnavailableLabel(): String = "Paid: not available in this app yet"
+    fun paidUnavailableDescription(name: String): String =
+        "$name is a paid extension. This app cannot take payment for paid extensions yet, so it cannot be bought here"
     fun installDescription(name: String): String = "Install $name"
     fun purchaseDescription(name: String, price: String): String = "Buy $name for $price, then install it"
     fun installPackDescription(name: String, items: Int): String = "Install the pack $name with $items items"
@@ -165,7 +175,7 @@ object NotInstalledStrings {
     // Phase text for [ActionPhase].
     fun working(): String = "Working…"
     fun somethingWentWrong(): String = "Something went wrong."
-    fun couldNotOpen(label: String): String = "Couldn't open that page. Select “$label” to try again."
+    fun couldNotOpen(label: String): String = "Couldn't open that page. Press “${retryPrefix(label)}” to try again."
     fun retryPrefix(label: String): String = "Retry: $label"
     fun sheetTitle(name: String): String = "Install “$name”"
 }
@@ -185,9 +195,9 @@ fun notInstalledStateFor(
     entry: ExtensionStateEntry?,
     priceLabel: String? = null,
     packItems: Int? = null,
-    webOnly: Boolean = false,
+    checkoutUnavailable: Boolean = false,
 ): NotInstalled? = when (entry?.state) {
-    null -> NotInstalled.Absent(priceLabel = priceLabel, packItems = packItems, webOnly = webOnly)
+    null -> NotInstalled.Absent(priceLabel = priceLabel, packItems = packItems, checkoutUnavailable = checkoutUnavailable)
     ExtensionState.DOWNLOADED -> NotInstalled.Downloaded
     ExtensionState.FAILED -> NotInstalled.Failed(entry.reason)
     ExtensionState.REMOVED -> NotInstalled.Removed
@@ -205,10 +215,11 @@ fun notInstalledStateFor(
 fun requiredActionsFor(state: NotInstalled, packageName: String): List<RequiredAction> = when (state) {
     is NotInstalled.Absent -> listOf(
         when {
-            state.priceLabel != null && state.webOnly -> act(
-                ActionKind.BUY_ON_WEB,
-                NotInstalledStrings.buyOnWebLabel(),
-                NotInstalledStrings.buyOnWebDescription(packageName),
+            state.priceLabel != null && state.checkoutUnavailable -> act(
+                ActionKind.PAID_UNAVAILABLE,
+                NotInstalledStrings.paidUnavailableLabel(),
+                NotInstalledStrings.paidUnavailableDescription(packageName),
+                enabled = false,
             )
             state.priceLabel != null -> act(
                 ActionKind.PURCHASE_EXTENSION,
@@ -284,7 +295,7 @@ data class ActionButtonState(
 )
 
 fun buttonStateFor(action: RequiredAction, phase: ActionPhase): ActionButtonState = when (phase) {
-    ActionPhase.Idle -> ActionButtonState(action.label, action.description, enabled = true, showProgress = false, error = null)
+    ActionPhase.Idle -> ActionButtonState(action.label, action.description, enabled = action.enabled, showProgress = false, error = null)
     // The accessible name keeps the visible text ("Working…") and still says which action is running.
     ActionPhase.Running -> ActionButtonState(
         label = NotInstalledStrings.working(),
@@ -295,7 +306,10 @@ fun buttonStateFor(action: RequiredAction, phase: ActionPhase): ActionButtonStat
     )
     // Still pressable, and relabelled: a failure that leaves the same word on the button gives no
     // sign that pressing it again is a retry rather than a repeat of what just failed.
-    is ActionPhase.Failed -> NotInstalledStrings.retryPrefix(action.label).let { retryLabel ->
+    // A disabled action never runs, so it never fails: it keeps its own explanation.
+    is ActionPhase.Failed -> if (!action.enabled) {
+        ActionButtonState(action.label, action.description, enabled = false, showProgress = false, error = null)
+    } else NotInstalledStrings.retryPrefix(action.label).let { retryLabel ->
         ActionButtonState(
             label = retryLabel,
             description = retryLabel + ". " + phase.message,
@@ -353,17 +367,17 @@ fun showNothingInstalled(
 fun canStart(phase: ActionPhase): Boolean = phase != ActionPhase.Running
 
 /** What pressing the main button does. */
-enum class AcquireRoute { CHECKOUT, HANDOFF, WEB_STORE }
+enum class AcquireRoute { CHECKOUT, HANDOFF, NONE }
 
 /**
  * The one routing decision behind the main button, from the action it is showing. Checkout runs only
- * when the button says Get; Buy-on-azphalt.store opens the web store; everything else (install, retry,
+ * when the button says Get; the unavailable-paid button does nothing; everything else (install, retry,
  * reinstall, install again) is the install handoff. An owner is never sent through checkout by a
  * button that says Install. No `else`: a new [ActionKind] must be routed here.
  */
 fun acquireRouteFor(kind: ActionKind): AcquireRoute = when (kind) {
     ActionKind.PURCHASE_EXTENSION -> AcquireRoute.CHECKOUT
-    ActionKind.BUY_ON_WEB -> AcquireRoute.WEB_STORE
+    ActionKind.PAID_UNAVAILABLE -> AcquireRoute.NONE
     ActionKind.INSTALL_EXTENSION, ActionKind.INSTALL_PACK, ActionKind.RETRY_INSTALL, ActionKind.REINSTALL,
     ActionKind.INSTALL_HOST, ActionKind.DOWNLOAD_PACKAGE, ActionKind.RETRY_HANDOFF, ActionKind.BROWSE_CATALOGUE,
     -> AcquireRoute.HANDOFF
@@ -379,20 +393,12 @@ fun primaryActionFor(
     name: String,
     priceLabel: String? = null,
     packItems: Int? = null,
-    webOnly: Boolean = false,
+    checkoutUnavailable: Boolean = false,
 ): RequiredAction {
-    val missing = notInstalledStateFor(entry, priceLabel, packItems, webOnly)
+    val missing = notInstalledStateFor(entry, priceLabel, packItems, checkoutUnavailable)
         ?: return RequiredAction(ActionKind.INSTALL_EXTENSION, "Install again", "Install again. Install $name again")
     return requiredActionsFor(missing, name).first()
 }
-
-/** The store page for a package, for the clients that cannot run checkout themselves. */
-fun webStoreUrl(id: String): String =
-    if (id.isNotEmpty() && id.all { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' || it == '.' || it == '-' || it == '_' }) {
-        "$STORE_ORIGIN/?package=$id"
-    } else {
-        STORE_ORIGIN
-    }
 
 /** Just enough of a checkout answer for [performAcquire]. */
 data class CheckoutAnswer(val error: String? = null, val message: String? = null, val code: String? = null)
@@ -402,7 +408,6 @@ class AcquireDeps(
     val checkout: suspend () -> CheckoutAnswer,
     /** The install handoff. Returns a failure message, or null on success. */
     val handoff: suspend () -> String?,
-    val openWebStore: () -> Boolean,
     val notice: (String) -> Unit,
 )
 
@@ -413,7 +418,7 @@ class AcquireDeps(
  */
 suspend fun performAcquire(route: AcquireRoute, deps: AcquireDeps): String? = when (route) {
     AcquireRoute.HANDOFF -> deps.handoff()
-    AcquireRoute.WEB_STORE -> if (deps.openWebStore()) null else NotInstalledStrings.couldNotOpenStore()
+    AcquireRoute.NONE -> null
     AcquireRoute.CHECKOUT -> {
         val r = deps.checkout()
         when {

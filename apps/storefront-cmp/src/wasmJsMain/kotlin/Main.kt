@@ -28,6 +28,6 @@ fun main() {
     // no such element and no React.
     val mount = document.getElementById(MOUNT_ID) ?: document.body!!
     ComposeViewport(mount) {
-        StorefrontApp()
+        StorefrontApp(inAppCheckout = true)
     }
 }
