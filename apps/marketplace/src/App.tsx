@@ -4,7 +4,7 @@ import type { PanInfo } from 'framer-motion';
 import { Search, Box, Download, ArrowLeft, Layers, Fingerprint } from 'lucide-react';
 import { RepositoryClient } from '@azphalt/repository-client';
 import type { PackageSummary } from '@azphalt/azdk';
-import { attemptHandoff, hostsFor, installLink } from '@azphalt/web-handoff';
+import { attemptHandoff, buttonStateFor, hostsFor, installLink, runWithPhase, type ActionPhase } from '@azphalt/web-handoff';
 import { NoHostPanel, type HostDirectory } from './NoHostPanel';
 import './index.css';
 
@@ -113,6 +113,8 @@ function App() {
   // The install fallback — spec/web-handoff.md § When no host is installed. Set only once an attempt
   // has come back with "nothing claimed it".
   const [noHost, setNoHost] = useState(false);
+  // The Install button's phase, produced by `runWithPhase` so it shows progress and any failure.
+  const [installPhase, setInstallPhase] = useState<ActionPhase>({ kind: 'idle' });
   // The hosts that could run the selected package, read once the fallback is shown — never before,
   // because on a device that has a host the user simply arrives there.
   const [directory, setDirectory] = useState<HostDirectory>({ status: 'loading' });
@@ -176,17 +178,20 @@ function App() {
   }, [noHost, selectedPkg]);
 
   const handleInstall = async () => {
-    if (!selectedPkg) return;
-    // Physics swell — feedback that the press registered, before anything navigates.
-    await installControls.start({
-      scale: [1, 1.15, 0.9, 1.05, 1],
-      transition: bouncySpring
+    if (!selectedPkg || installPhase.kind === 'running') return;
+    await runWithPhase(setInstallPhase, async () => {
+      // Physics swell — feedback that the press registered, before anything navigates.
+      await installControls.start({
+        scale: [1, 1.15, 0.9, 1.05, 1],
+        transition: bouncySpring
+      });
+      // Then actually hand the package to a host (spec/web-handoff.md). Until this, the button was
+      // only the animation: it looked like it installed and did nothing at all.
+      const handed = await attemptHandoff(installLink(selectedPkg.id, selectedPkg.version));
+      if (!handed) setDirectory({ status: 'loading' });
+      setNoHost(!handed);
+      return null;
     });
-    // Then actually hand the package to a host (spec/web-handoff.md). Until this, the button was
-    // only the animation: it looked like it installed and did nothing at all.
-    const handed = await attemptHandoff(installLink(selectedPkg.id, selectedPkg.version));
-    if (!handed) setDirectory({ status: 'loading' });
-    setNoHost(!handed);
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -315,16 +320,30 @@ function App() {
                   <div style={{ display: 'flex', gap: 12 }}>
                     <span className="tag tag-large">{selectedPkg.kind || 'extension'}</span>
                   </div>
-                  <motion.button 
-                    animate={installControls}
-                    className="btn btn-primary btn-large"
-                    onClick={handleInstall}
-                    aria-label={`Install ${selectedPkg.name}`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Download size={20} /> Install
-                  </motion.button>
+                  {(() => {
+                    const state = buttonStateFor(
+                      { kind: 'install-extension', label: 'Install', description: `Install. Install ${selectedPkg.name}` },
+                      installPhase,
+                    );
+                    return (
+                      <>
+                        <motion.button
+                          animate={installControls}
+                          className="btn btn-primary btn-large"
+                          onClick={handleInstall}
+                          aria-label={state.description}
+                          // aria-disabled, not `disabled`, so keyboard focus is not dropped mid-install.
+                          aria-disabled={state.disabled || undefined}
+                          aria-busy={state.showProgress || undefined}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Download size={20} /> {state.label}
+                        </motion.button>
+                        {state.error && <div role="alert">{state.error}</div>}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Nothing claimed the link. Not an error state: on a device with no host, downloading

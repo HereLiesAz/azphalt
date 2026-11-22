@@ -67,6 +67,7 @@ internal fun ActionButton(
     modifier: Modifier = Modifier,
     primary: Boolean = true,
     focusRequester: FocusRequester? = null,
+    containerColor: androidx.compose.ui.graphics.Color? = null,
     onClick: () -> Unit,
 ) {
     val state = buttonStateFor(action, phase)
@@ -95,7 +96,7 @@ internal fun ActionButton(
                 enabled = state.enabled,
                 shape = CapsuleShape.Full,
                 modifier = buttonModifier,
-                colors = ButtonDefaults.buttonColors(containerColor = cs.primary, contentColor = cs.onPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = containerColor ?: cs.primary, contentColor = cs.onPrimary),
             ) { content() }
         } else {
             OutlinedButton(

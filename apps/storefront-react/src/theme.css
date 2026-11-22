@@ -203,7 +203,7 @@ textarea.field {
   /* 48px: the target size the not-installed actions promise on every platform. */
   min-height: 48px;
 }
-.action:disabled {
+.action[aria-disabled="true"] {
   opacity: 0.7;
   cursor: progress;
 }

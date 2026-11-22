@@ -183,7 +183,8 @@ private fun HandoffFlow(
     failure?.let { message ->
         AlertDialog(
             shape = CapsuleShape.Panel,
-            onDismissRequest = { failure = null },
+            // Clears the retry target too: a later, unrelated failure must not offer to retry this package.
+            onDismissRequest = { failure = null; retryPkg = null },
             confirmButton = {
                 val again = retryPkg
                 if (again != null) {

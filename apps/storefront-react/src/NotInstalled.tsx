@@ -73,7 +73,7 @@ export function ActionControl({
           aria-busy={state.showProgress || undefined}
           style={style}
           {...(action.kind === "download-package" ? { download: true } : {})}
-          {...(action.kind === "install-host" || action.kind === "find-host"
+          {...(action.kind === "install-host"
             ? // Listings are third-party URLs from the registry — deny them window.opener.
               { target: "_blank", rel: "noopener noreferrer" }
             : {})}
@@ -86,9 +86,11 @@ export function ActionControl({
           className="action"
           aria-label={state.description}
           aria-busy={state.showProgress || undefined}
-          disabled={state.disabled}
+          // aria-disabled, not `disabled`: a disabled button drops keyboard focus, so a screen-reader
+          // or keyboard user pressing it would lose their place the moment it started working.
+          aria-disabled={state.disabled || undefined}
           style={style}
-          onClick={onPress}
+          onClick={state.disabled ? undefined : onPress}
         >
           {body}
         </button>
@@ -110,8 +112,8 @@ export interface SheetPackage {
  * What the user sees when pressing Install found no host — `spec/web-handoff.md` § When no host is
  * installed. The body of a dialog; the dialog itself (focus trap, Escape) is the caller's.
  *
- * Every row is an action that does one thing, and it is never empty: a package whose directory entry
- * is missing still gets "Find an app that runs extensions". Deliberately not phrased as an error —
+ * Every row is an action that does one thing; a package with no listed host says so and offers the
+ * actions that work (download, retry) rather than a button that goes nowhere. Deliberately not phrased as an error —
  * downloading the package *is* a successful outcome on a device with no host.
  */
 export function NoHostSheetBody({
@@ -125,7 +127,7 @@ export function NoHostSheetBody({
   onRetry: () => void;
   onDismiss: () => void;
 }) {
-  const state: NotInstalled = { type: "host-missing", hosts, scopedTo: pkg.targetApps ?? [] };
+  const state: NotInstalled = { type: "host-missing", hosts };
   const actions = requiredActionsFor(state, pkg.name);
   const retry = actions.find((a) => a.kind === "retry-handoff");
   const rows = actions.filter((a) => a.kind !== "retry-handoff");

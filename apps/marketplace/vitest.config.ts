@@ -6,6 +6,9 @@ import react from '@vitejs/plugin-react'
 // JSX transform does not follow to find `"jsx": "react-jsx"`.
 export default defineConfig({
   plugins: [react()],
+  // Resolve the workspace package from source, so the suite runs on a fresh install without
+  // `@azphalt/web-handoff` having been built first (its `main` points at `dist/`).
+  resolve: { alias: { '@azphalt/web-handoff': new URL('../../packages/web-handoff/src/index.ts', import.meta.url).pathname } },
   oxc: { jsx: { runtime: 'automatic' } },
   test: { include: ['test/**/*.test.{ts,tsx}'] },
 })

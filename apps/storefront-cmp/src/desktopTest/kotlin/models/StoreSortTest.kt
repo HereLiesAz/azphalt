@@ -41,4 +41,24 @@ class StoreSortTest {
         )
         assertEquals(listOf(true, false, false), listOf(isHeld(inv, "x"), isHeld(inv, "r"), isHeld(inv, "none")))
     }
+
+    @Test fun downloadedAndFailedAreNotHeldEither() {
+        // Same definition as the cards, the Installed filter and the detail screen (`isInstalled`).
+        val inv = ExtensionState.entries.associate { st ->
+            st.name to ExtensionStateEntry(id = st.name, version = "1", state = st)
+        }
+        val held = ExtensionState.entries.filter { isHeld(inv, it.name) }
+        assertEquals(listOf(ExtensionState.INSTALLED, ExtensionState.ACTIVE), held)
+        assertEquals(true to false, isInstalled(inv["ACTIVE"]) to isHeld(inv, "FAILED"))
+    }
+
+    @Test fun installedFirstDoesNotRankADownloadedOrFailedPackageAsInstalled() {
+        val inv = mapOf(
+            "i" to installedEntry("i", "1"),
+            "d" to ExtensionStateEntry(id = "d", version = "1", state = ExtensionState.DOWNLOADED),
+            "f" to ExtensionStateEntry(id = "f", version = "1", state = ExtensionState.FAILED),
+        )
+        val order = sortPackages(listOf(p("d", "A"), p("f", "B"), p("i", "C")), SortMode.INSTALLED) { isHeld(inv, it) }.map { it.id }
+        assertEquals("i", order.first())
+    }
 }

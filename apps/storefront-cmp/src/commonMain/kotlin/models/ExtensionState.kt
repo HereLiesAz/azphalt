@@ -87,25 +87,6 @@ public fun parseHostInventory(json: String?): Map<String, ExtensionStateEntry> {
         .associateBy { it.id }
 }
 
-/**
- * The label a card's action should carry, given what the host reported and what the catalogue offers.
- *
- * `latestVersion` is the store's knowledge, not the host's: *Update* is derived here by comparing
- * versions, because whether something newer exists is the repository's fact and a host cannot know it
- * offline (`spec/state-reporting.md` § 1).
- */
-public fun actionLabelFor(entry: ExtensionStateEntry?, latestVersion: String?): String = when (entry?.state) {
-    null -> "Get"
-    ExtensionState.DOWNLOADED -> "Install"
-    ExtensionState.FAILED -> "Retry"
-    ExtensionState.REMOVED -> "Reinstall"
-    ExtensionState.INSTALLED, ExtensionState.ACTIVE -> {
-        val held = entry.version
-        if (!latestVersion.isNullOrBlank() && held.isNotBlank() && held != latestVersion) "Update"
-        else if (entry.state == ExtensionState.ACTIVE) "Open" else "Enable"
-    }
-}
-
 /** A short status word for the card's badge, or null when the host said nothing about this package. */
 public fun statusLabelFor(entry: ExtensionStateEntry?): String? = when (entry?.state) {
     null -> null

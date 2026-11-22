@@ -26,16 +26,22 @@ export type NotInstalled =
   | { type: "absent"; priceLabel?: string; packItems?: number }
   /** Bytes held and verified by a host, not installed. */
   | { type: "downloaded" }
-  /** Acquisition or installation did not complete. */
-  | { type: "failed"; reason?: string }
+  /**
+   * Acquisition or installation did not complete. `priceLabel` set ⇒ a paid package whose entitlement
+   * is not known: the failure may have been the purchase itself, so the button says Get and goes to
+   * checkout, because that is what pressing it does. (`downloaded` and `removed` mean a host held the
+   * bytes, which for a paid package means it was already bought: those never go back through checkout.)
+   */
+  | { type: "failed"; reason?: string; priceLabel?: string }
   /** Had it, does not now. */
   | { type: "removed" }
   /**
    * The install link was attempted and nothing claimed it. `hosts` is the directory already
-   * filtered to hosts that can run the package; empty means the directory had nothing, which must
-   * still resolve to somewhere to go. `scopedTo` is the package's `targetApps`.
+   * filtered to hosts that can run the package; empty means **no host is listed for this extension**,
+   * which is said plainly and answered with the actions that still work (download, retry). No button
+   * points at a page with nothing more to offer: there is no host-directory page to send anyone to.
    */
-  | { type: "host-missing"; hosts: HostOption[]; scopedTo?: string[] }
+  | { type: "host-missing"; hosts: HostOption[] }
   /** The "Installed" filter matched nothing. */
   | { type: "nothing-installed" };
 
@@ -48,7 +54,6 @@ export type ActionKind =
   | "retry-install"
   | "reinstall"
   | "install-host"
-  | "find-host"
   | "download-package"
   | "retry-handoff"
   | "browse-catalogue";
@@ -89,8 +94,6 @@ export const NOT_INSTALLED_STRINGS = {
   installHostLabel: (hostName: string) => `Install ${hostName}`,
   installHostDescription: (hostName: string, pkgName: string) =>
     `Open the install page for ${hostName}, an app that can run ${pkgName}`,
-  findHostLabel: () => "Find an app that runs extensions",
-  findHostDescription: () => "Open the Azphalt Store page listing apps that can run extensions",
   downloadLabel: () => "Download .azp",
   downloadDescription: (pkgName: string) => `Download the package file for ${pkgName} to open in an app later`,
   retryHandoffLabel: () => "Retry install",
@@ -100,10 +103,13 @@ export const NOT_INSTALLED_STRINGS = {
 
   hostMissingBody: () =>
     "No app on this device can open this extension yet. Install an app that runs extensions, or download the package and open it later.",
+  noHostListedBody: () =>
+    "No host app is listed for this extension yet. You can download the package and install it manually, then try again.",
   nothingInstalledTitle: () => "Nothing installed yet",
   sheetTitle: (name: string) => `Install “${name}”`,
 
   working: () => "Working…",
+  somethingWentWrong: () => "Something went wrong.",
   retryPrefix: (label: string) => `Retry: ${label}`,
 } as const;
 
@@ -133,24 +139,17 @@ export function notInstalledStateFor(
     case "downloaded":
       return { type: "downloaded" };
     case "failed":
-      return { type: "failed", ...(entry.reason !== undefined ? { reason: entry.reason } : {}) };
+      return {
+        type: "failed",
+        ...(entry.reason !== undefined ? { reason: entry.reason } : {}),
+        ...(opts.priceLabel !== undefined ? { priceLabel: opts.priceLabel } : {}),
+      };
     case "removed":
       return { type: "removed" };
     case "installed":
     case "active":
       return null;
   }
-}
-
-/**
- * The page listing apps able to run extensions, for when the directory had nothing to offer. A
- * package scoped to one app points at that app's page; anything else at the store itself. `origin` is
- * empty for a storefront linking to itself, and set for a client that is not served from the store.
- * Ids are reverse-DNS, so anything outside that alphabet is not trusted into a path.
- */
-export function hostDirectoryUrl(scopedTo: readonly string[] = [], origin = ""): string {
-  const id = scopedTo.find((candidate) => /^[A-Za-z0-9._-]+$/.test(candidate));
-  return id === undefined ? `${origin}/` : `${origin}/app/${id}`;
 }
 
 /**
@@ -161,65 +160,48 @@ export function hostDirectoryUrl(scopedTo: readonly string[] = [], origin = ""):
  * then get a host, then retry — because downloading the package is a *successful* outcome of pressing
  * Install on a device with no host.
  */
-export function requiredActionsFor(state: NotInstalled, packageName: string, origin = ""): RequiredAction[] {
+/**
+ * A required action whose spoken form **starts with its visible label** (WCAG 2.5.3, label in name):
+ * a voice-control user says what they read, so the accessible name must contain it.
+ */
+const act = (kind: ActionKind, label: string, detail: string, url?: string): RequiredAction => ({
+  kind,
+  label,
+  description: `${label}. ${detail}`,
+  ...(url !== undefined ? { url } : {}),
+});
+
+export function requiredActionsFor(state: NotInstalled, packageName: string): RequiredAction[] {
   const S = NOT_INSTALLED_STRINGS;
   switch (state.type) {
     case "absent":
       if (state.priceLabel !== undefined) {
-        return [{
-          kind: "purchase-extension",
-          label: S.purchase(state.priceLabel),
-          description: S.purchaseDescription(packageName, state.priceLabel),
-        }];
+        return [act("purchase-extension", S.purchase(state.priceLabel), S.purchaseDescription(packageName, state.priceLabel))];
       }
       if (state.packItems !== undefined) {
-        return [{
-          kind: "install-pack",
-          label: S.installPack(state.packItems),
-          description: S.installPackDescription(packageName, state.packItems),
-        }];
+        return [act("install-pack", S.installPack(state.packItems), S.installPackDescription(packageName, state.packItems))];
       }
-      return [{ kind: "install-extension", label: S.installFree(), description: S.installDescription(packageName) }];
+      return [act("install-extension", S.installFree(), S.installDescription(packageName))];
     case "downloaded":
-      return [{
-        kind: "install-extension",
-        label: S.downloadedLabel(packageName),
-        description: S.downloadedDescription(packageName),
-      }];
+      return [act("install-extension", S.downloadedLabel(packageName), S.downloadedDescription(packageName))];
     case "failed":
-      return [{ kind: "retry-install", label: S.failedLabel(), description: S.failedDescription(packageName) }];
-    case "removed":
-      return [{ kind: "reinstall", label: S.removedLabel(packageName), description: S.removedDescription(packageName) }];
-    case "host-missing": {
-      const actions: RequiredAction[] = [
-        { kind: "download-package", label: S.downloadLabel(), description: S.downloadDescription(packageName) },
+      return [
+        state.priceLabel !== undefined
+          ? act("purchase-extension", S.purchase(state.priceLabel), S.purchaseDescription(packageName, state.priceLabel))
+          : act("retry-install", S.failedLabel(), S.failedDescription(packageName)),
       ];
-      if (state.hosts.length === 0) {
-        actions.push({
-          kind: "find-host",
-          label: S.findHostLabel(),
-          description: S.findHostDescription(),
-          url: hostDirectoryUrl(state.scopedTo ?? [], origin),
-        });
-      } else {
-        for (const host of state.hosts) {
-          actions.push({
-            kind: "install-host",
-            label: S.installHostLabel(host.name),
-            description: S.installHostDescription(host.name, packageName),
-            url: host.installUrl,
-          });
-        }
-      }
-      actions.push({
-        kind: "retry-handoff",
-        label: S.retryHandoffLabel(),
-        description: S.retryHandoffDescription(packageName),
-      });
-      return actions;
-    }
+    case "removed":
+      return [act("reinstall", S.removedLabel(packageName), S.removedDescription(packageName))];
+    case "host-missing":
+      return [
+        act("download-package", S.downloadLabel(), S.downloadDescription(packageName)),
+        ...state.hosts.map((host) =>
+          act("install-host", S.installHostLabel(host.name), S.installHostDescription(host.name, packageName), host.installUrl),
+        ),
+        act("retry-handoff", S.retryHandoffLabel(), S.retryHandoffDescription(packageName)),
+      ];
     case "nothing-installed":
-      return [{ kind: "browse-catalogue", label: S.browseLabel(), description: S.browseDescription() }];
+      return [act("browse-catalogue", S.browseLabel(), S.browseDescription())];
   }
 }
 
@@ -236,7 +218,7 @@ export function statusLineFor(state: NotInstalled): string | null {
     case "removed":
       return S.removedStatus();
     case "host-missing":
-      return S.hostMissingBody();
+      return state.hosts.length === 0 ? S.noHostListedBody() : S.hostMissingBody();
     case "nothing-installed":
       return S.nothingInstalledTitle();
   }
@@ -263,7 +245,8 @@ export function buttonStateFor(action: RequiredAction, phase: ActionPhase): Acti
     case "running":
       return {
         label: S.working(),
-        description: `${action.description}. ${S.working()}`,
+        // The accessible name keeps the visible text and still says which action is running.
+        description: `${S.working()} ${action.label}`,
         disabled: true,
         showProgress: true,
         error: null,
@@ -273,10 +256,47 @@ export function buttonStateFor(action: RequiredAction, phase: ActionPhase): Acti
     case "failed":
       return {
         label: S.retryPrefix(action.label),
-        description: `${action.description}. ${phase.message}`,
+        description: `${S.retryPrefix(action.label)}. ${phase.message}`,
         disabled: false,
         showProgress: false,
         error: phase.message,
       };
   }
+}
+
+/**
+ * Run `block` with its progress reported through `setPhase`: `running` while it works, then `idle`
+ * if it returned `null`/`undefined` or `failed` with the message if it returned one or threw. This is
+ * the one place the phases are produced; every async not-installed action (checkout, the install
+ * handoff) goes through it, so a button cannot run without showing it nor fail without saying so.
+ */
+export async function runWithPhase(
+  setPhase: (phase: ActionPhase) => void,
+  block: () => Promise<string | null | undefined>,
+): Promise<void> {
+  setPhase({ kind: "running" });
+  let failure: string | null | undefined;
+  try {
+    failure = await block();
+  } catch (e) {
+    const message = e instanceof Error ? e.message.trim() : "";
+    failure = message || NOT_INSTALLED_STRINGS.somethingWentWrong();
+  }
+  setPhase(failure ? { kind: "failed", message: failure } : { kind: "idle" });
+}
+
+/**
+ * Whether to show "Nothing installed yet": only when the **only** thing narrowing the catalogue is
+ * the Installed filter. With a search, price, category or app filter also active, an empty result
+ * says nothing about what is installed, and a button that wiped those filters would be wrong.
+ */
+export function showNothingInstalled(f: {
+  owned: number;
+  query: string;
+  price: number;
+  category: string | null;
+  app: string | null;
+  resultsEmpty: boolean;
+}): boolean {
+  return f.resultsEmpty && f.owned === 1 && f.query.trim() === "" && f.price === 0 && f.category === null && f.app === null;
 }

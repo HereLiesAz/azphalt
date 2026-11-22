@@ -32,6 +32,9 @@ import kotlinx.coroutines.launch
 import models.CheckoutResponse
 import models.installCount
 import models.ExtensionState
+import models.ActionKind
+import models.ActionPhase
+import models.runWithPhase
 import models.ExtensionStateEntry
 import models.HostOption
 import models.NotInstalled
@@ -127,7 +130,10 @@ fun DetailScreen(
     // rule of the system, and a permanently-running canvas is the loudest way to break it.
     val phase = STILL_FRAME
     val scope = rememberCoroutineScope()
-    var busy by remember { mutableStateOf(false) }
+    // The main button's phase. Everything that runs async behind it (checkout, the install handoff) goes
+    // through `runWithPhase`, so it shows progress while it works and says so, with a Retry, when it fails.
+    var installPhase by remember(pkg.id) { mutableStateOf<ActionPhase>(ActionPhase.Idle) }
+    val busy = installPhase == ActionPhase.Running
     var dialogText by remember { mutableStateOf<String?>(null) }
     var showFlag by remember { mutableStateOf(false) }
 
@@ -153,8 +159,6 @@ fun DetailScreen(
         packItems = pkg.pack?.entries?.size,
     )
     val primaryAction: RequiredAction? = missing?.let { requiredActionsFor(it, pkg.name).first() }
-    // The last checkout failure, kept so the dialog can offer *Retry checkout* instead of only OK.
-    var checkoutFailed by remember(pkg.id) { mutableStateOf(false) }
 
     /**
      * The web handoff — one implementation for the Install button and for the sheet's *Try again*.
@@ -169,7 +173,7 @@ fun DetailScreen(
      */
     val handoff: () -> Unit = {
         scope.launch {
-            busy = true
+            runWithPhase({ installPhase = it }) {
             val handed = attemptHandoff(handoffUri(pkg.id, pkg.version))
             // Only on "nothing claimed it". A user who left for a host and came back should not find
             // an apology waiting for them.
@@ -188,7 +192,8 @@ fun DetailScreen(
                 dialogText = "“${pkg.name}” was sent to your host. It'll show as installed here — " +
                     "if it didn't arrive, install it again."
             }
-            busy = false
+            null
+            }
         }
     }
 
@@ -198,18 +203,15 @@ fun DetailScreen(
             // Acting for a caller: purchase (if paid), download, verify and return — all
             // of it driven by the entry point that owes the result.
             onAcquire != null -> onAcquire(pkg)
-            isPaid(pkg) -> {
+            // Checkout only when the button says Get. An owner (installed, downloaded or removed)
+            // is never sent back through it: they get the install handoff.
+            primaryAction?.kind == ActionKind.PURCHASE_EXTENSION -> {
                 scope.launch {
-                    busy = true
-                    checkoutFailed = false
-                    val result = try {
-                        startCheckout(pkg.id)
-                    } catch (e: Exception) {
-                        CheckoutResponse(error = e.message ?: "Checkout failed")
+                    runWithPhase({ installPhase = it }) {
+                        val result = startCheckout(pkg.id)
+                        if (result.error == null) dialogText = result.message ?: "Checkout started."
+                        result.error
                     }
-                    checkoutFailed = result.error != null
-                    dialogText = result.error ?: result.message ?: "Checkout started."
-                    busy = false
                 }
             }
             else -> handoff()
@@ -424,34 +426,22 @@ fun DetailScreen(
                     modifier = Modifier.padding(bottom = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
                 )
             }
-            val mainLabel = when {
-                busy -> "Working…"
-                held -> "Install again"
-                else -> primaryAction?.label ?: "Install again"
+            val mainAction = if (held || primaryAction == null) {
+                RequiredAction(
+                    ActionKind.INSTALL_EXTENSION,
+                    "Install again",
+                    "Install again. Install ${pkg.name} again",
+                )
+            } else {
+                primaryAction
             }
-            Button(
-                enabled = !busy,
-                shape = CapsuleShape.Full,
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .azTurnstileEntrance(index = 3)
-                    .semantics {
-                        // The visible label is a short form ("Install · Free"); say the whole thing.
-                        contentDescription = if (busy) "Working" else (primaryAction?.description ?: "Install ${pkg.name} again")
-                        role = Role.Button
-                    },
+            ActionButton(
+                action = mainAction,
+                phase = installPhase,
+                modifier = Modifier.azTurnstileEntrance(index = 3),
+                containerColor = if (held) Roles.Acquired.first else Roles.Acquire.first,
                 onClick = installAction,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (held) Roles.Acquired.first else Roles.Acquire.first,
-                    contentColor = Color.White,
-                ),
-            ) {
-                if (busy) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
-                    Spacer(Modifier.width(10.dp))
-                }
-                Text(text = mainLabel, fontWeight = FontWeight.Bold)
-            }
+            )
 
             if (receipt.isNotEmpty()) {
                 Spacer(Modifier.height(14.dp))
@@ -468,7 +458,7 @@ fun DetailScreen(
                     onClick = { onForget(pkg) },
                     shape = CapsuleShape.Full,
                     modifier = Modifier.heightIn(min = 48.dp).semantics {
-                        contentDescription = "Not installed? Remove ${pkg.name} from my library"
+                        contentDescription = "Not installed? Remove from my library. Removes ${pkg.name} from the store's record."
                     },
                 ) {
                     Text("Not installed? Remove from my library", color = cs.onSurfaceVariant)
@@ -494,23 +484,8 @@ fun DetailScreen(
             shape = CapsuleShape.Panel,
             onDismissRequest = { dialogText = null },
             confirmButton = {
-                if (checkoutFailed) {
-                    // A failed checkout is not a dead end: the next step is to start it again.
-                    TextButton(
-                        onClick = {
-                            dialogText = null
-                            installAction()
-                        },
-                        shape = CapsuleShape.Full,
-                        modifier = Modifier.heightIn(min = 48.dp),
-                    ) { Text("Retry checkout") }
-                } else {
-                    TextButton(onClick = { dialogText = null }, shape = CapsuleShape.Full, modifier = Modifier.heightIn(min = 48.dp)) { Text("OK") }
-                }
+                TextButton(onClick = { dialogText = null }, shape = CapsuleShape.Full, modifier = Modifier.heightIn(min = 48.dp)) { Text("OK") }
             },
-            dismissButton = if (checkoutFailed) {
-                { TextButton(onClick = { dialogText = null; checkoutFailed = false }, shape = CapsuleShape.Full, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") } }
-            } else null,
             title = { Text(if (isPaid(pkg)) "Checkout" else "Install") },
             text = { Text(message) },
         )
@@ -519,7 +494,7 @@ fun DetailScreen(
     if (noHost) {
         NoHostSheet(
             pkg = pkg,
-            state = NotInstalled.HostMissing(hosts = hosts, scopedTo = pkg.targetApps),
+            state = NotInstalled.HostMissing(hosts = hosts),
             onRetry = {
                 // Close the sheet, then run the same handoff the button runs — including recording it
                 // and telling the user. The user may have installed a host and come back, which is

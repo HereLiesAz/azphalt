@@ -21,11 +21,8 @@ import {
 export type HostDirectory =
   | { status: 'loading' }
   | { status: 'ready'; hosts: HostOption[] }
-  /** The directory could not be read. The fallback row still gives the user somewhere to go. */
+  /** The directory could not be read. Download and retry still work and are still offered. */
   | { status: 'error' };
-
-/** The store whose page lists apps that can run extensions — this app is not served from it. */
-export const STORE_ORIGIN = 'https://www.azphalt.store';
 
 export interface NoHostPackage {
   id: string;
@@ -46,14 +43,10 @@ export function NoHostPanel({
   onDismiss: () => void;
 }) {
   const hosts = directory.status === 'ready' ? directory.hosts : [];
-  const state: NotInstalled = { type: 'host-missing', hosts, scopedTo: pkg.targetApps ?? [] };
-  const actions = requiredActionsFor(state, pkg.name, STORE_ORIGIN);
+  const state: NotInstalled = { type: 'host-missing', hosts };
+  const actions = requiredActionsFor(state, pkg.name);
   const retry = actions.find((a) => a.kind === 'retry-handoff');
-  // While the directory loads, the rows that depend on it are held back rather than shown as a
-  // "find an app" that is about to be replaced by the real list.
-  const rows = actions.filter(
-    (a) => a.kind !== 'retry-handoff' && !(directory.status === 'loading' && a.kind === 'find-host'),
-  );
+  const rows = actions.filter((a) => a.kind !== 'retry-handoff');
   return (
     <div
       className="empty-state not-installed-panel"
@@ -61,7 +54,8 @@ export function NoHostPanel({
       aria-label={`Install ${pkg.name}`}
       style={{ marginTop: 16, padding: 16, border: '1px solid var(--md-sys-color-outline)' }}
     >
-      <p style={{ margin: 0 }}>{statusLineFor(state)}</p>
+      {/* While the directory loads the line would claim "no host is listed" prematurely, so wait. */}
+      {directory.status !== 'loading' && <p style={{ margin: 0 }}>{statusLineFor(state)}</p>}
       {directory.status === 'loading' && (
         <p role="status" style={{ margin: '8px 0 0' }}>Looking for apps that can run this…</p>
       )}

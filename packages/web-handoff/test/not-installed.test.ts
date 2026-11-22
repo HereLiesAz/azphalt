@@ -11,7 +11,8 @@ import { describe, it, expect } from "vitest";
 import {
   NOT_INSTALLED_STRINGS,
   buttonStateFor,
-  hostDirectoryUrl,
+  runWithPhase,
+  showNothingInstalled,
   isHeld,
   isInstalled,
   isSafeInstallUrl,
@@ -36,10 +37,10 @@ const samples: NotInstalled[] = [
   { type: "downloaded" },
   { type: "failed", reason: "integrity-mismatch" },
   { type: "failed" },
+  { type: "failed", reason: "incompatible", priceLabel: "$4.99" },
   { type: "removed" },
-  { type: "host-missing", hosts: [hostA, hostB], scopedTo: ["com.hereliesaz.graffux"] },
+  { type: "host-missing", hosts: [hostA, hostB] },
   { type: "host-missing", hosts: [] },
-  { type: "host-missing", hosts: [], scopedTo: ["com.hereliesaz.graffux"] },
   { type: "nothing-installed" },
 ];
 
@@ -51,13 +52,13 @@ function expectedKinds(state: NotInstalled): ActionKind[] {
     case "downloaded":
       return ["install-extension"];
     case "failed":
-      return ["retry-install"];
+      return [state.priceLabel !== undefined ? "purchase-extension" : "retry-install"];
     case "removed":
       return ["reinstall"];
     case "host-missing":
       return [
         "download-package",
-        ...(state.hosts.length === 0 ? (["find-host"] as const) : state.hosts.map(() => "install-host" as const)),
+        ...state.hosts.map(() => "install-host" as const),
         "retry-handoff",
       ];
     case "nothing-installed":
@@ -86,6 +87,8 @@ describe("requiredActionsFor", () => {
         expect(action.label.trim().length).toBeGreaterThan(0);
         expect(action.label.trim().toUpperCase()).not.toBe("OK");
         expect(action.description.length).toBeGreaterThanOrEqual(8);
+        // WCAG 2.5.3: the accessible name starts with the visible text.
+        expect(action.description.startsWith(action.label), action.description).toBe(true);
       }
     }
   });
@@ -93,7 +96,25 @@ describe("requiredActionsFor", () => {
   it("says the package's name in the spoken form where one applies", () => {
     for (const state of samples) {
       if (state.type === "nothing-installed" || state.type === "host-missing") continue;
+      if (state.type === "failed" && state.priceLabel === undefined) {
+        expect(requiredActionsFor(state, "Acme LUT")[0]!.description).toContain("Acme LUT");
+        continue;
+      }
       expect(requiredActionsFor(state, "Acme LUT")[0]!.description).toContain("Acme LUT");
+    }
+  });
+
+  it("never sends an owner back through checkout, and the label matches the action", () => {
+    const price = "$4.99";
+    expect(requiredActionsFor(notInstalledStateFor({ state: "downloaded" }, { priceLabel: price })!, "X")[0]!.kind).toBe("install-extension");
+    expect(requiredActionsFor(notInstalledStateFor({ state: "removed" }, { priceLabel: price })!, "X")[0]!.kind).toBe("reinstall");
+    const failed = requiredActionsFor(notInstalledStateFor({ state: "failed" }, { priceLabel: price })!, "X")[0]!;
+    expect(failed.kind).toBe("purchase-extension");
+    expect(failed.label).toBe("Get  ·  $4.99");
+    expect(requiredActionsFor(notInstalledStateFor({ state: "failed" })!, "X")[0]!.kind).toBe("retry-install");
+    for (const state of ["downloaded", "removed", "failed"] as const) {
+      const a = requiredActionsFor(notInstalledStateFor({ state }, { priceLabel: price })!, "X")[0]!;
+      expect(a.label.startsWith("Get"), state).toBe(a.kind === "purchase-extension");
     }
   });
 
@@ -111,35 +132,20 @@ describe("requiredActionsFor", () => {
     expect(actions.map((a) => a.url)).toEqual([undefined, hostA.installUrl, hostB.installUrl, undefined]);
   });
 
-  it("still has somewhere to go when the directory is empty", () => {
-    const actions = requiredActionsFor({ type: "host-missing", hosts: [], scopedTo: ["com.hereliesaz.graffux"] }, "Acme LUT");
-    const find = actions.find((a) => a.kind === "find-host");
-    expect(find?.url).toBe("/app/com.hereliesaz.graffux");
-    expect(actions.some((a) => a.kind === "install-host")).toBe(false);
-  });
-
-  it("can point the fallback at an absolute store origin", () => {
-    const [, find] = requiredActionsFor({ type: "host-missing", hosts: [] }, "Acme", "https://www.azphalt.store");
-    expect(find!.url).toBe("https://www.azphalt.store/");
+  it("with no listed host offers only what works, and says why", () => {
+    const state: NotInstalled = { type: "host-missing", hosts: [] };
+    expect(requiredActionsFor(state, "Acme LUT").map((a) => a.kind)).toEqual(["download-package", "retry-handoff"]);
+    expect(statusLineFor(state)).toMatch(/^No host app is listed for this extension yet/);
   });
 
   it("carries a url only for the kinds that open one, and only a safe one", () => {
-    const withUrl: ActionKind[] = ["install-host", "find-host"];
+    const withUrl: ActionKind[] = ["install-host"];
     for (const state of samples) {
       for (const action of requiredActionsFor(state, "Acme LUT")) {
         expect(action.url !== undefined, action.kind).toBe(withUrl.includes(action.kind));
         if (action.kind === "install-host") expect(isSafeInstallUrl(action.url)).toBe(true);
       }
     }
-  });
-});
-
-describe("hostDirectoryUrl", () => {
-  it("only trusts reverse-DNS ids into a path", () => {
-    expect(hostDirectoryUrl([])).toBe("/");
-    expect(hostDirectoryUrl(["com.a.b"])).toBe("/app/com.a.b");
-    expect(hostDirectoryUrl(["../admin", "a b", "x/y", ""])).toBe("/");
-    expect(hostDirectoryUrl(["../x", "com.ok.app"])).toBe("/app/com.ok.app");
   });
 });
 
@@ -185,17 +191,17 @@ describe("statusLineFor", () => {
     expect(statusLineFor({ type: "failed", reason: " " })).toBe("The last install didn't finish.");
     expect(statusLineFor({ type: "removed" })).toBe("Removed from your host.");
     expect(statusLineFor({ type: "nothing-installed" })).toBe("Nothing installed yet");
-    expect(statusLineFor({ type: "host-missing", hosts: [] })).toContain("No app on this device");
+    expect(statusLineFor({ type: "host-missing", hosts: [hostA] })).toContain("No app on this device");
   });
 });
 
 describe("buttonStateFor", () => {
-  const action: RequiredAction = { kind: "install-host", label: "Install Graffux", description: "Open the install page for Graffux", url: "https://example.test/graffux" };
+  const action: RequiredAction = { kind: "install-host", label: "Install Graffux", description: "Install Graffux. Open the install page for Graffux", url: "https://example.test/graffux" };
 
   it("is pressable and quiet when idle", () => {
     expect(buttonStateFor(action, { kind: "idle" })).toEqual({
       label: "Install Graffux",
-      description: "Open the install page for Graffux",
+      description: "Install Graffux. Open the install page for Graffux",
       disabled: false,
       showProgress: false,
       error: null,
@@ -207,7 +213,8 @@ describe("buttonStateFor", () => {
     expect(s.disabled).toBe(true);
     expect(s.showProgress).toBe(true);
     expect(s.error).toBeNull();
-    expect(s.description).toContain("Open the install page for Graffux");
+    expect(s.description).toBe("Working… Install Graffux");
+    expect(s.description).toContain(s.label);
   });
 
   it("says it failed and stays retryable", () => {
@@ -215,7 +222,7 @@ describe("buttonStateFor", () => {
     expect(s.label).toBe("Retry: Install Graffux");
     expect(s.disabled).toBe(false);
     expect(s.error).toBe("Couldn't open that page.");
-    expect(s.description).toContain("Couldn't open that page.");
+    expect(s.description.startsWith(s.label)).toBe(true);
   });
 
   it("handles every phase", () => {
@@ -224,10 +231,57 @@ describe("buttonStateFor", () => {
   });
 });
 
+describe("runWithPhase (the one producer of phases)", () => {
+  const record = () => {
+    const seen: ActionPhase[] = [];
+    return { seen, set: (p: ActionPhase) => void seen.push(p) };
+  };
+
+  it("reports running then idle on success", async () => {
+    const r = record();
+    await runWithPhase(r.set, async () => null);
+    expect(r.seen).toEqual([{ kind: "running" }, { kind: "idle" }]);
+  });
+
+  it("reports a returned message as a failure", async () => {
+    const r = record();
+    await runWithPhase(r.set, async () => "Checkout failed");
+    expect(r.seen).toEqual([{ kind: "running" }, { kind: "failed", message: "Checkout failed" }]);
+  });
+
+  it("turns a throw into a failure, never leaving it running", async () => {
+    const r = record();
+    await runWithPhase(r.set, async () => { throw new Error("boom"); });
+    expect(r.seen.at(-1)).toEqual({ kind: "failed", message: "boom" });
+    const blank = record();
+    await runWithPhase(blank.set, async () => { throw new Error(" "); });
+    expect(blank.seen.at(-1)).toEqual({ kind: "failed", message: "Something went wrong." });
+    const odd = record();
+    await runWithPhase(odd.set, async () => { throw "string"; });
+    expect(odd.seen.at(-1)).toEqual({ kind: "failed", message: "Something went wrong." });
+  });
+});
+
+describe("showNothingInstalled", () => {
+  const base = { owned: 1, query: "", price: 0, category: null, app: null, resultsEmpty: true };
+  it("shows only when the Installed filter is the only filter", () => {
+    expect(showNothingInstalled(base)).toBe(true);
+    expect(showNothingInstalled({ ...base, query: "  " })).toBe(true);
+    expect(showNothingInstalled({ ...base, resultsEmpty: false })).toBe(false);
+    expect(showNothingInstalled({ ...base, owned: 0 })).toBe(false);
+    expect(showNothingInstalled({ ...base, owned: 2 })).toBe(false);
+    // Someone with installs who searches "zzz" is not told they have nothing installed.
+    expect(showNothingInstalled({ ...base, query: "zzz" })).toBe(false);
+    expect(showNothingInstalled({ ...base, price: 2 })).toBe(false);
+    expect(showNothingInstalled({ ...base, category: "image" })).toBe(false);
+    expect(showNothingInstalled({ ...base, app: "com.a.b" })).toBe(false);
+  });
+});
+
 describe("strings", () => {
   it("never produce an OK label", () => {
     const S = NOT_INSTALLED_STRINGS;
-    for (const label of [S.installFree(), S.failedLabel(), S.downloadLabel(), S.retryHandoffLabel(), S.browseLabel(), S.findHostLabel()]) {
+    for (const label of [S.installFree(), S.failedLabel(), S.downloadLabel(), S.retryHandoffLabel(), S.browseLabel()]) {
       expect(label.toUpperCase()).not.toBe("OK");
     }
   });

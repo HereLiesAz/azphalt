@@ -46,6 +46,7 @@ import models.installCount
 import models.forgetInstall
 import models.installedEntry
 import models.isInstalled
+import models.showNothingInstalled
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import models.NotInstalled
@@ -296,7 +297,7 @@ fun StorefrontApp(
                                 header = header,
                                 // "Installed" with nothing installed is not a dead end: the way out is the
                                 // catalogue, where there is something to install.
-                                emptyAction = if (owned == 1 && shown.isEmpty()) {
+                                emptyAction = if (showNothingInstalled(owned, query, price, category, app, shown.isEmpty())) {
                                     {
                                         NothingInstalledAction(
                                             onBrowse = {

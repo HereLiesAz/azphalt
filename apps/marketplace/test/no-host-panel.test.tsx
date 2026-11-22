@@ -39,16 +39,19 @@ describe('NoHostPanel', () => {
     expect(html).not.toContain('role="alert"');
   });
 
-  it('is never a dead end: an empty directory still offers an app to find, on the store', () => {
+  it('with no listed host says so and offers only what works: no fake button', () => {
     const html = render({ status: 'ready', hosts: [] }, { targetApps: ['com.hereliesaz.graffux'] });
-    expect(labels(html)).toContain('Find an app that runs extensions');
-    expect(html).toContain('href="https://www.azphalt.store/app/com.hereliesaz.graffux"');
+    expect(html).toContain('No host app is listed for this extension yet');
+    expect(labels(html)).toEqual(['Download .azp', 'Retry install', 'Close']);
+    expect(html).not.toContain('Find an app');
   });
 
   it('while the directory loads, says so and does not flash a find-an-app row that is about to change', () => {
     const html = render({ status: 'loading' });
     expect(html).toContain('role="status"');
     expect(html).toContain('Looking for apps that can run this…');
+    // Not yet claiming "no host is listed" while the directory is still loading.
+    expect(html).not.toContain('No host app is listed');
     expect(labels(html)).toEqual(['Download .azp', 'Retry install', 'Close']);
   });
 
@@ -56,7 +59,7 @@ describe('NoHostPanel', () => {
     const html = render({ status: 'error' });
     expect(html).toContain('role="alert"');
     expect(html).toContain('Couldn’t load the list of apps.');
-    expect(labels(html)).toContain('Find an app that runs extensions');
+    expect(labels(html)).toEqual(['Download .azp', 'Retry install', 'Close']);
   });
 
   it('gives every link and button an accessible name that says what it does', () => {
@@ -65,7 +68,7 @@ describe('NoHostPanel', () => {
     expect(tags.filter((t) => t.includes('class="btn')).length).toBe(4);
     // Everything but the plain Close button carries a spoken description.
     for (const tag of tags.slice(0, 3)) expect(tag, tag).toMatch(/aria-label="[^"]{8,}"/);
-    expect(html).toContain('aria-label="Open the install page for Graffux, an app that can run Acme LUT"');
+    expect(html).toContain('aria-label="Install Graffux. Open the install page for Graffux, an app that can run Acme LUT"');
   });
 
   it('never labels anything OK', () => {

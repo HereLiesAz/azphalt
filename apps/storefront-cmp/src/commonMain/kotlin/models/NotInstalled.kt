@@ -34,8 +34,15 @@ sealed interface NotInstalled {
     /** Bytes held and verified by a host, no install (`ExtensionState.DOWNLOADED`). */
     data object Downloaded : NotInstalled
 
-    /** Acquisition or installation did not complete (`ExtensionState.FAILED`). */
-    data class Failed(val reason: String?) : NotInstalled
+    /**
+     * Acquisition or installation did not complete (`ExtensionState.FAILED`).
+     *
+     * [priceLabel] is set for a paid package whose entitlement is not known: the failure may have been
+     * the purchase itself, and the button must then say **Get** and go to checkout, because that is
+     * what pressing it does. (`DOWNLOADED` and `REMOVED` mean a host held the bytes, which for a paid
+     * package means it was already bought, so those never send an owner back through checkout.)
+     */
+    data class Failed(val reason: String?, val priceLabel: String? = null) : NotInstalled
 
     /** Had it, does not now (`ExtensionState.REMOVED`). */
     data object Removed : NotInstalled
@@ -43,15 +50,12 @@ sealed interface NotInstalled {
     /**
      * The install link was attempted and nothing on this device claimed it: there is no host.
      *
-     * [hosts] is the directory already filtered to hosts that can run this package (`hostsFor`);
-     * empty when the directory has nothing for it, which must still resolve to somewhere to go.
-     * [scopedTo] is the package's `targetApps`, used to point the "find a host" fallback at the right
-     * app's page.
+     * [hosts] is the directory already filtered to hosts that can run this package (`hostsFor`).
+     * Empty means **no host is listed for this extension**; that is said plainly and the actions that
+     * still work (download for a manual install, retry) are offered. No button points at a page that
+     * would have nothing more to offer — there is no host-directory page to send anyone to.
      */
-    data class HostMissing(
-        val hosts: List<HostOption>,
-        val scopedTo: List<String> = emptyList(),
-    ) : NotInstalled
+    data class HostMissing(val hosts: List<HostOption>) : NotInstalled
 
     /** The "Installed" filter matched nothing: the viewer has no extensions installed (yet). */
     data object NothingInstalledYet : NotInstalled
@@ -76,9 +80,6 @@ enum class ActionKind {
 
     /** Open a host app's install page ([RequiredAction.url]). */
     INSTALL_HOST,
-
-    /** No directory entry: open the store page that lists apps able to run extensions. */
-    FIND_HOST,
 
     /** Download the `.azp` — the part of the fallback that needs no link support at all. */
     DOWNLOAD_PACKAGE,
@@ -105,6 +106,13 @@ data class RequiredAction(
     val url: String? = null,
 )
 
+/**
+ * A [RequiredAction] whose spoken form **starts with its visible label** (WCAG 2.5.3, label in name):
+ * a voice-control user says what they read, so the accessible name must contain it.
+ */
+private fun act(kind: ActionKind, label: String, detail: String, url: String? = null) =
+    RequiredAction(kind, label, "$label. $detail", url)
+
 /** All user-facing text for the not-installed states. One place, so every platform says the same. */
 object NotInstalledStrings {
     fun installFree(): String = "Install  ·  Free"
@@ -130,8 +138,6 @@ object NotInstalledStrings {
     fun installHostLabel(hostName: String): String = "Install $hostName"
     fun installHostDescription(hostName: String, pkgName: String): String =
         "Open the install page for $hostName, an app that can run $pkgName"
-    fun findHostLabel(): String = "Find an app that runs extensions"
-    fun findHostDescription(): String = "Open the Azphalt Store page listing apps that can run extensions"
     fun downloadLabel(): String = "Download .azp"
     fun downloadDescription(pkgName: String): String = "Download the package file for $pkgName to open in an app later"
     fun retryHandoffLabel(): String = "Retry install"
@@ -142,10 +148,14 @@ object NotInstalledStrings {
     fun hostMissingBody(): String =
         "No app on this device can open this extension yet. Install an app that runs extensions, or " +
             "download the package and open it later."
+    fun noHostListedBody(): String =
+        "No host app is listed for this extension yet. You can download the package and install it " +
+            "manually, then try again."
     fun nothingInstalledTitle(): String = "Nothing installed yet"
 
     // Phase text for [ActionPhase].
     fun working(): String = "Working…"
+    fun somethingWentWrong(): String = "Something went wrong."
     fun openingPage(): String = "Opening…"
     fun couldNotOpen(label: String): String = "Couldn't open that page. Select “$label” to try again."
     fun retryPrefix(label: String): String = "Retry: $label"
@@ -170,21 +180,9 @@ fun notInstalledStateFor(
 ): NotInstalled? = when (entry?.state) {
     null -> NotInstalled.Absent(priceLabel = priceLabel, packItems = packItems)
     ExtensionState.DOWNLOADED -> NotInstalled.Downloaded
-    ExtensionState.FAILED -> NotInstalled.Failed(entry.reason)
+    ExtensionState.FAILED -> NotInstalled.Failed(entry.reason, priceLabel)
     ExtensionState.REMOVED -> NotInstalled.Removed
     ExtensionState.INSTALLED, ExtensionState.ACTIVE -> null
-}
-
-/**
- * The page that lists apps able to run extensions, for when the directory had nothing to offer.
- *
- * A package scoped to one app points at that app's page (`/app/<id>`, which the web store serves);
- * anything else points at the store itself, whose catalogue includes the `kind:"app"` listings.
- * Ids are reverse-DNS, so anything outside that alphabet is not trusted into a path.
- */
-fun hostDirectoryUrl(scopedTo: List<String>): String {
-    val id = scopedTo.firstOrNull { candidate -> candidate.isNotEmpty() && candidate.all { it.isLetterOrDigit() || it == '.' || it == '-' || it == '_' } }
-    return if (id == null) STORE_ORIGIN else "$STORE_ORIGIN/app/$id"
 }
 
 /**
@@ -198,17 +196,17 @@ fun hostDirectoryUrl(scopedTo: List<String>): String {
 fun requiredActionsFor(state: NotInstalled, packageName: String): List<RequiredAction> = when (state) {
     is NotInstalled.Absent -> listOf(
         when {
-            state.priceLabel != null -> RequiredAction(
+            state.priceLabel != null -> act(
                 ActionKind.PURCHASE_EXTENSION,
                 NotInstalledStrings.purchase(state.priceLabel),
                 NotInstalledStrings.purchaseDescription(packageName, state.priceLabel),
             )
-            state.packItems != null -> RequiredAction(
+            state.packItems != null -> act(
                 ActionKind.INSTALL_PACK,
                 NotInstalledStrings.installPack(state.packItems),
                 NotInstalledStrings.installPackDescription(packageName, state.packItems),
             )
-            else -> RequiredAction(
+            else -> act(
                 ActionKind.INSTALL_EXTENSION,
                 NotInstalledStrings.installFree(),
                 NotInstalledStrings.installDescription(packageName),
@@ -216,69 +214,38 @@ fun requiredActionsFor(state: NotInstalled, packageName: String): List<RequiredA
         },
     )
     NotInstalled.Downloaded -> listOf(
-        RequiredAction(
-            ActionKind.INSTALL_EXTENSION,
-            NotInstalledStrings.downloadedLabel(packageName),
-            NotInstalledStrings.downloadedDescription(packageName),
-        ),
+        act(ActionKind.INSTALL_EXTENSION, NotInstalledStrings.downloadedLabel(packageName), NotInstalledStrings.downloadedDescription(packageName)),
     )
     is NotInstalled.Failed -> listOf(
-        RequiredAction(
-            ActionKind.RETRY_INSTALL,
-            NotInstalledStrings.failedLabel(),
-            NotInstalledStrings.failedDescription(packageName),
-        ),
-    )
-    NotInstalled.Removed -> listOf(
-        RequiredAction(
-            ActionKind.REINSTALL,
-            NotInstalledStrings.removedLabel(packageName),
-            NotInstalledStrings.removedDescription(packageName),
-        ),
-    )
-    is NotInstalled.HostMissing -> buildList {
-        add(
-            RequiredAction(
-                ActionKind.DOWNLOAD_PACKAGE,
-                NotInstalledStrings.downloadLabel(),
-                NotInstalledStrings.downloadDescription(packageName),
-            ),
-        )
-        if (state.hosts.isEmpty()) {
-            add(
-                RequiredAction(
-                    ActionKind.FIND_HOST,
-                    NotInstalledStrings.findHostLabel(),
-                    NotInstalledStrings.findHostDescription(),
-                    url = hostDirectoryUrl(state.scopedTo),
-                ),
+        if (state.priceLabel != null) {
+            act(
+                ActionKind.PURCHASE_EXTENSION,
+                NotInstalledStrings.purchase(state.priceLabel),
+                NotInstalledStrings.purchaseDescription(packageName, state.priceLabel),
             )
         } else {
-            state.hosts.forEach { host ->
-                add(
-                    RequiredAction(
-                        ActionKind.INSTALL_HOST,
-                        NotInstalledStrings.installHostLabel(host.name),
-                        NotInstalledStrings.installHostDescription(host.name, packageName),
-                        url = host.installUrl,
-                    ),
-                )
-            }
+            act(ActionKind.RETRY_INSTALL, NotInstalledStrings.failedLabel(), NotInstalledStrings.failedDescription(packageName))
+        },
+    )
+    NotInstalled.Removed -> listOf(
+        act(ActionKind.REINSTALL, NotInstalledStrings.removedLabel(packageName), NotInstalledStrings.removedDescription(packageName)),
+    )
+    is NotInstalled.HostMissing -> buildList {
+        add(act(ActionKind.DOWNLOAD_PACKAGE, NotInstalledStrings.downloadLabel(), NotInstalledStrings.downloadDescription(packageName)))
+        state.hosts.forEach { host ->
+            add(
+                act(
+                    ActionKind.INSTALL_HOST,
+                    NotInstalledStrings.installHostLabel(host.name),
+                    NotInstalledStrings.installHostDescription(host.name, packageName),
+                    url = host.installUrl,
+                ),
+            )
         }
-        add(
-            RequiredAction(
-                ActionKind.RETRY_HANDOFF,
-                NotInstalledStrings.retryHandoffLabel(),
-                NotInstalledStrings.retryHandoffDescription(packageName),
-            ),
-        )
+        add(act(ActionKind.RETRY_HANDOFF, NotInstalledStrings.retryHandoffLabel(), NotInstalledStrings.retryHandoffDescription(packageName)))
     }
     NotInstalled.NothingInstalledYet -> listOf(
-        RequiredAction(
-            ActionKind.BROWSE_CATALOGUE,
-            NotInstalledStrings.browseLabel(),
-            NotInstalledStrings.browseDescription(),
-        ),
+        act(ActionKind.BROWSE_CATALOGUE, NotInstalledStrings.browseLabel(), NotInstalledStrings.browseDescription()),
     )
 }
 
@@ -287,7 +254,8 @@ fun statusLineFor(state: NotInstalled): String? = when (state) {
     NotInstalled.Downloaded -> NotInstalledStrings.downloadedStatus()
     is NotInstalled.Failed -> NotInstalledStrings.failedStatus(state.reason)
     NotInstalled.Removed -> NotInstalledStrings.removedStatus()
-    is NotInstalled.HostMissing -> NotInstalledStrings.hostMissingBody()
+    is NotInstalled.HostMissing ->
+        if (state.hosts.isEmpty()) NotInstalledStrings.noHostListedBody() else NotInstalledStrings.hostMissingBody()
     NotInstalled.NothingInstalledYet -> NotInstalledStrings.nothingInstalledTitle()
     is NotInstalled.Absent -> null
 }
@@ -311,24 +279,61 @@ data class ActionButtonState(
 
 fun buttonStateFor(action: RequiredAction, phase: ActionPhase): ActionButtonState = when (phase) {
     ActionPhase.Idle -> ActionButtonState(action.label, action.description, enabled = true, showProgress = false, error = null)
+    // The accessible name keeps the visible text ("Working…") and still says which action is running.
     ActionPhase.Running -> ActionButtonState(
         label = NotInstalledStrings.working(),
-        description = action.description + ". " + NotInstalledStrings.working(),
+        description = NotInstalledStrings.working() + " " + action.label,
         enabled = false,
         showProgress = true,
         error = null,
     )
     // Still pressable, and relabelled: a failure that leaves the same word on the button gives no
     // sign that pressing it again is a retry rather than a repeat of what just failed.
-    is ActionPhase.Failed -> ActionButtonState(
-        label = NotInstalledStrings.retryPrefix(action.label),
-        description = action.description + ". " + phase.message,
-        enabled = true,
-        showProgress = false,
-        error = phase.message,
-    )
+    is ActionPhase.Failed -> NotInstalledStrings.retryPrefix(action.label).let { retryLabel ->
+        ActionButtonState(
+            label = retryLabel,
+            description = retryLabel + ". " + phase.message,
+            enabled = true,
+            showProgress = false,
+            error = phase.message,
+        )
+    }
 }
 
 /** The phase after an attempt to open a page: it opened, or it did not and the user is told. */
 fun phaseAfterOpen(action: RequiredAction, opened: Boolean): ActionPhase =
     if (opened) ActionPhase.Idle else ActionPhase.Failed(NotInstalledStrings.couldNotOpen(action.label))
+
+/**
+ * Run [block] with its progress reported through [setPhase]: `Running` while it works, then `Idle` if
+ * it returned null or `Failed(message)` if it returned a message or threw. This is the one place the
+ * phases are produced; every async not-installed action (checkout, handoff, an install request) goes
+ * through it, so a button cannot run without showing it and cannot fail without saying so.
+ * Cancellation is not a failure and is rethrown.
+ */
+suspend fun runWithPhase(setPhase: (ActionPhase) -> Unit, block: suspend () -> String?) {
+    setPhase(ActionPhase.Running)
+    val failure: String? = try {
+        block()
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        setPhase(ActionPhase.Idle)
+        throw e
+    } catch (e: Exception) {
+        e.message?.takeIf { it.isNotBlank() } ?: NotInstalledStrings.somethingWentWrong()
+    }
+    setPhase(if (failure == null) ActionPhase.Idle else ActionPhase.Failed(failure))
+}
+
+/**
+ * Whether to show "Nothing installed yet": only when the **only** thing narrowing the catalogue is
+ * the Installed filter. With a search, price, category or app filter also active, an empty result
+ * says nothing about what is installed, and a button that wiped those filters would be wrong.
+ */
+fun showNothingInstalled(
+    owned: Int,
+    query: String,
+    price: Int,
+    category: String?,
+    app: String?,
+    resultsEmpty: Boolean,
+): Boolean = resultsEmpty && owned == 1 && query.isBlank() && price == 0 && category == null && app == null

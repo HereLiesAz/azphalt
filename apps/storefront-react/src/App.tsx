@@ -30,13 +30,17 @@ import {
   type PublishTicket,
   type Report,
 } from "./api";
-import { ActionControl, NoHostSheetBody, NothingInstalled, Spinner } from "./NotInstalled";
+import { ActionControl, NoHostSheetBody, NothingInstalled } from "./NotInstalled";
 import { drawPreview, paletteFor, rgba } from "./preview";
 import { availableStoreCategories, storeCategoryKeys, storeCategoryLabel } from "./taxonomy";
 import {
   attemptHandoff,
   forgetInstall,
   hostsFor,
+  runWithPhase,
+  showNothingInstalled,
+  type ActionPhase,
+  type RequiredAction,
   notInstalledStateFor,
   requiredActionsFor,
   statusLineFor,
@@ -380,7 +384,11 @@ function PackageCard({
   height?: number;
 }) {
   const [container, on] = paletteFor(pkg.id);
-  const held = isHeld(useContext(InventoryContext), pkg.id);
+  const inventory = useContext(InventoryContext);
+  const held = isHeld(inventory, pkg.id);
+  // A recorded state that is not an install (downloaded, failed, removed): say so, as the Compose
+  // cards do. The card opens the detail screen, whose button does the action.
+  const pending = !held ? inventory[pkg.id]?.state : undefined;
   const paid = isPaid(pkg);
   const ratingLabel = formatRating(pkg.rating, pkg.ratingCount);
   return (
@@ -407,6 +415,7 @@ function PackageCard({
                 relationship to the package, not the package's terms. Without it the install
                 confirmation promised a marking the catalogue never showed. */}
             {held && <Pill text="INSTALLED" bg="var(--primary)" fg="var(--on-primary)" />}
+            {pending && <Pill text={`${pending.toUpperCase()} · NOT INSTALLED`} bg="var(--secondary-container)" fg="var(--on-secondary-container)" />}
           </div>
           <Pill text={priceLabel(pkg)} bg={paid ? "var(--primary)" : rgba(on, 0.16)} fg={paid ? "var(--on-primary)" : on} />
         </div>
@@ -633,9 +642,9 @@ function Detail({
   const held = isHeld(inventory, pkg.id);
   const [container, on] = paletteFor(pkg.id);
   const [dialog, setDialog] = useState<string | null>(null);
-  // A failed checkout is not a dead end: the dialog then offers to start it again.
-  const [checkoutFailed, setCheckoutFailed] = useState(false);
-  const [busy, setBusy] = useState(false);
+  // The main button's phase. Everything async behind it (checkout, the install handoff) goes through
+  // `runWithPhase`, so it shows progress while it works and says so, with a Retry, when it fails.
+  const [phase, setPhase] = useState<ActionPhase>({ kind: "idle" });
   // The install fallback (spec/web-handoff.md § When no host is installed). Set only once a handoff
   // attempt has come back with "nothing claimed it" — never shown pre-emptively, because on a device
   // that does have a host the user should simply arrive there.
@@ -678,13 +687,12 @@ function Detail({
     }
   };
 
-  const hand = async () => {
-    setBusy(true);
-    // Close the sheet before re-attempting, so a retry does not sit on screen unchanged for the whole
-    // wait window looking like a dead button. The Compose storefront does the same at its call site;
-    // the two are meant to behave identically.
-    setNoHost(false);
-    try {
+  const hand = () =>
+    runWithPhase(setPhase, async () => {
+      // Close the sheet before re-attempting, so a retry does not sit on screen unchanged for the whole
+      // wait window looking like a dead button. The Compose storefront does the same at its call site;
+      // the two are meant to behave identically.
+      setNoHost(false);
       // One link shape for everything free, packs included — a pack is a package with an id, and the
       // host resolves its members (spec/web-handoff.md § Packs). Nothing here names a host.
       const handed = await attemptHandoff(installLink(pkg.id, pkg.version));
@@ -698,29 +706,25 @@ function Detail({
         );
       }
       setNoHost(!handed);
-    } finally {
-      setBusy(false);
-    }
-  };
+      return null;
+    });
 
-  const buy = async () => {
-    if (!paid) {
-      await hand();
-      return;
-    }
-    setBusy(true);
-    setCheckoutFailed(false);
-    try {
-      const r = await startCheckout(pkg.id);
-      setCheckoutFailed(r.error !== undefined && r.error !== null && r.error !== "");
-      setDialog(r.error ?? r.message ?? "Checkout started.");
-    } catch (e) {
-      setCheckoutFailed(true);
-      setDialog((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
+  // Checkout only when the button says Get. An owner (installed, downloaded or removed) is never sent
+  // back through it: they get the install handoff.
+  const buy = () =>
+    primaryAction?.kind === "purchase-extension"
+      ? runWithPhase(setPhase, async () => {
+          const r = await startCheckout(pkg.id);
+          if (r.error) return r.error;
+          setDialog(r.message ?? "Checkout started.");
+          return null;
+        })
+      : hand();
+
+  const mainAction: RequiredAction =
+    held || !primaryAction
+      ? { kind: "install-extension", label: "Install again", description: `Install again. Install ${pkg.name} again` }
+      : primaryAction;
 
   return (
     <div style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>
@@ -791,30 +795,9 @@ function Detail({
       {statusLine && (
         <p role="status" style={{ marginTop: 28, marginBottom: 0, color: "var(--on-surface-variant)" }}>{statusLine}</p>
       )}
-      <button
-        type="button"
-        onClick={buy}
-        disabled={busy}
-        aria-busy={busy || undefined}
-        aria-label={busy ? "Working" : held ? `Install ${pkg.name} again` : primaryAction?.description}
-        style={{
-          marginTop: statusLine ? 12 : 32,
-          border: "none",
-          borderRadius: 999,
-          padding: "14px 28px",
-          minHeight: 48,
-          fontSize: 16,
-          fontWeight: 700,
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 10,
-          background: "var(--primary)",
-          color: "var(--on-primary)",
-        }}
-      >
-        {busy && <Spinner />}
-        {busy ? "Working…" : held ? "Install again" : (primaryAction?.label ?? "Install again")}
-      </button>
+      <div style={{ maxWidth: 360, marginTop: statusLine ? 4 : 24 }}>
+        <ActionControl action={mainAction} phase={phase} primary onPress={() => void buy()} />
+      </div>
 
       {/* The store's record is a guess: a handoff can succeed and the install still not happen, and
           on the web nothing ever contradicts it. This is how the user says so. */}
@@ -823,7 +806,7 @@ function Detail({
           <button
             className="chip"
             style={{ marginTop: 12 }}
-            aria-label={`Not installed? Remove ${pkg.name} from my library`}
+            aria-label={`Not installed? Remove from my library. Removes ${pkg.name} from this browser's record.`}
             onClick={() => onForget(pkg)}
           >
             Not installed? Remove from my library
@@ -843,27 +826,12 @@ function Detail({
       {dialog && (
         <Dialog title={paid ? "Checkout" : "Install"} onClose={() => setDialog(null)}>
           <p style={{ color: "var(--on-surface-variant)", marginTop: 8 }}>{dialog}</p>
-          {checkoutFailed ? (
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button
-                className="chip"
-                onClick={() => {
-                  setDialog(null);
-                  void buy();
-                }}
-              >
-                Retry checkout
-              </button>
-              <button className="chip" onClick={() => { setDialog(null); setCheckoutFailed(false); }}>Close</button>
-            </div>
-          ) : (
-            <button className="chip" style={{ marginTop: 8 }} onClick={() => setDialog(null)}>OK</button>
-          )}
+          <button className="chip" style={{ marginTop: 8 }} onClick={() => setDialog(null)}>OK</button>
         </Dialog>
       )}
 
       {noHost && (
-        <NoHostSheet pkg={pkg} hosts={hosts} onRetry={hand} onDismiss={() => setNoHost(false)} />
+        <NoHostSheet pkg={pkg} hosts={hosts} onRetry={() => void hand()} onDismiss={() => setNoHost(false)} />
       )}
     </div>
   );
@@ -1039,7 +1007,7 @@ function StorefrontApp() {
           <button className="chip" onClick={load} style={{ background: "var(--primary)", color: "var(--on-primary)" }}>Retry</button>
         </div>
       ) : shown.length === 0 ? (
-        owned === 1 && query.trim() === "" && price === 0 && category === null && app === null ? (
+        showNothingInstalled({ owned, query, price, category, app, resultsEmpty: true }) ? (
           // "Installed" with nothing installed: say so, and offer the one thing that changes it.
           <NothingInstalled onBrowse={() => setOwned(0)} />
         ) : (
@@ -1565,9 +1533,8 @@ function AppCatalogPage({ appId }: { appId: string }) {
   const global = (packages ?? []).filter((p) => (p.targetApps ?? []).length === 0);
   const host = (packages ?? []).find((p) => p.kind === "app" && p.app?.hostId && canonicalAppId(p.app.hostId) === canonicalAppId(appId));
 
-  // Where to get the app itself. This page is where "Find an app that runs extensions" lands for a
-  // package scoped to one app, so it has to be able to finish the job: the install button for the host,
-  // from its own listing. Same pure mapping as the fallback sheet (`requiredActionsFor`).
+  // Where to get the app itself, from its own listing. When the app is not listed there is nothing to
+  // install from, and the page says so instead of showing a button that goes nowhere.
   const getHost = requiredActionsFor(
     {
       type: "host-missing",
@@ -1578,6 +1545,7 @@ function AppCatalogPage({ appId }: { appId: string }) {
     },
     host?.name ?? appId,
   ).find((a) => a.kind === "install-host");
+  const notListed = packages !== null && !getHost;
 
   const list = (title: string, items: PackageSummary[]) =>
     items.length > 0 && (
@@ -1609,6 +1577,11 @@ function AppCatalogPage({ appId }: { appId: string }) {
         <div style={{ maxWidth: 360, marginTop: 20 }}>
           <ActionControl action={getHost} primary />
         </div>
+      )}
+      {notListed && (
+        <p role="status" style={{ color: "var(--on-surface-variant)" }}>
+          No host app is listed for this id yet, so there is nothing to install from here.
+        </p>
       )}
       {error && <p style={{ color: "var(--on-surface-variant)" }}>{error}</p>}
       {!packages && !error && <p style={{ color: "var(--on-surface-variant)" }}>Loading…</p>}

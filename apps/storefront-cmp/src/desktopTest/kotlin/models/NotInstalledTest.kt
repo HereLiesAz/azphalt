@@ -32,10 +32,10 @@ class NotInstalledTest {
         NotInstalled.Downloaded,
         NotInstalled.Failed("integrity-mismatch"),
         NotInstalled.Failed(null),
+        NotInstalled.Failed("incompatible", priceLabel = "$4.99"),
         NotInstalled.Removed,
-        NotInstalled.HostMissing(hosts = listOf(hostA, hostB), scopedTo = listOf("com.hereliesaz.graffux")),
-        NotInstalled.HostMissing(hosts = emptyList(), scopedTo = emptyList()),
-        NotInstalled.HostMissing(hosts = emptyList(), scopedTo = listOf("com.hereliesaz.graffux")),
+        NotInstalled.HostMissing(hosts = listOf(hostA, hostB)),
+        NotInstalled.HostMissing(hosts = emptyList()),
         NotInstalled.NothingInstalledYet,
     )
 
@@ -49,11 +49,11 @@ class NotInstalledTest {
             },
         )
         NotInstalled.Downloaded -> listOf(ActionKind.INSTALL_EXTENSION)
-        is NotInstalled.Failed -> listOf(ActionKind.RETRY_INSTALL)
+        is NotInstalled.Failed -> listOf(if (state.priceLabel != null) ActionKind.PURCHASE_EXTENSION else ActionKind.RETRY_INSTALL)
         NotInstalled.Removed -> listOf(ActionKind.REINSTALL)
         is NotInstalled.HostMissing ->
             listOf(ActionKind.DOWNLOAD_PACKAGE) +
-                (if (state.hosts.isEmpty()) listOf(ActionKind.FIND_HOST) else state.hosts.map { ActionKind.INSTALL_HOST }) +
+                state.hosts.map { ActionKind.INSTALL_HOST } +
                 listOf(ActionKind.RETRY_HANDOFF)
         NotInstalled.NothingInstalledYet -> listOf(ActionKind.BROWSE_CATALOGUE)
     }
@@ -81,6 +81,8 @@ class NotInstalledTest {
             assertFalse(action.label.trim().equals("OK", ignoreCase = true), "label is OK for $action")
             // The spoken form says at least as much as the visible one.
             assertTrue(action.description.length >= 8, "description too thin for $action")
+            // WCAG 2.5.3: the accessible name starts with the visible text.
+            assertTrue(action.description.startsWith(action.label), "name must start with label: $action")
         }
     }
 
@@ -107,14 +109,22 @@ class NotInstalledTest {
     }
 
     @Test
-    fun theLabelsAgreeWithTheExistingCardWords() {
-        // `actionLabelFor` is the older, shorter vocabulary for the same states; the two must not
-        // disagree about which verb a state gets.
-        fun verbOf(state: ExtensionState) =
-            requiredActionsFor(notInstalledStateFor(entry(state))!!, "X").first().label
-        assertTrue(verbOf(ExtensionState.DOWNLOADED).startsWith(actionLabelFor(entry(ExtensionState.DOWNLOADED), null)))
-        assertTrue(verbOf(ExtensionState.FAILED).startsWith(actionLabelFor(entry(ExtensionState.FAILED), null)))
-        assertTrue(verbOf(ExtensionState.REMOVED).startsWith(actionLabelFor(entry(ExtensionState.REMOVED), null)))
+    fun paidPackagesNeverSendAnOwnerBackThroughCheckout() {
+        val price = "$4.99"
+        // A host that holds the bytes (downloaded) or had them (removed) means it was bought: install.
+        assertEquals(ActionKind.INSTALL_EXTENSION, requiredActionsFor(notInstalledStateFor(entry(ExtensionState.DOWNLOADED), price)!!, "X").single().kind)
+        assertEquals(ActionKind.REINSTALL, requiredActionsFor(notInstalledStateFor(entry(ExtensionState.REMOVED), price)!!, "X").single().kind)
+        // A failure may have been the purchase itself; the button then says Get and goes to checkout.
+        val failed = requiredActionsFor(notInstalledStateFor(entry(ExtensionState.FAILED), price)!!, "X").single()
+        assertEquals(ActionKind.PURCHASE_EXTENSION, failed.kind)
+        assertEquals("Get  ·  $4.99", failed.label)
+        // Free: failed is a plain retry.
+        assertEquals(ActionKind.RETRY_INSTALL, requiredActionsFor(notInstalledStateFor(entry(ExtensionState.FAILED), null)!!, "X").single().kind)
+        // Never absent-and-paid labelled as an install.
+        for (st in listOf(ExtensionState.DOWNLOADED, ExtensionState.REMOVED, ExtensionState.FAILED)) {
+            val a = requiredActionsFor(notInstalledStateFor(entry(st), price)!!, "X").single()
+            assertEquals(a.kind == ActionKind.PURCHASE_EXTENSION, a.label.startsWith("Get"), "label/action for $st")
+        }
     }
 
     @Test
@@ -146,22 +156,11 @@ class NotInstalledTest {
     }
 
     @Test
-    fun hostMissingWithAnEmptyDirectoryStillHasSomewhereToGo() {
-        val actions = requiredActionsFor(NotInstalled.HostMissing(emptyList(), scopedTo = listOf("com.hereliesaz.graffux")), "Acme LUT")
-        val find = actions.single { it.kind == ActionKind.FIND_HOST }
-        assertEquals("$STORE_ORIGIN/app/com.hereliesaz.graffux", find.url)
-        assertTrue(isSafeExternalUrl(find.url!!))
-        assertTrue(actions.none { it.kind == ActionKind.INSTALL_HOST })
-    }
-
-    @Test
-    fun hostDirectoryUrlOnlyTrustsReverseDnsIds() {
-        assertEquals(STORE_ORIGIN, hostDirectoryUrl(emptyList()))
-        assertEquals("$STORE_ORIGIN/app/com.a.b", hostDirectoryUrl(listOf("com.a.b")))
-        // A hostile or malformed id must not become part of a path.
-        assertEquals(STORE_ORIGIN, hostDirectoryUrl(listOf("../admin", "a b", "x/y", "")))
-        // …but a later, valid id is still used.
-        assertEquals("$STORE_ORIGIN/app/com.ok.app", hostDirectoryUrl(listOf("../x", "com.ok.app")))
+    fun hostMissingWithAnEmptyDirectoryOffersOnlyWhatWorks() {
+        // No fake button: only the actions that work. The explanation is honest about why.
+        val actions = requiredActionsFor(NotInstalled.HostMissing(emptyList()), "Acme LUT")
+        assertEquals(listOf(ActionKind.DOWNLOAD_PACKAGE, ActionKind.RETRY_HANDOFF), actions.map { it.kind })
+        assertTrue(statusLineFor(NotInstalled.HostMissing(emptyList()))!!.startsWith("No host app is listed for this extension yet"))
     }
 
     @Test
@@ -174,7 +173,7 @@ class NotInstalledTest {
 
     @Test
     fun onlyUrlKindsCarryAUrl() {
-        val withUrl = setOf(ActionKind.INSTALL_HOST, ActionKind.FIND_HOST)
+        val withUrl = setOf(ActionKind.INSTALL_HOST)
         for (state in samples) for (action in requiredActionsFor(state, "Acme LUT")) {
             assertEquals(action.kind in withUrl, action.url != null, "url presence for ${action.kind}")
         }
@@ -188,12 +187,12 @@ class NotInstalledTest {
         assertEquals("The last install didn't finish.", statusLineFor(NotInstalled.Failed(" ")))
         assertEquals("Removed from your host.", statusLineFor(NotInstalled.Removed))
         assertEquals("Nothing installed yet", statusLineFor(NotInstalled.NothingInstalledYet))
-        assertTrue(statusLineFor(NotInstalled.HostMissing(emptyList()))!!.contains("No app on this device"))
+        assertTrue(statusLineFor(NotInstalled.HostMissing(listOf(hostA)))!!.contains("No app on this device"))
     }
 
     // --- the button's own states ---------------------------------------------------------------
 
-    private val action = RequiredAction(ActionKind.INSTALL_HOST, "Install Graffux", "Open the install page for Graffux", "https://example.test/graffux")
+    private val action = RequiredAction(ActionKind.INSTALL_HOST, "Install Graffux", "Install Graffux. Open the install page for Graffux", "https://example.test/graffux")
 
     @Test
     fun idleButtonIsPressableAndQuiet() {
@@ -210,7 +209,8 @@ class NotInstalledTest {
         assertFalse(s.enabled)
         assertTrue(s.showProgress)
         assertNull(s.error)
-        assertTrue(s.description.contains("Open the install page for Graffux"))
+        assertEquals("Working… Install Graffux", s.description)
+        assertTrue(s.description.contains(s.label))
     }
 
     @Test
@@ -220,7 +220,7 @@ class NotInstalledTest {
         assertTrue(s.enabled)
         assertFalse(s.showProgress)
         assertEquals("Couldn't open that page.", s.error)
-        assertTrue(s.description.contains("Couldn't open that page."))
+        assertTrue(s.description.startsWith(s.label))
     }
 
     @Test
@@ -243,5 +243,58 @@ class NotInstalledTest {
         val failed = phaseAfterOpen(action, opened = false)
         assertTrue(failed is ActionPhase.Failed)
         assertTrue((failed as ActionPhase.Failed).message.contains("Install Graffux"))
+    }
+
+    // --- the phases are really produced -------------------------------------------------------
+
+    @Test
+    fun runWithPhaseReportsRunningThenIdleOnSuccess() {
+        val seen = mutableListOf<ActionPhase>()
+        kotlinx.coroutines.runBlocking { runWithPhase({ seen += it }) { null } }
+        assertEquals(listOf(ActionPhase.Running, ActionPhase.Idle), seen)
+    }
+
+    @Test
+    fun runWithPhaseReportsAFailureMessageAndThenRetryLabel() {
+        val seen = mutableListOf<ActionPhase>()
+        kotlinx.coroutines.runBlocking { runWithPhase({ seen += it }) { "Checkout failed" } }
+        assertEquals(listOf(ActionPhase.Running, ActionPhase.Failed("Checkout failed")), seen)
+        assertEquals("Retry: Install Graffux", buttonStateFor(action, seen.last()).label)
+    }
+
+    @Test
+    fun runWithPhaseTurnsAThrowIntoAFailureNeverStuckRunning() {
+        val seen = mutableListOf<ActionPhase>()
+        kotlinx.coroutines.runBlocking { runWithPhase({ seen += it }) { throw IllegalStateException("boom") } }
+        assertEquals(ActionPhase.Failed("boom"), seen.last())
+        val blank = mutableListOf<ActionPhase>()
+        kotlinx.coroutines.runBlocking { runWithPhase({ blank += it }) { throw RuntimeException() } }
+        assertEquals(ActionPhase.Failed("Something went wrong."), blank.last())
+    }
+
+    @Test
+    fun runWithPhaseDoesNotTreatCancellationAsAFailure() {
+        val seen = mutableListOf<ActionPhase>()
+        val result = runCatching {
+            kotlinx.coroutines.runBlocking { runWithPhase({ seen += it }) { throw kotlinx.coroutines.CancellationException("c") } }
+        }
+        assertTrue(result.isFailure)
+        assertEquals(ActionPhase.Idle, seen.last())
+    }
+
+    // --- the empty "Installed" guard ----------------------------------------------------------
+
+    @Test
+    fun nothingInstalledShowsOnlyWhenTheInstalledFilterIsTheOnlyFilter() {
+        assertTrue(showNothingInstalled(1, "", 0, null, null, resultsEmpty = true))
+        assertFalse(showNothingInstalled(1, "", 0, null, null, resultsEmpty = false))
+        assertFalse(showNothingInstalled(0, "", 0, null, null, resultsEmpty = true))
+        assertFalse(showNothingInstalled(2, "", 0, null, null, resultsEmpty = true))
+        // A user with installs who searches "zzz" is not told they have nothing installed.
+        assertFalse(showNothingInstalled(1, "zzz", 0, null, null, resultsEmpty = true))
+        assertFalse(showNothingInstalled(1, "  ", 2, null, null, resultsEmpty = true))
+        assertFalse(showNothingInstalled(1, "", 0, "image", null, resultsEmpty = true))
+        assertFalse(showNothingInstalled(1, "", 0, null, "com.a.b", resultsEmpty = true))
+        assertTrue(showNothingInstalled(1, "   ", 0, null, null, resultsEmpty = true))
     }
 }
