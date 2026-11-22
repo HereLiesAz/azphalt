@@ -15,16 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import models.SortMode
 import theme.azTurnstileEntrance
 import theme.CapsuleShape
-
-/** Sort orders for the catalog. */
-enum class SortMode(val label: String) {
-    POPULAR("Popular"),
-    RATING("Top rated"),
-    RECENT("Recent"),
-    NAME("A–Z"),
-}
 
 /** Search field + sort / price / category / app filter chips. All client-side over the loaded catalog. */
 @OptIn(ExperimentalLayoutApi::class)

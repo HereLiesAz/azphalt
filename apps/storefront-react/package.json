@@ -8,6 +8,7 @@
     "dev": "node ../../tools/sync-store-font.mjs && vite",
     "build": "node ../../tools/sync-store-font.mjs && node scripts/export-catalog.mjs && tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
