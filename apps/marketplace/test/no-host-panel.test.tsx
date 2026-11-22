@@ -85,6 +85,7 @@ describe('the Install press (marketplace)', () => {
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
     const press = createMainPress({
+      route: 'handoff',
       action: { kind: 'install-extension', label: 'Install', description: 'Install. Install this extension' },
       getPhase: () => phase,
       setPhase: (p) => { phase = p; },

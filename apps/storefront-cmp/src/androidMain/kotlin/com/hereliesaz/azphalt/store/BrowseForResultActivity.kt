@@ -32,6 +32,8 @@ import kotlinx.coroutines.withContext
 import main.StorefrontApp
 import models.HandoffSession
 import models.PackageSummary
+import models.Platform
+import models.platformInAppCheckout
 import network.downloadPackage
 import network.fetchRegistryList
 import theme.AzphaltExpressiveTheme
@@ -152,8 +154,9 @@ private fun HandoffFlow(
     }
 
     Box(Modifier.fillMaxSize()) {
-        // `onAcquire` (the host-driven Play Billing path) takes precedence over checkout, so this flag is unused here.
-        StorefrontApp(inAppCheckout = true, hostInventory = request.inventory, handoff = session)
+        // This flag feeds the main button's action (`mainButtonFor`) and must stay true here: a paid
+        // package must keep its `Get` button so `onAcquire`, the host-driven Play Billing purchase, runs.
+        StorefrontApp(inAppCheckout = platformInAppCheckout(Platform.ANDROID_HOST_DRIVEN), hostInventory = request.inventory, handoff = session)
 
         // Over the storefront rather than instead of it: the catalogue the user was just looking at
         // stays put behind this, so a failed or cancelled purchase returns them exactly where they

@@ -419,17 +419,28 @@ export function createMainPress(args: {
   setPhase: (phase: ActionPhase) => void;
   inFlight: InFlight;
   deps: AcquireDeps;
-  /** Overrides the route (the sheet's Retry presses the handoff whatever the button says). */
-  route?: AcquireRoute;
+  /**
+   * What a press does. **Required**: there is no default, so a caller cannot fall back to checkout by
+   * omission. Use {@link createPrimaryPress} for the route the shown action implies.
+   */
+  route: AcquireRoute;
 }): () => Promise<void> {
   return async () => {
     if (args.inFlight.current || !canStart(args.getPhase())) return;
     args.inFlight.current = true;
     try {
-      const route = args.route ?? acquireRouteFor(args.action.kind);
-      await runWithPhase(args.setPhase, () => performAcquire(route, args.deps));
+      await runWithPhase(args.setPhase, () => performAcquire(args.route, args.deps));
     } finally {
       args.inFlight.current = false;
     }
   };
+}
+
+/**
+ * The press handler for the main button as shown: its route is the one the shown action implies
+ * (`acquireRouteFor`), never one chosen by the caller. An owner's "Install again" is therefore always
+ * the handoff, and only a button that says Get can reach checkout.
+ */
+export function createPrimaryPress(args: Omit<Parameters<typeof createMainPress>[0], "route">): () => Promise<void> {
+  return createMainPress({ ...args, route: acquireRouteFor(args.action.kind) });
 }

@@ -400,6 +400,46 @@ fun primaryActionFor(
     return requiredActionsFor(missing, name).first()
 }
 
+/** Which build of the store this is, for the one thing that differs between them: buying. */
+enum class Platform { DESKTOP, WASM, ANDROID_STANDALONE, ANDROID_HOST_DRIVEN }
+
+/**
+ * Whether this build can buy a paid package. One named decision per platform:
+ *  - desktop: true (checkout opens the processor's page in the browser);
+ *  - wasm (browser): true (checkout continues on the processor's hosted page);
+ *  - standalone Android: **false**. Play Billing is not wired into it and `spec/store-app.md` § Paid
+ *    packages forbids an external payment flow in a Play-distributed app;
+ *  - host-driven Android (`BrowseForResultActivity`): **true**. The flag feeds the main button's
+ *    action, and the host-driven path must keep `Get` so `onAcquire` (the Play Billing purchase) runs.
+ * Every `StorefrontApp(...)` call site passes `platformInAppCheckout(<its platform>)`.
+ */
+fun platformInAppCheckout(platform: Platform): Boolean = when (platform) {
+    Platform.DESKTOP -> true
+    Platform.WASM -> true
+    Platform.ANDROID_STANDALONE -> false
+    Platform.ANDROID_HOST_DRIVEN -> true
+}
+
+/** Everything the detail screen's main button is, decided once: what it says, why, and what it does. */
+data class MainButton(val action: RequiredAction, val missing: NotInstalled?, val route: AcquireRoute)
+
+/**
+ * The main button for a package, computed **once** from the viewer's record, the price and the
+ * platform, and passed to everything on the screen. With [inAppCheckout] false a paid, untouched
+ * package is a disabled button whose route is [AcquireRoute.NONE]: it can never reach checkout.
+ */
+fun mainButtonFor(
+    entry: ExtensionStateEntry?,
+    name: String,
+    priceLabel: String?,
+    packItems: Int?,
+    inAppCheckout: Boolean,
+): MainButton {
+    val action = primaryActionFor(entry, name, priceLabel, packItems, checkoutUnavailable = !inAppCheckout)
+    val missing = notInstalledStateFor(entry, priceLabel, packItems, checkoutUnavailable = !inAppCheckout)
+    return MainButton(action, missing, acquireRouteFor(action.kind))
+}
+
 /** Just enough of a checkout answer for [performAcquire]. */
 data class CheckoutAnswer(val error: String? = null, val message: String? = null, val code: String? = null)
 

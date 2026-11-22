@@ -186,6 +186,7 @@ function App() {
   const handleInstall = () => {
     if (!selectedPkg) return Promise.resolve();
     return createMainPress({
+      route: 'handoff',
       action: installAction,
       getPhase: () => installPhase,
       setPhase: setInstallPhase,

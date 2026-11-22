@@ -3,6 +3,8 @@ package main
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
+import models.Platform
+import models.platformInAppCheckout
 
 /**
  * The id of the element the app mounts into, rendered by the page that hosts this bundle.
@@ -28,6 +30,6 @@ fun main() {
     // no such element and no React.
     val mount = document.getElementById(MOUNT_ID) ?: document.body!!
     ComposeViewport(mount) {
-        StorefrontApp(inAppCheckout = true)
+        StorefrontApp(inAppCheckout = platformInAppCheckout(Platform.WASM))
     }
 }

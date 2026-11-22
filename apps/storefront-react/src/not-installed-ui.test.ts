@@ -228,8 +228,8 @@ describe("backstop wiring guard (the real behaviour is tested through createMain
   it("Detail presses only through createMainPress, with the shown action, and checkout is only a dep", () => {
     expect(app).toContain("createMainPress({");
     expect(app).toContain("action: mainAction,");
-    expect(app).toContain("const buy = () => press();");
-    expect(app).toContain('const hand = () => press("handoff");')
+    expect(app).toContain("const buy = () => createPrimaryPress(pressArgs)();");
+    expect(app).toContain('route: "handoff"')
     expect(app.match(/startCheckout\(/g)?.length).toBe(1);
     expect(app).toContain("checkout: () => startCheckout(pkg.id)");
     expect(app).not.toMatch(/paid\s*\?\s*startCheckout|if \(!paid\)/);

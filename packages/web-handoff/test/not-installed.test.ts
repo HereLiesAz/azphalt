@@ -17,6 +17,7 @@ import {
   performAcquire,
   primaryActionFor,
   createMainPress,
+  createPrimaryPress,
   type InFlight,
   runWithPhase,
   showNothingInstalled,
@@ -418,7 +419,7 @@ describe("createMainPress (the handler Detail calls)", () => {
     const inFlight: InFlight = { current: false };
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
-    const press = createMainPress({
+    const press = createPrimaryPress({
       action,
       getPhase: () => phase,
       setPhase: (p) => { phase = p; phases.push(p); },
@@ -458,7 +459,7 @@ describe("createMainPress (the handler Detail calls)", () => {
   it("a press while the phase is running does nothing; after a failure it is allowed", async () => {
     for (const [phase, expected] of [[{ kind: "running" }, 0], [{ kind: "failed", message: "x" }, 1], [{ kind: "idle" }, 1]] as const) {
       let ran = 0;
-      await createMainPress({
+      await createPrimaryPress({
         action: primaryActionFor(undefined, "A"),
         getPhase: () => phase,
         setPhase: () => undefined,
@@ -467,6 +468,17 @@ describe("createMainPress (the handler Detail calls)", () => {
       })();
       expect(ran, phase.kind).toBe(expected);
     }
+  });
+
+  it("an owner's Install again never reaches checkout, whatever the price", async () => {
+    for (const state of ["installed", "active", "downloaded", "removed", "failed"] as const) {
+      const s = setup(primaryActionFor({ state }, "Acme", { priceLabel: "$4.99" }));
+      await s.press();
+      expect(s.calls, state).toEqual(["handoff"]);
+    }
+    // The handler has no route to fall back on: omitting it does not type-check (see createMainPress).
+    // @ts-expect-error route is required
+    createMainPress({ action: primaryActionFor(undefined, "A"), getPhase: () => ({ kind: "idle" }), setPhase: () => undefined, inFlight: { current: false }, deps: { checkout: async () => ({}), handoff: async () => null, notice: () => undefined } });
   });
 
   it("the unavailable-paid button never starts anything", async () => {
@@ -478,7 +490,7 @@ describe("createMainPress (the handler Detail calls)", () => {
   it("already_owned from checkout installs, and the phases end idle", async () => {
     const calls: string[] = [];
     const phases: ActionPhase[] = [];
-    await createMainPress({
+    await createPrimaryPress({
       action: primaryActionFor(undefined, "Acme", { priceLabel: "$4.99" }),
       getPhase: () => ({ kind: "idle" }),
       setPhase: (p) => void phases.push(p),

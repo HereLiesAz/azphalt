@@ -35,10 +35,9 @@ import models.ExtensionState
 import models.AcquireDeps
 import models.AcquireRoute
 import models.CheckoutAnswer
-import models.acquireRouteFor
 import models.canStart
 import models.performAcquire
-import models.primaryActionFor
+import models.mainButtonFor
 import models.ActionPhase
 import models.runWithPhase
 import models.ExtensionStateEntry
@@ -164,16 +163,17 @@ fun DetailScreen(
     // had never been installed was offered as "Install again" and badged "Have".
     val held = isInstalled(entry)
     // What the main button says and does. Both come from pure functions (`models/NotInstalled.kt`),
-    // shared with the web storefront: the text from `primaryActionFor`, the behaviour from
-    // `acquireRouteFor`. Nothing in this screen decides either.
-    val mainAction: RequiredAction = primaryActionFor(
+    // shared with the web storefront: the text, the state and the route from `mainButtonFor`,
+    // computed once. Nothing in this screen decides any of them.
+    val main = mainButtonFor(
         entry = entry,
         name = pkg.name,
         priceLabel = if (isPaid(pkg)) priceLabel(pkg) else null,
         packItems = pkg.pack?.entries?.size,
-        checkoutUnavailable = !inAppCheckout,
+        inAppCheckout = inAppCheckout,
     )
-    val missing = notInstalledStateFor(entry, if (isPaid(pkg)) priceLabel(pkg) else null, pkg.pack?.entries?.size, checkoutUnavailable = !inAppCheckout)
+    val mainAction: RequiredAction = main.action
+    val missing = main.missing
 
     /**
      * The web handoff — one implementation for the Install button and for the sheet's *Try again*.
@@ -234,7 +234,7 @@ fun DetailScreen(
     val installAction: () -> Unit = {
         // Acting for a caller: purchase (if paid), download, verify and return — all of it driven by
         // the entry point that owes the result.
-        if (onAcquire != null) onAcquire(pkg) else runRoute(acquireRouteFor(mainAction.kind))
+        if (onAcquire != null) onAcquire(pkg) else runRoute(main.route)
     }
 
     // Live rating state, seeded from the summary and updated when the viewer rates.

@@ -37,12 +37,12 @@ import {
   attemptHandoff,
   forgetInstall,
   createMainPress,
+  createPrimaryPress,
   hostsFor,
   primaryActionFor,
   requiredActionsFor,
   showNothingInstalled,
   type ActionPhase,
-  type AcquireRoute,
   type RequiredAction,
   notInstalledStateFor,
   statusLineFor,
@@ -719,18 +719,17 @@ function Detail({
    * button shows (never from the price), and reports progress and failure on the button. An owner told
    * "you already own this" by checkout is sent to the install by `performAcquire`.
    */
-  const press = (route?: AcquireRoute) =>
-    createMainPress({
-      action: mainAction,
-      getPhase: () => phase,
-      setPhase,
-      inFlight,
-      deps: { checkout: () => startCheckout(pkg.id), handoff, notice: setDialog },
-      route,
-    })();
+  const pressArgs = {
+    action: mainAction,
+    getPhase: () => phase,
+    setPhase,
+    inFlight,
+    deps: { checkout: () => startCheckout(pkg.id), handoff, notice: setDialog },
+  };
   // The sheet's retry installs whatever the button says.
-  const hand = () => press("handoff");
-  const buy = () => press();
+  const hand = () => createMainPress({ ...pressArgs, route: "handoff" })();
+  // The button's own press: its route is the one the shown action implies, never chosen here.
+  const buy = () => createPrimaryPress(pressArgs)();
 
   return (
     <div style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>

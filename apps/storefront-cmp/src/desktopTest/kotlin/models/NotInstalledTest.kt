@@ -435,28 +435,74 @@ class NotInstalledTest {
         assertTrue(showNothingInstalled(1, "   ", 0, null, null, resultsEmpty = true))
     }
 
-    // --- wiring guard: the screens must go through the tested functions --------------------------
+    // --- the per-platform flag, and the screen's single main-button decision -------------------------
 
-    private fun source(path: String): String {
-        val f = generateSequence(java.io.File("").absoluteFile) { it.parentFile }
-            .map { java.io.File(it, path) }.firstOrNull { it.isFile } ?: error("cannot find $path")
-        return f.readText()
+    @Test
+    fun eachPlatformsCheckoutFlagIsStated() {
+        assertEquals(true, platformInAppCheckout(Platform.DESKTOP))
+        assertEquals(true, platformInAppCheckout(Platform.WASM))
+        assertEquals(false, platformInAppCheckout(Platform.ANDROID_STANDALONE))
+        // Host-driven must stay true: it feeds the main button, and `Get` is what runs onAcquire (Play Billing).
+        assertEquals(true, platformInAppCheckout(Platform.ANDROID_HOST_DRIVEN))
+        assertEquals(Platform.entries.toSet(), setOf(Platform.DESKTOP, Platform.WASM, Platform.ANDROID_STANDALONE, Platform.ANDROID_HOST_DRIVEN))
+    }
+
+    /** Runs the screen's decision all the way through `performAcquire`; true if checkout was reached. */
+    private fun reachesCheckout(entryState: ExtensionState?, price: String?, platform: Platform): Boolean {
+        val main = mainButtonFor(entryState?.let { entry(it) }, "Acme", price, null, platformInAppCheckout(platform))
+        var checkoutCalled = false
+        val deps = AcquireDeps(
+            checkout = { checkoutCalled = true; CheckoutAnswer(message = "Checkout started.") },
+            handoff = { null },
+            notice = {},
+        )
+        kotlinx.coroutines.runBlocking { performAcquire(main.route, deps) }
+        return checkoutCalled
     }
 
     @Test
-    fun detailScreenRoutesThroughTheTestedFunctionsOnly() {
-        val detail = source("apps/storefront-cmp/src/commonMain/kotlin/components/DetailScreen.kt")
-        // Behaviour comes from the action the button shows, via the pure router…
-        assertTrue(detail.contains("acquireRouteFor(mainAction.kind)"), "route must come from the shown action")
-        assertTrue(detail.contains("primaryActionFor("), "the label must come from primaryActionFor")
-        // …a press is refused while one is running…
-        assertTrue(detail.contains("if (!canStart(installPhase)) return"), "re-entrancy guard")
-        // …checkout is reached only through performAcquire, never by a price check…
-        assertEquals(1, Regex("startCheckout\\(").findAll(detail).count(), "startCheckout only inside the acquire deps")
-        assertFalse(Regex("isPaid\\(pkg\\)\\s*->").containsMatchIn(detail), "no price-based routing")
-        // Backstop only. The real enforcement is compile-time: `inAppCheckout` has no default in
-        // StorefrontApp / DetailScreen, so dropping it anywhere fails to build.
-        assertTrue(detail.contains("checkoutUnavailable = !inAppCheckout"))
-        assertTrue(source("apps/storefront-cmp/src/androidMain/kotlin/com/hereliesaz/azphalt/store/MainActivity.kt").contains("inAppCheckout = false"))
+    fun theStandaloneAndroidPaidStateNeverReachesCheckout() {
+        // Paid + untouched on standalone Android: disabled, route NONE, and checkout is never called.
+        val main = mainButtonFor(null, "Acme", "$4.99", null, platformInAppCheckout(Platform.ANDROID_STANDALONE))
+        assertEquals(ActionKind.PAID_UNAVAILABLE, main.action.kind)
+        assertFalse(main.action.enabled)
+        assertEquals(AcquireRoute.NONE, main.route)
+        assertEquals(NotInstalled.Absent(priceLabel = "$4.99", checkoutUnavailable = true), main.missing)
+        for (state in listOf<ExtensionState?>(null) + ExtensionState.entries) {
+            assertFalse(reachesCheckout(state, "$4.99", Platform.ANDROID_STANDALONE), "standalone Android, paid, $state")
+        }
+    }
+
+    @Test
+    fun checkoutIsReachedOnlyByAnUntouchedPaidPackageOnAPlatformThatCanBuy() {
+        for (platform in Platform.entries) for (state in listOf<ExtensionState?>(null) + ExtensionState.entries) {
+            val expected = state == null && platformInAppCheckout(platform)
+            assertEquals(expected, reachesCheckout(state, "$4.99", platform), "paid $platform $state")
+            // A free package never reaches checkout anywhere.
+            assertFalse(reachesCheckout(state, null, platform), "free $platform $state")
+        }
+    }
+
+    @Test
+    fun mainButtonDecidesTheStateTheActionAndTheRouteTogether() {
+        for (state in listOf<ExtensionState?>(null) + ExtensionState.entries) for (ok in listOf(true, false)) {
+            val m = mainButtonFor(state?.let { entry(it) }, "X", "$4.99", null, ok)
+            assertEquals(acquireRouteFor(m.action.kind), m.route)
+            assertEquals(m.missing == null, state == ExtensionState.INSTALLED || state == ExtensionState.ACTIVE)
+        }
+    }
+
+    // Backstop only: the real enforcement is compile-time (`inAppCheckout` has no default) and the
+    // behavioural tests above. This just notices the screen no longer using the single decision.
+    @Test
+    fun detailScreenUsesTheSingleMainButtonDecision() {
+        val f = generateSequence(java.io.File("").absoluteFile) { it.parentFile }
+            .map { java.io.File(it, "apps/storefront-cmp/src/commonMain/kotlin/components/DetailScreen.kt") }
+            .firstOrNull { it.isFile } ?: error("cannot find DetailScreen.kt")
+        val detail = f.readText()
+        assertTrue(detail.contains("mainButtonFor("))
+        assertFalse(detail.contains("checkoutUnavailable ="), "the flag must not be recomputed in the screen")
+        assertTrue(detail.contains("runRoute(main.route)"), "the press must run the route mainButtonFor decided")
+        assertFalse(detail.contains("AcquireRoute.CHECKOUT"), "the screen must not pick checkout itself")
     }
 }
