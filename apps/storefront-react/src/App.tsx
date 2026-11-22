@@ -36,13 +36,19 @@ import { availableStoreCategories, storeCategoryKeys, storeCategoryLabel } from 
 import {
   attemptHandoff,
   forgetInstall,
+  acquireRouteFor,
+  canStart,
   hostsFor,
+  performAcquire,
+  primaryActionFor,
+  requiredActionsFor,
   runWithPhase,
+  webStoreUrl,
   showNothingInstalled,
   type ActionPhase,
+  type AcquireRoute,
   type RequiredAction,
   notInstalledStateFor,
-  requiredActionsFor,
   statusLineFor,
   installLink,
   isHeld,
@@ -656,18 +662,20 @@ function Detail({
   const [rateNote, setRateNote] = useState<string | null>(null);
   const ratingLabel = formatRating(aggregate.rating, aggregate.ratingCount);
   const hosts = useMemo(() => hostsFor(pkg, catalog), [pkg, catalog]);
-  // What is not installed about this package, and so what the main button has to do. Null when it is
-  // installed. One pure decision (`@azphalt/web-handoff` → not-installed.ts), shared with the Compose
-  // storefront.
+  // What is not installed about this package, and so what the main button says and does. Both come
+  // from pure functions shared with the Compose storefront (`@azphalt/web-handoff`).
   const missing = useMemo(
-    () =>
-      notInstalledStateFor(inventory[pkg.id], {
-        ...(paid ? { priceLabel: priceLabel(pkg) } : {}),
-      }),
+    () => notInstalledStateFor(inventory[pkg.id], paid ? { priceLabel: priceLabel(pkg) } : {}),
     [inventory, pkg, paid],
   );
-  const primaryAction = missing ? requiredActionsFor(missing, pkg.name)[0] : undefined;
+  const mainAction: RequiredAction = useMemo(
+    () => primaryActionFor(inventory[pkg.id], pkg.name, paid ? { priceLabel: priceLabel(pkg) } : {}),
+    [inventory, pkg, paid],
+  );
   const statusLine = missing ? statusLineFor(missing) : null;
+  // Set synchronously on press: React state would not show "running" until the next render, so two
+  // clicks in one tick could otherwise start two checkouts.
+  const inFlight = useRef(false);
 
   const rate = async (stars: number) => {
     setMyStars(stars);
@@ -687,44 +695,53 @@ function Detail({
     }
   };
 
-  const hand = () =>
-    runWithPhase(setPhase, async () => {
-      // Close the sheet before re-attempting, so a retry does not sit on screen unchanged for the whole
-      // wait window looking like a dead button. The Compose storefront does the same at its call site;
-      // the two are meant to behave identically.
-      setNoHost(false);
-      // One link shape for everything free, packs included — a pack is a package with an id, and the
-      // host resolves its members (spec/web-handoff.md § Packs). Nothing here names a host.
-      const handed = await attemptHandoff(installLink(pkg.id, pkg.version));
-      if (handed) {
-        // Record it, and say so. The successful path used to be the silent one: the user left for a
-        // host, came back, and the page looked exactly as it had — no acknowledgement, and every card
-        // still offering to install it.
-        onHandedOff(pkg);
-        setDialog(
-          `“${pkg.name}” was sent to your host. It'll show as installed here — if it didn't arrive, install it again.`,
-        );
-      }
-      setNoHost(!handed);
-      return null;
-    });
+  /** The install handoff; returns a failure message or null. Shared by the button and the sheet's retry. */
+  const handoff = async (): Promise<string | null> => {
+    // Close the sheet before re-attempting, so a retry does not sit on screen unchanged for the whole
+    // wait window looking like a dead button. The Compose storefront does the same at its call site;
+    // the two are meant to behave identically.
+    setNoHost(false);
+    // One link shape for everything free, packs included — a pack is a package with an id, and the
+    // host resolves its members (spec/web-handoff.md § Packs). Nothing here names a host.
+    const handed = await attemptHandoff(installLink(pkg.id, pkg.version));
+    if (handed) {
+      // Record it, and say so. The successful path used to be the silent one: the user left for a
+      // host, came back, and the page looked exactly as it had — no acknowledgement, and every card
+      // still offering to install it.
+      onHandedOff(pkg);
+      setDialog(
+        `“${pkg.name}” was sent to your host. It'll show as installed here — if it didn't arrive, install it again.`,
+      );
+    }
+    setNoHost(!handed);
+    return null;
+  };
 
-  // Checkout only when the button says Get. An owner (installed, downloaded or removed) is never sent
-  // back through it: they get the install handoff.
-  const buy = () =>
-    primaryAction?.kind === "purchase-extension"
-      ? runWithPhase(setPhase, async () => {
-          const r = await startCheckout(pkg.id);
-          if (r.error) return r.error;
-          setDialog(r.message ?? "Checkout started.");
-          return null;
-        })
-      : hand();
-
-  const mainAction: RequiredAction =
-    held || !primaryAction
-      ? { kind: "install-extension", label: "Install again", description: `Install again. Install ${pkg.name} again` }
-      : primaryAction;
+  /** Run `route` with progress and failure reported on the main button. One press at a time. */
+  const run = async (route: AcquireRoute) => {
+    if (inFlight.current || !canStart(phase)) return;
+    inFlight.current = true;
+    try {
+      await runWithPhase(setPhase, () =>
+        performAcquire(route, {
+          checkout: () => startCheckout(pkg.id),
+          handoff,
+          // The web store never routes here (it can run checkout itself); `noopener` hides the result anyway.
+          openWebStore: () => {
+            window.open(webStoreUrl(pkg.id), "_blank", "noopener,noreferrer");
+            return true;
+          },
+          notice: setDialog,
+        }),
+      );
+    } finally {
+      inFlight.current = false;
+    }
+  };
+  const hand = () => run("handoff");
+  // Checkout only when the button says Get; an owner who is told "you already own this" is routed to
+  // the install by `performAcquire`.
+  const buy = () => run(acquireRouteFor(mainAction.kind));
 
   return (
     <div style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>

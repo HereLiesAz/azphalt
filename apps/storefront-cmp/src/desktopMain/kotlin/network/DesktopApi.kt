@@ -7,6 +7,7 @@ import java.net.http.HttpResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import models.CheckoutResponse
+import models.checkoutAfterOpen
 import models.PackageSummary
 
 internal const val API_BASE = "https://azphalt.store"
@@ -36,7 +37,9 @@ actual suspend fun startCheckout(packageId: String): CheckoutResponse = withCont
     // would leave a paid purchase permanently stuck at "Checkout started".
     val checkoutUrl = checkout.session?.url.orEmpty()
     if (!checkout.stub && checkout.error == null && checkoutUrl.isNotBlank()) {
-        openExternal(checkoutUrl)
+        // If nothing opened, the user is not at a checkout page: say so (with a Retry on the button)
+        // instead of reporting "Checkout started".
+        return@withContext checkoutAfterOpen(checkout, openExternal(checkoutUrl))
     }
 
     checkout

@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
         // uninstalled context would make that a silent no-op (network/AndroidHandoff.kt).
         AndroidAppContext.install(this)
         enableEdgeToEdge()
-        setContent { StorefrontApp() }
+        // No checkout here: a paid package opens the web store (Play Billing is only for the host-driven flow).
+        setContent { StorefrontApp(inAppCheckout = false) }
     }
 }

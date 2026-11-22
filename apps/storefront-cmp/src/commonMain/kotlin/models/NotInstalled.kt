@@ -29,20 +29,23 @@ sealed interface NotInstalled {
      * [priceLabel] is set for a paid package (the next step is to buy it, not to install it);
      * [packItems] is set for a pack, so the button can say how much it is about to bring in.
      */
-    data class Absent(val priceLabel: String? = null, val packItems: Int? = null) : NotInstalled
+    data class Absent(
+        val priceLabel: String? = null,
+        val packItems: Int? = null,
+        /** This client cannot run checkout itself (the standalone Android store): buy on the web store. */
+        val webOnly: Boolean = false,
+    ) : NotInstalled
 
     /** Bytes held and verified by a host, no install (`ExtensionState.DOWNLOADED`). */
     data object Downloaded : NotInstalled
 
     /**
-     * Acquisition or installation did not complete (`ExtensionState.FAILED`).
-     *
-     * [priceLabel] is set for a paid package whose entitlement is not known: the failure may have been
-     * the purchase itself, and the button must then say **Get** and go to checkout, because that is
-     * what pressing it does. (`DOWNLOADED` and `REMOVED` mean a host held the bytes, which for a paid
-     * package means it was already bought, so those never send an owner back through checkout.)
+     * The install did not complete (`ExtensionState.FAILED`). A host reporting it knows the *install*
+     * failed, not the purchase, so this is always a retry of the install, even for a paid package:
+     * sending a possible owner back through checkout risks a second charge (a desktop checkout carries
+     * no account, so the server cannot see that they already own it).
      */
-    data class Failed(val reason: String?, val priceLabel: String? = null) : NotInstalled
+    data class Failed(val reason: String?) : NotInstalled
 
     /** Had it, does not now (`ExtensionState.REMOVED`). */
     data object Removed : NotInstalled
@@ -71,6 +74,9 @@ enum class ActionKind {
 
     /** Start checkout for a paid extension; installing follows once it is owned. */
     PURCHASE_EXTENSION,
+
+    /** A client that cannot run checkout opens the web store page for the package instead. */
+    BUY_ON_WEB,
 
     /** An install that failed, run again. */
     RETRY_INSTALL,
@@ -118,6 +124,9 @@ object NotInstalledStrings {
     fun installFree(): String = "Install  ·  Free"
     fun installPack(items: Int): String = "Install pack  ·  $items items"
     fun purchase(price: String): String = "Get  ·  $price"
+    fun buyOnWebLabel(): String = "Buy on azphalt.store"
+    fun buyOnWebDescription(name: String): String = "Open the azphalt.store page for $name to buy it, then install it"
+    fun couldNotOpenStore(): String = "Couldn't open azphalt.store."
     fun installDescription(name: String): String = "Install $name"
     fun purchaseDescription(name: String, price: String): String = "Buy $name for $price, then install it"
     fun installPackDescription(name: String, items: Int): String = "Install the pack $name with $items items"
@@ -156,7 +165,6 @@ object NotInstalledStrings {
     // Phase text for [ActionPhase].
     fun working(): String = "Working…"
     fun somethingWentWrong(): String = "Something went wrong."
-    fun openingPage(): String = "Opening…"
     fun couldNotOpen(label: String): String = "Couldn't open that page. Select “$label” to try again."
     fun retryPrefix(label: String): String = "Retry: $label"
     fun sheetTitle(name: String): String = "Install “$name”"
@@ -177,10 +185,11 @@ fun notInstalledStateFor(
     entry: ExtensionStateEntry?,
     priceLabel: String? = null,
     packItems: Int? = null,
+    webOnly: Boolean = false,
 ): NotInstalled? = when (entry?.state) {
-    null -> NotInstalled.Absent(priceLabel = priceLabel, packItems = packItems)
+    null -> NotInstalled.Absent(priceLabel = priceLabel, packItems = packItems, webOnly = webOnly)
     ExtensionState.DOWNLOADED -> NotInstalled.Downloaded
-    ExtensionState.FAILED -> NotInstalled.Failed(entry.reason, priceLabel)
+    ExtensionState.FAILED -> NotInstalled.Failed(entry.reason)
     ExtensionState.REMOVED -> NotInstalled.Removed
     ExtensionState.INSTALLED, ExtensionState.ACTIVE -> null
 }
@@ -196,6 +205,11 @@ fun notInstalledStateFor(
 fun requiredActionsFor(state: NotInstalled, packageName: String): List<RequiredAction> = when (state) {
     is NotInstalled.Absent -> listOf(
         when {
+            state.priceLabel != null && state.webOnly -> act(
+                ActionKind.BUY_ON_WEB,
+                NotInstalledStrings.buyOnWebLabel(),
+                NotInstalledStrings.buyOnWebDescription(packageName),
+            )
             state.priceLabel != null -> act(
                 ActionKind.PURCHASE_EXTENSION,
                 NotInstalledStrings.purchase(state.priceLabel),
@@ -217,15 +231,7 @@ fun requiredActionsFor(state: NotInstalled, packageName: String): List<RequiredA
         act(ActionKind.INSTALL_EXTENSION, NotInstalledStrings.downloadedLabel(packageName), NotInstalledStrings.downloadedDescription(packageName)),
     )
     is NotInstalled.Failed -> listOf(
-        if (state.priceLabel != null) {
-            act(
-                ActionKind.PURCHASE_EXTENSION,
-                NotInstalledStrings.purchase(state.priceLabel),
-                NotInstalledStrings.purchaseDescription(packageName, state.priceLabel),
-            )
-        } else {
-            act(ActionKind.RETRY_INSTALL, NotInstalledStrings.failedLabel(), NotInstalledStrings.failedDescription(packageName))
-        },
+        act(ActionKind.RETRY_INSTALL, NotInstalledStrings.failedLabel(), NotInstalledStrings.failedDescription(packageName)),
     )
     NotInstalled.Removed -> listOf(
         act(ActionKind.REINSTALL, NotInstalledStrings.removedLabel(packageName), NotInstalledStrings.removedDescription(packageName)),
@@ -319,9 +325,14 @@ suspend fun runWithPhase(setPhase: (ActionPhase) -> Unit, block: suspend () -> S
         setPhase(ActionPhase.Idle)
         throw e
     } catch (e: Exception) {
-        e.message?.takeIf { it.isNotBlank() } ?: NotInstalledStrings.somethingWentWrong()
+        e.message.orEmpty()
     }
-    setPhase(if (failure == null) ActionPhase.Idle else ActionPhase.Failed(failure))
+    // `null` is success. Any string is a failure, and a blank one gets the default message rather than
+    // being mistaken for success. Same rule as the TypeScript `runWithPhase`.
+    setPhase(
+        if (failure == null) ActionPhase.Idle
+        else ActionPhase.Failed(failure.trim().ifEmpty { NotInstalledStrings.somethingWentWrong() }),
+    )
 }
 
 /**
@@ -337,3 +348,81 @@ fun showNothingInstalled(
     app: String?,
     resultsEmpty: Boolean,
 ): Boolean = resultsEmpty && owned == 1 && query.isBlank() && price == 0 && category == null && app == null
+
+/** A press may start an action only when one is not already running (a double-click is one action). */
+fun canStart(phase: ActionPhase): Boolean = phase != ActionPhase.Running
+
+/** What pressing the main button does. */
+enum class AcquireRoute { CHECKOUT, HANDOFF, WEB_STORE }
+
+/**
+ * The one routing decision behind the main button, from the action it is showing. Checkout runs only
+ * when the button says Get; Buy-on-azphalt.store opens the web store; everything else (install, retry,
+ * reinstall, install again) is the install handoff. An owner is never sent through checkout by a
+ * button that says Install. No `else`: a new [ActionKind] must be routed here.
+ */
+fun acquireRouteFor(kind: ActionKind): AcquireRoute = when (kind) {
+    ActionKind.PURCHASE_EXTENSION -> AcquireRoute.CHECKOUT
+    ActionKind.BUY_ON_WEB -> AcquireRoute.WEB_STORE
+    ActionKind.INSTALL_EXTENSION, ActionKind.INSTALL_PACK, ActionKind.RETRY_INSTALL, ActionKind.REINSTALL,
+    ActionKind.INSTALL_HOST, ActionKind.DOWNLOAD_PACKAGE, ActionKind.RETRY_HANDOFF, ActionKind.BROWSE_CATALOGUE,
+    -> AcquireRoute.HANDOFF
+}
+
+/**
+ * The main button's action for a package: "Install again" when it is installed, otherwise the first
+ * action of its not-installed state. The screen calls this and [acquireRouteFor]; nothing else
+ * decides what the button says or does.
+ */
+fun primaryActionFor(
+    entry: ExtensionStateEntry?,
+    name: String,
+    priceLabel: String? = null,
+    packItems: Int? = null,
+    webOnly: Boolean = false,
+): RequiredAction {
+    val missing = notInstalledStateFor(entry, priceLabel, packItems, webOnly)
+        ?: return RequiredAction(ActionKind.INSTALL_EXTENSION, "Install again", "Install again. Install $name again")
+    return requiredActionsFor(missing, name).first()
+}
+
+/** The store page for a package, for the clients that cannot run checkout themselves. */
+fun webStoreUrl(id: String): String =
+    if (id.isNotEmpty() && id.all { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' || it == '.' || it == '-' || it == '_' }) {
+        "$STORE_ORIGIN/?package=$id"
+    } else {
+        STORE_ORIGIN
+    }
+
+/** Just enough of a checkout answer for [performAcquire]. */
+data class CheckoutAnswer(val error: String? = null, val message: String? = null, val code: String? = null)
+
+/** What the screens hand to [performAcquire]; each is the real function of that platform. */
+class AcquireDeps(
+    val checkout: suspend () -> CheckoutAnswer,
+    /** The install handoff. Returns a failure message, or null on success. */
+    val handoff: suspend () -> String?,
+    val openWebStore: () -> Boolean,
+    val notice: (String) -> Unit,
+)
+
+/**
+ * Carry out [route], returning a failure message or null. The screens run this inside [runWithPhase].
+ * Checkout answering `already_owned` (the account already has the licence) is not a failure: what the
+ * owner needs is the install, so it falls through to the handoff.
+ */
+suspend fun performAcquire(route: AcquireRoute, deps: AcquireDeps): String? = when (route) {
+    AcquireRoute.HANDOFF -> deps.handoff()
+    AcquireRoute.WEB_STORE -> if (deps.openWebStore()) null else NotInstalledStrings.couldNotOpenStore()
+    AcquireRoute.CHECKOUT -> {
+        val r = deps.checkout()
+        when {
+            r.code == "already_owned" -> deps.handoff()
+            !r.error.isNullOrEmpty() -> r.error
+            else -> {
+                deps.notice(r.message ?: "Checkout started.")
+                null
+            }
+        }
+    }
+}

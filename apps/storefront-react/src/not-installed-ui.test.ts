@@ -128,23 +128,35 @@ describe("NothingInstalled", () => {
 });
 
 describe("styles", () => {
-  const css = readFileSync(new URL("./theme.css", import.meta.url), "utf8");
+  const css = readFileSync(new URL("./theme.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  /** [selector, declarations] for every flat rule (no nested blocks in this stylesheet's rules). */
+  const rules = [...css.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].map((m) => ({ selectors: m[1]!.split(",").map((x) => x.trim()), body: m[2]! }));
+  const rulesFor = (cls: string) => rules.filter((r) => r.selectors.some((sel) => sel === cls || sel === `.dialog ${cls}`));
+  const minHeight = (cls: string) => Math.max(0, ...rulesFor(cls).map((r) => Number(/min-height:\s*(\d+)px/.exec(r.body)?.[1] ?? 0)));
 
-  it("styles the aria-disabled (not :disabled) state", () => {
-    expect(css).toContain('.action[aria-disabled="true"]');
+  it("makes every control in the not-installed UI at least 48px tall", () => {
+    // `.action` for the action rows, `.chip` for Retry install / Close / Browse (and the rest of the store).
+    expect(minHeight(".action")).toBeGreaterThanOrEqual(48);
+    expect(minHeight(".chip")).toBeGreaterThanOrEqual(48);
   });
 
-  it("makes every not-installed action at least 48px tall", () => {
-    const rule = css.match(/\.dialog \.action,\s*\.action\s*\{[^}]*\}/)?.[0] ?? "";
-    expect(rule).toContain("min-height: 48px");
+  it("styles the aria-disabled (not :disabled) state", () => {
+    expect(rules.some((r) => r.selectors.includes('.action[aria-disabled="true"]'))).toBe(true);
   });
 
   it("stops the spinner turning for people who asked for less motion", () => {
     expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{[^}]*\.spinner\s*\{\s*animation:\s*none/);
   });
 
-  it("keeps the focus ring for everything focusable", () => {
-    expect(css).toContain(":focus-visible");
+  it("keeps a visible focus ring: a real outline on :focus-visible, and none of the interactive classes removes it", () => {
+    const ring = rules.find((r) => r.selectors.includes(":focus-visible"));
+    expect(ring, ":focus-visible rule").toBeDefined();
+    expect(ring!.body).toMatch(/outline:\s*\d+px\s+solid/);
+    for (const cls of [".chip", ".action", ".field"]) {
+      for (const r of rulesFor(cls)) {
+        expect(r.body, `${cls} must not remove its outline`).not.toMatch(/outline:\s*(none|0)\b/);
+      }
+    }
   });
 });
 
@@ -191,5 +203,21 @@ describe("sort: Downloaded and Failed are not held", () => {
     expect(order.slice(0, 2).sort()).toEqual(["a", "i"]);
     const notFirst = sortPackages(items, "not-installed", (id) => isHeld(inv, id)).map((p) => p.id);
     expect(notFirst.slice(-2).sort()).toEqual(["a", "i"]);
+  });
+});
+
+describe("wiring guard: the Detail screen goes through the tested functions", () => {
+  const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+  it("routes from the shown action, never from the price", () => {
+    expect(app).toContain("run(acquireRouteFor(mainAction.kind))");
+    expect(app).toContain("primaryActionFor(inventory[pkg.id]");
+    expect(app).toContain("performAcquire(route");
+    // Checkout is reached only as a dep of performAcquire.
+    expect(app.match(/startCheckout\(/g)?.length).toBe(1);
+    expect(app).not.toMatch(/paid\s*\?\s*startCheckout|if \(!paid\)/);
+  });
+  it("refuses a second press while one is running, synchronously", () => {
+    expect(app).toContain("if (inFlight.current || !canStart(phase)) return;");
+    expect(app).toContain("inFlight.current = true;");
   });
 });

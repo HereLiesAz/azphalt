@@ -107,9 +107,9 @@ button {
 
 .chip {
   border: none;
-  /* 44px is the minimum touch target (WCAG 2.5.5 / platform guidance); the 11px label stays. */
-  min-height: 44px;
-  min-width: 44px;
+  /* 48px, matching the not-installed actions (and Material's touch target); the 11px label stays. */
+  min-height: 48px;
+  min-width: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

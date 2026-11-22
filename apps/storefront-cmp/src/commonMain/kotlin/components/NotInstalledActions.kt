@@ -121,9 +121,9 @@ internal fun ActionButton(
  * What the user sees when pressing Install found no host — `spec/web-handoff.md` § When no host is
  * installed.
  *
- * Every row is a button that does one thing, and it is never empty: a package whose directory entry
- * is missing still gets *Find an app that runs extensions*. Which rows there are, and what they say,
- * comes from [requiredActionsFor]; this wires each to the platform.
+ * Every row is a button that does one thing. A package with no listed host says so and offers only
+ * what works (download, retry) rather than a button that goes nowhere. Which rows there are, and what
+ * they say, comes from [requiredActionsFor]; this wires each to the platform.
  *
  * Deliberately not phrased as an error. Downloading the package *is* a successful outcome on a
  * device with no host — a host registered for the `.azp` media type opens the file directly.

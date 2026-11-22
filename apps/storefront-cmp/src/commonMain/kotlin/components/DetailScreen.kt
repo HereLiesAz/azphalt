@@ -32,7 +32,15 @@ import kotlinx.coroutines.launch
 import models.CheckoutResponse
 import models.installCount
 import models.ExtensionState
-import models.ActionKind
+import models.AcquireDeps
+import models.AcquireRoute
+import models.CheckoutAnswer
+import models.acquireRouteFor
+import models.canStart
+import models.performAcquire
+import models.primaryActionFor
+import models.webStoreUrl
+import network.openExternal
 import models.ActionPhase
 import models.runWithPhase
 import models.ExtensionStateEntry
@@ -41,7 +49,6 @@ import models.NotInstalled
 import models.RequiredAction
 import models.isInstalled
 import models.notInstalledStateFor
-import models.requiredActionsFor
 import models.statusLineFor
 import models.LocalHostInventory
 import models.PackageSummary
@@ -92,6 +99,12 @@ fun DetailScreen(
      * to claim it would answer a question nobody asked, and leave the caller waiting.
      */
     onAcquire: ((PackageSummary) -> Unit)? = null,
+    /**
+     * Whether this client can run checkout itself. The standalone Android store cannot (paid packages
+     * there go through Play Billing, which only the host-driven flow uses), so a paid package says
+     * *Buy on azphalt.store* and opens the web store instead of calling a checkout that would throw.
+     */
+    inAppCheckout: Boolean = true,
 ) {
     val cs = MaterialTheme.colorScheme
 
@@ -133,7 +146,6 @@ fun DetailScreen(
     // The main button's phase. Everything that runs async behind it (checkout, the install handoff) goes
     // through `runWithPhase`, so it shows progress while it works and says so, with a Retry, when it fails.
     var installPhase by remember(pkg.id) { mutableStateOf<ActionPhase>(ActionPhase.Idle) }
-    val busy = installPhase == ActionPhase.Running
     var dialogText by remember { mutableStateOf<String?>(null) }
     var showFlag by remember { mutableStateOf(false) }
 
@@ -151,14 +163,17 @@ fun DetailScreen(
     // Installed and usable. `DOWNLOADED` and `FAILED` are not: counting them here is how a package that
     // had never been installed was offered as "Install again" and badged "Have".
     val held = isInstalled(entry)
-    // What is not installed about this package, and so what the main button has to do. Null when it
-    // is installed. One pure decision (`models/NotInstalled.kt`), the same on every platform.
-    val missing = notInstalledStateFor(
+    // What the main button says and does. Both come from pure functions (`models/NotInstalled.kt`),
+    // shared with the web storefront: the text from `primaryActionFor`, the behaviour from
+    // `acquireRouteFor`. Nothing in this screen decides either.
+    val mainAction: RequiredAction = primaryActionFor(
         entry = entry,
+        name = pkg.name,
         priceLabel = if (isPaid(pkg)) priceLabel(pkg) else null,
         packItems = pkg.pack?.entries?.size,
+        webOnly = !inAppCheckout,
     )
-    val primaryAction: RequiredAction? = missing?.let { requiredActionsFor(it, pkg.name).first() }
+    val missing = notInstalledStateFor(entry, if (isPaid(pkg)) priceLabel(pkg) else null, pkg.pack?.entries?.size, !inAppCheckout)
 
     /**
      * The web handoff — one implementation for the Install button and for the sheet's *Try again*.
@@ -171,51 +186,56 @@ fun DetailScreen(
      * One link shape for everything free, packs included: a pack is a package with an id and the host
      * resolves its members (`spec/web-handoff.md` § Packs). Nothing here names a host.
      */
-    val handoff: () -> Unit = {
+    val handoffBlock: suspend () -> String? = {
+        val handed = attemptHandoff(handoffUri(pkg.id, pkg.version))
+        // Only on "nothing claimed it". A user who left for a host and came back should not find
+        // an apology waiting for them.
+        noHost = !handed
+        if (handed) {
+            onHandedOff(pkg)
+            // Only what the store actually observed: a host took the link, and it knows which
+            // version it named. It did NOT witness the download, the digest check or the
+            // signature — the host does those, out of sight. Claiming them would be a receipt
+            // for work this side never watched happen.
+            receipt = listOf(
+                "Sent to a host" to "Ok",
+                "Version" to pkg.version,
+                "Verified by the host" to "On arrival",
+            )
+            dialogText = "“${pkg.name}” was sent to your host. It'll show as installed here — " +
+                "if it didn't arrive, install it again."
+        }
+        null
+    }
+
+    /** Run [route] with progress and failure reported on the main button. One press at a time. */
+    fun runRoute(route: AcquireRoute) {
+        // Checked and set synchronously: the phase would otherwise only become Running once the launched
+        // coroutine starts, and two clicks in one dispatch could start two checkouts.
+        if (!canStart(installPhase)) return
+        installPhase = ActionPhase.Running
         scope.launch {
             runWithPhase({ installPhase = it }) {
-            val handed = attemptHandoff(handoffUri(pkg.id, pkg.version))
-            // Only on "nothing claimed it". A user who left for a host and came back should not find
-            // an apology waiting for them.
-            noHost = !handed
-            if (handed) {
-                onHandedOff(pkg)
-                // Only what the store actually observed: a host took the link, and it knows which
-                // version it named. It did NOT witness the download, the digest check or the
-                // signature — the host does those, out of sight. Claiming them would be a receipt
-                // for work this side never watched happen.
-                receipt = listOf(
-                    "Sent to a host" to "Ok",
-                    "Version" to pkg.version,
-                    "Verified by the host" to "On arrival",
+                performAcquire(
+                    route,
+                    AcquireDeps(
+                        checkout = { startCheckout(pkg.id).let { CheckoutAnswer(it.error, it.message, it.code) } },
+                        handoff = handoffBlock,
+                        openWebStore = { openExternal(webStoreUrl(pkg.id)) },
+                        notice = { dialogText = it },
+                    ),
                 )
-                dialogText = "“${pkg.name}” was sent to your host. It'll show as installed here — " +
-                    "if it didn't arrive, install it again."
-            }
-            null
             }
         }
     }
 
-    /** What the main button does: buy if paid, hand back if acting for a caller, otherwise the handoff. */
+    val handoff: () -> Unit = { runRoute(AcquireRoute.HANDOFF) }
+
+    /** What the main button does: hand back if acting for a caller, otherwise whatever its action routes to. */
     val installAction: () -> Unit = {
-        when {
-            // Acting for a caller: purchase (if paid), download, verify and return — all
-            // of it driven by the entry point that owes the result.
-            onAcquire != null -> onAcquire(pkg)
-            // Checkout only when the button says Get. An owner (installed, downloaded or removed)
-            // is never sent back through it: they get the install handoff.
-            primaryAction?.kind == ActionKind.PURCHASE_EXTENSION -> {
-                scope.launch {
-                    runWithPhase({ installPhase = it }) {
-                        val result = startCheckout(pkg.id)
-                        if (result.error == null) dialogText = result.message ?: "Checkout started."
-                        result.error
-                    }
-                }
-            }
-            else -> handoff()
-        }
+        // Acting for a caller: purchase (if paid), download, verify and return — all of it driven by
+        // the entry point that owes the result.
+        if (onAcquire != null) onAcquire(pkg) else runRoute(acquireRouteFor(mainAction.kind))
     }
 
     // Live rating state, seeded from the summary and updated when the viewer rates.
@@ -425,15 +445,6 @@ fun DetailScreen(
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
                 )
-            }
-            val mainAction = if (held || primaryAction == null) {
-                RequiredAction(
-                    ActionKind.INSTALL_EXTENSION,
-                    "Install again",
-                    "Install again. Install ${pkg.name} again",
-                )
-            } else {
-                primaryAction
             }
             ActionButton(
                 action = mainAction,

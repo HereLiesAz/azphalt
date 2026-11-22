@@ -89,6 +89,8 @@ fun StorefrontApp(
      * Empty for the web store and for the app opened on its own — neither has a host to ask.
      */
     hostInventory: Map<String, ExtensionStateEntry> = emptyMap(),
+    /** False for the standalone Android store, which cannot run checkout (see [DetailScreen]). */
+    inAppCheckout: Boolean = true,
     /**
      * Set when another app launched the store to get something for itself (`models/HandoffSession.kt`).
      *
@@ -230,6 +232,7 @@ fun StorefrontApp(
                     },
                     // In a handoff the Install button owes the caller bytes, not a link.
                     onAcquire = handoff?.acquire,
+                    inAppCheckout = inAppCheckout,
                     onForget = { forgotten ->
                         localInventory = forgetInstall(localInventory, forgotten.id)
                         saveStoredInventory(localInventory.values)
