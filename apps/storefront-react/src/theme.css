@@ -107,9 +107,9 @@ button {
 
 .chip {
   border: none;
-  /* 44px is the minimum touch target (WCAG 2.5.5 / platform guidance); the 11px label stays. */
-  min-height: 44px;
-  min-width: 44px;
+  /* 48px, matching the not-installed actions (and Material's touch target); the 11px label stays. */
+  min-height: 48px;
+  min-width: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -184,15 +184,50 @@ textarea.field {
   max-width: 440px;
   width: 100%;
 }
-.dialog .action {
-  display: block;
-  text-align: center;
+.dialog .action,
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
   margin-top: 8px;
   padding: 12px 20px;
+  border: none;
   border-radius: 999px;
+  font: inherit;
   font-weight: 700;
+  text-align: center;
   text-decoration: none;
-  min-height: 44px;
+  /* 48px: the target size the not-installed actions promise on every platform. */
+  min-height: 48px;
+}
+.action[aria-disabled="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+/* What an action says when it failed. Plain words, in the page's own error colour. */
+.action-error {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--error, #b3261e);
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No rotation, but still visibly "in progress": a half-ring that does not move. */
+  .spinner { animation: none; }
 }
 
 /* M3 Expressive start-aligned hero: the visible card width changes at a fixed

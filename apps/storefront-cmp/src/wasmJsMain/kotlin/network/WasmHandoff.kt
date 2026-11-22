@@ -107,9 +107,12 @@ actual suspend fun attemptHandoff(link: String): Boolean {
 actual fun downloadUrl(id: String, version: String): String =
     "/packages/$id/versions/$version/download"
 
-actual fun openExternal(url: String) {
+actual fun openExternal(url: String): Boolean {
     // `_blank` with `noopener` so the opened tab cannot reach back into this one through
     // `window.opener` — the host listings are third-party URLs from the registry.
-    if (!isSafeExternalUrl(url)) return
+    if (!isSafeExternalUrl(url)) return false
+    // `noopener` makes `window.open` return null even when the tab opened, so success cannot be read
+    // back from it; a popup blocker is the one failure this cannot see.
     window.open(url, "_blank", "noopener,noreferrer")
+    return true
 }

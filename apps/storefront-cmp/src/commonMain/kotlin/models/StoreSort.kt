@@ -42,6 +42,9 @@ fun sortPackages(items: List<PackageSummary>, sort: SortMode, isHeld: (String) -
     return items.sortedWith(cmp)
 }
 
-/** True when the viewer has the package; `REMOVED` is kept in the record, so presence is not enough. */
-fun isHeld(inventory: Map<String, ExtensionStateEntry>, id: String): Boolean =
-    inventory[id]?.state.let { it != null && it != ExtensionState.REMOVED }
+/**
+ * True when the viewer has the package installed and usable. One definition, shared with the cards,
+ * the Installed filter and the detail screen ([isInstalled]): `REMOVED`, `DOWNLOADED` and `FAILED`
+ * are recorded but are not installs, so they sort as not installed.
+ */
+fun isHeld(inventory: Map<String, ExtensionStateEntry>, id: String): Boolean = isInstalled(inventory[id])

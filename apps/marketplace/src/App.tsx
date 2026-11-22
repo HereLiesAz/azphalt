@@ -4,8 +4,12 @@ import type { PanInfo } from 'framer-motion';
 import { Search, Box, Download, ArrowLeft, Layers, Fingerprint } from 'lucide-react';
 import { RepositoryClient } from '@azphalt/repository-client';
 import type { PackageSummary } from '@azphalt/azdk';
-import { attemptHandoff, downloadUrl, installLink } from '@azphalt/web-handoff';
+import { attemptHandoff, buttonStateFor, createMainPress, hostsFor, installLink, type ActionPhase, type RequiredAction } from '@azphalt/web-handoff';
+import { NoHostPanel, type HostDirectory } from './NoHostPanel';
 import './index.css';
+
+/** The marketplace installs through the handoff only; it has no checkout. */
+const installAction: RequiredAction = { kind: 'install-extension', label: 'Install', description: 'Install. Install this extension' };
 
 const client = new RepositoryClient({ url: 'http://localhost:3000' });
 
@@ -112,6 +116,11 @@ function App() {
   // The install fallback — spec/web-handoff.md § When no host is installed. Set only once an attempt
   // has come back with "nothing claimed it".
   const [noHost, setNoHost] = useState(false);
+  // The Install button's phase, produced by `runWithPhase` so it shows progress and any failure.
+  const [installPhase, setInstallPhase] = useState<ActionPhase>({ kind: 'idle' });
+  // The hosts that could run the selected package, read once the fallback is shown — never before,
+  // because on a device that has a host the user simply arrives there.
+  const [directory, setDirectory] = useState<HostDirectory>({ status: 'loading' });
 
   // Animation controls
   const searchControls = useAnimation();
@@ -154,16 +163,52 @@ function App() {
     return () => { current = false; };
   }, [selectedPkg]);
 
-  const handleInstall = async () => {
-    if (!selectedPkg) return;
-    // Physics swell — feedback that the press registered, before anything navigates.
-    await installControls.start({
-      scale: [1, 1.15, 0.9, 1.05, 1],
-      transition: bouncySpring
-    });
-    // Then actually hand the package to a host (spec/web-handoff.md). Until this, the button was
-    // only the animation: it looked like it installed and did nothing at all.
-    setNoHost(!(await attemptHandoff(installLink(selectedPkg.id, selectedPkg.version))));
+  // Load the host directory (`GET /packages?kind=app`, spec/web-handoff.md § Host directory) when the
+  // fallback appears, so "no host installed" comes with the hosts to install.
+  useEffect(() => {
+    if (!noHost || !selectedPkg) return;
+    let current = true;
+    client
+      .search({ kind: ['app'] })
+      .then((res) => {
+        if (current) setDirectory({ status: 'ready', hosts: hostsFor(selectedPkg, res.packages) });
+      })
+      .catch((e) => {
+        console.error(e);
+        if (current) setDirectory({ status: 'error' });
+      });
+    return () => { current = false; };
+  }, [noHost, selectedPkg]);
+
+  const installInFlight = useRef(false);
+  // The press handler is `createMainPress`: it refuses a second press while one runs (synchronously, on
+  // the ref, so two clicks in one tick cannot both pass), and reports progress and failure on the button.
+  const handleInstall = () => {
+    if (!selectedPkg) return Promise.resolve();
+    return createMainPress({
+      route: 'handoff',
+      action: installAction,
+      getPhase: () => installPhase,
+      setPhase: setInstallPhase,
+      inFlight: installInFlight,
+      deps: {
+        checkout: async () => ({ error: 'This store has no checkout.' }),
+        handoff: async () => {
+          // Physics swell — feedback that the press registered, before anything navigates.
+          await installControls.start({
+            scale: [1, 1.15, 0.9, 1.05, 1],
+            transition: bouncySpring
+          });
+          // Then actually hand the package to a host (spec/web-handoff.md). Until this, the button was
+          // only the animation: it looked like it installed and did nothing at all.
+          const handed = await attemptHandoff(installLink(selectedPkg.id, selectedPkg.version));
+          if (!handed) setDirectory({ status: 'loading' });
+          setNoHost(!handed);
+          return null;
+        },
+        notice: () => undefined,
+      },
+    })();
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -292,32 +337,42 @@ function App() {
                   <div style={{ display: 'flex', gap: 12 }}>
                     <span className="tag tag-large">{selectedPkg.kind || 'extension'}</span>
                   </div>
-                  <motion.button 
-                    animate={installControls}
-                    className="btn btn-primary btn-large"
-                    onClick={handleInstall}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Download size={20} /> Install
-                  </motion.button>
+                  {(() => {
+                    const state = buttonStateFor(
+                      { ...installAction, description: `Install. Install ${selectedPkg.name}` },
+                      installPhase,
+                    );
+                    return (
+                      <>
+                        <motion.button
+                          animate={installControls}
+                          className="btn btn-primary btn-large"
+                          onClick={handleInstall}
+                          aria-label={state.description}
+                          // aria-disabled, not `disabled`, so keyboard focus is not dropped mid-install.
+                          aria-disabled={state.disabled || undefined}
+                          aria-busy={state.showProgress || undefined}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Download size={20} /> {state.label}
+                        </motion.button>
+                        {state.error && <div role="alert">{state.error}</div>}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Nothing claimed the link. Not an error state: on a device with no host, downloading
                     the package IS the successful outcome — a host registered for the .azp media type
                     opens the file directly, with no link support involved. */}
                 {noHost && (
-                  <div className="empty-state" style={{ marginTop: 16, padding: 16, border: '1px solid var(--md-sys-color-outline)' }}>
-                    <p style={{ margin: 0 }}>
-                      Nothing on this device opened the link. Download the package and open it in a host.
-                    </p>
-                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-                      <a className="btn btn-primary" href={downloadUrl(selectedPkg.id, selectedPkg.version)} download>
-                        Download .azp
-                      </a>
-                      <button className="btn btn-surface" onClick={() => setNoHost(false)}>Close</button>
-                    </div>
-                  </div>
+                  <NoHostPanel
+                    pkg={selectedPkg}
+                    directory={directory}
+                    onRetry={() => { setNoHost(false); void handleInstall(); }}
+                    onDismiss={() => setNoHost(false)}
+                  />
                 )}
 
                 <h4 className="section-title" style={{ marginTop: 32 }}>Included Assets</h4>

@@ -101,6 +101,8 @@ export interface CheckoutResponse {
   stub?: boolean;
   message?: string;
   error?: string;
+  /** Machine-readable reason for an error, e.g. `already_owned` (409): the account holds the licence. */
+  code?: string;
   session?: CheckoutSession;
 }
 

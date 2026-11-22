@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import theme.CapsuleShape
@@ -31,6 +32,8 @@ import kotlinx.coroutines.withContext
 import main.StorefrontApp
 import models.HandoffSession
 import models.PackageSummary
+import models.Platform
+import models.platformInAppCheckout
 import network.downloadPackage
 import network.fetchRegistryList
 import theme.AzphaltExpressiveTheme
@@ -117,6 +120,10 @@ private fun HandoffFlow(
     // The package the user pressed Install on, while it is being bought / downloaded / verified.
     var acquiring by remember { mutableStateOf<PackageSummary?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
+    // The package whose acquisition just failed, so the failure can offer to run it again rather than
+    // leaving the user to find the package and start over. Null for failures with nothing to retry
+    // (the catalogue not loading).
+    var retryPkg by remember { mutableStateOf<PackageSummary?>(null) }
 
     val session = remember(request, callerLabel) {
         HandoffSession(
@@ -147,7 +154,9 @@ private fun HandoffFlow(
     }
 
     Box(Modifier.fillMaxSize()) {
-        StorefrontApp(hostInventory = request.inventory, handoff = session)
+        // This flag feeds the main button's action (`mainButtonFor`) and must stay true here: a paid
+        // package must keep its `Get` button so `onAcquire`, the host-driven Play Billing purchase, runs.
+        StorefrontApp(inAppCheckout = platformInAppCheckout(Platform.ANDROID_HOST_DRIVEN), hostInventory = request.inventory, handoff = session)
 
         // Over the storefront rather than instead of it: the catalogue the user was just looking at
         // stays put behind this, so a failed or cancelled purchase returns them exactly where they
@@ -178,10 +187,37 @@ private fun HandoffFlow(
     failure?.let { message ->
         AlertDialog(
             shape = CapsuleShape.Panel,
-            onDismissRequest = { failure = null },
+            // Clears the retry target too: a later, unrelated failure must not offer to retry this package.
+            onDismissRequest = { failure = null; retryPkg = null },
             confirmButton = {
-                TextButton(onClick = { failure = null }, shape = CapsuleShape.Full) { Text("OK") }
+                val again = retryPkg
+                if (again != null) {
+                    TextButton(
+                        onClick = {
+                            failure = null
+                            retryPkg = null
+                            acquiring = again
+                        },
+                        shape = CapsuleShape.Full,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("Try again") }
+                } else {
+                    TextButton(
+                        onClick = { failure = null },
+                        shape = CapsuleShape.Full,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("OK") }
+                }
             },
+            dismissButton = if (retryPkg != null) {
+                {
+                    TextButton(
+                        onClick = { failure = null; retryPkg = null },
+                        shape = CapsuleShape.Full,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("Close") }
+                }
+            } else null,
             title = { Text("Couldn't finish") },
             text = { Text(message) },
         )
@@ -198,6 +234,7 @@ private fun HandoffFlow(
                 val activity = context as? Activity
                     ?: return@LaunchedEffect run {
                         failure = "no activity for the purchase flow"
+                        retryPkg = pkg
                         acquiring = null
                     }
                 when (val outcome = Billing(context).purchase(activity, pkg.id, request.repository)) {
@@ -207,6 +244,7 @@ private fun HandoffFlow(
                     is PurchaseOutcome.Cancelled -> return@LaunchedEffect run { acquiring = null }
                     is PurchaseOutcome.Failed -> return@LaunchedEffect run {
                         failure = outcome.message
+                        retryPkg = pkg
                         acquiring = null
                     }
                 }
@@ -229,6 +267,7 @@ private fun HandoffFlow(
             onAcquired(acquired)
         } catch (e: Exception) {
             failure = e.message ?: "verification failed"
+            retryPkg = pkg
             acquiring = null
         }
     }

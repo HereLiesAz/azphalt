@@ -45,6 +45,13 @@ import models.loadStoreTaxonomy
 import models.installCount
 import models.forgetInstall
 import models.installedEntry
+import models.isInstalled
+import models.showNothingInstalled
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import models.NotInstalled
+import models.requiredActionsFor
+import models.statusLineFor
 import models.mergeInventories
 import network.fetchRegistryList
 import network.loadStoredInventory
@@ -77,6 +84,8 @@ import theme.ExpressiveMotion
 
 @Composable
 fun StorefrontApp(
+    /** False for the standalone Android store, which cannot buy paid packages (see [DetailScreen]). Required. */
+    inAppCheckout: Boolean,
     /**
      * What the calling host has already done with these extensions (`spec/state-reporting.md` § 3).
      * Empty for the web store and for the app opened on its own — neither has a host to ask.
@@ -162,10 +171,11 @@ fun StorefrontApp(
                     else -> true
                 }) &&
                 (when (owned) {
-                    // `REMOVED` is held rather than dropped so a reinstall can be offered, so "have it"
-                    // is a question about the state, not about the key being present.
-                    1 -> inventory[p.id]?.state.let { it != null && it != ExtensionState.REMOVED }
-                    2 -> inventory[p.id]?.state.let { it == null || it == ExtensionState.REMOVED }
+                    // `REMOVED`, `DOWNLOADED` and `FAILED` are recorded rather than dropped so they can be
+                    // offered a reinstall, install or retry — and none of them is installed. "Have it" is
+                    // a question about the state, not about the key being present.
+                    1 -> isInstalled(inventory[p.id])
+                    2 -> !isInstalled(inventory[p.id])
                     else -> true
                 }) &&
                 (category == null || (taxonomy?.keys(p)?.contains(category) ?: (category in p.mediaDomains))) &&
@@ -222,6 +232,7 @@ fun StorefrontApp(
                     },
                     // In a handoff the Install button owes the caller bytes, not a link.
                     onAcquire = handoff?.acquire,
+                    inAppCheckout = inAppCheckout,
                     onForget = { forgotten ->
                         localInventory = forgetInstall(localInventory, forgotten.id)
                         saveStoredInventory(localInventory.values)
@@ -287,6 +298,21 @@ fun StorefrontApp(
                                 listState = listState,
                                 modifier = Modifier.padding(horizontal = 30.dp),
                                 header = header,
+                                // "Installed" with nothing installed is not a dead end: the way out is the
+                                // catalogue, where there is something to install.
+                                emptyAction = if (showNothingInstalled(owned, query, price, category, app, shown.isEmpty())) {
+                                    {
+                                        NothingInstalledAction(
+                                            onBrowse = {
+                                                owned = 0
+                                                query = ""
+                                                price = 0
+                                                category = null
+                                                app = null
+                                            },
+                                        )
+                                    }
+                                } else null,
                             )
                             else -> CascadeCatalog(
                                 sections = sections,
@@ -458,5 +484,30 @@ private fun LoadFailure(message: String, onRetry: () -> Unit) {
         Text(message, style = TextStyle(fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant))
         Spacer(Modifier.height(6.dp))
         Capsule(label = "Retry", background = Ground.Ink, cap = Color(0xFFF0D42A), labelSize = 13, height = 48.dp, onClick = onRetry)
+    }
+}
+
+/**
+ * What to do when the "Installed" filter matches nothing: nothing is installed yet, and the one thing
+ * that changes that is to go and install something. Clears every filter, so the catalogue the button
+ * promises is the whole of it.
+ */
+@Composable
+private fun NothingInstalledAction(onBrowse: () -> Unit) {
+    val action = requiredActionsFor(NotInstalled.NothingInstalledYet, packageName = "").first()
+    Column(Modifier.fillMaxWidth().padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            statusLineFor(NotInstalled.NothingInstalledYet) ?: "",
+            style = TextStyle(fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant),
+        )
+        Capsule(
+            label = action.label,
+            background = Ground.Ink,
+            cap = Color(0xFFF0D42A),
+            labelSize = 13,
+            height = 48.dp,
+            onClick = onBrowse,
+            modifier = Modifier.semantics { contentDescription = action.description },
+        )
     }
 }

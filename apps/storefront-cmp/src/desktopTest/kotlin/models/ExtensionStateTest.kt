@@ -80,43 +80,17 @@ class ExtensionStateTest {
     }
 }
 
-/** The label logic — what a card actually shows. */
-class ActionLabelTest {
-
-    private fun entry(state: ExtensionState, version: String = "1.0.0") =
-        ExtensionStateEntry(id = "com.a.one", version = version, state = state)
-
+/** The status word on a card. (The old `actionLabelFor` vocabulary is gone: see `NotInstalled.kt`.) */
+class StatusLabelTest {
     @Test
-    fun `an unknown package is Get`() {
-        assertEquals("Get", actionLabelFor(null, "1.0.0"))
+    fun `no record has no status`() {
         assertNull(statusLabelFor(null))
     }
 
     @Test
-    fun `states map to their labels`() {
-        assertEquals("Install", actionLabelFor(entry(ExtensionState.DOWNLOADED), "1.0.0"))
-        assertEquals("Retry", actionLabelFor(entry(ExtensionState.FAILED), "1.0.0"))
-        assertEquals("Reinstall", actionLabelFor(entry(ExtensionState.REMOVED), "1.0.0"))
-        assertEquals("Open", actionLabelFor(entry(ExtensionState.ACTIVE), "1.0.0"))
-        assertEquals("Enable", actionLabelFor(entry(ExtensionState.INSTALLED), "1.0.0"))
-    }
-
-    @Test
-    fun `Update is derived from the catalogue, not from the host`() {
-        // Whether something newer exists is the repository's knowledge — a host cannot know it offline,
-        // which is why it is not a reportable state.
-        assertEquals("Update", actionLabelFor(entry(ExtensionState.ACTIVE, "1.0.0"), "1.1.0"))
-        assertEquals("Update", actionLabelFor(entry(ExtensionState.INSTALLED, "1.0.0"), "1.1.0"))
-        // Update outranks Open: a stale copy is the more useful thing to say.
-        assertEquals("Open", actionLabelFor(entry(ExtensionState.ACTIVE, "1.1.0"), "1.1.0"))
-    }
-
-    @Test
-    fun `an unknown latest version never claims an update`() {
-        // A store that could not reach its catalogue must not tell the user to update to nothing.
-        assertEquals("Open", actionLabelFor(entry(ExtensionState.ACTIVE), null))
-        assertEquals("Open", actionLabelFor(entry(ExtensionState.ACTIVE), ""))
-        // Nor when the host reported no version to compare against.
-        assertEquals("Open", actionLabelFor(entry(ExtensionState.ACTIVE, ""), "1.1.0"))
+    fun `every state has a status word`() {
+        for (state in ExtensionState.entries) {
+            assertTrue(statusLabelFor(ExtensionStateEntry(id = "a", state = state)) != null, "$state")
+        }
     }
 }

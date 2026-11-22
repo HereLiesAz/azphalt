@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import main.StorefrontApp
+import models.Platform
+import models.platformInAppCheckout
 import network.AndroidAppContext
 
 /**
@@ -21,6 +23,8 @@ class MainActivity : ComponentActivity() {
         // uninstalled context would make that a silent no-op (network/AndroidHandoff.kt).
         AndroidAppContext.install(this)
         enableEdgeToEdge()
-        setContent { StorefrontApp() }
+        // No way to buy here: Play Billing is not wired into the standalone store, and spec/store-app.md
+        // § Paid packages forbids an external payment flow, so a paid package shows a disabled, explained button.
+        setContent { StorefrontApp(inAppCheckout = platformInAppCheckout(Platform.ANDROID_STANDALONE)) }
     }
 }

@@ -27,8 +27,14 @@ expect suspend fun attemptHandoff(link: String): Boolean
  */
 expect fun handoffUri(id: String, version: String?): String
 
-/** Open [url] in the platform's browser — the "get a host" and "download the .azp" actions. */
-expect fun openExternal(url: String)
+/**
+ * Open [url] in the platform's browser — the "get a host" and "download the .azp" actions.
+ *
+ * Returns whether the request was handed to the platform. `false` means nothing was opened (an unsafe
+ * URL, a device with no browser, a headless desktop), so the caller can say so and offer a retry
+ * instead of leaving a button that did nothing. It cannot say the page *loaded*; no platform tells us.
+ */
+expect fun openExternal(url: String): Boolean
 
 /**
  * Whether [url] may be handed to the OS or a browser. Listing URLs (a host's install pointer, an
